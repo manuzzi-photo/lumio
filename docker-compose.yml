@@ -194,6 +194,10 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_FORCE_PATH_STYLE=${S3_FORCE_PATH_STYLE:-true}
       - WORKER_CONCURRENCY=${WORKER_CONCURRENCY:-4}
+      # Slots der Fast-Lane (Bild-Renditions, ZIPs). Siehe entrypoint.sh:
+      # ohne explizites WORKER_QUEUES laufen zwei Lanes, damit Videos/ML
+      # die Bildverarbeitung nicht blockieren.
+      - WORKER_FAST_CONCURRENCY=${WORKER_FAST_CONCURRENCY:-2}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       # Billing-Lifecycle (Trial-Expiry, Read-only-Eskalation, Suspend).
       # consumer.py triggert enforce_limits nur wenn das hier "true" ist —

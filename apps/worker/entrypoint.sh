@@ -16,37 +16,61 @@ set -e
 
 LOG_LEVEL="${LOG_LEVEL:-info}"
 CONCURRENCY="${WORKER_CONCURRENCY:-4}"
-# Welche Celery-Queues dieser Worker bedient. Default enthaelt 'ml'
-# (Auto-Tagging), damit Single-Node- und Self-Host-Setups out-of-the-box
-# taggen. In Multi-Node-Setups setzen reine Celery-Nodes OHNE CLIP dies
-# auf "default,heavy,io" (ohne 'ml'), damit Tagging-Tasks nur auf dem
-# CLIP-faehigen Worker landen.
-QUEUES="${WORKER_QUEUES:-default,heavy,io,ml}"
+# Slots der Fast-Lane (Bild-Renditions, ZIPs, Webhooks). Bewusst klein:
+# die Jobs sind kurz; 2 Slots reichen, damit Uploads sichtbar fluessig
+# verarbeitet werden, ohne der Heavy-Lane nennenswert CPU zu nehmen.
+FAST_CONCURRENCY="${WORKER_FAST_CONCURRENCY:-2}"
 
-echo "[lumio-worker] starting celery (concurrency=$CONCURRENCY, queues=$QUEUES) and stream consumer"
+PIDS=()
 
-# Celery im Hintergrund
-celery -A app worker \
-    -l "$LOG_LEVEL" \
-    -c "$CONCURRENCY" \
-    -Q "$QUEUES" &
-CELERY_PID=$!
-
-# Stream-Consumer im Hintergrund
-python consumer.py &
-CONSUMER_PID=$!
-
-# Wenn einer der Prozesse stirbt, beenden wir den anderen, damit Docker
-# den Container neu startet.
 shutdown() {
     echo "[lumio-worker] shutting down"
-    kill -TERM "$CELERY_PID" 2>/dev/null || true
-    kill -TERM "$CONSUMER_PID" 2>/dev/null || true
+    for pid in "${PIDS[@]}"; do
+        kill -TERM "$pid" 2>/dev/null || true
+    done
     wait
 }
 trap shutdown TERM INT
 
-# wait gibt zurück, sobald einer von beiden stirbt
+if [ -n "${WORKER_QUEUES:-}" ]; then
+    # Explizite Queue-Liste gesetzt (Multi-Node-Setups, z.B. reine
+    # Celery-Nodes ohne CLIP mit "default,heavy,io"): EIN Worker-Prozess,
+    # unveraendertes Verhalten wie vor v0.53.0.
+    echo "[lumio-worker] starting celery (concurrency=$CONCURRENCY, queues=$WORKER_QUEUES) and stream consumer"
+    celery -A app worker \
+        -l "$LOG_LEVEL" \
+        -c "$CONCURRENCY" \
+        -Q "$WORKER_QUEUES" &
+    PIDS+=($!)
+else
+    # Standard (Single-Node, Self-Hosting): ZWEI Lanes, damit langlaufende
+    # Video-/RAW-/ML-Jobs die kurzen Bild-Renditions nicht aushungern.
+    # Vorher teilten sich alle Queues die gleichen Slots — drei Video-
+    # Transcodings + Auto-Tagging konnten die komplette Kapazitaet belegen,
+    # und simple Thumbnails warteten minutenlang ("Wird verarbeitet...").
+    echo "[lumio-worker] starting celery fast lane (concurrency=$FAST_CONCURRENCY, queues=default,io)"
+    celery -A app worker \
+        -n "fast@%h" \
+        -l "$LOG_LEVEL" \
+        -c "$FAST_CONCURRENCY" \
+        -Q "default,io" &
+    PIDS+=($!)
+
+    echo "[lumio-worker] starting celery heavy lane (concurrency=$CONCURRENCY, queues=heavy,ml)"
+    celery -A app worker \
+        -n "heavy@%h" \
+        -l "$LOG_LEVEL" \
+        -c "$CONCURRENCY" \
+        -Q "heavy,ml" &
+    PIDS+=($!)
+fi
+
+# Stream-Consumer im Hintergrund
+python consumer.py &
+PIDS+=($!)
+
+# wait -n gibt zurueck, sobald EIN Prozess stirbt — dann alles beenden,
+# damit Docker den Container sauber neu startet.
 wait -n
 echo "[lumio-worker] one of the processes died — exiting"
 shutdown
