@@ -33,6 +33,16 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 -
 
 ### Changed
+-
+
+### Fixed
+-
+
+## [0.53.1] - 2026-07-27
+
+_Pull + Rebuild genügt — nur Hauptserver (Frontend), keine Migration. · Pull + rebuild is enough — main server only (frontend), no migration._
+
+### Changed
 - **Uploads laufen jetzt in zwei Lanes: Bilder blockieren nicht mehr hinter Videos.** Bisher teilten sich alle Dateien vier Upload-Slots — drei Videos konnten drei davon über Minuten belegen, während viele kleine Bilder einzeln durchtröpfelten. Jetzt laden bis zu 4 Bilder und parallel dazu bis zu 2 Videos/große Dateien (Multipart) gleichzeitig hoch. Der Modus „Langsame Verbindung?" bleibt unverändert strikt seriell. · *Uploads now run in two lanes: images no longer queue behind videos. Previously all files shared four upload slots — three videos could occupy three of them for minutes while many small images trickled through one by one. Now up to 4 images upload in parallel with up to 2 videos/large files (multipart). The "slow connection" mode remains strictly serial.*
 
 ### Fixed
