@@ -33,10 +33,17 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 -
 
 ### Changed
-- **Video-/KI-Jobs können die Bildverarbeitung nicht mehr blockieren.** Bisher teilten sich alle Job-Typen dieselben Worker-Slots — wenige parallele Video-Transcodings plus Auto-Tagging konnten die komplette Kapazität belegen, und selbst simple Bild-Thumbnails hingen minutenlang auf „Wird verarbeitet". Der Worker startet jetzt zwei Lanes: eine schnelle für Bild-Renditions/ZIPs/Webhooks (`WORKER_FAST_CONCURRENCY`, Default 2) und eine schwere für Video/RAW/KI-Tagging (`WORKER_CONCURRENCY`, Default 4). Setups mit explizit gesetztem `WORKER_QUEUES` (Multi-Node-Worker) behalten unverändert einen Prozess mit genau diesen Queues. · *Video/AI jobs can no longer starve image processing. Previously all job types shared the same worker slots — a few parallel video transcodes plus auto-tagging could occupy the entire capacity, leaving even simple image thumbnails stuck on "processing" for minutes. The worker now runs two lanes: a fast one for image renditions/ZIPs/webhooks (`WORKER_FAST_CONCURRENCY`, default 2) and a heavy one for video/RAW/AI tagging (`WORKER_CONCURRENCY`, default 4). Setups with an explicit `WORKER_QUEUES` (multi-node workers) keep a single process with exactly those queues, unchanged.*
+-
 
 ### Fixed
 -
+
+## [0.53.0] - 2026-07-21
+
+_Pull + Rebuild. **Betrifft den Worker: Hauptserver UND alle Worker-Nodes neu bauen** (Nodes nach dem Hauptserver). Keine Migration, neue optionale Envs `WORKER_FAST_CONCURRENCY`. · Pull + rebuild. **Affects the worker: rebuild main server AND all worker nodes** (nodes after the main server). No migration, new optional env `WORKER_FAST_CONCURRENCY`._
+
+### Changed
+- **Video-/KI-Jobs können die Bildverarbeitung nicht mehr blockieren.** Bisher teilten sich alle Job-Typen dieselben Worker-Slots — wenige parallele Video-Transcodings plus Auto-Tagging konnten die komplette Kapazität belegen, und selbst simple Bild-Thumbnails hingen minutenlang auf „Wird verarbeitet". Der Worker startet jetzt zwei Lanes: eine schnelle für Bild-Renditions/ZIPs/Webhooks (`WORKER_FAST_CONCURRENCY`, Default 2) und eine schwere für Video/RAW/KI-Tagging (`WORKER_CONCURRENCY`, Default 4). Setups mit explizit gesetztem `WORKER_QUEUES` (Multi-Node-Worker) behalten unverändert einen Prozess mit genau diesen Queues. · *Video/AI jobs can no longer starve image processing. Previously all job types shared the same worker slots — a few parallel video transcodes plus auto-tagging could occupy the entire capacity, leaving even simple image thumbnails stuck on "processing" for minutes. The worker now runs two lanes: a fast one for image renditions/ZIPs/webhooks (`WORKER_FAST_CONCURRENCY`, default 2) and a heavy one for video/RAW/AI tagging (`WORKER_CONCURRENCY`, default 4). Setups with an explicit `WORKER_QUEUES` (multi-node workers) keep a single process with exactly those queues, unchanged.*
 
 ## [0.52.3] - 2026-07-21
 
