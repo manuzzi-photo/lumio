@@ -27,17 +27,22 @@ export type ProgressCallback = (p: UploadProgress) => void;
  *  Upload-Link-Page) gesetzt — typischerweise basierend auf
  *  `navigator.connection.effectiveType` oder einem manuellen Toggle. */
 export interface UploadOptions {
-  /** Wenn true: nur 1 paralleles File, 1 paralleler Part. Sonst
-   *  4 / 4. Spart bei langsamem Mobilnetz Bandbreite (parallele
-   *  Streams konkurrieren um die schmale Uplink-Connection und
-   *  reduzieren den Gesamt-Durchsatz). Default false. */
+  /** Wenn true: nur 1 paralleles File, 1 paralleler Part. Sonst zwei
+   *  Lanes (4 Bilder + 2 Videos/Multipart parallel, je bis 4 Parts).
+   *  Spart bei langsamem Mobilnetz Bandbreite (parallele Streams
+   *  konkurrieren um die schmale Uplink-Connection und reduzieren
+   *  den Gesamt-Durchsatz). Default false. */
   slowConnection?: boolean;
 }
 
-// Anzahl paralleler Single-PUTs bzw. Multipart-Parts. Bei langsamer
-// Verbindung (slowConnection=true) auf 1 reduziert.
-const PARALLEL_UPLOADS_FAST = 4;
-const PARALLEL_UPLOADS_SLOW = 1;
+// Anzahl paralleler Uploads, getrennt nach Lanes: Bilder/kleine Dateien
+// laufen in der Fast-Lane, Videos und Multipart-Uploads (grosse Dateien)
+// in der Heavy-Lane. Ohne Trennung belegten drei Videos drei der vier
+// Slots ueber Minuten und viele kleine Bilder tropften einzeln durch —
+// dieselbe Verhungerungs-Klasse wie beim Worker (v0.53.0). Bei langsamer
+// Verbindung (slowConnection=true) laeuft alles strikt seriell.
+const PARALLEL_IMAGE_UPLOADS_FAST = 4;
+const PARALLEL_VIDEO_UPLOADS_FAST = 2;
 const PARALLEL_PARTS_FAST = 4;
 const PARALLEL_PARTS_SLOW = 1;
 
@@ -77,24 +82,30 @@ export async function uploadFiles(
 ): Promise<void> {
   if (files.length === 0) return;
   const slow = options?.slowConnection ?? false;
-  const parallelUploads = slow ? PARALLEL_UPLOADS_SLOW : PARALLEL_UPLOADS_FAST;
   const parallelParts = slow ? PARALLEL_PARTS_SLOW : PARALLEL_PARTS_FAST;
 
-  const workQueue: Array<{ file: File; init: UploadInit }> = [];
+  type Work = { file: File; init: UploadInit };
+  // Zwei Lanes: Videos und Multipart-Uploads (= grosse Dateien, auch
+  // z.B. RAW/PSD) in die Heavy-Queue, alles andere in die Image-Queue.
+  const imageQueue: Work[] = [];
+  const videoQueue: Work[] = [];
   let initDone = false;
   let initError: unknown = null;
 
-  let notifyWaiter: (() => void) | null = null;
+  // ALLE wartenden Worker wecken. Vorher wurde nur der zuletzt
+  // registrierte Waiter gespeichert — gingen zwei Worker gleichzeitig
+  // in den Wartezustand (Init langsamer als die Uploads), wurde einer
+  // nie wieder geweckt und uploadFiles resolvte nie: die Upload-Anzeige
+  // blieb dann trotz fertiger Dateien fuer immer stehen.
+  let waiters: Array<() => void> = [];
   function notifyWorkers() {
-    if (notifyWaiter) {
-      const fn = notifyWaiter;
-      notifyWaiter = null;
-      fn();
-    }
+    const toWake = waiters;
+    waiters = [];
+    for (const fn of toWake) fn();
   }
   function waitForWork(): Promise<void> {
     return new Promise((resolve) => {
-      notifyWaiter = resolve;
+      waiters.push(resolve);
     });
   }
 
@@ -119,7 +130,9 @@ export async function uploadFiles(
             status: "queued",
             progress: 0,
           });
-          workQueue.push({ file, init });
+          const heavy =
+            init.method === "multipart" || file.type.startsWith("video/");
+          (heavy ? videoQueue : imageQueue).push({ file, init });
         }
         notifyWorkers();
       }
@@ -131,9 +144,13 @@ export async function uploadFiles(
     }
   }
 
-  async function uploadWorker(): Promise<void> {
+  async function uploadWorker(queues: Work[][]): Promise<void> {
     while (true) {
-      const w = workQueue.shift();
+      let w: Work | undefined;
+      for (const q of queues) {
+        w = q.shift();
+        if (w) break;
+      }
       if (!w) {
         if (initDone) return;
         await waitForWork();
@@ -171,8 +188,20 @@ export async function uploadFiles(
     }
   }
 
-  const workerCount = Math.min(parallelUploads, files.length);
-  const workers = Array.from({ length: workerCount }, uploadWorker);
+  const workers: Array<Promise<void>> = [];
+  if (slow) {
+    // Langsame Verbindung: strikt seriell ueber beide Lanes — parallele
+    // Streams wuerden sich die schmale Uplink-Connection zerteilen.
+    workers.push(uploadWorker([imageQueue, videoQueue]));
+  } else {
+    const imgWorkers = Math.min(PARALLEL_IMAGE_UPLOADS_FAST, files.length);
+    for (let i = 0; i < imgWorkers; i++) {
+      workers.push(uploadWorker([imageQueue]));
+    }
+    for (let i = 0; i < PARALLEL_VIDEO_UPLOADS_FAST; i++) {
+      workers.push(uploadWorker([videoQueue]));
+    }
+  }
   await Promise.all([runInits(), ...workers]);
 
   if (initError) throw initError;

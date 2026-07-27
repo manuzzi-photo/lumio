@@ -108,7 +108,7 @@ export default function GalleryDetailPage() {
   // Inhalt-Vergleich im Bestand).
   const [showDuplicatesDialog, setShowDuplicatesDialog] = useState(false);
   // Slow-Connection-Modus fuer Uploads. Beeinflusst die Anzahl
-  // paralleler Streams (1 statt 4 / 1 statt 4). Auto-Detect via
+  // paralleler Streams (1 seriell statt 4 Bilder + 2 Videos). Auto-Detect via
   // navigator.connection oder manuell via Toggle. Wird beim
   // uploadFiles-Aufruf in den options.slowConnection durchgereicht.
   const { slow: slowConnection } = useSlowConnection();

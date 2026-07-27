@@ -33,10 +33,10 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 -
 
 ### Changed
--
+- **Uploads laufen jetzt in zwei Lanes: Bilder blockieren nicht mehr hinter Videos.** Bisher teilten sich alle Dateien vier Upload-Slots — drei Videos konnten drei davon über Minuten belegen, während viele kleine Bilder einzeln durchtröpfelten. Jetzt laden bis zu 4 Bilder und parallel dazu bis zu 2 Videos/große Dateien (Multipart) gleichzeitig hoch. Der Modus „Langsame Verbindung?" bleibt unverändert strikt seriell. · *Uploads now run in two lanes: images no longer queue behind videos. Previously all files shared four upload slots — three videos could occupy three of them for minutes while many small images trickled through one by one. Now up to 4 images upload in parallel with up to 2 videos/large files (multipart). The "slow connection" mode remains strictly serial.*
 
 ### Fixed
--
+- **Upload-Anzeige konnte trotz fertiger Dateien für immer „aktiv" bleiben.** Ein interner Weckmechanismus merkte sich nur den zuletzt wartenden Upload-Slot — gingen zwei Slots gleichzeitig in den Wartezustand, wurde einer nie wieder geweckt und die Upload-Liste wurde nie als abgeschlossen gemeldet. · *The upload panel could stay "active" forever despite all files being done. An internal wake-up mechanism only remembered the most recently waiting upload slot — if two slots went idle at the same time, one was never woken again and the upload list never reported completion.*
 
 ## [0.53.0] - 2026-07-21
 
