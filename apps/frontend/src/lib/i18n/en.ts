@@ -1260,6 +1260,8 @@ export const en: Dict = {
     title: "Delete studio",
     description:
       "This marks your studio for permanent deletion. You have a 60-day grace period in which you can undo the deletion at any time. After it expires, all images, galleries and account data are removed irreversibly.",
+    galleriesOfflineNote:
+      "Important: all galleries, share links and upload links go offline immediately — your clients lose access the moment you submit the request. The data is kept during the grace period; if you undo the deletion, every gallery becomes reachable again unchanged.",
     stripeNote:
       "Your Stripe subscription is cancelled immediately — no further billing.",
     deleteButton: "Delete studio…",
@@ -1269,7 +1271,7 @@ export const en: Dict = {
     cancelDeletion: "Undo deletion",
     modalTitle: "Delete studio \"{name}\"",
     modalDesc:
-      "Please confirm with your password and by retyping the studio name. The deletion is scheduled with a 60-day grace period — you can undo it any time until the deadline is reached.",
+      "Please confirm with your password and by retyping the studio name. The deletion is scheduled with a 60-day grace period — you can undo it any time until the deadline is reached. All galleries go offline immediately.",
     password: "Current password",
     confirmNameLabel: "Studio name for confirmation",
     typeExact: "Type \"{name}\" exactly.",
@@ -1279,6 +1281,8 @@ export const en: Dict = {
     requestDeletion: "Request permanent deletion",
     errorCancel: "Error undoing",
     bannerTitle: "Your studio is being deleted.",
+    bannerGalleriesOffline:
+      "All galleries and upload links are offline. If you undo the deletion they become reachable again straight away.",
     bannerDaysOne: "Permanent deletion in 1 day ({date}).",
     bannerDaysMany: "Permanent deletion in {days} days ({date}).",
     bannerExecuting: "Permanent deletion is being carried out.",

@@ -134,8 +134,17 @@ function PublicGalleryInner() {
         }
       } catch (err) {
         if (!cancelled) {
+          // tenant_unavailable / gallery_archived = das Studio ist
+          // offline (gesperrt, archiviert oder Loeschung beantragt).
+          // Bewusst die gleiche neutrale Meldung wie bei not_found —
+          // Besucher muessen nicht erfahren, warum das Studio weg ist.
+          const msg = err instanceof Error ? err.message : "";
+          const neutral =
+            msg.includes("not_found") ||
+            msg.includes("tenant_unavailable") ||
+            msg.includes("gallery_archived");
           setError(
-            err instanceof Error && err.message.includes("not_found")
+            neutral
               ? t("gallery.notAvailableDesc")
               : err instanceof Error
               ? err.message

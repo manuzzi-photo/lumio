@@ -26,6 +26,7 @@ import { config } from "../config.js";
 import { hashPassword, verifyPassword } from "../services/auth.js";
 import { detectFileKind } from "../services/filekind.js";
 import { effectiveAllowedKinds, isKindAllowed } from "../services/upload-allow.js";
+import { isTenantPubliclyVisible } from "../services/tenant.js";
 import {
   effectiveUploadLimitBytes,
   formatLimit,
@@ -158,13 +159,24 @@ async function loadLink(token: string) {
           status: true,
           // tenant.maxUploadMib brauchen wir im Init-Endpoint zur
           // effektiven Limit-Berechnung
-          tenant: { select: { maxUploadMib: true, uploadAllowedKinds: true } },
+          tenant: {
+            select: {
+              maxUploadMib: true,
+              uploadAllowedKinds: true,
+              status: true,
+            },
+          },
         },
       },
     },
   });
   if (!link) return null;
   if (!link.active) return null;
+  // Studio nicht mehr oeffentlich (suspended / archived / Loeschantrag)
+  // → Gast-Uploads sind dicht. Sonst koennten waehrend der Loesch-
+  // Karenzphase noch neue Daten in ein Studio laufen, das gerade
+  // abgebaut wird.
+  if (!isTenantPubliclyVisible(link.gallery.tenant.status)) return null;
   if (link.gallery.status === "archived") return null;
   if (link.expiresAt && link.expiresAt < new Date()) return null;
   return link;

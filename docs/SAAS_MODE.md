@@ -203,10 +203,22 @@ SMTP_USER=noreply@your-saas-domain.com
 SMTP_PASSWORD=...
 SMTP_FROM="Lumio <noreply@your-saas-domain.com>"
 SMTP_REPLY_TO="Support <support@your-saas-domain.com>"   # optional, see below
+SUPPORT_EMAIL=support@your-saas-domain.com               # optional, see below
+FEEDBACK_EMAIL=feedback@your-saas-domain.com             # optional, see below
 LEAD_ADMIN_EMAIL=ops@your-saas-domain.com
 ```
 
-**Reply-To:** Several emails invite the recipient to "just reply to this email". If `SMTP_FROM` is a no-reply address without a mailbox behind it, those replies bounce. Set `SMTP_REPLY_TO` to a monitored address (real mailbox or forwarding) so replies actually reach you. Without it, no Reply-To header is set.
+**Reply-To:** If `SMTP_FROM` is a no-reply address without a mailbox behind it, replies bounce. Set `SMTP_REPLY_TO` to a monitored address (real mailbox or forwarding). Without it, no Reply-To header is set.
+
+**Contact addresses in system emails:** Lumio adapts the wording of its emails to what is actually configured — it never promises a reply channel that does not exist:
+
+| Configuration | What the emails say |
+|---|---|
+| `SMTP_REPLY_TO` set | "Just reply to this email or write to …" |
+| only `SUPPORT_EMAIL` set | "Write to us at …" |
+| neither | no contact address at all |
+
+`SUPPORT_EMAIL` falls back to the address from `SMTP_REPLY_TO`, `FEEDBACK_EMAIL` falls back to `SUPPORT_EMAIL`. Both expect a bare address without a display name.
 
 If `SMTP_HOST` stays empty, everything runs in no-op mode – trial emails aren't sent, the rest works normally.
 

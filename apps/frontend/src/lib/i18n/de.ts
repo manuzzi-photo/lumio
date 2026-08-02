@@ -1265,6 +1265,8 @@ export const de: Dict = {
     title: "Studio löschen",
     description:
       "Dies markiert dein Studio zur endgültigen Löschung. Du hast eine 60-tägige Karenzphase, in der du die Löschung jederzeit zurücknehmen kannst. Nach Ablauf werden alle Bilder, Galerien und Account-Daten unwiderruflich entfernt.",
+    galleriesOfflineNote:
+      "Wichtig: Alle Galerien, Freigabe-Links und Upload-Links gehen sofort offline — deine Kundinnen und Kunden haben ab dem Antrag keinen Zugriff mehr. Die Daten bleiben während der Karenzphase erhalten; nimmst du die Löschung zurück, sind alle Galerien unverändert wieder erreichbar.",
     stripeNote:
       "Deine Stripe-Subscription wird sofort gekündigt — keine weitere Abrechnung.",
     deleteButton: "Studio löschen…",
@@ -1274,7 +1276,7 @@ export const de: Dict = {
     cancelDeletion: "Löschung zurücknehmen",
     modalTitle: "Studio „{name}\" löschen",
     modalDesc:
-      "Bitte bestätige mit deinem Passwort und durch erneutes Eintippen des Studio-Namens. Die Löschung wird mit 60-tägiger Karenzphase geplant — du kannst sie jederzeit zurücknehmen, bis der Stichtag erreicht ist.",
+      "Bitte bestätige mit deinem Passwort und durch erneutes Eintippen des Studio-Namens. Die Löschung wird mit 60-tägiger Karenzphase geplant — du kannst sie jederzeit zurücknehmen, bis der Stichtag erreicht ist. Alle Galerien gehen sofort offline.",
     password: "Aktuelles Passwort",
     confirmNameLabel: "Studio-Name zur Bestätigung",
     typeExact: "Tippe „{name}\" exakt ein.",
@@ -1284,6 +1286,8 @@ export const de: Dict = {
     requestDeletion: "Endgültig löschen anfordern",
     errorCancel: "Fehler beim Zurücknehmen",
     bannerTitle: "Dein Studio wird gelöscht.",
+    bannerGalleriesOffline:
+      "Alle Galerien und Upload-Links sind offline. Wenn du die Löschung zurücknimmst, sind sie sofort wieder erreichbar.",
     bannerDaysOne: "Endgültige Löschung in 1 Tag ({date}).",
     bannerDaysMany: "Endgültige Löschung in {days} Tagen ({date}).",
     bannerExecuting: "Endgültige Löschung wird gerade ausgeführt.",

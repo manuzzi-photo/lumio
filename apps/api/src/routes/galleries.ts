@@ -21,7 +21,7 @@ import { config } from "../config.js";
 import { generateGallerySlug } from "../services/ids.js";
 import { presignGet, presignPut, getObjectStream } from "../services/storage.js";
 import { verifyPassword, hashPassword } from "../services/auth.js";
-import { isTenantOperational } from "../services/tenant.js";
+import { isTenantPubliclyVisible } from "../services/tenant.js";
 import { enqueue, Queues } from "../services/queue.js";
 import { resolveGalleryBranding } from "../services/branding.js";
 import { logEvent } from "../services/audit.js";
@@ -263,9 +263,14 @@ export async function loadVisitor(
       expiresAt: true,
       passwordHash: true,
       publicAccess: true,
+      tenant: { select: { status: true } },
     },
   });
   if (!gallery || gallery.status !== "live") return null;
+  // Studio nicht mehr oeffentlich (suspended / archived / Loeschantrag)
+  // → alle Endkunden-Routen die ueber loadVisitor gehen (Files, ZIP,
+  // Proofing, HLS, Print-Shop) sind damit ebenfalls dicht.
+  if (!isTenantPubliclyVisible(gallery.tenant.status)) return null;
   if (gallery.expiresAt && gallery.expiresAt < new Date()) return null;
 
   const cookieName = visitorCookieName(gallery.id);
@@ -1694,7 +1699,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
     if (!gallery || gallery.status !== "live") {
       return reply.status(404).send({ error: "not_found" });
     }
-    if (!isTenantOperational(gallery.tenant.status)) {
+    if (!isTenantPubliclyVisible(gallery.tenant.status)) {
       return reply
         .status(503)
         .send({ error: "tenant_unavailable" });
@@ -1939,10 +1944,14 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
           expiresAt: true,
           passwordHash: true,
           publicAccess: true,
+          tenant: { select: { status: true } },
         },
       });
       if (!gallery || gallery.status !== "live") {
         return reply.status(404).send({ error: "not_found" });
+      }
+      if (!isTenantPubliclyVisible(gallery.tenant.status)) {
+        return reply.status(503).send({ error: "tenant_unavailable" });
       }
       if (gallery.expiresAt && gallery.expiresAt < new Date()) {
         return reply.status(410).send({ error: "expired" });
@@ -2627,7 +2636,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
       if (!gallery || gallery.status !== "live") {
         return reply.status(404).send({ error: "not_found" });
       }
-      if (!isTenantOperational(gallery.tenant.status)) {
+      if (!isTenantPubliclyVisible(gallery.tenant.status)) {
         return reply.status(503).send({ error: "tenant_unavailable" });
       }
 

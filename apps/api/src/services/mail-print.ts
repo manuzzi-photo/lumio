@@ -4,6 +4,14 @@
  * Endkunden-Bestaetigung, Studio-Notifikation, Versand-Notifikation.
  * Folgt dem Template-Pattern von mail.ts: subject/text/html als POJO.
  */
+import { supportAddress } from "./mail.js";
+
+/** Kontaktadresse fuer Print-Mails: Studio-Support > Instanz-Support.
+ *  Frueher stand hier fest support@lumio-cloud.de — fuer Self-Hoster
+ *  eine fremde Adresse, die den Endkunden ins Leere schickt. */
+function printSupport(studioSupport: string): string | null {
+  return studioSupport?.trim() || supportAddress();
+}
 
 interface OrderLike {
   id: string;
@@ -123,7 +131,7 @@ ${
     : "Wir bereiten deine Bestellung jetzt zur Produktion vor. Du bekommst eine weitere Mail sobald sie versendet wird."
 }
 
-Bei Fragen: ${supportEmail || "support@lumio-cloud.de"}
+${printSupport(supportEmail) ? `Bei Fragen: ${printSupport(supportEmail)}` : ""}
 
 Viele Grüße,
 ${studioName}`;
@@ -153,7 +161,7 @@ ${studioName}`;
     }
   </p>
   <p style="color:#888;font-size:13px;margin-top:24px;">
-    Bei Fragen: <a href="mailto:${escapeHtml(supportEmail)}">${escapeHtml(supportEmail || "support@lumio-cloud.de")}</a>
+    ${printSupport(supportEmail) ? `Bei Fragen: <a href="mailto:${escapeHtml(printSupport(supportEmail)!)}">${escapeHtml(printSupport(supportEmail)!)}</a>` : ""}
   </p>
 </body></html>`;
 
@@ -244,7 +252,7 @@ ${formatAddress(order.shippingAddress)}
 Viele Grüße,
 ${studioName}
 
-Bei Fragen: ${supportEmail || "support@lumio-cloud.de"}`;
+${printSupport(supportEmail) ? `Bei Fragen: ${printSupport(supportEmail)}` : ""}`;
 
   const html = `<!doctype html>
 <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#222;">
@@ -263,7 +271,7 @@ Bei Fragen: ${supportEmail || "support@lumio-cloud.de"}`;
   <pre style="font-family:inherit;white-space:pre-wrap;margin:0;color:#444;">${escapeHtml(formatAddress(order.shippingAddress))}</pre>
   <p style="margin-top:24px;color:#444;">Viele Grüße,<br>${escapeHtml(studioName)}</p>
   <p style="color:#888;font-size:13px;margin-top:24px;">
-    Bei Fragen: <a href="mailto:${escapeHtml(supportEmail)}">${escapeHtml(supportEmail || "support@lumio-cloud.de")}</a>
+    ${printSupport(supportEmail) ? `Bei Fragen: <a href="mailto:${escapeHtml(printSupport(supportEmail)!)}">${escapeHtml(printSupport(supportEmail)!)}</a>` : ""}
   </p>
 </body></html>`;
 

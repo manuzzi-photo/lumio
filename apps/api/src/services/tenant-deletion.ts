@@ -9,8 +9,14 @@
  *    - status='pending_deletion' setzen + Timestamps + scheduledFor=now+60d
  *    - Stripe-Subscription sofort cancellen (keine weitere Abrechnung)
  *    - Audit-Log + Mail an Owner
- *    - Galerien bleiben erreichbar (Endkunden merken nichts), aber
- *      Studio-Login ist read-only (read-only-Plugin prueft status)
+ *    - Alle oeffentlichen Inhalte gehen SOFORT offline: Galerien,
+ *      Freigabe-Links, Upload-Links, Proofing, Print-Shop. Gate ist
+ *      isTenantPubliclyVisible() (nur status='active'). Aufbewahren
+ *      fuer das Undo-Fenster und Weiter-Veroeffentlichen sind zwei
+ *      verschiedene Dinge — nach einem Art.-17-Antrag ist nur das
+ *      Erste vertretbar.
+ *    - Studio-Login bleibt moeglich (damit der Owner die Loeschung
+ *      zuruecknehmen kann), ist aber read-only (read-only-Plugin)
  *
  * 2) cancelDeletion(): User ueberlegt es sich anders waehrend Karenzphase
  *    - status='active', Timestamps clearen

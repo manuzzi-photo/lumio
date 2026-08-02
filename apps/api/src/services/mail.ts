@@ -52,6 +52,95 @@ export interface MailMessage {
   replyTo?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Kontaktangaben in System-Mails
+//
+// Problem, das diese Helper loesen: Mail-Texte duerfen nicht blind
+// "antworte einfach auf diese Mail" versprechen. Der Absender aus
+// SMTP_FROM ist typischerweise eine noreply-Adresse ohne Postfach —
+// Antworten landen im Nirvana und der Empfaenger merkt es nicht.
+//
+// Antworten funktioniert nur, wenn SMTP_REPLY_TO gesetzt UND das
+// Postfach beim Provider auch wirklich existiert. Deshalb:
+//   - SMTP_REPLY_TO gesetzt  → "antworten oder an <adresse> schreiben"
+//   - nur SUPPORT_EMAIL      → "schreib an <adresse>"
+//   - gar nichts konfiguriert→ kein Kontakt-Satz (statt einer fremden
+//     Adresse; frueher stand ueberall fest support@lumio-cloud.de)
+// ---------------------------------------------------------------------------
+
+/** Zieht die nackte Mail-Adresse aus einem Header-Wert wie
+ *  "Lumio Support <support@example.com>" oder "support@example.com". */
+function bareAddress(value: string | undefined): string | null {
+  if (!value) return null;
+  const angle = value.match(/<([^>]+)>/);
+  const addr = (angle ? angle[1] : value).trim();
+  return addr.includes("@") ? addr : null;
+}
+
+/** Adresse, die in System-Mails als Support-Kontakt genannt wird.
+ *  SUPPORT_EMAIL > SMTP_REPLY_TO > keine. */
+export function supportAddress(): string | null {
+  return bareAddress(config.SUPPORT_EMAIL) ?? bareAddress(config.SMTP_REPLY_TO);
+}
+
+/** Adresse fuer Produkt-Feedback. FEEDBACK_EMAIL > Support-Adresse. */
+export function feedbackAddress(): string | null {
+  return bareAddress(config.FEEDBACK_EMAIL) ?? supportAddress();
+}
+
+/** Kann der Empfaenger auf diese Mail antworten? Nur wenn ein
+ *  Reply-To-Header gesetzt wird. */
+function canReplyToMails(): boolean {
+  return bareAddress(config.SMTP_REPLY_TO) !== null;
+}
+
+/**
+ * Freundlicher Kontakt-Satz fuers Mail-Ende. Liefert null, wenn keine
+ * Kontaktadresse konfiguriert ist — dann laesst der Aufrufer den Satz
+ * einfach weg, statt eine tote Adresse zu nennen.
+ */
+export function supportHint(): string | null {
+  const addr = supportAddress();
+  if (!addr) return null;
+  return canReplyToMails()
+    ? `Fragen? Antworte einfach auf diese Mail oder schreib an ${addr}.`
+    : `Fragen? Schreib uns an ${addr}.`;
+}
+
+/**
+ * Dringlicher Kontakt-Satz fuer sicherheitsrelevante Hinweise
+ * ("das warst du nicht?"). Ohne konfigurierte Adresse wird auf den
+ * Betreiber der Instanz verwiesen — bei Self-Hostern ist das der
+ * Admin, den der Empfaenger ohnehin kennt.
+ */
+export function urgentSupportHint(intro: string): string {
+  const addr = supportAddress();
+  if (!addr) {
+    return `${intro} melde dich umgehend beim Betreiber dieser Lumio-Instanz.`;
+  }
+  return canReplyToMails()
+    ? `${intro} antworte umgehend auf diese Mail oder schreib an ${addr}.`
+    : `${intro} melde dich umgehend unter ${addr}.`;
+}
+
+/**
+ * Feedback-Bitte fuer Lifecycle-Mails. Nennt nur dann einen Rueckkanal,
+ * wenn es ihn wirklich gibt — sonst bleibt es bei der Frage ohne
+ * Aufforderung, die ins Leere laufen wuerde.
+ */
+export function feedbackInvite(): string {
+  const question =
+    "Wir wären neugierig: War etwas unklar, hat etwas gefehlt oder war es einfach der falsche Zeitpunkt?";
+  if (canReplyToMails()) {
+    return `${question} Antworte gerne kurz auf diese Mail — wir lesen jede Antwort.`;
+  }
+  const addr = feedbackAddress();
+  if (addr) {
+    return `${question} Schreib uns gerne kurz an ${addr} — wir lesen jede Rückmeldung.`;
+  }
+  return question;
+}
+
 export async function sendMail(msg: MailMessage): Promise<void> {
   const transport = getTransport();
   if (!transport) {
@@ -520,8 +609,7 @@ export function tmplWelcome(opts: {
       `  • Eine erste Galerie anlegen und ein paar Bilder hochladen\n` +
       `  • Test-Share-Link an dich selbst schicken, um den Endkunden-` +
       `Workflow zu durchlaufen\n\n` +
-      `Fragen? Antworte einfach auf diese Mail oder schreib an ` +
-      `support@lumio-cloud.de.\n\n` +
+      (supportHint() ? `${supportHint()}\n\n` : "") +
       `Bis bald\n` +
       `— Lumio`,
     html: renderMailLayout({
@@ -539,9 +627,7 @@ export function tmplWelcome(opts: {
           "Eine erste Galerie anlegen und ein paar Bilder hochladen",
           "Test-Share-Link an dich selbst schicken, um den Endkunden-Workflow zu durchlaufen",
         ]) +
-        mailNoticeBox(
-          `Fragen? Antworte einfach auf diese Mail oder schreib an support@lumio-cloud.de.`
-        ),
+        (supportHint() ? mailNoticeBox(supportHint()!) : ""),
     }),
   };
 }
@@ -571,14 +657,15 @@ export function tmplDeletionRequested(opts: {
       `Was jetzt passiert:\n` +
       `  • Deine Stripe-Subscription wurde sofort gekündigt — keine ` +
       `weitere Abrechnung.\n` +
-      `  • Das Studio bleibt für 60 Tage in der Karenzphase. Bestehende ` +
-      `Kunden-Galerien sind in dieser Zeit weiter erreichbar.\n` +
+      `  • Alle Galerien, Freigabe- und Upload-Links sind ab sofort ` +
+      `offline. Deine Kundinnen und Kunden haben keinen Zugriff mehr.\n` +
+      `  • Das Studio bleibt für 60 Tage in der Karenzphase. Die Daten ` +
+      `bleiben in dieser Zeit vollständig erhalten.\n` +
       `  • Du kannst die Löschung bis zum ${dateStr} jederzeit ` +
       `zurücknehmen.\n` +
       `  • Am ${dateStr} werden alle Daten endgültig gelöscht.\n\n` +
       `Löschung zurücknehmen:\n${opts.cancelUrl}\n\n` +
-      `Wenn du die Löschung NICHT angefordert hast, melde dich umgehend ` +
-      `bei support@lumio-cloud.de.\n\n` +
+      `${urgentSupportHint("Wenn du die Löschung NICHT angefordert hast,")}\n\n` +
       `— Lumio`,
     html: renderMailLayout({
       preheader: `Endgültige Löschung am ${dateStr} — bis dahin rücknehmbar`,
@@ -590,13 +677,14 @@ export function tmplDeletionRequested(opts: {
         mailHeading(`Was jetzt passiert`) +
         mailBullets([
           "Deine Stripe-Subscription wurde sofort gekündigt — keine weitere Abrechnung.",
-          "Das Studio bleibt für 60 Tage in der Karenzphase. Bestehende Kunden-Galerien sind weiter erreichbar.",
+          "Alle Galerien, Freigabe- und Upload-Links sind ab sofort offline — deine Kundinnen und Kunden haben keinen Zugriff mehr.",
+          "Das Studio bleibt für 60 Tage in der Karenzphase. Die Daten bleiben in dieser Zeit vollständig erhalten; nimmst du die Löschung zurück, sind alle Galerien sofort wieder erreichbar.",
           `Du kannst die Löschung bis zum ${dateStr} jederzeit zurücknehmen.`,
           `Am ${dateStr} werden alle Daten endgültig gelöscht.`,
         ]) +
         mailButton(opts.cancelUrl, "Löschung zurücknehmen") +
         mailNoticeBox(
-          `Wenn du die Löschung NICHT angefordert hast, melde dich umgehend bei support@lumio-cloud.de — möglicherweise hat jemand Fremdes Zugriff auf deinen Account.`
+          `${urgentSupportHint("Wenn du die Löschung NICHT angefordert hast,")} Möglicherweise hat jemand Fremdes Zugriff auf deinen Account.`
         ),
     }),
   };
@@ -649,14 +737,18 @@ export function tmplDeletionExecuted(opts: {
       `  • Branding, Watermarks, Templates\n` +
       `  • Audit-Logs (nur die Tenant-spezifischen)\n\n` +
       `Behalten:\n` +
-      `  • Stripe-Customer-Datensatz (für Rechnungs-Audit-Trail in Stripe).\n` +
-      `    Wenn du den auch endgültig gelöscht haben möchtest, schreibe ` +
-      `an support@lumio-cloud.de.\n\n` +
+      `  • Stripe-Customer-Datensatz (für Rechnungs-Audit-Trail in Stripe).${
+        supportAddress()
+          ? `\n    Wenn du den auch endgültig gelöscht haben möchtest, schreibe an ${supportAddress()}.`
+          : ""
+      }\n\n` +
       `Diese Mail ist deine Löschungs-Bestätigung — bitte aufbewahren ` +
       `falls du sie später für dein eigenes Verarbeitungsverzeichnis ` +
       `brauchst.\n\n` +
-      `Schade dass du gehst. Falls es technische Gründe waren oder ein ` +
-      `Feature gefehlt hat: feedback@lumio-cloud.de — wir lesen das.\n\n` +
+      (feedbackAddress()
+        ? `Schade dass du gehst. Falls es technische Gründe waren oder ein ` +
+          `Feature gefehlt hat: ${feedbackAddress()} — wir lesen das.\n\n`
+        : "") +
       `— Lumio`,
     html: renderMailLayout({
       preheader: `Bestätigung der endgültigen Löschung von „${opts.studioName}"`,
@@ -675,14 +767,18 @@ export function tmplDeletionExecuted(opts: {
         ]) +
         mailHeading(`Behalten`) +
         mailParagraph(
-          `Stripe-Customer-Datensatz (für Rechnungs-Audit-Trail in Stripe). Wenn du den auch endgültig gelöscht haben möchtest, schreibe an support@lumio-cloud.de.`
+          `Stripe-Customer-Datensatz (für Rechnungs-Audit-Trail in Stripe).${
+            supportAddress()
+              ? ` Wenn du den auch endgültig gelöscht haben möchtest, schreibe an ${supportAddress()}.`
+              : ""
+          }`
         ) +
         mailDivider() +
         mailNoticeBox(
           `Diese Mail ist deine Löschungs-Bestätigung — bitte aufbewahren, falls du sie später für dein eigenes Verarbeitungsverzeichnis brauchst.`
         ) +
         mailParagraph(
-          `Schade dass du gehst. Falls es technische Gründe waren oder ein Feature gefehlt hat: feedback@lumio-cloud.de — wir lesen das.`
+          `Schade dass du gehst.${feedbackAddress() ? ` Falls es technische Gründe waren oder ein Feature gefehlt hat: ${feedbackAddress()} — wir lesen das.` : ""}`
         ),
     }),
   };
@@ -1055,7 +1151,8 @@ export function tmplTrialReminder(opts: {
       `Wenn du danach weiter bei Lumio bleibst, läuft dein Abo einfach weiter — ` +
       `ohne Unterbrechung, keine Daten gehen verloren.\n\n` +
       `Studio öffnen: ${opts.studioUrl}\n\n` +
-      `Bei Fragen antworte einfach auf diese Mail.\n\n— Lumio\n\n` +
+      (supportHint() ? `${supportHint()}\n\n` : "") +
+      `— Lumio\n\n` +
       `---\nDiese Mail abbestellen: ${opts.unsubscribeUrl}`,
     html: renderMailLayout({
       preheader: `Dein Trial endet am ${trialEnd} — hier ein kurzer Überblick.`,
@@ -1076,9 +1173,7 @@ export function tmplTrialReminder(opts: {
           `Wenn du nach dem Trial weiter bei Lumio bleibst, läuft dein Abo einfach weiter — ohne Unterbrechung, keine Daten gehen verloren.`
         ) +
         mailButton(opts.studioUrl, "Studio öffnen") +
-        mailParagraph(
-          `Bei Fragen antworte einfach auf diese Mail.`
-        ) +
+        (supportHint() ? mailParagraph(supportHint()!) : "") +
         `<p style="margin:24px 0 0 0;font-size:12px;color:#9ca3af;">` +
         `<a href="${opts.unsubscribeUrl}" style="color:#9ca3af;">Keine weiteren Produkt-Mails erhalten</a>` +
         `</p>`,
@@ -1109,9 +1204,7 @@ export function tmplTrialCancelled(opts: {
       `${greeting}\n\n` +
       `Du hast dein Lumio-Abo während des Trials storniert. ` +
       `Dein Studio bleibt noch bis zum ${trialEnd} voll zugänglich.\n\n` +
-      `Wir wären neugierig: War etwas unklar, hat etwas gefehlt oder ` +
-      `war es einfach der falsche Zeitpunkt? Antworte gerne kurz auf diese ` +
-      `Mail — wir lesen jede Antwort.\n\n` +
+      `${feedbackInvite()}\n\n` +
       `Falls du es dir anders überlegt hast, kannst du dein Abo jederzeit ` +
       `im Studio reaktivieren:\n` +
       `${opts.studioUrl}/billing\n\n` +
@@ -1124,9 +1217,7 @@ export function tmplTrialCancelled(opts: {
         mailParagraph(
           `Du hast dein Lumio-Abo während des Trials storniert. Dein Studio bleibt noch bis zum <strong>${trialEnd}</strong> voll zugänglich.`
         ) +
-        mailParagraph(
-          `Wir wären neugierig: War etwas unklar, hat etwas gefehlt oder war es einfach der falsche Zeitpunkt? Antworte gerne kurz auf diese Mail — wir lesen jede Antwort.`
-        ) +
+        mailParagraph(feedbackInvite()) +
         mailParagraph(
           `Falls du es dir anders überlegt hast, kannst du dein Abo jederzeit reaktivieren.`
         ) +

@@ -81,6 +81,19 @@ const envSchema = z.object({
   // "Lumio Support <support@example.com>". Kein Default — ohne Wert
   // wird kein Reply-To gesetzt (Verhalten wie bisher).
   SMTP_REPLY_TO: z.string().optional(),
+
+  // Support-Adresse, die in System-Mails als Kontakt genannt wird
+  // (Willkommen, Loeschbestaetigung, Sicherheitshinweise). Bare Mail-
+  // Adresse, z.B. "support@example.com". Ohne Wert faellt Lumio auf
+  // die Adresse aus SMTP_REPLY_TO zurueck; ist auch die leer, wird
+  // in den Mails gar keine Kontaktadresse genannt (statt einer
+  // fremden — frueher stand hier fest support@lumio-cloud.de, was
+  // fuer Self-Hoster ins Leere lief).
+  SUPPORT_EMAIL: z.string().optional(),
+  // Optionale separate Adresse fuer Produkt-Feedback. Ohne Wert wird
+  // SUPPORT_EMAIL benutzt.
+  FEEDBACK_EMAIL: z.string().optional(),
+
   SMTP_SECURE: z
     .string()
     .default("false")

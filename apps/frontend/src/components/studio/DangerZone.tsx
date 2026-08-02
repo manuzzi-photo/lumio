@@ -198,6 +198,9 @@ export function DangerZone({
             <p className="text-ui-sm text-ink-secondary leading-relaxed">
               {t("dangerZone.description")}
             </p>
+            <p className="text-ui-sm text-ink-secondary leading-relaxed font-medium">
+              {t("dangerZone.galleriesOfflineNote")}
+            </p>
             <p className="text-ui-sm text-ink-tertiary leading-relaxed">
               {t("dangerZone.stripeNote")}
             </p>
@@ -398,6 +401,9 @@ export function PendingDeletionBanner({
                   date: scheduledDate.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" }),
                 })
             : t("dangerZone.bannerExecuting")}
+          <div className="opacity-80 mt-0.5">
+            {t("dangerZone.bannerGalleriesOffline")}
+          </div>
         </div>
         <button
           onClick={onCancelClick}
