@@ -38,6 +38,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 ### Fixed
 -
 
+## [0.55.1] - 2026-08-06
+
+_Pull + Rebuild genügt — nur Hauptserver. Wer `SMTP_REPLY_TO`, `SUPPORT_EMAIL` oder `FEEDBACK_EMAIL` in der `.env` gesetzt hat, sollte prüfen: diese Werte wirken erst ab dieser Version. · Pull + rebuild is enough — main server only. If you set `SMTP_REPLY_TO`, `SUPPORT_EMAIL` or `FEEDBACK_EMAIL` in your `.env`, note that those values only take effect from this version on._
+
+### Fixed
+- **`SMTP_REPLY_TO`, `SUPPORT_EMAIL` und `FEEDBACK_EMAIL` wurden nicht an den API-Container durchgereicht.** Die Variablen waren in `.env.example` dokumentiert und im Code ausgewertet, standen aber nicht im `environment`-Block der `docker-compose.yml` — Docker gibt nur weiter, was dort aufgeführt ist. Wer sie in der `.env` gesetzt hatte, bekam trotzdem das Verhalten ohne Wert: System-Mails ohne Kontaktadresse, kein Reply-To-Header, und das Support-Formular im Studio blieb ausgeblendet, weil `GET /instance` `supportFormEnabled: false` meldete. Betrifft `SMTP_REPLY_TO` rückwirkend seit seiner Einführung. · *`SMTP_REPLY_TO`, `SUPPORT_EMAIL` and `FEEDBACK_EMAIL` were not passed through to the API container. The variables were documented in `.env.example` and read by the code, but missing from the `environment` block in `docker-compose.yml` — Docker only forwards what is listed there. Anyone who set them in `.env` still got the no-value behaviour: system emails without a contact address, no Reply-To header, and the studio support form stayed hidden because `GET /instance` reported `supportFormEnabled: false`. Affects `SMTP_REPLY_TO` retroactively since it was introduced.*
+
 ## [0.55.0] - 2026-08-06
 
 _Pull + Rebuild genügt — nur Hauptserver (API + Frontend), keine Migration. Das Support-Formular erscheint nur in SaaS-Instanzen (`BILLING_ENABLED`) mit gesetzter `SUPPORT_EMAIL` bzw. `SMTP_REPLY_TO`; selbstgehostete Instanzen sind unverändert. · Pull + rebuild is enough — main server only (API + frontend), no migration. The support form only appears on SaaS instances (`BILLING_ENABLED`) with `SUPPORT_EMAIL` or `SMTP_REPLY_TO` configured; self-hosted instances are unchanged._
