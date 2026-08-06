@@ -148,6 +148,16 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - SMTP_FROM=${SMTP_FROM:-}
       - SMTP_SECURE=${SMTP_SECURE:-false}
+      # Antwortadresse. SMTP_FROM ist ueblicherweise eine noreply-Adresse
+      # ohne Postfach — ohne Reply-To laufen Antworten der Empfaenger ins
+      # Leere. Ohne Wert wird kein Reply-To-Header gesetzt.
+      - SMTP_REPLY_TO=${SMTP_REPLY_TO:-}
+      # Kontaktadressen in System-Mails. Ohne SUPPORT_EMAIL faellt Lumio
+      # auf die Adresse aus SMTP_REPLY_TO zurueck; ist beides leer, nennen
+      # die Mails gar keine Adresse und das Support-Formular im Studio
+      # bleibt ausgeblendet (GET /instance → supportFormEnabled=false).
+      - SUPPORT_EMAIL=${SUPPORT_EMAIL:-}
+      - FEEDBACK_EMAIL=${FEEDBACK_EMAIL:-}
       - MAX_FILE_SIZE_MIB=${MAX_FILE_SIZE_MIB:-2048}
       - BILLING_ENABLED=${BILLING_ENABLED:-false}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
