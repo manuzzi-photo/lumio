@@ -1,6 +1,31 @@
 import type { Dict } from "./dict";
 
 export const de: Dict = {
+  support: {
+    navLabel: "Support",
+    title: "Support kontaktieren",
+    intro:
+      "Beschreib kurz, worum es geht. Studio, Plan und die Seite, von der aus du schreibst, hängen wir automatisch an — das musst du nicht erklären.",
+    messageLabel: "Deine Nachricht",
+    messagePlaceholder:
+      "Was möchtest du erreichen, und was passiert stattdessen?",
+    replyTo: "Wir antworten an {email}.",
+    replyToUnknown: "Wir antworten an deine Login-Adresse.",
+    replyChange: "Andere Adresse verwenden",
+    replyLabel: "Rückrufadresse",
+    submit: "Anfrage senden",
+    sending: "Wird gesendet…",
+    sentTitle: "Anfrage gesendet",
+    sentBody:
+      "Du bekommst eine Bestätigung per Mail. Wir melden uns innerhalb eines Werktags.",
+    contextNote:
+      "Mitgesendet werden: Studio-Name, Plan, deine Rolle, die aktuelle Seite und die Lumio-Version. Keine Bild- oder Galerie-Inhalte.",
+    errUndelivered:
+      "Die Nachricht konnte nicht zugestellt werden — bitte schreib uns direkt per Mail.",
+    errRate:
+      "Du hast gerade mehrere Anfragen gesendet. Bitte warte einen Moment.",
+    errGeneric: "Senden fehlgeschlagen. Bitte versuch es erneut.",
+  },
   common: {
     signIn: "Anmelden",
     signingIn: "Anmelden…",

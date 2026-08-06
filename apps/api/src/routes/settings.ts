@@ -13,6 +13,7 @@ import { promises as dns } from "node:dns";
 
 import { prisma } from "../db.js";
 import { config } from "../config.js";
+import { isSupportFormEnabled } from "./support.js";
 import {
   zipPartDefaultMib,
   zipPartHardCapMib,
@@ -94,6 +95,10 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
   app.get("/instance", async () => ({
     billingEnabled: config.BILLING_ENABLED,
     deploymentMode: config.DEPLOYMENT_MODE,
+    // Steuert, ob das Studio den Support-Button zeigt. False bei
+    // Self-Hosting und wenn keine Zieladresse konfiguriert ist —
+    // ein Formular, das ins Leere laeuft, ist schlimmer als keins.
+    supportFormEnabled: isSupportFormEnabled(),
   }));
 
   // -------------------------------------------------------------------------

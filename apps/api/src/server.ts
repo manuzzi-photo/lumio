@@ -46,6 +46,7 @@ import { registerDuplicateRoutes } from "./routes/duplicates.js";
 import { registerTenantExportRoutes } from "./routes/exports.js";
 import { registerTeamRoutes } from "./routes/team.js";
 import { registerAccountRoutes } from "./routes/account.js";
+import { registerSupportRoutes } from "./routes/support.js";
 import { registerSuperAuthRoutes } from "./routes/super-auth.js";
 import { registerSuperTenantRoutes, registerSuperMarketingRoutes } from "./routes/super-tenants.js";
 import { registerAnnouncementRoutes } from "./routes/announcements.js";
@@ -176,6 +177,11 @@ async function buildServer() {
       await registerTenantExportRoutes(api);
       await registerTeamRoutes(api);
       await registerAccountRoutes(api);
+      // Nur im SaaS-Betrieb: eine selbstgehostete Instanz hat keinen
+      // Support, den dieses Formular erreichen koennte.
+      if (config.BILLING_ENABLED) {
+        await registerSupportRoutes(api);
+      }
       await registerSuperAuthRoutes(api);
       // Super-Admin-Tenant-Routes haben einen internen preHandler-Guard,
       // sind aber bewusst eingekapselt damit ihr Guard nicht auf andere

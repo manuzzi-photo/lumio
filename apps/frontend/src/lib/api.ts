@@ -910,6 +910,18 @@ export const api = {
   // Instanz-Flags — wie läuft diese Installation? (kein Auth nötig)
   getInstanceInfo: () => request<InstanceInfo>(`/instance`),
 
+  /** Support-Anfrage aus dem Studio. Tenant, Plan, Rolle und Version
+   *  haengt die API selbst an — hier nur der Freitext. */
+  sendSupportRequest: (body: {
+    message: string;
+    replyEmail?: string;
+    fromPath?: string;
+  }) =>
+    request<{ ok: true }>(`/support-request`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
   // Speicherverbrauch des eigenen Tenants — unabhängig vom Billing,
   // funktioniert also auch self-hosted ohne Plan.
   getAccountStorage: () => request<AccountStorage>(`/account/storage`),
@@ -4332,6 +4344,10 @@ export { API_URL, ApiError };
 export interface InstanceInfo {
   billingEnabled: boolean;
   deploymentMode: "single" | "multi";
+  /** Zeigt das Studio den Support-Button? False bei Self-Hosting und
+   *  wenn keine Support-Adresse konfiguriert ist. Kann bei aelteren
+   *  API-Versionen fehlen, deshalb optional. */
+  supportFormEnabled?: boolean;
 }
 
 export interface AccountStorage {

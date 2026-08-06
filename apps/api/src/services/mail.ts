@@ -141,7 +141,20 @@ export function feedbackInvite(): string {
   return question;
 }
 
-export async function sendMail(msg: MailMessage): Promise<void> {
+/**
+ * Verschickt eine Mail. Wirft NIE — ein Mail-Problem darf keine
+ * Business-Operation killen.
+ *
+ * Der Rueckgabewert sagt, ob es geklappt hat. Die meisten Aufrufer
+ * ignorieren ihn (fire-and-forget ist dort richtig), aber wo eine
+ * verlorene Mail den ganzen Vorgang sinnlos macht — Support-Anfragen
+ * haben kein Auffangnetz in der DB — kann der Aufrufer damit einen
+ * Fehler an den Nutzer zurueckgeben statt ein falsches "gesendet".
+ *
+ * No-Op (kein SMTP konfiguriert) zaehlt bewusst NICHT als Erfolg, sonst
+ * sieht eine unkonfigurierte Instanz aus wie eine funktionierende.
+ */
+export async function sendMail(msg: MailMessage): Promise<boolean> {
   const transport = getTransport();
   if (!transport) {
     logger.info(
@@ -149,7 +162,7 @@ export async function sendMail(msg: MailMessage): Promise<void> {
       "mail (no-op, SMTP not configured)"
     );
     void logMail(msg.to, msg.subject, "skipped");
-    return;
+    return false;
   }
   try {
     await transport.sendMail({
@@ -164,6 +177,7 @@ export async function sendMail(msg: MailMessage): Promise<void> {
     });
     logger.info({ to: msg.to, subject: msg.subject }, "mail sent");
     void logMail(msg.to, msg.subject, "sent");
+    return true;
   } catch (err) {
     logger.warn({ err, to: msg.to, subject: msg.subject }, "mail send failed");
     void logMail(
@@ -173,6 +187,7 @@ export async function sendMail(msg: MailMessage): Promise<void> {
       err instanceof Error ? err.message : String(err)
     );
     // Wir werfen NICHT — Mail-Fehler sollten Business-Operationen nicht killen
+    return false;
   }
 }
 
@@ -1276,6 +1291,114 @@ export function tmplWinback(opts: {
         `<p style="margin:24px 0 0 0;font-size:12px;color:#9ca3af;">` +
         `<a href="${opts.unsubscribeUrl}" style="color:#9ca3af;">Keine weiteren Mails erhalten</a>` +
         `</p>`,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Support-Anfragen aus dem Studio
+//
+// Die Admin-Mail traegt bewusst viel Kontext: Tenant, Plan, Rolle, Version,
+// Ursprungsseite. Das sind genau die Rueckfragen, die man sonst stellen
+// muss, bevor man ueberhaupt anfangen kann zu helfen — und der Nutzer weiss
+// die Antworten meist nicht ("welchen Plan hast du?").
+// ---------------------------------------------------------------------------
+
+export interface SupportRequestContext {
+  message: string;
+  userEmail: string;
+  /** Abweichende Rueckrufadresse, falls angegeben. */
+  replyEmail: string | null;
+  userName: string | null;
+  userRole: string;
+  isImpersonated: boolean;
+  tenantName: string | null;
+  tenantSlug: string | null;
+  tenantId: string;
+  tenantStatus: string | null;
+  planName: string | null;
+  planSlug: string | null;
+  planStatus: string | null;
+  trialEndsAt: Date | null;
+  fromPath: string | null;
+  version: string;
+}
+
+export function tmplSupportRequest(
+  ctx: SupportRequestContext
+): { subject: string; text: string; html: string } {
+  const who = ctx.userName ? `${ctx.userName} <${ctx.userEmail}>` : ctx.userEmail;
+  const studio = ctx.tenantName ?? ctx.tenantSlug ?? ctx.tenantId;
+
+  const facts: string[] = [
+    `Von: ${who} (${ctx.userRole})`,
+    `Studio: ${studio}${ctx.tenantSlug ? ` (${ctx.tenantSlug})` : ""}`,
+  ];
+  if (ctx.replyEmail && ctx.replyEmail !== ctx.userEmail) {
+    facts.push(`Rückrufadresse: ${ctx.replyEmail}`);
+  }
+  if (ctx.planName) {
+    const st = ctx.planStatus ? ` — ${ctx.planStatus}` : "";
+    facts.push(`Plan: ${ctx.planName}${st}`);
+  } else {
+    facts.push(`Plan: keine Subscription`);
+  }
+  if (ctx.trialEndsAt) {
+    facts.push(`Trial endet: ${ctx.trialEndsAt.toISOString().slice(0, 10)}`);
+  }
+  if (ctx.tenantStatus && ctx.tenantStatus !== "active") {
+    facts.push(`⚠️ Tenant-Status: ${ctx.tenantStatus}`);
+  }
+  if (ctx.isImpersonated) {
+    facts.push(`⚠️ Support-Session (Super-Admin eingeloggt als dieser User)`);
+  }
+  if (ctx.fromPath) facts.push(`Geschrieben von: ${ctx.fromPath}`);
+  facts.push(`Version: ${ctx.version}`);
+  facts.push(`Tenant-ID: ${ctx.tenantId}`);
+
+  return {
+    subject: `Support: ${studio}${ctx.planSlug ? ` [${ctx.planSlug}]` : ""}`,
+    text:
+      `Support-Anfrage aus dem Studio:\n\n` +
+      facts.map((f) => `  ${f}`).join("\n") +
+      `\n\nNachricht:\n${ctx.message}\n`,
+    html: renderMailLayout({
+      preheader: `${who} — ${ctx.message.slice(0, 80)}`,
+      bodyHtml:
+        mailHeading(`Support-Anfrage`) +
+        mailBullets(facts) +
+        mailHeading(`Nachricht`) +
+        mailParagraph(ctx.message.replace(/\n/g, "<br>")) +
+        mailNoticeBox(
+          `Reply-To steht auf ${ctx.replyEmail ?? ctx.userEmail} — direkt antworten geht.`
+        ),
+    }),
+  };
+}
+
+export function tmplSupportRequestConfirmation(opts: {
+  message: string;
+  name: string | null;
+}): { subject: string; text: string; html: string } {
+  const greeting = opts.name ? `Hallo ${opts.name},` : `Hallo,`;
+  return {
+    subject: `Deine Support-Anfrage ist angekommen`,
+    text:
+      `${greeting}\n\n` +
+      `danke für deine Nachricht. Wir haben sie erhalten und melden uns ` +
+      `innerhalb eines Werktags bei dir.\n\n` +
+      `Zur Sicherheit hier noch einmal, was du uns geschickt hast:\n\n` +
+      `${opts.message}\n\n` +
+      `— Dein Lumio-Team`,
+    html: renderMailLayout({
+      preheader: `Wir haben deine Anfrage erhalten und melden uns innerhalb eines Werktags.`,
+      bodyHtml:
+        mailHeading(`Anfrage angekommen`) +
+        mailParagraph(
+          `${greeting} danke für deine Nachricht. Wir haben sie erhalten und melden uns innerhalb eines Werktags bei dir.`
+        ) +
+        mailHeading(`Deine Nachricht`) +
+        mailParagraph(opts.message.replace(/\n/g, "<br>")),
     }),
   };
 }

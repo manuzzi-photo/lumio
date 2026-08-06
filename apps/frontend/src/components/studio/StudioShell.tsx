@@ -26,6 +26,7 @@ import { AppVersion } from "@/components/AppVersion";
 import { useT } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { GlobalSearchModal } from "@/components/studio/GlobalSearchModal";
+import { SupportModal } from "@/components/studio/SupportModal";
 import { StorageBanner } from "@/components/studio/StorageBanner";
 import { SubscriptionBanner } from "@/components/studio/SubscriptionBanner";
 import { PreArchiveBanner } from "@/components/studio/PreArchiveBanner";
@@ -153,6 +154,12 @@ const RESERVED_SEGMENTS = new Set([
 export function StudioShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+  // null = noch nicht geladen. Der Button erscheint erst, wenn die API
+  // bestaetigt hat, dass es einen Support gibt (SaaS + Adresse gesetzt) —
+  // in einer selbstgehosteten Instanz taucht er nie auf.
+  const [supportEnabled, setSupportEnabled] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<"owner" | "admin" | "member" | null>(
     null
   );
@@ -187,6 +194,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
         const r = await api.me();
         if (cancelled) return;
         setUserRole(r.user.role);
+        setUserEmail(r.user.email ?? null);
         setImpersonation(r.impersonation);
         setFeatures(r.features ?? []);
         applyStudioAccent(r.studioAccent ?? null);
@@ -198,6 +206,13 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
         });
       } catch {
         setUserRole("member");
+      }
+      try {
+        const info = await api.getInstanceInfo();
+        if (!cancelled) setSupportEnabled(info.supportFormEnabled === true);
+      } catch {
+        // Kein Support-Button, wenn wir es nicht wissen — lieber fehlt er,
+        // als dass er ins Leere fuehrt.
       }
     })();
     return () => {
@@ -246,6 +261,11 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
       <GlobalSearchModal
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
+      />
+      <SupportModal
+        open={supportOpen}
+        onClose={() => setSupportOpen(false)}
+        userEmail={userEmail}
       />
       {/* Mobile Hamburger */}
       <button
@@ -326,7 +346,14 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Footer mit Logout */}
-        <SidebarFooter onNavigate={() => setMobileOpen(false)} />
+        <SidebarFooter
+          onNavigate={() => setMobileOpen(false)}
+          showSupport={supportEnabled}
+          onSupport={() => {
+            setMobileOpen(false);
+            setSupportOpen(true);
+          }}
+        />
       </aside>
 
       {/* Overlay zum Schließen */}
@@ -476,7 +503,15 @@ function SidebarLink({
   );
 }
 
-function SidebarFooter({ onNavigate }: { onNavigate: () => void }) {
+function SidebarFooter({
+  onNavigate,
+  showSupport,
+  onSupport,
+}: {
+  onNavigate: () => void;
+  showSupport: boolean;
+  onSupport: () => void;
+}) {
   const router = useRouter();
   const t = useT();
 
@@ -489,6 +524,11 @@ function SidebarFooter({ onNavigate }: { onNavigate: () => void }) {
     }
   }
 
+  const supportLabel = (() => {
+    const translated = t("support.navLabel");
+    return translated === "support.navLabel" ? "Support" : translated;
+  })();
+
   const logoutLabel = (() => {
     const translated = t("nav.logout");
     return translated === "nav.logout" ? "Abmelden" : translated;
@@ -496,6 +536,27 @@ function SidebarFooter({ onNavigate }: { onNavigate: () => void }) {
 
   return (
     <div className="p-2 border-t border-line-subtle space-y-1.5">
+      {showSupport && (
+        <button
+          type="button"
+          onClick={onSupport}
+          className="group w-full flex items-center gap-2.5 h-9 px-3 rounded-md text-ui text-ink-tertiary hover:text-ink-primary hover:bg-surface-raised transition-colors duration-motion ease-out"
+        >
+          <span className="text-ink-tertiary group-hover:text-ink-secondary">
+            <svg
+              className="w-[18px] h-[18px] shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              strokeLinecap="round"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </span>
+          <span className="truncate">{supportLabel}</span>
+        </button>
+      )}
       <button
         type="button"
         onClick={handleLogout}

@@ -1,6 +1,29 @@
 import type { Dict } from "./dict";
 
 export const en: Dict = {
+  support: {
+    navLabel: "Support",
+    title: "Contact support",
+    intro:
+      "Briefly describe what's going on. We attach your studio, plan and the page you're writing from automatically — no need to explain that.",
+    messageLabel: "Your message",
+    messagePlaceholder: "What are you trying to do, and what happens instead?",
+    replyTo: "We'll reply to {email}.",
+    replyToUnknown: "We'll reply to your login address.",
+    replyChange: "Use a different address",
+    replyLabel: "Reply address",
+    submit: "Send request",
+    sending: "Sending…",
+    sentTitle: "Request sent",
+    sentBody:
+      "You'll get a confirmation by email. We'll get back to you within one working day.",
+    contextNote:
+      "Sent along: studio name, plan, your role, the current page and the Lumio version. No image or gallery content.",
+    errUndelivered:
+      "The message could not be delivered — please email us directly instead.",
+    errRate: "You've just sent several requests. Please wait a moment.",
+    errGeneric: "Sending failed. Please try again.",
+  },
   common: {
     signIn: "Sign in",
     signingIn: "Signing in…",
