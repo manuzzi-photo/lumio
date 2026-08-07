@@ -38,6 +38,18 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 ### Fixed
 -
 
+## [0.56.1] - 2026-08-07
+
+_Pull + Rebuild genügt — nur Hauptserver. Nach dem Deploy einmal hart neu laden, sonst hält der Browser das alte Favicon. · Pull + rebuild is enough — main server only. Do one hard reload afterwards, otherwise the browser keeps the cached favicon._
+
+### Fixed
+
+- Das Favicon folgt jetzt dem Browser-Theme. Die Kacheln der Bildmarke laufen auf `currentColor` und kippen per `prefers-color-scheme` auf Papier, sobald die Browserleiste dunkel ist. Vorher trugen sie feste Tinte — auf einer dunklen Leiste sind das 1,16 Kontrast, die Marke war dort praktisch unsichtbar. Die orange Kachel bleibt in beiden Fällen. Die PNG-Fallbacks bleiben unverändert; sie greifen nur in älteren Browsern, die ohnehin helle Leisten haben.
+
+**🇬🇧 English**
+
+- The favicon now follows the browser theme. The symbol's tiles run on `currentColor` and flip to paper via `prefers-color-scheme` once the browser chrome is dark. Previously they carried fixed ink — on a dark bar that is a contrast ratio of 1.16, leaving the mark all but invisible. The orange tile stays put in both cases. The PNG fallbacks are unchanged; they only apply in older browsers, which have light chrome anyway.
+
 ## [0.56.0] - 2026-08-07
 
 _Pull + Rebuild genügt — nur Hauptserver. Keine `.env`-Änderung, keine Migration. · Pull + rebuild is enough — main server only. No `.env` change, no migration._
