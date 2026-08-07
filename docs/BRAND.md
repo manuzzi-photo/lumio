@@ -63,8 +63,13 @@ thrown out.
 <Logo variant="full" className="h-6 w-auto" />
 ```
 
-The ink follows `currentColor` while the accent stays fixed. On a dark
-surface, just set a light text colour — no second file needed.
+The ink follows `currentColor`; the accent follows `--logo-accent`, which
+is tied to `--brand-accent`. So where the symbol stands in for a missing
+studio logo, it carries that studio's accent colour. On a dark surface,
+just set a light text colour — no second file needed.
+
+The static files under `public/` (`favicon.svg`, `logo.svg`, the OG images)
+keep the fixed vermillion. Those are Lumio as a product, not the tenant's.
 
 ## Rules
 

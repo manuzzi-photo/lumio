@@ -17,7 +17,7 @@ export function Logo({
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const clip = `lumio-cut-${uid}`;
-  const accent = "#FF4D2E";
+  const accent = "var(--logo-accent, #FF4D2E)";
 
   const tiles = (
     <g clipPath={`url(#${clip})`}>

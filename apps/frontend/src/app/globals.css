@@ -53,6 +53,14 @@
   --brand-primary:     242 242 244;
   --brand-accent:      245 158 11;
 
+  /* Akzent der Lumio-Bildmarke. Haengt an --brand-accent, damit die Marke
+     dort, wo sie als Ersatz fuer ein fehlendes Studio-Logo einspringt, die
+     Akzentfarbe des Studios traegt — applyStudioAccent() ueberschreibt
+     --brand-accent zur Laufzeit. Wer die Marke fest in Lumio-Vermillion
+     will, setzt hier #FF4D2E ein. Die statischen Dateien in /public
+     (favicon.svg, logo.svg, OG-Bilder) sind davon nicht betroffen. */
+  --logo-accent:       rgb(var(--brand-accent));
+
   /* === Typography === */
   --font-sans: var(--font-inter), "Inter", system-ui, -apple-system, "Segoe UI",
                Roboto, Helvetica, Arial, sans-serif;

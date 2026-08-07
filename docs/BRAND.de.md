@@ -65,8 +65,14 @@ verwerfen.
 <Logo variant="full" className="h-6 w-auto" />
 ```
 
-Die Tinte läuft auf `currentColor`, der Akzent bleibt fest. Auf dunklem
-Grund also einfach die Textfarbe hell setzen — keine zweite Datei nötig.
+Die Tinte läuft auf `currentColor`, der Akzent auf `--logo-accent` — das
+hängt an `--brand-accent`. Wo die Marke als Ersatz für ein fehlendes
+Studio-Logo einspringt, trägt sie also die Akzentfarbe dieses Studios. Auf
+dunklem Grund einfach die Textfarbe hell setzen — keine zweite Datei nötig.
+
+Die statischen Dateien unter `public/` (`favicon.svg`, `logo.svg`, die
+OG-Bilder) behalten das feste Vermillion. Das ist Lumio als Produkt, da
+hat der Tenant nichts zu bestimmen.
 
 ## Regeln
 
