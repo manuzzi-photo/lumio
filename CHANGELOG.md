@@ -38,6 +38,30 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 ### Fixed
 -
 
+## [0.56.0] - 2026-08-07
+
+_Pull + Rebuild genügt — nur Hauptserver. Keine `.env`-Änderung, keine Migration. · Pull + rebuild is enough — main server only. No `.env` change, no migration._
+
+### Added
+
+- Lumio hat eine eigene Bildmarke: vier Kacheln auf einem 2×2-Raster, diagonal angeschnitten — ein Kontaktbogen mit Auswahlschnitt. Sie liegt als SVG unter `apps/frontend/public/` (`mark.svg`, `logo.svg`, `wordmark.svg`, jeweils auch als `-inverse` für dunkle Flächen) plus Favicon-PNGs in 16/32/180/512 und `site.webmanifest`.
+- Neue Komponente `Logo` (`@/components/ui`) mit den Varianten `mark` und `full`. Die Tinte läuft auf `currentColor`, der Akzent auf `--logo-accent` — das hängt an `--brand-accent` und damit an der Akzentfarbe, die im Studio unter *Gestaltung → Erscheinungsbild* gesetzt ist. Wer die Marke stattdessen fest in Lumio-Vermillion will, setzt `--logo-accent` in `globals.css` auf `#FF4D2E`. Die Wortmarke ist in Pfade gewandelt, es wird kein zusätzlicher Webfont geladen.
+
+**🇬🇧 English**
+
+- Lumio now has its own symbol: four tiles on a 2×2 grid with a diagonal cut through them — a contact sheet with a selection stroke. It ships as SVG under `apps/frontend/public/` (`mark.svg`, `logo.svg`, `wordmark.svg`, each also as `-inverse` for dark surfaces), plus favicon PNGs at 16/32/180/512 and `site.webmanifest`.
+- New `Logo` component (`@/components/ui`) with `mark` and `full` variants. The ink follows `currentColor`, the accent follows `--logo-accent`, which is tied to `--brand-accent` and therefore to the accent colour configured in the studio under *Design → Appearance*. To pin the symbol to Lumio vermillion instead, set `--logo-accent` to `#FF4D2E` in `globals.css`. The wordmark is converted to outlines, so no additional webfont is loaded.
+
+### Changed
+
+- Favicon und Touch-Icon zeigen die neue Bildmarke statt des Platzhalters. Browser und iOS-Homescreen können das gecachte alte Icon noch eine Weile behalten — ein harter Reload hilft.
+- Wo bisher der Text „Lumio" als Ersatz für ein fehlendes Studio-Logo stand (Studio-Kopfzeile, Login-Seite), steht jetzt die Bildmarke. Sie trägt dort weiterhin die Akzentfarbe des Studios, genau wie der Text vorher. Ein hochgeladenes Studio-Logo und ein gesetzter Tenant-Name haben unverändert Vorrang — an der Galerie-Gestaltung ändert sich nichts.
+
+**🇬🇧 English**
+
+- Favicon and touch icon now show the new symbol instead of the placeholder. Browsers and the iOS home screen may keep the cached old icon for a while — a hard reload helps.
+- Where the plain text "Lumio" previously stood in for a missing studio logo (studio header, login page), the symbol now appears. It still carries the studio's accent colour there, exactly as the text did. An uploaded studio logo and a configured tenant name still take precedence — gallery branding is unchanged.
+
 ## [0.55.1] - 2026-08-06
 
 _Pull + Rebuild genügt — nur Hauptserver. Wer `SMTP_REPLY_TO`, `SUPPORT_EMAIL` oder `FEEDBACK_EMAIL` in der `.env` gesetzt hat, sollte prüfen: diese Werte wirken erst ab dieser Version. · Pull + rebuild is enough — main server only. If you set `SMTP_REPLY_TO`, `SUPPORT_EMAIL` or `FEEDBACK_EMAIL` in your `.env`, note that those values only take effect from this version on._
