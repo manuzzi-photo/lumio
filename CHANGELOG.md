@@ -38,6 +38,20 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 ### Fixed
 -
 
+## [0.59.0] - 2026-08-07
+
+_Pull + Rebuild genügt — nur Hauptserver. Keine `.env`-Änderung, keine Migration. Betrifft nur Instanzen mit Self-Service-Registrierung (`BILLING_ENABLED=true`). · Pull + rebuild is enough — main server only. No `.env` change, no migration. Only affects instances with self-service signup (`BILLING_ENABLED=true`)._
+
+### Fixed
+
+- Wer bereits als Mitglied in einem fremden Studio angelegt war, konnte kein eigenes Studio eröffnen — die Registrierung meldete „Diese E-Mail-Adresse ist bereits registriert." Die Sperre prüfte die Adresse instanzweit und traf damit genau den legitimen Fall. Sie greift jetzt nur noch, wenn die Adresse bereits **Inhaberin** eines bestehenden Studios ist. Mitglied oder Administrator anderswo zu sein steht einem eigenen Studio nicht mehr im Weg. Beim Anmelden erscheint dann wie gewohnt die Studio-Auswahl.
+- „Passwort vergessen" blieb auf der Hauptdomain wirkungslos: ohne Studio-Adresse im Aufruf ließ sich kein Studio zuordnen, und es wurde stillschweigend keine Mail verschickt. Jetzt werden alle Studios ermittelt, in denen die Adresse aktiv ist, und je eine Mail verschickt — jede nennt das betreffende Studio. Auf zehn Mails gedeckelt.
+
+**🇬🇧 English**
+
+- Anyone who already existed as a member of someone else's studio could not create their own — signup reported "this email address is already registered". The check looked instance-wide and therefore blocked exactly the legitimate case. It now only applies when the address already **owns** an existing studio. Being a member or administrator elsewhere no longer stands in the way. At sign-in, the usual studio picker appears.
+- "Forgot password" had no effect on the main domain: without a studio address in the request no studio could be resolved, and no email was sent, silently. All studios where the address is active are now found and each is sent its own email naming the studio in question. Capped at ten.
+
 ## [0.58.0] - 2026-08-07
 
 _Pull + Rebuild genügt — nur Hauptserver. Keine `.env`-Änderung, keine Migration. Die Bildmarke in den Mails wird über `PUBLIC_URL` geladen; ist die falsch gesetzt, bleibt in Mails ein Platzhalter statt des Logos. · Pull + rebuild is enough — main server only. No `.env` change, no migration. The symbol in emails is loaded via `PUBLIC_URL`; if that is set incorrectly, emails will show a broken image instead of the logo._
