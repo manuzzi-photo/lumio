@@ -20,6 +20,7 @@ tatsächlichen Stand und keine Nachzeichnung — auch in echten Pixelgrößen ab
 | `favicon/` | Favicon-SVG, PNG-Fallbacks, Touch-Icon, Webmanifest |
 | `email/` | PNG-Fassungen für Mail-Köpfe |
 | `src/` | die Python-Skripte, die alles oben erzeugen |
+| `fonts/` | Quicksand und Inter samt Lizenztexten |
 
 ### Welche Datei wofür
 
@@ -46,21 +47,37 @@ Die SVGs sind generiert, nicht von Hand gezeichnet. Die Wortmarke ist
 Webfont laden.
 
 ```bash
-cd brand/src
 pip install fonttools cairosvg
-curl -sL -o Quicksand.ttf \
-  "https://github.com/google/fonts/raw/main/ofl/quicksand/Quicksand%5Bwght%5D.ttf"
-curl -sL -o Inter.ttf \
-  "https://github.com/google/fonts/raw/main/ofl/inter/Inter%5Bopsz,wght%5D.ttf"
+cd brand/src
 
 python3 build.py            # Bildmarke, Wortmarke, alle Lockups
 python3 favicon-adaptive.py # Favicon mit prefers-color-scheme
 python3 og.py               # Open-Graph-Bilder 1200x630
 ```
 
-Die Schriften werden bewusst **nicht** mitgeliefert, sondern beim Bauen
-geladen. Beide stehen unter der SIL Open Font License; wer sie weitergibt,
-muss den Lizenztext beilegen.
+Die Skripte finden die Schriften über einen Pfad relativ zu sich selbst, der
+Aufruf hängt also nicht vom Arbeitsverzeichnis ab. Ein Lauf aus einer frischen
+Kopie erzeugt alle vierzehn SVGs **bitgenau identisch** zu den hier abgelegten
+— wenn eine Datei abweicht, ist das ein Hinweis und kein Rauschen.
+
+## Schriften
+
+Unter `fonts/` liegen die beiden verwendeten Schriften mit ihren Lizenztexten:
+
+| Datei | Verwendung |
+|---|---|
+| `Quicksand.ttf` | Wortmarke (Instanz `wght 600`), Descriptor (`wght 500`) |
+| `Inter.ttf` | Überschriften der OG-Bilder |
+| `Quicksand-OFL.txt`, `Inter-OFL.txt` | die zugehörigen Lizenzen |
+
+Beide stehen unter der **SIL Open Font License 1.1**. Die erlaubt Weitergabe
+ausdrücklich, verlangt aber, dass der Lizenztext mitgeht — deshalb liegen die
+`OFL.txt` daneben. Beide Familien tragen einen *Reserved Font Name*: eine
+veränderte Fassung darf nicht weiter „Quicksand" beziehungsweise „Inter"
+heißen.
+
+Die Wortmarke in `logo/` ist ohnehin in Pfade gewandelt und braucht die
+Schrift nicht mehr — die Dateien hier werden nur zum Neu-Erzeugen gebraucht.
 
 `build.py` schreibt nebenbei `paths.json` — daraus beziehen die Inline-
 Komponenten (`apps/frontend/src/components/ui/Logo.tsx` und die

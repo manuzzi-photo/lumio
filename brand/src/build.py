@@ -6,13 +6,26 @@ from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.recordingPen import DecomposingRecordingPen
 from fontTools.pens.boundsPen import BoundsPen
 
+import pathlib
+# Schriften liegen unter brand/fonts/ und werden mit ausgeliefert (SIL OFL,
+# Lizenztexte daneben). Pfad relativ zum Skript, damit der Aufruf nicht vom
+# Arbeitsverzeichnis abhaengt.
+FONTS = pathlib.Path(__file__).resolve().parent.parent / "fonts"
+
+
 INK, ACC, PAPER = "#12121A", "#FF4D2E", "#FAF8F5"
 MARK_CUT = "M-40,-40 H150 V150 H-40 Z M-40,145.73 L150,-44.27 L150,-57 L-40,133 Z"
+
+# Geometrie der Bildmarke: vier gleiche Kacheln auf strengem 2x2-Raster.
+# Eindeutige Namen: R und S sind weiter unten schon als Wortmarken-Bounds
+# vergeben (L, R, T, B aus typeset()) und wuerden hier ueberschrieben.
+TILE, RADIUS = 46, 9
+TILE_POS = [(0, 0), (54, 0), (0, 54), (54, 54)]   # Gutter = 8
 
 _cache = {}
 def face(w):
     if w not in _cache:
-        f = instantiateVariableFont(TTFont("Quicksand.ttf"), {"wght": w}, inplace=False)
+        f = instantiateVariableFont(TTFont(FONTS / "Quicksand.ttf"), {"wght": w}, inplace=False)
         _cache[w] = (f, f.getGlyphSet(), f.getBestCmap())
     return _cache[w]
 
@@ -154,3 +167,39 @@ print("paths.json geschrieben")
 # eine Ecke.
 horizontal("lumio-logo-mono-light.svg", PAPER, PAPER, "cut")
 print("mono-light erzeugt")
+
+# --- Bildmarke allein --------------------------------------------------
+# Der diagonale Schnitt ist ein Parallelogramm zwischen zwei Geraden
+# y = c - x. Nicht als <mask>, sondern als clipPath mit evenodd und
+# umgekehrter Wicklung: so greift es sowohl bei nonzero als auch bei
+# evenodd und damit in jedem Renderer, den wir getestet haben.
+def cut_band(c1: float, c2: float, x0: float = -40, x1: float = 150) -> str:
+    pts = [(x0, c1 - x0), (x1, c1 - x1), (x1, c2 - x1), (x0, c2 - x0)]
+    pts.reverse()
+    return "M" + " L".join(f"{x:g},{y:g}" for x, y in pts) + " Z"
+
+
+def standalone_mark(name: str, band: str, accent: str, ink: str) -> None:
+    fills = [accent, ink, ink, ink]
+    rects = "".join(
+        f'    <rect x="{x}" y="{y}" width="{TILE}" height="{TILE}" rx="{RADIUS}" fill="{f}"/>\n'
+        for (x, y), f in zip(TILE_POS, fills))
+    open(name, "w").write(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" '
+        'height="100" role="img" aria-label="Lumio">\n'
+        '  <defs>\n    <clipPath id="cut" clip-rule="evenodd">\n'
+        f'      <path d="M-40,-40 H150 V150 H-40 Z {band}"/>\n'
+        '    </clipPath>\n  </defs>\n'
+        '  <g clip-path="url(#cut)">\n' + rects + '  </g>\n</svg>\n')
+
+
+# c1 = 93 laesst die orange Kachel unangetastet; darunter schneidet das Band
+# ihre untere rechte Ecke an. Der zweite Wert bestimmt die Spaltbreite.
+CUT_NORMAL = cut_band(93, 105.73)
+CUT_THIN = cut_band(93, 100.78)
+
+standalone_mark("lumio-mark.svg", CUT_NORMAL, ACC, INK)
+standalone_mark("lumio-mark-inverse.svg", CUT_NORMAL, ACC, PAPER)
+standalone_mark("lumio-mark-mono.svg", CUT_NORMAL, INK, INK)
+standalone_mark("lumio-mark-thin.svg", CUT_THIN, ACC, INK)
+print("Bildmarken erzeugt")

@@ -7,6 +7,13 @@ from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.recordingPen import DecomposingRecordingPen
 from fontTools.pens.boundsPen import BoundsPen
 
+import pathlib
+# Schriften liegen unter brand/fonts/ und werden mit ausgeliefert (SIL OFL,
+# Lizenztexte daneben). Pfad relativ zum Skript, damit der Aufruf nicht vom
+# Arbeitsverzeichnis abhaengt.
+FONTS = pathlib.Path(__file__).resolve().parent.parent / "fonts"
+
+
 INK, ACC, PAPER = "#12121A", "#FF4D2E", "#FAF8F5"
 MUT = "#8B857D"
 D = json.load(open("paths.json"))
@@ -15,7 +22,7 @@ _c = {}
 def inter(w, opsz=32):
     k = (w, opsz)
     if k not in _c:
-        f = instantiateVariableFont(TTFont("Inter.ttf"), {"wght": w, "opsz": opsz}, inplace=False)
+        f = instantiateVariableFont(TTFont(FONTS / "Inter.ttf"), {"wght": w, "opsz": opsz}, inplace=False)
         _c[k] = (f, f.getGlyphSet(), f.getBestCmap(), f["head"].unitsPerEm)
     return _c[k]
 
