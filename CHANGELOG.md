@@ -38,6 +38,28 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 ### Fixed
 -
 
+## [0.58.0] - 2026-08-07
+
+_Pull + Rebuild genügt — nur Hauptserver. Keine `.env`-Änderung, keine Migration. Die Bildmarke in den Mails wird über `PUBLIC_URL` geladen; ist die falsch gesetzt, bleibt in Mails ein Platzhalter statt des Logos. · Pull + rebuild is enough — main server only. No `.env` change, no migration. The symbol in emails is loaded via `PUBLIC_URL`; if that is set incorrectly, emails will show a broken image instead of the logo._
+
+### Added
+
+- E-Mails zeigen jetzt die Bildmarke statt einer Textwortmarke. Als PNG, weil Gmail und Outlook kein SVG rendern, in doppelter Auflösung geliefert und halb angezeigt. Zwei Fassungen: auf einem farbigen Kopfbalken würde die orange Kachel im Untergrund verschwinden, dort greift eine einfarbig helle Variante.
+
+**🇬🇧 English**
+
+- Emails now show the symbol instead of a text wordmark. As PNG, because Gmail and Outlook do not render SVG, delivered at double resolution and displayed at half size. Two versions: on a coloured header bar the orange tile would vanish into the background, so a single-colour light variant is used there.
+
+### Changed
+
+- Die drei Print-Shop-Mails — Bestellbestätigung, Studio-Benachrichtigung, Versandmeldung — liefen bisher an der Gestaltung vorbei: kein Kopfbereich, kein Logo, keine Akzentfarbe. Sie nutzen jetzt dasselbe Layout wie alle anderen Mails und tragen damit dein Studio-Logo und deine Akzentfarbe. Ohne eigenes Logo erscheint die Lumio-Bildmarke.
+- Hat dein Studio einen Namen, aber kein Logo hinterlegt, steht im Mail-Kopf weiterhin dein Name — dort erscheint bewusst *nicht* die Lumio-Marke.
+
+**🇬🇧 English**
+
+- The three print shop emails — order confirmation, studio notification, shipping notice — previously bypassed the design system entirely: no header, no logo, no accent colour. They now use the same layout as every other email and therefore carry your studio logo and accent colour. Without a custom logo, the Lumio symbol appears.
+- If your studio has a name but no logo, the email header still shows your name — the Lumio symbol deliberately does *not* appear there.
+
 ## [0.57.0] - 2026-08-07
 
 _Pull + Rebuild genügt — nur Hauptserver. Die Migration ändert nur Spalten-Defaults, keine Daten. **Sichtbar:** Studios ohne eigene Akzentfarbe zeigen danach Vermillion statt Amber — wie man Amber behält, steht unten. · Pull + rebuild is enough — main server only. The migration only changes column defaults, no data. **Visible:** studios without a custom accent colour will show vermillion instead of amber — see below on keeping amber._
