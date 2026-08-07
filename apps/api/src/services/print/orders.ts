@@ -16,6 +16,7 @@ import {
 } from "../mail-print.js";
 import { config } from "../../config.js";
 import { studioNotifyEnabled } from "../notifications.js";
+import { tenantMailBranding } from "../notifier.js";
 
 // Order-Number: LP-YYYYMMDD-XXXX, mit XXXX = 4 hex random.
 // Kurz genug zum telefonieren, lang genug fuer Eindeutigkeit.
@@ -484,11 +485,16 @@ export async function sendOrderMails(
     })),
   };
 
+  // Studio-Branding einmal aufloesen und an alle drei Print-Mails geben.
+  // Ohne eigenes Logo greift darin die Lumio-Bildmarke.
+  const mailBranding = await tenantMailBranding(order.tenantId);
+
   if (trigger === "paid") {
     // Endkunde: Bestaetigung
     await sendMail({
       to: order.guestEmail,
       ...tmplPrintOrderConfirmGuest({
+        branding: mailBranding,
         studioName,
         supportEmail,
         order: orderForMail,
@@ -499,6 +505,7 @@ export async function sendOrderMails(
       await sendMail({
         to: ownerEmail,
         ...tmplPrintOrderNotifyStudio({
+          branding: mailBranding,
           studioName,
           order: orderForMail,
           baseUrl: config.PUBLIC_URL,
@@ -509,6 +516,7 @@ export async function sendOrderMails(
     await sendMail({
       to: order.guestEmail,
       ...tmplPrintOrderShippedGuest({
+        branding: mailBranding,
         studioName,
         supportEmail,
         order: orderForMail,

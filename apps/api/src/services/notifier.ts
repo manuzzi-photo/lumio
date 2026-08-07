@@ -38,7 +38,11 @@ function publicUrl(slug: string): string {
  * Public-Redirect ausgeliefert (verfällt nicht wie eine signierte URL).
  * Die Logo-Position ist grob an die Login-Layout-Variante gekoppelt.
  */
-async function tenantMailBranding(
+/**
+ * Baut das MailBranding eines Tenants. Exportiert, weil auch der
+ * Print-Shop es braucht — dessen Mails liefen frueher ohne Branding.
+ */
+export async function tenantMailBranding(
   tenantId: string | null | undefined
 ): Promise<MailBranding | undefined> {
   if (!tenantId) return undefined;

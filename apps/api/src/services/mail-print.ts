@@ -3,8 +3,19 @@
  *
  * Endkunden-Bestaetigung, Studio-Notifikation, Versand-Notifikation.
  * Folgt dem Template-Pattern von mail.ts: subject/text/html als POJO.
+ *
+ * Diese drei Mails haben frueher ihr eigenes nacktes HTML gebaut und
+ * damit das Branding-System umgangen: kein Studio-Logo, keine
+ * Akzentfarbe, kein Absender-Kopf. Sie laufen jetzt durch
+ * renderMailLayout() wie alle anderen — mit dem Studio-Branding, und
+ * ohne eigenes Logo mit der Lumio-Bildmarke.
  */
 import { supportAddress } from "./mail.js";
+import {
+  renderMailLayout,
+  mailButton,
+  type MailBranding,
+} from "./mail-layout.js";
 
 /** Kontaktadresse fuer Print-Mails: Studio-Support > Instanz-Support.
  *  Frueher stand hier fest support@lumio-cloud.de — fuer Self-Hoster
@@ -101,10 +112,12 @@ function escapeHtml(s: string): string {
 // =============================================================================
 export function tmplPrintOrderConfirmGuest(opts: {
   studioName: string;
+  /** Studio-Branding; ohne Angabe greift das Lumio-Branding. */
+  branding?: MailBranding;
   supportEmail: string;
   order: OrderLike;
 }): { subject: string; text: string; html: string } {
-  const { studioName, supportEmail, order } = opts;
+  const { studioName, supportEmail, order, branding } = opts;
   const subject = `Deine Bestellung ${order.orderNumber} bei ${studioName}`;
 
   const text =
@@ -136,8 +149,9 @@ ${printSupport(supportEmail) ? `Bei Fragen: ${printSupport(supportEmail)}` : ""}
 Viele Grüße,
 ${studioName}`;
 
-  const html = `<!doctype html>
-<html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#222;">
+  const html = renderMailLayout({
+    branding,
+    bodyHtml: `
   <p>Hallo ${escapeHtml(order.guestName)},</p>
   <p>vielen Dank für deine Bestellung bei <strong>${escapeHtml(studioName)}</strong>.</p>
   <p style="background:#f5f5f5;padding:10px 14px;border-radius:4px;display:inline-block;">
@@ -163,7 +177,8 @@ ${studioName}`;
   <p style="color:#888;font-size:13px;margin-top:24px;">
     ${printSupport(supportEmail) ? `Bei Fragen: <a href="mailto:${escapeHtml(printSupport(supportEmail)!)}">${escapeHtml(printSupport(supportEmail)!)}</a>` : ""}
   </p>
-</body></html>`;
+`,
+  });
 
   return { subject, text, html };
 }
@@ -173,10 +188,12 @@ ${studioName}`;
 // =============================================================================
 export function tmplPrintOrderNotifyStudio(opts: {
   studioName: string;
+  /** Studio-Branding; ohne Angabe greift das Lumio-Branding. */
+  branding?: MailBranding;
   order: OrderLike;
   baseUrl: string;
 }): { subject: string; text: string; html: string } {
-  const { order, baseUrl } = opts;
+  const { order, baseUrl, branding } = opts;
   const orderUrl = `${baseUrl.replace(/\/+$/, "")}/studio/print-shop/orders/${order.id}`;
   const subject = `Neue Print-Bestellung: ${order.orderNumber}`;
 
@@ -198,8 +215,9 @@ ${order.guestNote ? `Hinweis vom Kunden:\n${order.guestNote}\n` : ""}
 Zur Bestellung im Studio:
 ${orderUrl}`;
 
-  const html = `<!doctype html>
-<html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#222;">
+  const html = renderMailLayout({
+    branding,
+    bodyHtml: `
   <p>Neue Bestellung im Print-Shop:</p>
   <table style="border-collapse:collapse;">
     <tr><td style="padding:4px 12px 4px 0;color:#888;">Bestellnummer:</td><td style="padding:4px 0;"><strong style="font-family:monospace;">${order.orderNumber}</strong></td></tr>
@@ -215,9 +233,10 @@ ${orderUrl}`;
   <pre style="font-family:inherit;white-space:pre-wrap;margin:0;color:#444;">${escapeHtml(formatAddress(order.shippingAddress))}</pre>
   ${order.guestNote ? `<h3 style="margin-top:20px;">Hinweis vom Kunden</h3><blockquote style="border-left:3px solid #ddd;padding-left:12px;margin:0;color:#444;">${escapeHtml(order.guestNote)}</blockquote>` : ""}
   <p style="margin-top:24px;">
-    <a href="${orderUrl}" style="display:inline-block;padding:10px 18px;background:#222;color:#fff;text-decoration:none;border-radius:4px;">Bestellung öffnen</a>
+    ${mailButton(orderUrl, "Bestellung öffnen", branding?.accentColor)}
   </p>
-</body></html>`;
+`,
+  });
 
   return { subject, text, html };
 }
@@ -227,10 +246,12 @@ ${orderUrl}`;
 // =============================================================================
 export function tmplPrintOrderShippedGuest(opts: {
   studioName: string;
+  /** Studio-Branding; ohne Angabe greift das Lumio-Branding. */
+  branding?: MailBranding;
   supportEmail: string;
   order: OrderLike;
 }): { subject: string; text: string; html: string } {
-  const { studioName, supportEmail, order } = opts;
+  const { studioName, supportEmail, order, branding } = opts;
   const subject = `Deine Bestellung ${order.orderNumber} ist auf dem Weg`;
 
   const trackingLine = order.trackingNumber
@@ -254,8 +275,9 @@ ${studioName}
 
 ${printSupport(supportEmail) ? `Bei Fragen: ${printSupport(supportEmail)}` : ""}`;
 
-  const html = `<!doctype html>
-<html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#222;">
+  const html = renderMailLayout({
+    branding,
+    bodyHtml: `
   <p>Hallo ${escapeHtml(order.guestName)},</p>
   <p>deine Bestellung <strong style="font-family:monospace;">${order.orderNumber}</strong> ist auf dem Weg zu dir.</p>
   ${
@@ -273,7 +295,8 @@ ${printSupport(supportEmail) ? `Bei Fragen: ${printSupport(supportEmail)}` : ""}
   <p style="color:#888;font-size:13px;margin-top:24px;">
     ${printSupport(supportEmail) ? `Bei Fragen: <a href="mailto:${escapeHtml(printSupport(supportEmail)!)}">${escapeHtml(printSupport(supportEmail)!)}</a>` : ""}
   </p>
-</body></html>`;
+`,
+  });
 
   return { subject, text, html };
 }

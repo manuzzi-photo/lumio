@@ -32,11 +32,26 @@
  *  - Keine Dark-Mode-Logik. Mailclients mit Dark-Mode invertieren
  *    selbst — wenn wir mit Light-Theme rausgehen, sehen die Dark-
  *    Empfaenger eine softe automatische Invertierung.
- *  - Keine externe Bilder ausser dem Studio-Logo. Tracking-Pixel
+ *  - Keine externen Bilder ausser dem Studio-Logo und der Lumio-
+ *    Bildmarke (beide unter PUBLIC_URL). Tracking-Pixel
  *    sind unethisch, Backgrounds sind in Outlook unzuverlaessig.
  */
 
+import { config } from "../config.js";
+
 const LUMIO_BRAND_COLOR = "#FF4D2E"; // Vermillion, wie die Bildmarke
+
+// Die Bildmarke als PNG. SVG faellt aus: Gmail und Outlook rendern es
+// nicht. Die Dateien liegen im Frontend unter /public und sind damit
+// unter PUBLIC_URL erreichbar — auch bei Self-Hostern auf ihrer Domain.
+// Zwei Fassungen, weil die orange Kachel auf einem Akzent-Banner im
+// Untergrund verschwinden wuerde und der Marke dann eine Ecke fehlt.
+const LUMIO_LOGO_DARK = `${config.PUBLIC_URL}/logo-email.png`;
+const LUMIO_LOGO_LIGHT = `${config.PUBLIC_URL}/logo-email-light.png`;
+// 2x geliefert, auf halber Groesse angezeigt — sonst franst es auf
+// Retina-Displays aus.
+const LUMIO_LOGO_W = 157;
+const LUMIO_LOGO_H = 34;
 const LUMIO_TEXT_COLOR = "#1f2937"; // gray-800
 const LUMIO_MUTED_COLOR = "#6b7280"; // gray-500
 const LUMIO_BORDER_COLOR = "#e5e7eb"; // gray-200
@@ -111,9 +126,17 @@ export function renderMailLayout(opts: RenderMailOpts): string {
   // Logo-Tag (für Kopf ODER Footer wiederverwendet). Im Banner liegt es
   // auf der Akzentfläche; sonst auf Weiß. Ohne Logo: Wortmarke.
   const wordmarkColor = isBanner ? "#ffffff" : accent;
+  // Ohne eigenes Studio-Logo greift die Lumio-Bildmarke — aber nur, wenn
+  // es auch Lumios eigene Mail ist. Ein Studio, das einen Namen gesetzt
+  // hat aber kein Logo, bekommt weiterhin seinen Namen als Wortmarke;
+  // die Lumio-Marke waere dort schlicht falsch.
+  const isLumioBrand = !opts.branding?.brandName || brandName === "Lumio";
+  const lumioLogoSrc = isBanner ? LUMIO_LOGO_LIGHT : LUMIO_LOGO_DARK;
   const logoImg = logoUrl
     ? `<img src="${escapeAttr(logoUrl)}" alt="${escapeAttr(brandName)}" style="max-height:48px;max-width:200px;display:inline-block;border:0;" />`
-    : `<div style="font-size:22px;font-weight:600;color:${wordmarkColor};letter-spacing:-0.02em;">${escapeHtml(brandName)}</div>`;
+    : isLumioBrand
+      ? `<img src="${escapeAttr(lumioLogoSrc)}" alt="Lumio" width="${LUMIO_LOGO_W}" height="${LUMIO_LOGO_H}" style="width:${LUMIO_LOGO_W}px;height:${LUMIO_LOGO_H}px;display:inline-block;border:0;" />`
+      : `<div style="font-size:22px;font-weight:600;color:${wordmarkColor};letter-spacing:-0.02em;">${escapeHtml(brandName)}</div>`;
 
   // Kopfzeile. Sitzt das Logo im Footer, zeigt der Kopf kein Logo —
   // bei 'line' nur einen schmalen Akzentstreifen, bei 'banner' den
