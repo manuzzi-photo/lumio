@@ -1172,7 +1172,7 @@ function GalleryTile({
         }`}
         style={
           pickMode && isPicked
-            ? { boxShadow: "0 0 0 3px var(--brand-accent, #f59e0b)" }
+            ? { boxShadow: "0 0 0 3px var(--brand-accent, #FF4D2E)" }
             : undefined
         }
         aria-pressed={pickMode ? isPicked : undefined}

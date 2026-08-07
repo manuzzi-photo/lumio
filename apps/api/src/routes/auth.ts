@@ -1520,7 +1520,7 @@ function htmlPage(
   cta?: { ctaText: string; ctaUrl: string }
 ): string {
   const ctaHtml = cta
-    ? `<p style="margin-top:1.5rem;"><a href="${escapeAttr(cta.ctaUrl)}" style="display:inline-block;background:#f59e0b;color:#0e0e10;padding:0.6rem 1.2rem;border-radius:4px;text-decoration:none;font-weight:500;">${escapeHtml(cta.ctaText)}</a></p>`
+    ? `<p style="margin-top:1.5rem;"><a href="${escapeAttr(cta.ctaUrl)}" style="display:inline-block;background:#FF4D2E;color:#FAF8F5;padding:0.6rem 1.2rem;border-radius:4px;text-decoration:none;font-weight:500;">${escapeHtml(cta.ctaText)}</a></p>`
     : "";
   return `<!doctype html>
 <html lang="de">
@@ -1531,7 +1531,7 @@ function htmlPage(
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0e0e10; color: #e8e8eb; margin: 0; padding: 0; min-height: 100vh; display:flex; align-items:center; justify-content:center; }
   .card { background: #18181b; border: 1px solid #2a2a30; border-radius: 8px; padding: 2rem; max-width: 480px; margin: 1rem; }
-  h1 { color: #f59e0b; font-size: 1.5rem; margin: 0 0 0.75rem 0; font-weight: 500; }
+  h1 { color: #FF4D2E; font-size: 1.5rem; margin: 0 0 0.75rem 0; font-weight: 500; }
   p { color: #b0b0b8; line-height: 1.55; margin: 0.5rem 0; }
   strong { color: #e8e8eb; }
 </style>

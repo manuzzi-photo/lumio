@@ -71,6 +71,30 @@ just set a light text colour — no second file needed.
 The static files under `public/` (`favicon.svg`, `logo.svg`, the OG images)
 keep the fixed vermillion. Those are Lumio as a product, not the tenant's.
 
+## Text on orange surfaces
+
+Labels on vermillion are **paper `#FAF8F5`**, not ink. That is a deliberate
+deviation from WCAG 2, and it comes from measurement:
+
+| On `#FF4D2E` | WCAG 2 | APCA |
+|---|---|---|
+| Ink `#12121A` | 5.64 | Lc +44 — large text only |
+| Paper `#FAF8F5` | 3.12 | Lc −60 — fine for body text |
+
+APCA is the perceptually derived successor algorithm and is considerably more
+accurate for saturated mid-luminance colours. WCAG 2 systematically overrates
+dark text on saturated fills; on an actual screen, paper reads clearly better.
+
+The accompanying rule: labels on orange surfaces never below 14 px and at least
+`font-weight: 600`.
+
+**If WCAG 2.1 AA has to be formally claimed** — EN 301 549 and the German BFSG
+reference WCAG 2, not APCA — the remedy is *one* change in *one* place: darken
+the accent to `#C93214`, including the symbol, favicons and OG images. That
+keeps it a single tone with both algorithms green. Two distinct oranges were
+tested and rejected: symbol and button side by side in the header then read
+like a mistake.
+
 ## Rules
 
 - Exactly **one** tile carries the accent. Never two, never all four.

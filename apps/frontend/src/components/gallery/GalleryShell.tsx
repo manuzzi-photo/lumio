@@ -105,7 +105,7 @@ export function GalleryShell({
   // Galerie-Overrides haben Vorrang vor Branding-Werten.
   const primary =
     overrides?.colorBackground ?? branding?.primaryColor ?? "#0e0e10";
-  const accent = overrides?.colorAccent ?? branding?.accentColor ?? "#f59e0b";
+  const accent = overrides?.colorAccent ?? branding?.accentColor ?? "#FF4D2E";
   const accentRgb = hexToRgbTriple(accent);
   const light = isLightColor(primary);
   // Wie der Text-auf-Akzent aussehen muss: bei hellen Akzenten (Amber,

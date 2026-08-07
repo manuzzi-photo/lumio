@@ -328,8 +328,10 @@ model Branding {
   // auch eine helle Version hochzuladen.
   logoLightUrl  String?
   faviconUrl    String?
-  primaryColor  String   @default("#0f172a")
-  accentColor   String   @default("#f59e0b")
+  // Defaults der Lumio-Marke. Bestehende Brandings behalten ihre Werte;
+  // ein Default wirkt nur auf neu angelegte Zeilen.
+  primaryColor  String   @default("#12121A")
+  accentColor   String   @default("#FF4D2E")
   fontFamily    String   @default("Inter")
   introText     String?
   footerText    String?

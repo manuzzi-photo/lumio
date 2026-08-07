@@ -221,7 +221,7 @@ function MailLayoutControls({
   accent: string;
 }) {
   const t = useT();
-  const ac = accent || "#d97706";
+  const ac = accent || "#FF4D2E";
   const LOGO_GRAY = "#4b5563";
   const TEXT_GRAY = "#d1d5db";
   const inFooter = logoPosition === "footer";

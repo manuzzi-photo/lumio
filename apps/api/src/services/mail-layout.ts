@@ -36,7 +36,7 @@
  *    sind unethisch, Backgrounds sind in Outlook unzuverlaessig.
  */
 
-const LUMIO_BRAND_COLOR = "#d97706"; // amber-600, vom Hero
+const LUMIO_BRAND_COLOR = "#FF4D2E"; // Vermillion, wie die Bildmarke
 const LUMIO_TEXT_COLOR = "#1f2937"; // gray-800
 const LUMIO_MUTED_COLOR = "#6b7280"; // gray-500
 const LUMIO_BORDER_COLOR = "#e5e7eb"; // gray-200

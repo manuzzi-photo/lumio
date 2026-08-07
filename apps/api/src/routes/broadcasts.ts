@@ -282,9 +282,9 @@ function simpleHtml(title: string, body: string): string {
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif; background:#f6f7f9; color:#1f2937; margin:0; padding:32px 16px; }
   .card { max-width:480px; margin:48px auto; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:32px; }
-  h1 { color:#d97706; margin:0 0 16px; font-size:24px; }
+  h1 { color:#FF4D2E; margin:0 0 16px; font-size:24px; }
   p { margin:0 0 16px; line-height:1.6; }
-  a { color:#d97706; }
+  a { color:#C93214; }
 </style>
 </head>
 <body>

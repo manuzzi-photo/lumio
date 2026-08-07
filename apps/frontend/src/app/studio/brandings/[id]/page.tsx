@@ -24,7 +24,7 @@ export default function BrandingEditorPage() {
   // Lokaler Edit-State (debounced auf den Server gesynced)
   const [name, setName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#0f172a");
-  const [accentColor, setAccentColor] = useState("#f59e0b");
+  const [accentColor, setAccentColor] = useState("#FF4D2E");
   const [fontFamily, setFontFamily] = useState("Inter");
   const [introText, setIntroText] = useState("");
   const [footerText, setFooterText] = useState("");

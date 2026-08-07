@@ -78,7 +78,7 @@ const customCssField = z
 const createBrandingSchema = z.object({
   name: z.string().min(1).max(100),
   primaryColor: z.string().regex(colorRegex).default("#0f172a"),
-  accentColor: z.string().regex(colorRegex).default("#f59e0b"),
+  accentColor: z.string().regex(colorRegex).default("#FF4D2E"),
   fontFamily: fontFamilyField.default("Inter"),
   introText: z.string().max(2000).nullable().optional(),
   footerText: z.string().max(500).nullable().optional(),

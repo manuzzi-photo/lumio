@@ -74,6 +74,30 @@ Die statischen Dateien unter `public/` (`favicon.svg`, `logo.svg`, die
 OG-Bilder) behalten das feste Vermillion. Das ist Lumio als Produkt, da
 hat der Tenant nichts zu bestimmen.
 
+## Schrift auf orangen Flächen
+
+Labels auf Vermillion sind **Papier `#FAF8F5`**, nicht Tinte. Das ist eine
+bewusste Abweichung von WCAG 2, und zwar aus Messgründen:
+
+| Auf `#FF4D2E` | WCAG 2 | APCA |
+|---|---|---|
+| Tinte `#12121A` | 5.64 | Lc +44 — nur Großschrift |
+| Papier `#FAF8F5` | 3.12 | Lc −60 — gut für Fließtext |
+
+APCA ist das perceptuell gerechnete Nachfolgeverfahren und bei satten,
+mittelhellen Farben deutlich realistischer. WCAG 2 überschätzt dunkle Schrift
+auf gesättigten Flächen systematisch; am Gerät liest Papier klar besser.
+
+Die Regel dazu: Labels auf orangen Flächen nie unter 14 px und mindestens
+`font-weight: 600`.
+
+**Wenn WCAG 2.1 AA formal zugesagt werden muss** — EN 301 549 und das BFSG
+referenzieren WCAG 2, nicht APCA — ist die Gegenmaßnahme *eine* Änderung an
+*einer* Stelle: den Akzent auf `#C93214` abdunkeln, dann inklusive Bildmarke,
+Favicon und OG-Bildern. Damit bleibt es ein Ton und beide Verfahren sind grün.
+Zwei verschiedene Orangetöne wurden getestet und verworfen — Marke und Button
+nebeneinander im Header lesen dann wie ein Fehler.
+
 ## Regeln
 
 - Genau **eine** Kachel trägt den Akzent. Nie zwei, nie alle vier.

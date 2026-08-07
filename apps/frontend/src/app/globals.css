@@ -37,12 +37,22 @@
 
   --line-subtle:       38 38 44;          /* #26262c — Standard-Border */
   --line-strong:       64 64 72;          /* #404048 — Hover/Focus-Visible */
-  --line-focus:        245 158 11;        /* Marke = Fokusring */
+  --line-focus:        255 77 46;         /* Marke = Fokusring */
 
-  --accent:            245 158 11;        /* Amber 500 */
-  --accent-hover:      252 176 50;        /* etwas heller */
-  --accent-subtle:     245 158 11;        /* mit alpha 0.12 nutzen */
-  --accent-contrast:   14 14 16;          /* Text auf Accent */
+  /* Lumio-Vermillion #FF4D2E. Das ist nur der DEFAULT: Studios, die unter
+     Gestaltung -> Erscheinungsbild eine eigene Akzentfarbe gesetzt haben,
+     ueberschreiben diese Variablen zur Laufzeit per applyStudioAccent().
+     studioAccentColor ist nullable ohne DB-Default, deshalb greift der
+     Wechsel automatisch bei allen, die nie selbst gewaehlt haben. */
+  --accent:            255 77 46;         /* Vermillion */
+  --accent-hover:      255 109 84;        /* +18% Richtung Weiss, wie
+                                             applyStudioAccent() rechnet */
+  --accent-subtle:     255 77 46;         /* mit alpha 0.12 nutzen */
+  /* Label auf Accent-Flaechen. applyStudioAccent() leitet das aus der
+     relativen Helligkeit ab: <= 0.6 ergibt Papier. Vermillion liegt bei
+     0.44, also Papier — der statische Default muss dasselbe sagen, sonst
+     weichen Default und Laufzeit voneinander ab. */
+  --accent-contrast:   245 242 244;
 
   --semantic-success:  74 222 128;        /* gedämpft, kein crayon-grün */
   --semantic-warning:  250 204 21;
@@ -51,7 +61,7 @@
 
   /* === Bestehende Brand-Slots: bleiben für Whitelabel-Override === */
   --brand-primary:     242 242 244;
-  --brand-accent:      245 158 11;
+  --brand-accent:      255 77 46;
 
   /* Akzent der Lumio-Bildmarke. Haengt an --brand-accent, damit die Marke
      dort, wo sie als Ersatz fuer ein fehlendes Studio-Logo einspringt, die

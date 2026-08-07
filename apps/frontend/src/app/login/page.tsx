@@ -176,7 +176,7 @@ export default function LoginPage() {
           setBranding({
             logoUrl: r.login.logoUrl,
             logoLightUrl: r.login.logoUrl,
-            accentColor: r.login.accentColor ?? "#f59e0b",
+            accentColor: r.login.accentColor ?? "#FF4D2E",
             loginBackgroundUrl: r.login.backgroundUrl,
             loginGreeting: r.login.greeting,
             loginOverlayColor: r.login.overlayColor,
