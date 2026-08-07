@@ -167,19 +167,36 @@ export async function registerSignupRoutes(app: FastifyInstance) {
       });
     }
 
-    // E-Mail darf nicht bereits an einen Tenant gebunden sein.
-    // Wir checken global — multi-tenant-Wiederverwendung von E-Mails
-    // wäre theoretisch denkbar (gleiche Person bei zwei Studios),
-    // aber für Self-Service-Sign-up führt das nur zu Verwirrung beim
-    // Login. Restriktiv: eine E-Mail = ein Tenant.
-    const emailTaken = await prisma.user.findFirst({
-      where: { email: body.email },
+    // Die Adresse darf nicht bereits ein EIGENES Studio besitzen.
+    //
+    // Frueher wurde hier global geprueft, mit der Begruendung, mehrfache
+    // Zugehoerigkeit fuehre zu Verwirrung beim Login. Das trifft nicht
+    // mehr zu: /auth/login hat einen Tenant-Picker, das Datenmodell
+    // erlaubt dieselbe Adresse pro Tenant (@@unique([tenantId, email]))
+    // und team.ts prueft ohnehin nur tenant-lokal — dieselbe Person kann
+    // also laengst in zwei Studios eingeladen sein. Die globale Sperre
+    // war der einzige Ort, der das verbot, und traf damit genau den
+    // legitimen Fall: jemand ist irgendwo Member und will ein eigenes
+    // Studio eroeffnen.
+    //
+    // Was bleibt, ist die Bremse gegen beliebig viele Gratis-Trials mit
+    // derselben Adresse — deshalb nur noch owner-Rollen und nur in
+    // Tenants, die es wirklich noch gibt.
+    const ownsStudio = await prisma.user.findFirst({
+      where: {
+        email: body.email,
+        role: "owner",
+        status: { not: "disabled" },
+        tenant: { status: { in: ["active", "pending_deletion"] } },
+      },
       select: { id: true },
     });
-    if (emailTaken) {
+    if (ownsStudio) {
       return reply.status(409).send({
         error: "email_taken",
-        message: "Diese E-Mail-Adresse ist bereits registriert.",
+        message:
+          "Diese Adresse gehört bereits zu einem eigenen Studio. " +
+          "Melde dich dort an, oder nutze eine andere Adresse für ein zweites Studio.",
       });
     }
 

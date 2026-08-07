@@ -1060,8 +1060,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   //
   // Tenant-Resolution greift wie ueberall: bei Subdomain/Custom-Domain
   // ist req.tenantId schon gesetzt und wir scopen auf den Tenant. Im
-  // Apex-Multi-Mode ohne Header ist tenantId leer und wir koennen
-  // nicht zuordnen — return 200 ohne Mailversand (silent no-op).
+  // Apex-Multi-Mode ohne Header ist tenantId leer — dann faechern wir
+  // ueber die Adresse auf und mailen an jedes passende Studio (gedeckelt).
   //
   // Disabled User: keine Mail. Suspended/archived Tenant: keine Mail.
   // Im "no-mail" Fall trotzdem 200, damit der Caller nicht zwischen
@@ -1076,8 +1076,62 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         .object({ email: z.string().email().toLowerCase().max(255) })
         .parse(req.body);
 
-      // Ohne Tenant-Resolution geben wir den Generic-200 zurueck.
+      // Ohne Tenant-Kontext (Apex im Multi-Mode) koennen wir den Tenant
+      // nicht aus dem Host ableiten. Frueher gab es hier ein stilles
+      // No-Op — wer nur die Apex-Domain kennt, bekam nie eine Mail. Das
+      // trifft besonders Leute, die in mehreren Studios sind.
+      //
+      // Neu: ueber die Adresse alle in Frage kommenden Studios suchen und
+      // je eine Reset-Mail schicken. Die Mail nennt den Studio-Namen, die
+      // Empfaengerin kann also unterscheiden. Kein Enumerationsrisiko:
+      // die Antwort bleibt der generische 200 und alle Mails gehen an
+      // dieselbe Adresse, die der Anfragende ohnehin kontrollieren muss.
       if (!req.tenantId) {
+        // Deckel gegen Mail-Bombing, falls eine Adresse in sehr vielen
+        // Studios haengt. Zusaetzlich zum Rate-Limit auf der Route.
+        const MAX_FANOUT = 10;
+        const users = await prisma.user.findMany({
+          where: {
+            email: body.email,
+            status: "active",
+            tenant: { status: { in: ["active", "pending_deletion"] } },
+          },
+          include: {
+            tenant: { select: { name: true, displayName: true, status: true } },
+          },
+          orderBy: { createdAt: "asc" },
+          take: MAX_FANOUT,
+        });
+
+        for (const u of users) {
+          try {
+            const { token } = await createSetupToken({
+              userId: u.id,
+              kind: "reset",
+            });
+            const tpl = tmplPasswordReset({
+              displayName: u.name ?? u.email,
+              tenantName: tenantDisplayName(u.tenant),
+              resetUrl: buildResetUrl(token),
+              validHours: 24,
+              ipAddress: req.ip,
+            });
+            await sendMail({ to: u.email, ...tpl });
+            await logEvent({
+              tenantId: u.tenantId,
+              actorType: "user",
+              actorId: u.id,
+              action: "auth.password_reset_requested",
+              ipAddress: req.ip,
+              payload: { email: body.email, via: "apex_fanout" },
+            });
+          } catch (err) {
+            app.log.warn(
+              { err, userId: u.id },
+              "forgot-password: apex fanout mail send failed"
+            );
+          }
+        }
         return reply.send({ ok: true });
       }
 
