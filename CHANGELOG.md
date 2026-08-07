@@ -38,6 +38,24 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 ### Fixed
 -
 
+## [0.57.0] - 2026-08-07
+
+_Pull + Rebuild genügt — nur Hauptserver. Die Migration ändert nur Spalten-Defaults, keine Daten. **Sichtbar:** Studios ohne eigene Akzentfarbe zeigen danach Vermillion statt Amber — wie man Amber behält, steht unten. · Pull + rebuild is enough — main server only. The migration only changes column defaults, no data. **Visible:** studios without a custom accent colour will show vermillion instead of amber — see below on keeping amber._
+
+### Changed
+
+- Lumios Standard-Akzentfarbe ist Vermillion `#FF4D2E` statt Amber `#f59e0b` — passend zur Bildmarke. Das betrifft die Studio-Oberfläche, den Fokusring, die Lumio-eigenen E-Mail-Vorlagen und die Farbvorschläge für neue Brandings.
+- **Deine Farbwahl bleibt.** Die Akzentfarbe des Studios liegt in `tenants.studioAccentColor` und ist leer, solange niemand unter *Gestaltung → Erscheinungsbild* etwas gesetzt hat. Nur diese leeren Fälle wechseln automatisch. Wer Amber behalten will, setzt dort einmal `#f59e0b` — dann bleibt es dabei, auch bei künftigen Updates.
+- **Bestehende Galerien ändern sich nicht.** Die Farben eines Brandings stehen als Wert in der Datenbank; der neue Default gilt nur für Brandings, die ab jetzt angelegt werden. Wer seine Galerien mitziehen will, ändert die Akzentfarbe im Branding-Editor.
+- Unberührt bleiben die Auto-Tag-Farben (*Hell*, *Vormittag*, *Lachen*, *Produkt*), die Autorenfarben in der Video-Annotation und die gelben Hinweisflächen in Proofing und Abrechnung — das ist Semantik, keine Markenfarbe.
+
+**🇬🇧 English**
+
+- Lumio's default accent colour is vermillion `#FF4D2E` instead of amber `#f59e0b`, matching the symbol. This affects the studio interface, the focus ring, Lumio's own email templates and the colour suggestions for new brandings.
+- **Your own choice is kept.** The studio accent lives in `tenants.studioAccentColor` and stays empty until someone sets it under *Design → Appearance*. Only those empty cases switch automatically. To keep amber, set `#f59e0b` there once — it will then stay, including through future updates.
+- **Existing galleries are unchanged.** A branding's colours are stored as values in the database; the new default only applies to brandings created from now on. To move your galleries along, change the accent colour in the branding editor.
+- Untouched: the auto-tag colours (*bright*, *morning*, *laughter*, *product*), the author colours in video annotation, and the amber notice panels in proofing and billing — those are semantics, not brand.
+
 ## [0.56.1] - 2026-08-07
 
 _Pull + Rebuild genügt — nur Hauptserver. Nach dem Deploy einmal hart neu laden, sonst hält der Browser das alte Favicon. · Pull + rebuild is enough — main server only. Do one hard reload afterwards, otherwise the browser keeps the cached favicon._
