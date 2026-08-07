@@ -30,7 +30,12 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 ## [Unreleased]
 
 ### Added
--
+
+- Alle Fassungen der Bildmarke liegen jetzt unter `brand/` im Repo — Bildmarke, Wortmarke, Lockups, Produktvarianten mit *Cloud* und *Self-Hosted*, jeweils normal und invers, dazu Favicons, Mail-PNGs und die Skripte, aus denen das alles entsteht. `brand/preview.html` zeigt den Bestand im Browser, inklusive echter Pixelgrößen ab 16 px. Die Regeln stehen weiterhin in `docs/BRAND.md`.
+
+**🇬🇧 English**
+
+- Every version of the symbol now lives under `brand/` in the repository — symbol, wordmark, lockups, the *Cloud* and *Self-Hosted* product variants, each in regular and inverted form, plus favicons, email PNGs and the scripts that generate them. `brand/preview.html` shows the whole set in a browser, including real pixel sizes from 16 px up. The rules remain in `docs/BRAND.md`.
 
 ### Changed
 -
