@@ -32,6 +32,7 @@ import { SubscriptionBanner } from "@/components/studio/SubscriptionBanner";
 import { PreArchiveBanner } from "@/components/studio/PreArchiveBanner";
 import { AnnouncementBanner } from "@/components/studio/AnnouncementBanner";
 import { applyStudioAccent, applyStudioTheme } from "@/lib/studio-appearance";
+import { Logo } from "@/components/ui/Logo";
 import {
   PendingDeletionBanner,
   useDeletionStatus,
@@ -305,9 +306,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
                   className="h-7 max-w-[150px] object-contain"
                 />
               ) : (
-                <span className="text-accent text-ui-md font-semibold tracking-tight">
-                  Lumio
-                </span>
+                <Logo variant="full" className="h-6 w-auto text-ink-primary" />
               );
             })()}
           </Link>

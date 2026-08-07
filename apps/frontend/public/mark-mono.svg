@@ -5,7 +5,7 @@
     </clipPath>
   </defs>
   <g clip-path="url(#cut)">
-    <rect x="0" y="0" width="46" height="46" rx="9" fill="#FF4D2E"/>
+    <rect x="0" y="0" width="46" height="46" rx="9" fill="#12121A"/>
     <rect x="54" y="0" width="46" height="46" rx="9" fill="#12121A"/>
     <rect x="0" y="54" width="46" height="46" rx="9" fill="#12121A"/>
     <rect x="54" y="54" width="46" height="46" rx="9" fill="#12121A"/>

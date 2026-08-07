@@ -44,7 +44,7 @@ import remarkGfm from "remark-gfm";
 
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
-import { Button, Input } from "@/components/ui";
+import { Button, Input, Logo } from "@/components/ui";
 
 const MODE = process.env.NEXT_PUBLIC_DEPLOYMENT_MODE ?? "single";
 const DOMAIN_BASE = (process.env.NEXT_PUBLIC_DOMAIN_BASE ?? "").toLowerCase();
@@ -390,10 +390,12 @@ export default function LoginPage() {
           alt={tenantContext?.name ?? ""}
           className="max-h-14 mx-auto object-contain"
         />
-      ) : (
+      ) : tenantContext?.name ? (
         <div className="text-display text-accent font-semibold tracking-tight">
-          {tenantContext?.name ?? "Lumio"}
+          {tenantContext.name}
         </div>
+      ) : (
+        <Logo variant="full" className="h-9 w-auto mx-auto text-ink-primary" />
       )}
       {branding?.loginGreeting && (
         <div className="mt-4 text-ui-sm text-ink-secondary prose-tight">

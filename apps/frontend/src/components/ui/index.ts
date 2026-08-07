@@ -13,3 +13,5 @@ export {
   CardDescription,
 } from "./Card";
 export type { CardProps } from "./Card";
+
+export { Logo } from "./Logo";
