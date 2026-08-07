@@ -37,7 +37,7 @@ verwerfen.
 
 | Datei                  | Zweck                                        |
 |------------------------|----------------------------------------------|
-| `favicon.svg`          | Bildmarke, feste Farben                      |
+| `favicon.svg`          | Bildmarke; Tinte folgt `prefers-color-scheme` |
 | `favicon-16/32.png`    | Fallback für ältere Browser                  |
 | `apple-touch-icon.png` | 180×180, deckender Grund (iOS mag kein Alpha) |
 | `icon-512.png`         | Webmanifest, PWA                             |

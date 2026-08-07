@@ -37,7 +37,7 @@ thrown out.
 
 | File                   | Purpose                                          |
 |------------------------|--------------------------------------------------|
-| `favicon.svg`          | symbol, fixed colours                            |
+| `favicon.svg`          | symbol; ink follows `prefers-color-scheme`        |
 | `favicon-16/32.png`    | fallback for older browsers                      |
 | `apple-touch-icon.png` | 180×180, opaque background (iOS dislikes alpha)  |
 | `icon-512.png`         | web manifest, PWA                                |
