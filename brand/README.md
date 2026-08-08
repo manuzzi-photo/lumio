@@ -21,6 +21,8 @@ tatsächlichen Stand und keine Nachzeichnung — auch in echten Pixelgrößen ab
 | `email/` | PNG-Fassungen für Mail-Köpfe |
 | `src/` | die Python-Skripte, die alles oben erzeugen |
 | `fonts/` | Quicksand und Inter samt Lizenztexten |
+| `readme/` | Lockup-PNGs für den README-Kopf, hell und dunkel |
+| `social/` | Social-Preview-Karte für GitHub — **muss dort manuell hochgeladen werden**, siehe `social/README.md` |
 
 ### Welche Datei wofür
 
@@ -53,6 +55,7 @@ cd brand/src
 python3 build.py            # Bildmarke, Wortmarke, alle Lockups
 python3 favicon-adaptive.py # Favicon mit prefers-color-scheme
 python3 og.py               # Open-Graph-Bilder 1200x630
+python3 github.py           # Social-Preview + README-Logos
 ```
 
 Die Skripte finden die Schriften über einen Pfad relativ zu sich selbst, der

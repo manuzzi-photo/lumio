@@ -1,9 +1,23 @@
 [English](README.md) · **Deutsch**
 
-# Lumio
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/readme/logo-readme-dark.png">
+    <img src="brand/readme/logo-readme.png" alt="Lumio" width="260">
+  </picture>
+</p>
 
-**Self-hosted Foto- und Video-Galerie für Fotograf:innen und Studios.**
-Self-hostbare Alternative zu Picdrop, Pixieset und Pic-Time — Daten bleiben bei dir.
+<p align="center">
+  <strong>Self-hosted Foto- und Video-Galerie für Fotograf:innen und Studios.</strong><br>
+  Self-hostbare Alternative zu Picdrop, Pixieset und Pic-Time — Daten bleiben bei dir.
+</p>
+
+<p align="center">
+  <a href="https://github.com/markusthiel/lumio/releases"><img alt="Release" src="https://img.shields.io/github/v/tag/markusthiel/lumio?label=release&color=FF4D2E&labelColor=12121A&style=flat-square"></a>
+  <a href="#lizenz"><img alt="Lizenz" src="https://img.shields.io/badge/Lizenz-FSL--1.1--ALv2-FF4D2E?labelColor=12121A&style=flat-square"></a>
+  <a href="#quick-start"><img alt="Docker Compose" src="https://img.shields.io/badge/Deploy-Docker%20Compose-FF4D2E?labelColor=12121A&style=flat-square"></a>
+  <a href="https://lumio-app.de"><img alt="Website" src="https://img.shields.io/badge/Doku-lumio--app.de-FF4D2E?labelColor=12121A&style=flat-square"></a>
+</p>
 
 ![Lumio Galerie aus Kundensicht](docs/images/01-gallery.jpg)
 
