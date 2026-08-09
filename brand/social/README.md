@@ -1,18 +1,20 @@
+**English** · [Deutsch](README.de.md)
+
 # social/
 
-`github-social.png` (1280×640) ist die Karte, die GitHub, Slack, Mastodon und
-Co. zeigen, wenn jemand den Repo-Link teilt.
+`github-social.png` (1280×640) is the card GitHub, Slack, Mastodon and others
+show when someone shares the repository link.
 
-**GitHub liest sie nicht aus dem Repo.** Sie muss einmalig hochgeladen werden:
+**GitHub does not read it from the repository.** It has to be uploaded once:
 
-> Repo → **Settings** → Abschnitt *Social preview* → **Edit** → `github-social.png`
+> Repo → **Settings** → *Social preview* section → **Edit** → `github-social.png`
 
-Danach bleibt sie liegen und muss erst wieder angefasst werden, wenn sich die
-Marke ändert. Ein Test geht über <https://www.opengraph.xyz/> oder indem man
-den Link in einen Slack-Kanal wirft.
+After that it stays put and only needs touching when the brand changes. To test,
+run the link through <https://www.opengraph.xyz/> or just drop it into a Slack
+channel.
 
-Der Text ist bewusst **englisch** — der README ist englisch geführt und GitHub
-ist das internationale Schaufenster. Die deutschen Fassungen liegen bei den
-Marketing-Sites unter deren `brand/og-default.svg`.
+The text is deliberately **English** — the README is English-first and GitHub is
+the international shop window. The German versions live with the marketing sites
+under their `brand/og-default.svg`.
 
-Neu erzeugen: `python3 ../src/github.py`
+Regenerate with `python3 ../src/github.py`.
