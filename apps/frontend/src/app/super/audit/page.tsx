@@ -126,7 +126,7 @@ function AuditContent() {
             onChange={(e) => setActorType(e.target.value as typeof actorType)}
             className="w-full rounded border border-line-subtle px-2 py-1.5 text-sm bg-surface-base"
           >
-            <option value="">Alle</option>
+            <option value="">{t("super.auditAll")}</option>
             <option value="user">user</option>
             <option value="access">access</option>
             <option value="system">system</option>
@@ -142,7 +142,7 @@ function AuditContent() {
             onChange={(e) => setActionPrefix(e.target.value)}
             className="w-full rounded border border-line-subtle px-2 py-1.5 text-sm bg-surface-base"
           >
-            <option value="">Alle</option>
+            <option value="">{t("super.auditAll")}</option>
             {actionPrefixes.map((p) => (
               <option key={p} value={p}>
                 {p}*

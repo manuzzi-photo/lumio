@@ -2316,6 +2316,121 @@ export const en: Dict = {
       "Status: invited — becomes active as soon as the user redeems the setup link.",
     usersResetLink: "Reset link (also sent by email):",
 
+    refresh: "Refresh",
+
+    storageTitle: "Storage overview",
+    storageSubtitle:
+      "All tenants by utilisation. Values come from the usage cache, which the worker refreshes periodically.",
+    storageColTenant: "Tenant",
+    storageColPlan: "Plan",
+    storageColUsed: "Used",
+    storageColLimit: "Limit",
+    storageColUtilisation: "Utilisation",
+    storageNoPlan: "No plan",
+    storageOverLimit: "Over limit",
+    storageOver80: "Over 80%",
+
+    jobsTitle: "Job failures",
+    jobsSubtitle:
+      "Failed and stuck async jobs across all tenants: file processing (thumbnails, transcode, auto-tagging), ZIP builds and outgoing webhooks. “Stuck” means in processing for more than 2 hours.",
+    jobsAllClear: "No job failures — everything is running.",
+    jobsFailedFiles: "Failed files",
+    jobsStuckFiles: "Stuck files",
+    jobsFailedZips: "Failed ZIPs",
+    jobsFailedWebhooks: "Failed webhooks",
+    jobsFailedFilesTitle: "Failed file processing",
+    jobsStuckFilesTitle: "Stuck file processing (> 2 h)",
+    jobsFailedZipsTitle: "Failed ZIP builds",
+    jobsFailedWebhooksTitle: "Failed webhooks",
+
+    mailLogTitle: "Email deliverability",
+    mailLogSubtitle:
+      "Log of outgoing mail (sent / failed / skipped). “Skipped” means no SMTP was configured. The log covers the last 30 days; older entries are cleaned up automatically.",
+    mailLogNoSmtp:
+      "Recently, mail was only “skipped” — most likely no SMTP is configured. Without SMTP no mail is sent at all.",
+    mailLogOnlyErrors: "Errors only",
+    mailLogColStatus: "Status",
+    mailLogColRecipient: "Recipient",
+    mailLogColSubject: "Subject",
+    mailLogColTime: "Time",
+    mailLogLast24h: "Last 24 hours",
+    mailLogLast7d: "Last 7 days",
+
+    cspTitle: "CSP violations",
+    cspReportOnly: "Report-Only",
+    cspSubtitleBefore: "The content security policy runs in ",
+    cspSubtitleAfter:
+      " mode — it blocks nothing but reports violations here. Once nothing legitimate shows up under real traffic (only expected third-party sources such as Stripe or fonts), the policy can safely be switched to “enforced”. Until then: keep watching and extend the whitelist in the Caddy policy where needed.",
+    cspEmpty: "No violations collected yet.",
+    cspEmptyHint:
+      "That is normal after a fresh deploy — the browser only reports on an actual page view. If nothing arrives after a few days of traffic, the policy is probably already fine.",
+    cspColDirective: "Directive",
+    cspColBlockedSource: "Blocked source",
+    cspColCount: "Count",
+    cspColLast: "Last seen",
+    cspClear: "Clear",
+    cspClearing: "Clearing…",
+
+    securityTitle: "Security",
+    securitySubtitle:
+      "Abuse signals from the audit log: failed sign-ins (including 2FA, WebAuthn and super admin) and failed gallery unlocks (a brute-force indicator). Period: the last 7 days.",
+    securityTopIps: "Top IPs (failed logins, 7 d)",
+    securityRecentFailedLogins: "Recent failed sign-ins",
+    securityRecentFailedUnlocks: "Recent failed gallery unlocks",
+
+    loginTitle: "Lumio super admin",
+    loginSubtitle: "Platform administration. Not a customer login.",
+    loginEmail: "Email",
+    loginPassword: "Password",
+
+    complianceTitle: "Compliance",
+    complianceOnlyFlagged: "Flagged only",
+    complianceColTenant: "Tenant",
+    complianceColStatus: "Status",
+    complianceColDpa: "DPA",
+    complianceColLifecycle: "Lifecycle",
+
+    printProvidersTitle: "Print providers",
+    printProvidersSubtitle:
+      "Global activation of the print lab integrations. Providers enabled here can be selected in the studio settings. Self-print is always available — tenants without an API lab can still use the print shop.",
+    printProvidersWebsite: "Website",
+    printProvidersApiSetup: "API setup",
+    printProvidersAlwaysOn: "always on",
+    printProvidersPlannedWarning:
+      "Careful: this provider is marked as “planned” — the API integration is not implemented yet. Tenants can select the provider, but orders will fail on submit.",
+
+    broadcastsTitle: "Broadcasts",
+    broadcastsSubtitle:
+      "Mailings to all tenant owners. Feature announcements, maintenance notices, terms updates.",
+    broadcastsNew: "+ New broadcast",
+    broadcastsEmpty: "No broadcasts yet.",
+    broadcastsCreateFirst: "Create the first broadcast →",
+    cspClearConfirm:
+      "Delete all collected CSP violations? Useful after a policy fix, to start measuring cleanly.",
+    mailLogSkipped: "Skipped",
+    mailLogSent: "Sent",
+    mailLogFailed: "Failed",
+    storageActiveTenants: "Active tenants",
+    storageTotal: "Total storage",
+    securityFailedLogins24h: "Failed logins 24 h",
+    securityFailedLogins7d: "Failed logins 7 d",
+    securityFailedUnlocks24h: "Failed unlocks 24 h",
+    securityFailedUnlocks7d: "Failed unlocks 7 d",
+    complianceDpaCurrent: "DPA current",
+    complianceDpaOutdated: "DPA outdated",
+    complianceDpaMissing: "DPA missing",
+    usersNew: "+ New user",
+    usersEmail: "Email",
+    usersMailSent: "Email was sent.",
+    usersMailMessage: "Message (Markdown)",
+    systemReleaseNotesLink: "↗ Release notes",
+    backupExportHint:
+      "Exports all galleries of a tenant as ZIP files (originals + metadata.json), one archive per gallery. Download links are valid for 30 days.",
+    backupBackToTenants: "← Tenant list",
+    backupDownloadZip: "Download ZIP",
+    backupFailed: "failed",
+    complianceDeletionScheduled: "Deletion scheduled",
+
     systemTitle: "System",
     systemSubtitle:
       "Live infrastructure status, update check and backup status. Refreshes every 10 seconds.",

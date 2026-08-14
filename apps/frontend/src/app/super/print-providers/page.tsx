@@ -17,6 +17,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useT } from "@/lib/i18n";
 
 type Response = Awaited<ReturnType<typeof api.superListPrintProviders>>;
 type Provider = Response["providers"][number];
@@ -30,6 +31,7 @@ export default function SuperPrintProvidersPage() {
 }
 
 function Content() {
+  const t = useT();
   const [data, setData] = useState<Response | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,12 +64,9 @@ function Content() {
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
-      <h1 className="text-2xl font-semibold mb-1">Print-Provider</h1>
+      <h1 className="text-2xl font-semibold mb-1">{t("super.printProvidersTitle")}</h1>
       <p className="text-ui-sm text-ink-tertiary mb-6">
-        Globale Aktivierung der Print-Lab-Anbindungen. Hier aktivierte
-        Provider sind in den Studio-Settings auswählbar. Self-Print ist
-        immer verfügbar — Tenants ohne API-Lab können trotzdem den
-        Print-Shop nutzen.
+        {t("super.printProvidersSubtitle")}
       </p>
 
       {error && (
@@ -77,7 +76,7 @@ function Content() {
       )}
 
       {!data ? (
-        <div className="text-sm text-ink-tertiary">Lädt…</div>
+        <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
       ) : (
         <div className="space-y-2">
           {data.providers.map((p) => (
@@ -103,6 +102,7 @@ function ProviderRow({
   busy: boolean;
   onToggle: () => void;
 }) {
+  const t = useT();
   const isSelfPrint = p.stage === "self_print";
   const stageBadge = (() => {
     switch (p.stage) {
@@ -148,7 +148,7 @@ function ProviderRow({
                   rel="noopener noreferrer"
                   className="text-accent hover:underline"
                 >
-                  Website
+                  {t("super.printProvidersWebsite")}
                 </a>
               </>
             )}
@@ -161,7 +161,7 @@ function ProviderRow({
                   rel="noopener noreferrer"
                   className="text-accent hover:underline"
                 >
-                  API-Setup
+                  {t("super.printProvidersApiSetup")}
                 </a>
               </>
             )}
@@ -170,7 +170,7 @@ function ProviderRow({
 
         {isSelfPrint ? (
           <span className="text-xs text-ink-tertiary px-3 py-1.5">
-            immer aktiv
+            {t("super.printProvidersAlwaysOn")}
           </span>
         ) : (
           <button
@@ -197,9 +197,7 @@ function ProviderRow({
 
       {p.stage === "planned" && p.enabled && (
         <div className="mt-2 text-xs rounded border border-semantic-warning/30 bg-semantic-warning/8 px-2 py-1.5 text-semantic-warning">
-          Achtung: Provider ist als &apos;planned&apos; markiert — die API-
-          Anbindung ist noch nicht implementiert. Tenants koennen den
-          Provider auswaehlen, Bestellungen werden aber bei Submit fehlschlagen.
+          {t("super.printProvidersPlannedWarning")}
         </div>
       )}
     </div>

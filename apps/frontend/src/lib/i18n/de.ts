@@ -2323,6 +2323,121 @@ export const de: Dict = {
       "Status: invited — wird aktiv, sobald der User den Setup-Link eingelöst hat.",
     usersResetLink: "Reset-Link (auch per Mail verschickt):",
 
+    refresh: "Aktualisieren",
+
+    storageTitle: "Storage-Übersicht",
+    storageSubtitle:
+      "Alle Tenants nach Auslastung. Werte aus dem Usage-Cache (wird vom Worker periodisch aktualisiert).",
+    storageColTenant: "Tenant",
+    storageColPlan: "Plan",
+    storageColUsed: "Belegt",
+    storageColLimit: "Limit",
+    storageColUtilisation: "Auslastung",
+    storageNoPlan: "Kein Plan",
+    storageOverLimit: "Über Limit",
+    storageOver80: "Über 80%",
+
+    jobsTitle: "Job-Fehler",
+    jobsSubtitle:
+      "Fehlgeschlagene und hängende Async-Jobs über alle Tenants: Datei-Verarbeitung (Thumbnails, Transcode, Auto-Tagging), ZIP-Builds und ausgehende Webhooks. „Hängend“ = seit über 2 Stunden in Verarbeitung.",
+    jobsAllClear: "Keine Job-Fehler — alles läuft.",
+    jobsFailedFiles: "Fehlerhafte Dateien",
+    jobsStuckFiles: "Hängende Dateien",
+    jobsFailedZips: "Fehlerhafte ZIPs",
+    jobsFailedWebhooks: "Fehlerhafte Webhooks",
+    jobsFailedFilesTitle: "Fehlgeschlagene Datei-Verarbeitung",
+    jobsStuckFilesTitle: "Hängende Datei-Verarbeitung (> 2 h)",
+    jobsFailedZipsTitle: "Fehlgeschlagene ZIP-Builds",
+    jobsFailedWebhooksTitle: "Fehlgeschlagene Webhooks",
+
+    mailLogTitle: "E-Mail-Zustellbarkeit",
+    mailLogSubtitle:
+      "Protokoll der ausgehenden Mails (gesendet / fehlgeschlagen / übersprungen). „Übersprungen“ heißt, es war kein SMTP konfiguriert. Der Log umfasst die letzten 30 Tage; ältere Einträge werden automatisch aufgeräumt.",
+    mailLogNoSmtp:
+      "Es wurden zuletzt nur Mails „übersprungen“ — vermutlich ist kein SMTP konfiguriert. Ohne SMTP werden keine Mails versendet.",
+    mailLogOnlyErrors: "Nur Fehler",
+    mailLogColStatus: "Status",
+    mailLogColRecipient: "Empfänger",
+    mailLogColSubject: "Betreff",
+    mailLogColTime: "Zeitpunkt",
+    mailLogLast24h: "Letzte 24 Stunden",
+    mailLogLast7d: "Letzte 7 Tage",
+
+    cspTitle: "CSP-Verstöße",
+    cspReportOnly: "Report-Only",
+    cspSubtitleBefore: "Die Content-Security-Policy läuft im ",
+    cspSubtitleAfter:
+      "-Modus — sie blockiert nichts, meldet aber Verstöße hierher. Sobald hier über echten Traffic nichts Legitimes mehr auftaucht (nur erwartete Third-Party-Quellen wie Stripe/Fonts), kann die Policy gefahrlos auf „enforced“ umgestellt werden. Bis dahin: beobachten und ggf. die Whitelist in der Caddy-Policy ergänzen.",
+    cspEmpty: "Noch keine Verstöße gesammelt.",
+    cspEmptyHint:
+      "Das ist nach frischem Deploy normal — der Browser meldet erst bei echtem Seitenaufruf. Wenn nach ein paar Tagen Traffic immer noch nichts kommt, passt die Policy vermutlich schon.",
+    cspColDirective: "Directive",
+    cspColBlockedSource: "Blockierte Quelle",
+    cspColCount: "Anzahl",
+    cspColLast: "Zuletzt",
+    cspClear: "Leeren",
+    cspClearing: "Leert…",
+
+    securityTitle: "Security",
+    securitySubtitle:
+      "Abuse-Signale aus dem Audit-Log: fehlgeschlagene Anmeldungen (inkl. 2FA, WebAuthn, Super-Admin) und fehlgeschlagene Galerie-Entsperrungen (Brute-Force-Indikator). Zeitraum: letzte 7 Tage.",
+    securityTopIps: "Top-IPs (Fehl-Logins, 7 T)",
+    securityRecentFailedLogins: "Letzte fehlgeschlagene Anmeldungen",
+    securityRecentFailedUnlocks: "Letzte fehlgeschlagene Galerie-Entsperrungen",
+
+    loginTitle: "Lumio Super-Admin",
+    loginSubtitle: "Plattform-Verwaltung. Kein Kunden-Zugang.",
+    loginEmail: "E-Mail",
+    loginPassword: "Passwort",
+
+    complianceTitle: "Compliance",
+    complianceOnlyFlagged: "Nur auffällige",
+    complianceColTenant: "Tenant",
+    complianceColStatus: "Status",
+    complianceColDpa: "DPA",
+    complianceColLifecycle: "Lifecycle",
+
+    printProvidersTitle: "Print-Provider",
+    printProvidersSubtitle:
+      "Globale Aktivierung der Print-Lab-Anbindungen. Hier aktivierte Provider sind in den Studio-Settings auswählbar. Self-Print ist immer verfügbar — Tenants ohne API-Lab können trotzdem den Print-Shop nutzen.",
+    printProvidersWebsite: "Website",
+    printProvidersApiSetup: "API-Setup",
+    printProvidersAlwaysOn: "immer aktiv",
+    printProvidersPlannedWarning:
+      "Achtung: Provider ist als „planned“ markiert — die API-Anbindung ist noch nicht implementiert. Tenants können den Provider auswählen, Bestellungen werden aber bei Submit fehlschlagen.",
+
+    broadcastsTitle: "Broadcasts",
+    broadcastsSubtitle:
+      "Versand-Mails an alle Tenant-Owner. Feature-Ankündigungen, Wartungs-Hinweise, AGB-Updates.",
+    broadcastsNew: "+ Neuer Broadcast",
+    broadcastsEmpty: "Noch keine Broadcasts.",
+    broadcastsCreateFirst: "Ersten Broadcast erstellen →",
+    cspClearConfirm:
+      "Alle gesammelten CSP-Verstöße löschen? Sinnvoll nach einem Policy-Fix, um sauber neu zu messen.",
+    mailLogSkipped: "Übersprungen",
+    mailLogSent: "Gesendet",
+    mailLogFailed: "Fehler",
+    storageActiveTenants: "Aktive Tenants",
+    storageTotal: "Gesamt-Storage",
+    securityFailedLogins24h: "Fehl-Logins 24 h",
+    securityFailedLogins7d: "Fehl-Logins 7 T",
+    securityFailedUnlocks24h: "Fehl-Entsperrungen 24 h",
+    securityFailedUnlocks7d: "Fehl-Entsperrungen 7 T",
+    complianceDpaCurrent: "DPA aktuell",
+    complianceDpaOutdated: "DPA veraltet",
+    complianceDpaMissing: "DPA fehlt",
+    usersNew: "+ Neuer User",
+    usersEmail: "E-Mail",
+    usersMailSent: "E-Mail wurde gesendet.",
+    usersMailMessage: "Nachricht (Markdown)",
+    systemReleaseNotesLink: "↗ Release-Notes",
+    backupExportHint:
+      "Exportiert alle Galerien eines Tenants als ZIP (Originale + metadata.json), ein Archiv pro Galerie. Download-Links sind 30 Tage gültig.",
+    backupBackToTenants: "← Tenant-Liste",
+    backupDownloadZip: "ZIP herunterladen",
+    backupFailed: "fehlgeschlagen",
+    complianceDeletionScheduled: "Löschung geplant",
+
     systemTitle: "System",
     systemSubtitle:
       "Live-Status der Infrastruktur, Update-Check und Backup-Status. Aktualisiert sich alle 10 Sekunden.",

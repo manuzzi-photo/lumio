@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, type MailLogRow, type MailCounts } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useT } from "@/lib/i18n";
 
 export default function SuperMailLogPage() {
   return (
@@ -15,6 +16,7 @@ export default function SuperMailLogPage() {
 const EMPTY: MailCounts = { sent: 0, failed: 0, skipped: 0 };
 
 function MailLogView() {
+  const t = useT();
   const [recent, setRecent] = useState<MailLogRow[]>([]);
   const [last24h, setLast24h] = useState<MailCounts>(EMPTY);
   const [last7d, setLast7d] = useState<MailCounts>(EMPTY);
@@ -47,36 +49,32 @@ function MailLogView() {
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
       <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
-        <h1 className="text-2xl font-semibold">E-Mail-Zustellbarkeit</h1>
+        <h1 className="text-2xl font-semibold">{t("super.mailLogTitle")}</h1>
         <button
           type="button"
           onClick={() => void load()}
           className="h-9 px-4 rounded border border-line-subtle text-ui-sm hover:bg-surface-sunken"
         >
-          Aktualisieren
+          {t("super.refresh")}
         </button>
       </div>
       <p className="text-ui-sm text-ink-tertiary mb-6 max-w-2xl">
-        Protokoll der ausgehenden Mails (gesendet / fehlgeschlagen /
-        übersprungen). „Übersprungen" heißt, es war kein SMTP konfiguriert. Der
-        Log umfasst die letzten 30 Tage; ältere Einträge werden automatisch
-        aufgeräumt.
+        {t("super.mailLogSubtitle")}
       </p>
 
       {noSmtp && (
         <div className="mb-6 rounded-md border border-semantic-warning/40 bg-semantic-warning/10 px-4 py-3 text-ui-sm text-semantic-warning">
-          Es wurden zuletzt nur Mails „übersprungen" — vermutlich ist kein SMTP
-          konfiguriert. Ohne SMTP werden keine Mails versendet.
+          {t("super.mailLogNoSmtp")}
         </div>
       )}
 
       {loading ? (
-        <div className="text-ui text-ink-tertiary">Lädt…</div>
+        <div className="text-ui text-ink-tertiary">{t("common.loading")}</div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <StatGroup title="Letzte 24 Stunden" counts={last24h} />
-            <StatGroup title="Letzte 7 Tage" counts={last7d} />
+            <StatGroup title={t("super.mailLogLast24h")} counts={last24h} />
+            <StatGroup title={t("super.mailLogLast7d")} counts={last7d} />
           </div>
 
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -89,7 +87,7 @@ function MailLogView() {
                 checked={onlyFailed}
                 onChange={(e) => setOnlyFailed(e.target.checked)}
               />
-              Nur Fehler
+              {t("super.mailLogOnlyErrors")}
             </label>
           </div>
 
@@ -106,13 +104,15 @@ function MailLogView() {
               <table className="w-full text-ui-sm">
                 <thead className="text-ink-tertiary text-ui-xs uppercase tracking-wide">
                   <tr className="border-b border-line-subtle">
-                    <th className="text-left font-medium px-3 py-2">Status</th>
                     <th className="text-left font-medium px-3 py-2">
-                      Empfänger
+                      {t("super.mailLogColStatus")}
                     </th>
-                    <th className="text-left font-medium px-3 py-2">Betreff</th>
                     <th className="text-left font-medium px-3 py-2">
-                      Zeitpunkt
+                      {t("super.mailLogColRecipient")}
+                    </th>
+                    <th className="text-left font-medium px-3 py-2">{t("super.mailLogColSubject")}</th>
+                    <th className="text-left font-medium px-3 py-2">
+                      {t("super.mailLogColTime")}
                     </th>
                   </tr>
                 </thead>
@@ -153,15 +153,16 @@ function MailLogView() {
 }
 
 function StatGroup({ title, counts }: { title: string; counts: MailCounts }) {
+  const t = useT();
   return (
     <div className="border border-line-subtle rounded-md bg-surface-raised p-4">
       <div className="text-ui-xs uppercase tracking-wide text-ink-tertiary mb-3">
         {title}
       </div>
       <div className="flex gap-6">
-        <Stat label="Gesendet" value={counts.sent} tone="success" />
-        <Stat label="Fehler" value={counts.failed} tone="danger" />
-        <Stat label="Übersprungen" value={counts.skipped} tone="muted" />
+        <Stat label={t("super.mailLogSent")} value={counts.sent} tone="success" />
+        <Stat label={t("super.mailLogFailed")} value={counts.failed} tone="danger" />
+        <Stat label={t("super.mailLogSkipped")} value={counts.skipped} tone="muted" />
       </div>
     </div>
   );

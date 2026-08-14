@@ -11,8 +11,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 export default function SuperLoginPage() {
+  const t = useT();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -56,15 +58,15 @@ export default function SuperLoginPage() {
       >
         <div>
           <h1 className="text-ui-lg font-semibold text-ink-primary">
-            Lumio Super-Admin
+            {t("super.loginTitle")}
           </h1>
           <p className="text-ui-sm text-ink-tertiary mt-1">
-            Plattform-Verwaltung. Kein Kunden-Zugang.
+            {t("super.loginSubtitle")}
           </p>
         </div>
 
         <label className="block">
-          <span className="text-ui-sm text-ink-secondary">E-Mail</span>
+          <span className="text-ui-sm text-ink-secondary">{t("super.loginEmail")}</span>
           <input
             type="email"
             value={email}
@@ -77,7 +79,7 @@ export default function SuperLoginPage() {
         </label>
 
         <label className="block">
-          <span className="text-ui-sm text-ink-secondary">Passwort</span>
+          <span className="text-ui-sm text-ink-secondary">{t("super.loginPassword")}</span>
           <input
             type="password"
             value={password}

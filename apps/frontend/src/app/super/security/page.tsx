@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, type SuperSecurityResponse } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useT } from "@/lib/i18n";
 
 export default function SuperSecurityPage() {
   return (
@@ -20,6 +21,7 @@ const ACTION_LABEL: Record<string, string> = {
 };
 
 function SecurityView() {
+  const t = useT();
   const [data, setData] = useState<SuperSecurityResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,41 +41,39 @@ function SecurityView() {
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
       <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
-        <h1 className="text-2xl font-semibold">Security</h1>
+        <h1 className="text-2xl font-semibold">{t("super.securityTitle")}</h1>
         <button
           type="button"
           onClick={() => void load()}
           className="h-9 px-4 rounded border border-line-subtle text-ui-sm hover:bg-surface-sunken"
         >
-          Aktualisieren
+          {t("super.refresh")}
         </button>
       </div>
       <p className="text-ui-sm text-ink-tertiary mb-6 max-w-2xl">
-        Abuse-Signale aus dem Audit-Log: fehlgeschlagene Anmeldungen (inkl. 2FA,
-        WebAuthn, Super-Admin) und fehlgeschlagene Galerie-Entsperrungen
-        (Brute-Force-Indikator). Zeitraum: letzte 7 Tage.
+        {t("super.securitySubtitle")}
       </p>
 
       {loading || !data ? (
-        <div className="text-ui text-ink-tertiary">Lädt…</div>
+        <div className="text-ui text-ink-tertiary">{t("common.loading")}</div>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
             <CountCard
-              label="Fehl-Logins 24 h"
+              label={t("super.securityFailedLogins24h")}
               value={data.counts.failedLogins.d1}
             />
             <CountCard
-              label="Fehl-Logins 7 T"
+              label={t("super.securityFailedLogins7d")}
               value={data.counts.failedLogins.d7}
               muted
             />
             <CountCard
-              label="Fehl-Entsperrungen 24 h"
+              label={t("super.securityFailedUnlocks24h")}
               value={data.counts.failedUnlocks.d1}
             />
             <CountCard
-              label="Fehl-Entsperrungen 7 T"
+              label={t("super.securityFailedUnlocks7d")}
               value={data.counts.failedUnlocks.d7}
               muted
             />
@@ -82,7 +82,7 @@ function SecurityView() {
           {data.topIps.length > 0 && (
             <div className="mb-8">
               <h2 className="text-ui font-semibold mb-3">
-                Top-IPs (Fehl-Logins, 7 T)
+                {t("super.securityTopIps")}
               </h2>
               <div className="border border-line-subtle rounded-md bg-surface-raised overflow-hidden">
                 <table className="w-full text-ui-sm">
@@ -108,7 +108,7 @@ function SecurityView() {
 
           <div className="mb-8">
             <h2 className="text-ui font-semibold mb-3">
-              Letzte fehlgeschlagene Anmeldungen
+              {t("super.securityRecentFailedLogins")}
             </h2>
             {data.recentLogins.length === 0 ? (
               <EmptyBox text="Keine fehlgeschlagenen Anmeldungen in den letzten 7 Tagen." />
@@ -152,7 +152,7 @@ function SecurityView() {
           {data.recentUnlocks.length > 0 && (
             <div className="mb-8">
               <h2 className="text-ui font-semibold mb-3">
-                Letzte fehlgeschlagene Galerie-Entsperrungen
+                {t("super.securityRecentFailedUnlocks")}
               </h2>
               <div className="border border-line-subtle rounded-md bg-surface-raised overflow-x-auto">
                 <table className="w-full text-ui-sm">

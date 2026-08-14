@@ -9,6 +9,7 @@ import {
   type JobWebhookRow,
 } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useT } from "@/lib/i18n";
 
 export default function SuperJobsPage() {
   return (
@@ -19,6 +20,7 @@ export default function SuperJobsPage() {
 }
 
 function JobsView() {
+  const t = useT();
   const [data, setData] = useState<SuperJobsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -63,46 +65,44 @@ function JobsView() {
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
       <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
-        <h1 className="text-2xl font-semibold">Job-Fehler</h1>
+        <h1 className="text-2xl font-semibold">{t("super.jobsTitle")}</h1>
         <button
           type="button"
           onClick={() => void load()}
           className="h-9 px-4 rounded border border-line-subtle text-ui-sm hover:bg-surface-sunken"
         >
-          Aktualisieren
+          {t("super.refresh")}
         </button>
       </div>
       <p className="text-ui-sm text-ink-tertiary mb-6 max-w-2xl">
-        Fehlgeschlagene und hängende Async-Jobs über alle Tenants:
-        Datei-Verarbeitung (Thumbnails, Transcode, Auto-Tagging), ZIP-Builds und
-        ausgehende Webhooks. „Hängend" = seit über 2 Stunden in Verarbeitung.
+        {t("super.jobsSubtitle")}
       </p>
 
       {loading ? (
-        <div className="text-ui text-ink-tertiary">Lädt…</div>
+        <div className="text-ui text-ink-tertiary">{t("common.loading")}</div>
       ) : !data ? null : allClear ? (
         <div className="rounded-md border border-dashed border-line-subtle bg-surface-sunken p-12 text-center">
           <p className="text-ui text-ink-tertiary">
-            Keine Job-Fehler — alles läuft.
+            {t("super.jobsAllClear")}
           </p>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-            <CountCard label="Fehlerhafte Dateien" value={c!.failedFiles} />
-            <CountCard label="Hängende Dateien" value={c!.stuckFiles} />
-            <CountCard label="Fehlerhafte ZIPs" value={c!.failedZips} />
-            <CountCard label="Fehlerhafte Webhooks" value={c!.failedWebhooks} />
+            <CountCard label={t("super.jobsFailedFiles")} value={c!.failedFiles} />
+            <CountCard label={t("super.jobsStuckFiles")} value={c!.stuckFiles} />
+            <CountCard label={t("super.jobsFailedZips")} value={c!.failedZips} />
+            <CountCard label={t("super.jobsFailedWebhooks")} value={c!.failedWebhooks} />
           </div>
 
           <FileSection
-            title="Fehlgeschlagene Datei-Verarbeitung"
+            title={t("super.jobsFailedFilesTitle")}
             rows={data.failedFiles}
             busyId={busyId}
             onRetry={retryFile}
           />
           <FileSection
-            title="Hängende Datei-Verarbeitung (> 2 h)"
+            title={t("super.jobsStuckFilesTitle")}
             rows={data.stuckFiles}
             busyId={busyId}
             onRetry={retryFile}
@@ -231,8 +231,9 @@ function FileSection({
 }
 
 function ZipSection({ rows }: { rows: JobZipRow[] }) {
+  const t = useT();
   return (
-    <Section title="Fehlgeschlagene ZIP-Builds" count={rows.length}>
+    <Section title={t("super.jobsFailedZipsTitle")} count={rows.length}>
       <table className="w-full text-ui-sm">
         <tbody>
           {rows.map((z) => (
@@ -273,8 +274,9 @@ function WebhookSection({
   busyId: string | null;
   onRetry: (id: string) => void;
 }) {
+  const t = useT();
   return (
-    <Section title="Fehlgeschlagene Webhooks" count={rows.length}>
+    <Section title={t("super.jobsFailedWebhooksTitle")} count={rows.length}>
       <table className="w-full text-ui-sm">
         <tbody>
           {rows.map((w) => (

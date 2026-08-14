@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
-import { useFormat } from "@/lib/i18n";
+import { useFormat, useT} from "@/lib/i18n";
 
 type Response = Awaited<ReturnType<typeof api.superListBroadcasts>>;
 
@@ -25,6 +25,7 @@ export default function SuperBroadcastsPage() {
 }
 
 function BroadcastsContent() {
+  const t = useT();
   const router = useRouter();
   const [data, setData] = useState<Response | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,10 +54,9 @@ function BroadcastsContent() {
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
       <div className="flex items-baseline justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">Broadcasts</h1>
+          <h1 className="text-2xl font-semibold mb-1">{t("super.broadcastsTitle")}</h1>
           <p className="text-ui-sm text-ink-tertiary">
-            Versand-Mails an alle Tenant-Owner. Feature-Ankündigungen,
-            Wartungs-Hinweise, AGB-Updates.
+            {t("super.broadcastsSubtitle")}
           </p>
         </div>
         <button
@@ -64,7 +64,7 @@ function BroadcastsContent() {
           onClick={() => router.push("/super/broadcasts/new")}
           className="text-sm px-3 py-2 rounded-md bg-accent text-accent-contrast hover:bg-accent-hover"
         >
-          + Neuer Broadcast
+          {t("super.broadcastsNew")}
         </button>
       </div>
 
@@ -75,17 +75,17 @@ function BroadcastsContent() {
       )}
 
       {!data ? (
-        <div className="text-sm text-ink-tertiary">Lädt…</div>
+        <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
       ) : data.broadcasts.length === 0 ? (
         <div className="border border-line-subtle rounded-md bg-surface-raised p-8 text-center">
           <p className="text-sm text-ink-tertiary mb-3">
-            Noch keine Broadcasts.
+            {t("super.broadcastsEmpty")}
           </p>
           <Link
             href="/super/broadcasts/new"
             className="text-sm text-accent hover:underline"
           >
-            Ersten Broadcast erstellen →
+            {t("super.broadcastsCreateFirst")}
           </Link>
         </div>
       ) : (

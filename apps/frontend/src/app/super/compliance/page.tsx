@@ -7,6 +7,7 @@ import {
   type ComplianceTenantRow,
 } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useT } from "@/lib/i18n";
 
 export default function SuperCompliancePage() {
   return (
@@ -27,6 +28,7 @@ function isFlagged(t: ComplianceTenantRow): boolean {
 }
 
 function ComplianceView() {
+  const t = useT();
   const [data, setData] = useState<SuperComplianceResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [onlyFlagged, setOnlyFlagged] = useState(false);
@@ -50,13 +52,13 @@ function ComplianceView() {
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
       <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
-        <h1 className="text-2xl font-semibold">Compliance</h1>
+        <h1 className="text-2xl font-semibold">{t("super.complianceTitle")}</h1>
         <button
           type="button"
           onClick={() => void load()}
           className="h-9 px-4 rounded border border-line-subtle text-ui-sm hover:bg-surface-sunken"
         >
-          Aktualisieren
+          {t("super.refresh")}
         </button>
       </div>
       <p className="text-ui-sm text-ink-tertiary mb-6 max-w-2xl">
@@ -66,19 +68,19 @@ function ComplianceView() {
       </p>
 
       {loading || !data ? (
-        <div className="text-ui text-ink-tertiary">Lädt…</div>
+        <div className="text-ui text-ink-tertiary">{t("common.loading")}</div>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <CountCard label="DPA aktuell" value={data.counts.dpaSigned} />
+            <CountCard label={t("super.complianceDpaCurrent")} value={data.counts.dpaSigned} />
             <CountCard
-              label="DPA veraltet"
+              label={t("super.complianceDpaOutdated")}
               value={data.counts.dpaOutdated}
               warn
             />
-            <CountCard label="DPA fehlt" value={data.counts.dpaMissing} warn />
+            <CountCard label={t("super.complianceDpaMissing")} value={data.counts.dpaMissing} warn />
             <CountCard
-              label="Löschung geplant"
+              label={t("super.complianceDeletionScheduled")}
               value={data.counts.deletionScheduled}
               warn
             />
@@ -94,7 +96,7 @@ function ComplianceView() {
                 checked={onlyFlagged}
                 onChange={(e) => setOnlyFlagged(e.target.checked)}
               />
-              Nur auffällige
+              {t("super.complianceOnlyFlagged")}
             </label>
           </div>
 
@@ -102,10 +104,10 @@ function ComplianceView() {
             <table className="w-full text-ui-sm">
               <thead className="text-ink-tertiary text-ui-xs uppercase tracking-wide">
                 <tr className="border-b border-line-subtle">
-                  <th className="text-left font-medium px-3 py-2">Tenant</th>
-                  <th className="text-left font-medium px-3 py-2">Status</th>
-                  <th className="text-left font-medium px-3 py-2">DPA</th>
-                  <th className="text-left font-medium px-3 py-2">Lifecycle</th>
+                  <th className="text-left font-medium px-3 py-2">{t("super.complianceColTenant")}</th>
+                  <th className="text-left font-medium px-3 py-2">{t("super.complianceColStatus")}</th>
+                  <th className="text-left font-medium px-3 py-2">{t("super.complianceColDpa")}</th>
+                  <th className="text-left font-medium px-3 py-2">{t("super.complianceColLifecycle")}</th>
                 </tr>
               </thead>
               <tbody>

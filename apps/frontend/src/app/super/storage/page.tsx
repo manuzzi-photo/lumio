@@ -17,7 +17,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
-import { useFormat } from "@/lib/i18n";
+import { useFormat, useT} from "@/lib/i18n";
 
 type StorageResponse = Awaited<ReturnType<typeof api.superTenantsStorage>>;
 
@@ -30,6 +30,7 @@ export default function SuperStoragePage() {
 }
 
 function StorageContent() {
+  const t = useT();
   const fmt = useFormat();
   const [data, setData] = useState<StorageResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,10 +54,9 @@ function StorageContent() {
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
-      <h1 className="text-2xl font-semibold mb-1">Storage-Übersicht</h1>
+      <h1 className="text-2xl font-semibold mb-1">{t("super.storageTitle")}</h1>
       <p className="text-ui-sm text-ink-tertiary mb-6">
-        Alle Tenants nach Auslastung. Werte aus dem Usage-Cache (wird vom
-        Worker periodisch aktualisiert).
+        {t("super.storageSubtitle")}
       </p>
 
       {error && (
@@ -68,15 +68,15 @@ function StorageContent() {
       {data && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <StatCard label="Aktive Tenants" value={data.tenants.length.toLocaleString(fmt.bcp47)} />
-            <StatCard label="Gesamt-Storage" value={formatBytes(totalUsedBytes)} />
+            <StatCard label={t("super.storageActiveTenants")} value={data.tenants.length.toLocaleString(fmt.bcp47)} />
+            <StatCard label={t("super.storageTotal")} value={formatBytes(totalUsedBytes)} />
             <StatCard
-              label="Über Limit"
+              label={t("super.storageOverLimit")}
               value={overLimitCount.toLocaleString(fmt.bcp47)}
               tone={overLimitCount > 0 ? "danger" : "neutral"}
             />
             <StatCard
-              label="Über 80%"
+              label={t("super.storageOver80")}
               value={nearLimitCount.toLocaleString(fmt.bcp47)}
               tone={nearLimitCount > 0 ? "warning" : "neutral"}
             />
@@ -87,16 +87,16 @@ function StorageContent() {
               <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="border-b border-line-subtle text-xs uppercase tracking-wider text-ink-tertiary text-left">
-                  <th className="px-3 py-2 font-medium">Tenant</th>
-                  <th className="px-3 py-2 font-medium">Plan</th>
-                  <th className="px-3 py-2 font-medium text-right">Belegt</th>
-                  <th className="px-3 py-2 font-medium text-right">Limit</th>
-                  <th className="px-3 py-2 font-medium">Auslastung</th>
+                  <th className="px-3 py-2 font-medium">{t("super.storageColTenant")}</th>
+                  <th className="px-3 py-2 font-medium">{t("super.storageColPlan")}</th>
+                  <th className="px-3 py-2 font-medium text-right">{t("super.storageColUsed")}</th>
+                  <th className="px-3 py-2 font-medium text-right">{t("super.storageColLimit")}</th>
+                  <th className="px-3 py-2 font-medium">{t("super.storageColUtilisation")}</th>
                 </tr>
               </thead>
               <tbody>
                 {data.tenants.map((t) => (
-                  <StorageRow key={t.id} t={t} />
+                  <StorageRow key={t.id} tenant={t} />
                 ))}
               </tbody>
             </table>
@@ -109,38 +109,39 @@ function StorageContent() {
 }
 
 function StorageRow({
-  t,
+  tenant,
 }: {
-  t: StorageResponse["tenants"][number];
+  tenant: StorageResponse["tenants"][number];
 }) {
-  const pct = t.usagePct;
+  const t = useT();
+  const pct = tenant.usagePct;
   const limitBytes =
-    t.totalLimitGib !== null ? t.totalLimitGib * 1024 ** 3 : null;
+    tenant.totalLimitGib !== null ? tenant.totalLimitGib * 1024 ** 3 : null;
 
   return (
     <tr className="border-b border-line-subtle hover:bg-surface-sunken/40">
       <td className="px-3 py-2">
         <Link
-          href={`/super/tenants/${t.id}`}
+          href={`/super/tenants/${tenant.id}`}
           className="font-medium hover:underline"
         >
-          {t.name}
+          {tenant.name}
         </Link>
-        <div className="text-xs text-ink-tertiary font-mono">{t.slug}</div>
+        <div className="text-xs text-ink-tertiary font-mono">{tenant.slug}</div>
       </td>
       <td className="px-3 py-2 text-sm">
-        {t.planName ?? <span className="text-ink-tertiary italic">Kein Plan</span>}
+        {tenant.planName ?? <span className="text-ink-tertiary italic">{t("super.storageNoPlan")}</span>}
       </td>
       <td className="px-3 py-2 text-right text-sm font-mono">
-        {formatBytes(t.usedBytes)}
+        {formatBytes(tenant.usedBytes)}
       </td>
       <td className="px-3 py-2 text-right text-sm font-mono text-ink-tertiary">
         {limitBytes !== null ? (
           <>
             {formatBytes(limitBytes)}
-            {t.addonGib > 0 && (
+            {tenant.addonGib > 0 && (
               <div className="text-xs">
-                {t.planLimitGib} + {t.addonGib} Add-On
+                {tenant.planLimitGib} + {tenant.addonGib} Add-On
               </div>
             )}
           </>

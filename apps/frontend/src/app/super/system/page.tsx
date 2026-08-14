@@ -270,7 +270,7 @@ function UpdateCheckCard({
               rel="noopener noreferrer"
               className="text-sm text-accent hover:underline"
             >
-              ↗ Release-Notes
+              {t("super.systemReleaseNotesLink")}
             </a>
           )}
         </div>

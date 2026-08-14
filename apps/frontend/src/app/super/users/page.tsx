@@ -98,7 +98,7 @@ function UsersList() {
           onClick={() => setCreating(true)}
           className="h-9 px-4 rounded bg-accent text-accent-contrast font-medium text-ui-sm hover:bg-accent-hover transition-colors"
         >
-          + Neuer User
+          {t("super.usersNew")}
         </button>
       </div>
 
@@ -207,7 +207,7 @@ function UsersList() {
                       onClick={() => setEmailing(u)}
                       className="text-ui-xs text-accent hover:underline mr-3"
                     >
-                      E-Mail
+                      {t("super.usersEmail")}
                     </button>
                     <button
                       type="button"
@@ -333,7 +333,7 @@ function EmailUserDialog({
         {sent ? (
           <>
             <p className="text-ui-sm text-semantic-success">
-              E-Mail wurde gesendet.
+              {t("super.usersMailSent")}
             </p>
             <div className="flex justify-end">
               <button
@@ -341,7 +341,7 @@ function EmailUserDialog({
                 onClick={onClose}
                 className="h-9 px-4 rounded bg-accent text-accent-contrast text-ui-sm"
               >
-                Schließen
+                {t("common.close")}
               </button>
             </div>
           </>
@@ -362,7 +362,7 @@ function EmailUserDialog({
             </div>
             <div>
               <label className="text-ui-xs text-ink-secondary block mb-1.5">
-                Nachricht (Markdown)
+                {t("super.usersMailMessage")}
               </label>
               <textarea
                 value={body}
@@ -386,7 +386,7 @@ function EmailUserDialog({
                 disabled={busy}
                 className="h-9 px-4 rounded border border-line-subtle text-ui-sm hover:bg-surface-sunken disabled:opacity-50"
               >
-                Abbrechen
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
@@ -472,7 +472,7 @@ function AnnouncementUserDialog({
                 onClick={onClose}
                 className="h-9 px-4 rounded bg-accent text-accent-contrast text-ui-sm"
               >
-                Schließen
+                {t("common.close")}
               </button>
             </div>
           </>
@@ -585,7 +585,7 @@ function AnnouncementUserDialog({
                 disabled={busy}
                 className="h-9 px-4 rounded border border-line-subtle text-ui-sm hover:bg-surface-sunken disabled:opacity-50"
               >
-                Abbrechen
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
@@ -784,7 +784,7 @@ function EditUserDialog({
               onClick={onClose}
               className="text-sm px-3 py-2 rounded-md border border-line-subtle hover:bg-surface-sunken"
             >
-              Abbrechen
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -888,7 +888,7 @@ function CreateUserDialog({
 
         <div>
           <label htmlFor="c-email" className="text-sm font-medium block mb-1">
-            E-Mail
+            {t("super.usersEmail")}
           </label>
           <input
             id="c-email"
@@ -941,7 +941,7 @@ function CreateUserDialog({
             onClick={onClose}
             className="text-sm px-3 py-2 rounded-md border border-line-subtle hover:bg-surface-sunken"
           >
-            Abbrechen
+            {t("common.cancel")}
           </button>
           <button
             type="submit"

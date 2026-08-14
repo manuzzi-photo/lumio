@@ -167,9 +167,7 @@ function TenantExportSection() {
     <section>
       <h2 className="text-lg font-semibold mb-1">{t("super.backupEmergencyExport")}</h2>
       <p className="text-ui-sm text-ink-tertiary mb-4">
-        Exportiert alle Galerien eines Tenants als ZIP (Originale +
-        metadata.json), ein Archiv pro Galerie. Download-Links sind 30 Tage
-        gültig.
+        {t("super.backupExportHint")}
       </p>
 
       {!selected ? (
@@ -290,7 +288,7 @@ function TenantExportPanel({
             onClick={onBack}
             className="text-sm text-ink-tertiary hover:text-ink-primary"
           >
-            ← Tenant-Liste
+            {t("super.backupBackToTenants")}
           </button>
           <div className="text-lg font-medium mt-1">
             {tenant.name}{" "}
@@ -432,11 +430,11 @@ function ExportRow({
                     href={it.downloadUrl}
                     className="text-accent hover:underline whitespace-nowrap"
                   >
-                    ZIP herunterladen
+                    {t("super.backupDownloadZip")}
                   </a>
                 ) : it.status === "failed" ? (
                   <span className="text-semantic-danger whitespace-nowrap">
-                    fehlgeschlagen
+                    {t("super.backupFailed")}
                   </span>
                 ) : (
                   <span className="text-ink-tertiary whitespace-nowrap">
