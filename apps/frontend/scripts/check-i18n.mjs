@@ -9,7 +9,7 @@
  *      dictionary. React renders the key name itself, so the button reads
  *      "studio.cancel" — in every language. tsc cannot see this because the
  *      dictionary type is Record<string, string | Dict>.
- *   2. A key present in one dictionary but not the other, which silently
+ *   2. A key present in one dictionary but not the others, which silently
  *      falls back to English for the locale that is missing it.
  *   3. Hardcoded locale identifiers in Intl / toLocale* calls, which render
  *      German dates inside an English interface.
@@ -72,6 +72,7 @@ function extractKeys(file) {
 
 const enKeys = extractKeys(join(I18N_DIR, "en.ts"));
 const deKeys = extractKeys(join(I18N_DIR, "de.ts"));
+const itKeys = extractKeys(join(I18N_DIR, "it.ts"));
 
 let failures = 0;
 const report = (title, items, format = (x) => x) => {
@@ -90,6 +91,14 @@ report(
   "Keys in de.ts but not en.ts",
   [...deKeys].filter((k) => !enKeys.has(k)).sort()
 );
+report(
+  "Keys in en.ts but not it.ts",
+  [...enKeys].filter((k) => !itKeys.has(k)).sort()
+);
+report(
+  "Keys in it.ts but not en.ts",
+  [...itKeys].filter((k) => !enKeys.has(k)).sort()
+);
 
 // --- 2. t() calls pointing at nothing -------------------------------------
 const files = walk(SRC).filter((f) => !f.startsWith(I18N_DIR));
@@ -102,7 +111,7 @@ for (const file of files) {
 
   for (const m of text.matchAll(/\bt\(\s*"([^"]+)"/g)) {
     const key = m[1];
-    if (!enKeys.has(key) || !deKeys.has(key)) {
+    if (!enKeys.has(key) || !deKeys.has(key) || !itKeys.has(key)) {
       if (!broken.has(key)) broken.set(key, new Set());
       broken.get(key).add(rel);
     }
@@ -132,7 +141,7 @@ report(
 
 if (failures === 0) {
   console.log(
-    `i18n check passed — ${enKeys.size} keys in both dictionaries, ` +
+    `i18n check passed — ${enKeys.size} keys in all three dictionaries, ` +
       `no dangling t() references, no hardcoded locales.`
   );
   process.exit(0);
