@@ -988,87 +988,195 @@ export function tmplWelcome(opts: {
 // Self-Service Tenant-Loeschung (DSGVO Art. 17)
 // ---------------------------------------------------------------------------
 
+/**
+ * DSGVO Art. 17. Der Text nennt konkrete Zusagen — 60 Tage Karenz, sofortige
+ * Stripe-Kuendigung, Ruecknahme bis zum Stichtag. Die englische Fassung ist
+ * bewusst woertlich gehalten: gleiche Fristen, gleiche Verbindlichkeit, keine
+ * weicheren Formulierungen.
+ */
+const deletionRequestedPhrases = {
+  subject: {
+    de: "Löschung deines Studios „{studio}“ geplant",
+    en: "Deletion of your studio “{studio}” is scheduled",
+  },
+  preheader: {
+    de: "Endgültige Löschung am {date} — bis dahin rücknehmbar",
+    en: "Permanent deletion on {date} — reversible until then",
+  },
+  greetingNamed: { de: "Hallo {name},", en: "Hello {name}," },
+  greetingPlain: { de: "Hallo,", en: "Hello," },
+  heading: { de: "Studio-Löschung geplant", en: "Studio deletion scheduled" },
+  intro: {
+    de: "wir haben deine Anfrage zur Löschung deines Lumio-Studios „{studio}“ erhalten.",
+    en: "we have received your request to delete your Lumio studio “{studio}”.",
+  },
+  introHtml: {
+    de: "{greeting} — wir haben deine Anfrage zur Löschung von „{studio}“ erhalten.",
+    en: "{greeting} — we have received your request to delete “{studio}”.",
+  },
+  whatHappens: { de: "Was jetzt passiert", en: "What happens now" },
+  whatHappensText: { de: "Was jetzt passiert:", en: "What happens now:" },
+  step1: {
+    de: "Deine Stripe-Subscription wurde sofort gekündigt — keine weitere Abrechnung.",
+    en: "Your Stripe subscription was cancelled immediately — no further billing.",
+  },
+  step2Text: {
+    de: "Alle Galerien, Freigabe- und Upload-Links sind ab sofort offline. Deine Kundinnen und Kunden haben keinen Zugriff mehr.",
+    en: "All galleries, share links and upload links are offline as of now. Your customers no longer have access.",
+  },
+  step2Html: {
+    de: "Alle Galerien, Freigabe- und Upload-Links sind ab sofort offline — deine Kundinnen und Kunden haben keinen Zugriff mehr.",
+    en: "All galleries, share links and upload links are offline as of now — your customers no longer have access.",
+  },
+  step3Text: {
+    de: "Das Studio bleibt für 60 Tage in der Karenzphase. Die Daten bleiben in dieser Zeit vollständig erhalten.",
+    en: "The studio stays in a 60-day grace period. During that time all data is retained in full.",
+  },
+  step3Html: {
+    de: "Das Studio bleibt für 60 Tage in der Karenzphase. Die Daten bleiben in dieser Zeit vollständig erhalten; nimmst du die Löschung zurück, sind alle Galerien sofort wieder erreichbar.",
+    en: "The studio stays in a 60-day grace period. During that time all data is retained in full; if you reverse the deletion, every gallery is reachable again immediately.",
+  },
+  step4: {
+    de: "Du kannst die Löschung bis zum {date} jederzeit zurücknehmen.",
+    en: "You can reverse the deletion at any time until {date}.",
+  },
+  step5: {
+    de: "Am {date} werden alle Daten endgültig gelöscht.",
+    en: "On {date} all data will be permanently deleted.",
+  },
+  cancelLine: { de: "Löschung zurücknehmen:", en: "Reverse the deletion:" },
+  button: { de: "Löschung zurücknehmen", en: "Reverse deletion" },
+  notRequested: {
+    de: "Wenn du die Löschung NICHT angefordert hast,",
+    en: "If you did NOT request this deletion,",
+  },
+  strangerAccess: {
+    de: "Möglicherweise hat jemand Fremdes Zugriff auf deinen Account.",
+    en: "Someone else may have access to your account.",
+  },
+} satisfies Record<string, Phrase>;
+
 export function tmplDeletionRequested(opts: {
   displayName: string | null;
   studioName: string;
   scheduledFor: Date;
   cancelUrl: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
-  const greeting = opts.displayName ? `Hallo ${opts.displayName},` : "Hallo,";
-  const dateStr = opts.scheduledFor.toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  const l = opts.locale ?? instanceMailLocale();
+  const P = deletionRequestedPhrases;
+  const greeting = opts.displayName
+    ? phrase(P.greetingNamed, l, { name: opts.displayName })
+    : phrase(P.greetingPlain, l);
+  const dateStr = opts.scheduledFor.toLocaleDateString(
+    l === "de" ? "de-DE" : "en-GB",
+    { day: "2-digit", month: "long", year: "numeric" }
+  );
+  const vars = { studio: opts.studioName, date: dateStr };
   return {
-    subject: `Löschung deines Studios „${opts.studioName}" geplant`,
+    subject: phrase(P.subject, l, vars),
     text:
       `${greeting}\n\n` +
-      `wir haben deine Anfrage zur Löschung deines Lumio-Studios ` +
-      `„${opts.studioName}" erhalten.\n\n` +
-      `Was jetzt passiert:\n` +
-      `  • Deine Stripe-Subscription wurde sofort gekündigt — keine ` +
-      `weitere Abrechnung.\n` +
-      `  • Alle Galerien, Freigabe- und Upload-Links sind ab sofort ` +
-      `offline. Deine Kundinnen und Kunden haben keinen Zugriff mehr.\n` +
-      `  • Das Studio bleibt für 60 Tage in der Karenzphase. Die Daten ` +
-      `bleiben in dieser Zeit vollständig erhalten.\n` +
-      `  • Du kannst die Löschung bis zum ${dateStr} jederzeit ` +
-      `zurücknehmen.\n` +
-      `  • Am ${dateStr} werden alle Daten endgültig gelöscht.\n\n` +
-      `Löschung zurücknehmen:\n${opts.cancelUrl}\n\n` +
-      `${urgentSupportHint("Wenn du die Löschung NICHT angefordert hast,")}\n\n` +
-      `— Lumio`,
+      `${phrase(P.intro, l, vars)}\n\n` +
+      `${phrase(P.whatHappensText, l)}\n` +
+      `  • ${phrase(P.step1, l)}\n` +
+      `  • ${phrase(P.step2Text, l)}\n` +
+      `  • ${phrase(P.step3Text, l)}\n` +
+      `  • ${phrase(P.step4, l, vars)}\n` +
+      `  • ${phrase(P.step5, l, vars)}\n\n` +
+      `${phrase(P.cancelLine, l)}\n${opts.cancelUrl}\n\n` +
+      `${urgentSupportHint(phrase(P.notRequested, l))}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `Endgültige Löschung am ${dateStr} — bis dahin rücknehmbar`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Studio-Löschung geplant`) +
+        mailHeading(phrase(P.heading, l)) +
         mailParagraph(
-          `${greeting.replace(",", "")} — wir haben deine Anfrage zur Löschung von „${opts.studioName}" erhalten.`
+          phrase(P.introHtml, l, {
+            ...vars,
+            greeting: greeting.replace(",", ""),
+          })
         ) +
-        mailHeading(`Was jetzt passiert`) +
+        mailHeading(phrase(P.whatHappens, l)) +
         mailBullets([
-          "Deine Stripe-Subscription wurde sofort gekündigt — keine weitere Abrechnung.",
-          "Alle Galerien, Freigabe- und Upload-Links sind ab sofort offline — deine Kundinnen und Kunden haben keinen Zugriff mehr.",
-          "Das Studio bleibt für 60 Tage in der Karenzphase. Die Daten bleiben in dieser Zeit vollständig erhalten; nimmst du die Löschung zurück, sind alle Galerien sofort wieder erreichbar.",
-          `Du kannst die Löschung bis zum ${dateStr} jederzeit zurücknehmen.`,
-          `Am ${dateStr} werden alle Daten endgültig gelöscht.`,
+          phrase(P.step1, l),
+          phrase(P.step2Html, l),
+          phrase(P.step3Html, l),
+          phrase(P.step4, l, vars),
+          phrase(P.step5, l, vars),
         ]) +
-        mailButton(opts.cancelUrl, "Löschung zurücknehmen") +
+        mailButton(opts.cancelUrl, phrase(P.button, l)) +
         mailNoticeBox(
-          `${urgentSupportHint("Wenn du die Löschung NICHT angefordert hast,")} Möglicherweise hat jemand Fremdes Zugriff auf deinen Account.`
+          `${urgentSupportHint(phrase(P.notRequested, l))} ${phrase(P.strangerAccess, l)}`
         ),
     }),
   };
 }
 
+const deletionCancelledPhrases = {
+  subject: {
+    de: "Löschung deines Studios „{studio}“ zurückgenommen",
+    en: "Deletion of your studio “{studio}” has been reversed",
+  },
+  preheader: {
+    de: "Dein Studio „{studio}“ ist wieder aktiv",
+    en: "Your studio “{studio}” is active again",
+  },
+  greetingNamed: { de: "Hallo {name},", en: "Hello {name}," },
+  greetingPlain: { de: "Hallo,", en: "Hello," },
+  heading: { de: "Löschung zurückgenommen", en: "Deletion reversed" },
+  bodyText: {
+    de: "du hast die Löschung deines Studios „{studio}“ zurückgenommen. Dein Studio ist wieder aktiv und voll nutzbar.",
+    en: "you reversed the deletion of your studio “{studio}”. Your studio is active and fully usable again.",
+  },
+  bodyHtml: {
+    de: "{greeting} — du hast die Löschung deines Studios „{studio}“ zurückgenommen. Dein Studio ist wieder aktiv und voll nutzbar.",
+    en: "{greeting} — you reversed the deletion of your studio “{studio}”. Your studio is active and fully usable again.",
+  },
+  billingTitle: {
+    de: "Wichtiger Hinweis zur Abrechnung:",
+    en: "Important note about billing:",
+  },
+  billingText: {
+    de: "Deine Stripe-Subscription wurde bei der Lösch-Anfrage gekündigt und wird NICHT automatisch reaktiviert. Wenn du Lumio weiter nutzen willst, musst du im Studio unter „Billing“ eine neue Subscription starten.",
+    en: "Your Stripe subscription was cancelled when the deletion was requested and will NOT be reactivated automatically. If you want to keep using Lumio, you have to start a new subscription in the studio under “Billing”.",
+  },
+  billingBox: {
+    de: "Wichtig zur Abrechnung: Deine Stripe-Subscription wurde bei der Lösch-Anfrage gekündigt und wird NICHT automatisch reaktiviert. Wenn du Lumio weiter nutzen willst, starte im Studio unter „Billing“ eine neue Subscription.",
+    en: "Important about billing: your Stripe subscription was cancelled when the deletion was requested and will NOT be reactivated automatically. If you want to keep using Lumio, start a new subscription in the studio under “Billing”.",
+  },
+} satisfies Record<string, Phrase>;
+
 export function tmplDeletionCancelled(opts: {
   displayName: string | null;
   studioName: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
-  const greeting = opts.displayName ? `Hallo ${opts.displayName},` : "Hallo,";
+  const l = opts.locale ?? instanceMailLocale();
+  const P = deletionCancelledPhrases;
+  const greeting = opts.displayName
+    ? phrase(P.greetingNamed, l, { name: opts.displayName })
+    : phrase(P.greetingPlain, l);
+  const vars = { studio: opts.studioName };
   return {
-    subject: `Löschung deines Studios „${opts.studioName}" zurückgenommen`,
+    subject: phrase(P.subject, l, vars),
     text:
       `${greeting}\n\n` +
-      `du hast die Löschung deines Studios „${opts.studioName}" ` +
-      `zurückgenommen. Dein Studio ist wieder aktiv und voll nutzbar.\n\n` +
-      `Wichtiger Hinweis zur Abrechnung:\n` +
-      `Deine Stripe-Subscription wurde bei der Lösch-Anfrage gekündigt ` +
-      `und wird NICHT automatisch reaktiviert. Wenn du Lumio weiter ` +
-      `nutzen willst, musst du im Studio unter „Billing" eine neue ` +
-      `Subscription starten.\n\n` +
-      `— Lumio`,
+      `${phrase(P.bodyText, l, vars)}\n\n` +
+      `${phrase(P.billingTitle, l)}\n` +
+      `${phrase(P.billingText, l)}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `Dein Studio „${opts.studioName}" ist wieder aktiv`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Löschung zurückgenommen`) +
+        mailHeading(phrase(P.heading, l)) +
         mailParagraph(
-          `${greeting.replace(",", "")} — du hast die Löschung deines Studios „${opts.studioName}" zurückgenommen. Dein Studio ist wieder aktiv und voll nutzbar.`
+          phrase(P.bodyHtml, l, {
+            ...vars,
+            greeting: greeting.replace(",", ""),
+          })
         ) +
-        mailNoticeBox(
-          `Wichtig zur Abrechnung: Deine Stripe-Subscription wurde bei der Lösch-Anfrage gekündigt und wird NICHT automatisch reaktiviert. Wenn du Lumio weiter nutzen willst, starte im Studio unter „Billing" eine neue Subscription.`
-        ),
+        mailNoticeBox(phrase(P.billingBox, l)),
     }),
   };
 }
@@ -1322,6 +1430,32 @@ export function tmplSuperNewTenant(opts: {
   };
 }
 
+/** Empfaenger: Super-Admins -> Sprache der Instanz. */
+const superDigestPhrases = {
+  subject: {
+    de: "Lumio Report {date} — {n} neue Tenant(s)",
+    en: "Lumio report {date} — {n} new tenant(s)",
+  },
+  preheader: {
+    de: "{n} neue Tenants · {gib} GB gesamt",
+    en: "{n} new tenants · {gib} GB total",
+  },
+  titleText: { de: "Lumio Täglicher Report — {date}", en: "Lumio daily report — {date}" },
+  heading: { de: "Täglicher Report — {date}", en: "Daily report — {date}" },
+  newTenants: { de: "Neue Tenants (24h): {n}", en: "New tenants (24h): {n}" },
+  noNewTenants: {
+    de: "Keine neuen Tenants in den letzten 24 Stunden.",
+    en: "No new tenants in the last 24 hours.",
+  },
+  activeTenants: { de: "Aktive Tenants: {n}", en: "Active tenants: {n}" },
+  totalUsers: { de: "User gesamt: {n}", en: "Users total: {n}" },
+  totalStorage: { de: "Speicher gesamt: {n} GB", en: "Storage total: {n} GB" },
+  topStorage: { de: "Top-Speicher:", en: "Top storage:" },
+  nearLimit: { de: "Nahe am Limit (>=90%): {n}", en: "Near the limit (>=90%): {n}" },
+  superAdmin: { de: "Super-Admin", en: "Super admin" },
+  button: { de: "Super-Admin öffnen", en: "Open super admin" },
+} satisfies Record<string, Phrase>;
+
 export function tmplSuperDigest(opts: {
   dateLabel: string;
   newTenants: Array<{ name: string; plan: string }>;
@@ -1331,59 +1465,62 @@ export function tmplSuperDigest(opts: {
   topStorage: Array<{ name: string; usedGib: number; percent: number }>;
   nearLimit: Array<{ name: string; percent: number }>;
   superUrl: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = superDigestPhrases;
   const newCount = opts.newTenants.length;
   const newLines = opts.newTenants.map((t) => `${t.name} (${t.plan})`);
   const topLines = opts.topStorage.map(
     (t) => `${t.name}: ${t.usedGib} GB (${t.percent}%)`
   );
   const nearLines = opts.nearLimit.map((t) => `${t.name}: ${t.percent}%`);
+  const stats = [
+    phrase(P.activeTenants, l, { n: opts.activeTenants }),
+    phrase(P.totalUsers, l, { n: opts.totalUsers }),
+    phrase(P.totalStorage, l, { n: opts.totalStorageGib }),
+  ];
 
   const textParts = [
-    `Lumio Täglicher Report — ${opts.dateLabel}`,
+    phrase(P.titleText, l, { date: opts.dateLabel }),
     ``,
-    `Neue Tenants (24h): ${newCount}`,
-    ...newLines.map((l) => `  - ${l}`),
+    phrase(P.newTenants, l, { n: newCount }),
+    ...newLines.map((x) => `  - ${x}`),
     ``,
-    `Aktive Tenants: ${opts.activeTenants}`,
-    `User gesamt: ${opts.totalUsers}`,
-    `Speicher gesamt: ${opts.totalStorageGib} GB`,
+    ...stats,
     ``,
-    `Top-Speicher:`,
-    ...topLines.map((l) => `  - ${l}`),
+    phrase(P.topStorage, l),
+    ...topLines.map((x) => `  - ${x}`),
     ``,
-    `Nahe am Limit (>=90%): ${opts.nearLimit.length}`,
-    ...nearLines.map((l) => `  - ${l}`),
+    phrase(P.nearLimit, l, { n: opts.nearLimit.length }),
+    ...nearLines.map((x) => `  - ${x}`),
     ``,
-    `Super-Admin: ${opts.superUrl}`,
-    `— Lumio`,
+    `${phrase(P.superAdmin, l)}: ${opts.superUrl}`,
+    phrase(common.signature, l),
   ];
 
   let body =
-    mailHeading(`Täglicher Report — ${opts.dateLabel}`) +
-    mailHeading2sub(`Neue Tenants (24h): ${newCount}`);
+    mailHeading(phrase(P.heading, l, { date: opts.dateLabel })) +
+    mailHeading2sub(phrase(P.newTenants, l, { n: newCount }));
   body +=
-    newCount > 0
-      ? mailBullets(newLines)
-      : mailParagraph("Keine neuen Tenants in den letzten 24 Stunden.");
+    newCount > 0 ? mailBullets(newLines) : mailParagraph(phrase(P.noNewTenants, l));
   body += mailDivider();
-  body += mailBullets([
-    `Aktive Tenants: ${opts.activeTenants}`,
-    `User gesamt: ${opts.totalUsers}`,
-    `Speicher gesamt: ${opts.totalStorageGib} GB`,
-  ]);
+  body += mailBullets(stats);
   if (opts.topStorage.length > 0) {
-    body += mailParagraph("Top-Speicher:") + mailBullets(topLines);
+    body += mailParagraph(phrase(P.topStorage, l)) + mailBullets(topLines);
   }
-  body += mailParagraph(`Nahe am Limit (>=90%): ${opts.nearLimit.length}`);
+  body += mailParagraph(phrase(P.nearLimit, l, { n: opts.nearLimit.length }));
   if (opts.nearLimit.length > 0) body += mailBullets(nearLines);
-  body += mailButton(opts.superUrl, "Super-Admin öffnen");
+  body += mailButton(opts.superUrl, phrase(P.button, l));
 
   return {
-    subject: `Lumio Report ${opts.dateLabel} — ${newCount} neue Tenant(s)`,
+    subject: phrase(P.subject, l, { date: opts.dateLabel, n: newCount }),
     text: textParts.join("\n"),
     html: renderMailLayout({
-      preheader: `${newCount} neue Tenants · ${opts.totalStorageGib} GB gesamt`,
+      preheader: phrase(P.preheader, l, {
+        n: newCount,
+        gib: opts.totalStorageGib,
+      }),
       bodyHtml: body,
     }),
   };

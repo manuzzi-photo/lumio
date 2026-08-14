@@ -514,6 +514,7 @@ export async function sendSuperAdminDigest(): Promise<void> {
     });
 
     const tpl = tmplSuperDigest({
+      locale: instanceMailLocale(),
       dateLabel,
       newTenants,
       activeTenants,

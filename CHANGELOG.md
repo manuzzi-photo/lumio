@@ -31,12 +31,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ### Added
 
+- Die Mails zur Studio-Löschung (Anfrage bestätigt, Löschung zurückgenommen) und der tägliche Bericht an die Plattform-Verwaltung sind übersetzbar. Bei der Löschung sind die englischen Fassungen bewusst wörtlich gehalten: gleiche Fristen, gleiche Verbindlichkeit.
 - Die Lifecycle-Mails rund um den Testzeitraum (Erinnerung, Stornierung, Rückhol-Mail) sind übersetzbar und folgen der Sprache der angeschriebenen Person.
 - Auch die Willkommens-Mail, die Support-Bestätigung, die Print-Bestellmeldung ans Studio und die Benachrichtigung an die Plattform-Verwaltung sind jetzt übersetzbar.
 - Weitere Benachrichtigungen ans Studio-Team sind jetzt übersetzbar und folgen der Sprache der jeweiligen Person: Auswahl abgeschlossen, Speicherwarnung, Galerie läuft ab, neue Uploads, neues Team-Mitglied, Konto-Einrichtung, Passwort zurücksetzen und der E-Mail-Wechsel. Bekommen mehrere Personen dieselbe Benachrichtigung, erhält jede sie in ihrer eigenen Sprache.
 
 **🇬🇧 English**
 
+- The studio deletion emails (request confirmed, deletion reversed) and the daily platform administration report are translatable. For the deletion mails the English wording is deliberately literal: same deadlines, same commitments.
 - The trial lifecycle emails (reminder, cancellation, win-back) are translatable and follow the language of the person being written to.
 - The welcome email, the support confirmation, the print order notice to the studio and the platform administration notice are now translatable too.
 - More notifications to the studio team are now translatable and follow each person's own language: selection finished, storage warning, gallery expiring, new uploads, new team member, account setup, password reset and the email change flow. Where several people receive the same notification, each gets it in their own language.

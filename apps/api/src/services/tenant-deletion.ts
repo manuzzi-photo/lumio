@@ -52,6 +52,7 @@ import {
   tmplDeletionExecuted,
 } from "./mail.js";
 import { config } from "../config.js";
+import { normalizeLocale } from "./mail-i18n.js";
 
 /** Karenzphase zwischen Anfrage und Hard-Delete in Tagen.
  *  Vorgegeben durch die DSGVO-Marketing-Page-FAQ — wenn das hier
@@ -368,19 +369,21 @@ async function notifyAllOwners(
   try {
     const owners = await prisma.user.findMany({
       where: { tenantId, role: "owner" },
-      select: { email: true, name: true },
+      select: { email: true, name: true, locale: true },
     });
 
     for (const owner of owners) {
       const tpl =
         kind === "requested"
           ? tmplDeletionRequested({
+              locale: normalizeLocale(owner.locale),
               displayName: owner.name,
               studioName: opts.studioName,
               scheduledFor: opts.scheduledFor!,
               cancelUrl: `${config.PUBLIC_URL}/studio/settings/account`,
             })
           : tmplDeletionCancelled({
+              locale: normalizeLocale(owner.locale),
               displayName: owner.name,
               studioName: opts.studioName,
             });
