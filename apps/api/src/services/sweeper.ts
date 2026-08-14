@@ -27,7 +27,7 @@
  */
 import { enqueue, Queues } from "./queue.js";
 import { prisma } from "../db.js";
-import { sendMail } from "./mail.js";
+import { sendMail, tmplPreArchiveNotice} from "./mail.js";
 import { logEvent } from "./audit.js";
 import { writeMrrSnapshot } from "./mrr.js";
 import { processBroadcast } from "./broadcast.js";
@@ -299,18 +299,13 @@ async function sendPreArchiveReminders() {
     include: {
       users: {
         where: { role: "owner", status: "active" },
-        select: { id: true, email: true, name: true },
+        select: { id: true, email: true, name: true, locale: true },
       },
     },
   });
 
   for (const t of tenants) {
     if (!t.archiveScheduledAt) continue;
-    const formattedDate = t.archiveScheduledAt.toLocaleDateString("de-DE", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
     const daysLeft = Math.ceil(
       (t.archiveScheduledAt.getTime() - Date.now()) / ONE_DAY_MS
     );
@@ -319,21 +314,14 @@ async function sendPreArchiveReminders() {
       try {
         await sendMail({
           to: owner.email,
-          subject: `Erinnerung: Ihr Lumio-Konto „${t.name}" wird in ${daysLeft} Tagen archiviert`,
-          text:
-            `Hallo ${owner.name ?? owner.email},\n\n` +
-            `dies ist eine Erinnerung: Ihr Lumio-Konto „${t.name}" wird ` +
-            `am ${formattedDate} archiviert (in ${daysLeft} Tagen).\n\n` +
-            `Falls Sie Ihre Daten noch herunterladen möchten, loggen Sie ` +
-            `sich bitte zeitnah ein und nutzen Sie die Sidebar → ` +
-            `"Datenexport". Pro Galerie wird ein ZIP-Archiv mit Originalen ` +
-            `und Metadaten erstellt.\n\n` +
-            `Nach der Archivierung können Sie sich nicht mehr einloggen. ` +
-            `Ein direkter Download-Link wird Ihnen dann automatisch per ` +
-            `Mail zugeschickt (30 Tage gültig), aber der Self-Service-Export ` +
-            `im Studio ist ab dann nicht mehr verfügbar.\n\n` +
-            `Falls die Archivierung nicht wie geplant erfolgen soll, ` +
-            `antworten Sie bitte zeitnah auf diese Mail.\n\n— Lumio`,
+          ...tmplPreArchiveNotice({
+            locale: normalizeLocale(owner.locale),
+            displayName: owner.name,
+            recipientEmail: owner.email,
+            studioName: t.name,
+            scheduledFor: t.archiveScheduledAt,
+            daysLeft,
+          }),
         });
         mailsSent++;
       } catch (err) {

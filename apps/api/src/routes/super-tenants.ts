@@ -42,7 +42,13 @@ import { config } from "../config.js";
 import { hashPassword, createSession } from "../services/auth.js";
 import { createSetupToken, buildSetupUrl, buildResetUrl } from "../services/setupToken.js";
 import { logEvent } from "../services/audit.js";
-import { sendMail, tmplOwnerSetup, tmplPasswordReset } from "../services/mail.js";
+import {
+  sendMail,
+  tmplOwnerSetup,
+  tmplPasswordReset,
+  tmplPreArchiveNotice,
+  tmplExportReady,
+} from "../services/mail.js";
 import { renderAdminMessageHtml } from "../services/broadcast.js";
 import { cancelSubscriptionImmediately, extendTrial, deleteStripeCustomer } from "../services/stripe-service.js";
 import { enqueue, Queues } from "../services/queue.js";
@@ -62,7 +68,7 @@ import {
   checkBackups,
 } from "../services/system-health.js";
 import { logger } from "../logger.js";
-import { userMailLocale } from "../services/mail-i18n.js";
+import { userMailLocale, normalizeLocale} from "../services/mail-i18n.js";
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 
@@ -706,7 +712,7 @@ export async function registerSuperTenantRoutes(app: FastifyInstance) {
         include: {
           users: {
             where: { role: "owner", status: "active" },
-            select: { id: true, email: true, name: true },
+            select: { id: true, email: true, name: true, locale: true },
           },
         },
       });
@@ -749,33 +755,18 @@ export async function registerSuperTenantRoutes(app: FastifyInstance) {
       // Banner funktioniert. Der Sweeper wuerde dann nochmal versuchen
       // — aber nur fuer den 7-Tage-Reminder, nicht fuer die Initial-
       // Mail. Wir loggen also Mail-Failures hier explizit.
-      const formattedDate = scheduledAt.toLocaleDateString("de-DE", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
       let mailsSent = 0;
       for (const owner of t.users) {
         try {
           await sendMail({
             to: owner.email,
-            subject: `Wichtig: Ihr Lumio-Konto „${t.name}" wird am ${formattedDate} archiviert`,
-            text:
-              `Hallo ${owner.name ?? owner.email},\n\n` +
-              `wir möchten Sie informieren, dass Ihr Lumio-Konto ` +
-              `„${t.name}" am ${formattedDate} archiviert wird.\n\n` +
-              `Was bedeutet das?\n` +
-              `  • Ab diesem Datum können Sie sich nicht mehr einloggen\n` +
-              `  • Ihre Daten bleiben 30 Tage in Karenz erhalten\n` +
-              `  • Danach werden alle Daten endgültig gelöscht\n\n` +
-              `Was sollten Sie jetzt tun?\n` +
-              `Loggen Sie sich ein und exportieren Sie Ihre Daten über die ` +
-              `Sidebar → "Datenexport". Pro Galerie wird ein ZIP-Archiv mit ` +
-              `Originaldateien und Metadaten erstellt.\n\n` +
-              `Falls Sie das Archivierungsdatum für ein Missverständnis halten ` +
-              `oder Fragen haben, antworten Sie bitte zeitnah auf diese Mail.\n\n` +
-              `Wir senden Ihnen 7 Tage vor dem Stichtag noch eine Erinnerung.\n\n` +
-              `— Lumio`,
+            ...tmplPreArchiveNotice({
+              locale: normalizeLocale(owner.locale),
+              displayName: owner.name,
+              recipientEmail: owner.email,
+              studioName: t.name,
+              scheduledFor: scheduledAt,
+            }),
           });
           mailsSent++;
         } catch (err) {
@@ -2438,7 +2429,7 @@ export async function registerSuperTenantRoutes(app: FastifyInstance) {
         include: {
           users: {
             where: { role: "owner", status: "active" },
-            select: { id: true, email: true, name: true },
+            select: { id: true, email: true, name: true, locale: true },
           },
         },
       });
@@ -2466,20 +2457,13 @@ export async function registerSuperTenantRoutes(app: FastifyInstance) {
             try {
               await sendMail({
                 to: owner.email,
-                subject: `Ihr Datenexport von Lumio ist bereit – ${t.name}`,
-                text:
-                  `Hallo ${owner.name ?? owner.email},\n\n` +
-                  `Ihr Lumio-Konto „${t.name}" wurde archiviert und Ihre Daten ` +
-                  `werden in Kürze endgültig gelöscht. Sie können Ihre Galerien ` +
-                  `(Originaldateien + Metadaten) als ZIP-Archiv unter folgendem ` +
-                  `Link herunterladen — der Link ist 30 Tage gültig:\n\n` +
-                  `${link}\n\n` +
-                  `Der Export wird gerade erstellt. Pro Galerie dauert das ` +
-                  `je nach Größe einige Sekunden bis Minuten. Auf der ` +
-                  `Download-Seite sehen Sie den jeweiligen Status und können ` +
-                  `fertige Galerien direkt herunterladen.\n\n` +
-                  `Falls Sie weitere Fragen haben, antworten Sie auf diese ` +
-                  `Mail.\n\n— Lumio`,
+                ...tmplExportReady({
+                  locale: normalizeLocale(owner.locale),
+                  displayName: owner.name,
+                  recipientEmail: owner.email,
+                  studioName: t.name,
+                  downloadUrl: link,
+                }),
               });
             } catch (err) {
               app.log.warn(

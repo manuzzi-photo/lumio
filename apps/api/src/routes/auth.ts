@@ -32,7 +32,9 @@ import {
   createSetupToken,
   buildResetUrl,
 } from "../services/setupToken.js";
-import { sendMail, tmplPasswordReset } from "../services/mail.js";
+import { sendMail, tmplPasswordReset,
+  tmplImpersonationNotice,
+} from "../services/mail.js";
 import { tenantDisplayName, isTenantOperational } from "../services/tenant.js";
 import {
   createLoginChallenge,
@@ -59,7 +61,7 @@ import { getEffectiveFlags } from "../services/feature-flags.js";
 import { getStripe } from "../services/stripe-client.js";
 import { resolveTenantBranding } from "../services/branding.js";
 import { presignGet } from "../services/storage.js";
-import { userMailLocale } from "../services/mail-i18n.js";
+import { userMailLocale, normalizeLocale} from "../services/mail-i18n.js";
 
 const loginSchema = z.object({
   email: z.string().email().toLowerCase(),
@@ -836,6 +838,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         email: true,
         name: true,
         status: true,
+        locale: true,
         tenant: {
           select: {
             id: true,
@@ -902,17 +905,13 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (payload.superAdminEmail) {
       void sendMail({
         to: user.email,
-        subject: `Support-Zugriff auf dein Studio "${user.tenant.displayName ?? user.tenant.name}"`,
-        text:
-          `Hallo${user.name ? " " + user.name : ""},\n\n` +
-          `ein Mitglied des Lumio-Supports (${payload.superAdminEmail}) hat sich gerade ` +
-          `in dein Studio "${user.tenant.displayName ?? user.tenant.name}" eingeloggt, ` +
-          `um ein Problem zu untersuchen. Der Zugriff ist auf maximal 60 Minuten begrenzt ` +
-          `und wird vollständig im Audit-Log dokumentiert.\n\n` +
-          (payload.reason ? `Grund: ${payload.reason}\n\n` : "") +
-          `Falls du KEINEN Support-Zugriff angefragt hast und das ungewöhnlich ` +
-          `findest, antworte auf diese Mail.\n\n` +
-          `— Lumio`,
+        ...tmplImpersonationNotice({
+          locale: normalizeLocale(user.locale),
+          displayName: user.name,
+          studioName: user.tenant.displayName ?? user.tenant.name,
+          superAdminEmail: payload.superAdminEmail,
+          reason: payload.reason ?? null,
+        }),
       });
     }
 

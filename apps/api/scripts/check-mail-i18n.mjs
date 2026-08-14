@@ -35,9 +35,19 @@ const INLINE_ALLOWED = new Set([
   "src/services/mail.ts",
   "src/services/broadcast.ts",
   "src/routes/broadcasts.ts",
-  // Super admin types the subject and body for a single tenant by hand.
-  "src/routes/super-tenants.ts:contactTenant",
 ]);
+
+/**
+ * Individual sendMail call sites that legitimately carry their own subject,
+ * keyed by "<file>:<line-content-fragment>". Only for mail whose wording a
+ * human types at runtime — translating it would mean translating what the
+ * operator wrote.
+ */
+const INLINE_ALLOWED_SITES = [
+  // Super admin writes a direct message to one user: subject and body come
+  // straight from the request.
+  { file: "src/routes/super-tenants.ts", match: "subject: body.subject" },
+];
 
 /**
  * Locale identifiers are legitimate here: mail-i18n maps our locales onto
@@ -114,6 +124,13 @@ for (const file of files) {
     if (!/subject\s*:/.test(block)) continue;
     if (/tmpl\w+\(|\.\.\.tpl\b/.test(block)) continue;
     if (INLINE_ALLOWED.has(rel)) continue;
+    if (
+      INLINE_ALLOWED_SITES.some(
+        (a) => a.file === rel && block.includes(a.match)
+      )
+    ) {
+      continue;
+    }
     const line = text.slice(0, m.index).split("\n").length;
     inlineMails.push(`${rel}:${line}  builds subject/text inline`);
   }

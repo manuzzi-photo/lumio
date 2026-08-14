@@ -2268,6 +2268,288 @@ const supportConfirmPhrases = {
   team: { de: "— Dein Lumio-Team", en: "— Your Lumio team" },
 } satisfies Record<string, Phrase>;
 
+/**
+ * Transparenz-Mail bei Support-Zugriff (Impersonation).
+ *
+ * Vorher inline in routes/auth.ts gebaut und deshalb in JEDER Sprache
+ * deutsch — ausgerechnet bei einer Mitteilung, die dem Nutzer sagt, dass
+ * jemand in seinem Studio war. Hat ausserdem als einzige Mail keine
+ * HTML-Fassung gehabt; die gibt es jetzt auch.
+ */
+const impersonationNoticePhrases = {
+  subject: {
+    de: 'Support-Zugriff auf dein Studio "{studio}"',
+    en: 'Support access to your studio "{studio}"',
+  },
+  preheader: {
+    de: "Ein Support-Mitglied hat auf „{studio}“ zugegriffen",
+    en: "A support member accessed “{studio}”",
+  },
+  greetingNamed: { de: "Hallo {name},", en: "Hello {name}," },
+  greetingPlain: { de: "Hallo,", en: "Hello," },
+  heading: { de: "Support-Zugriff auf dein Studio", en: "Support access to your studio" },
+  body: {
+    de: 'ein Mitglied des Lumio-Supports ({admin}) hat sich gerade in dein Studio "{studio}" eingeloggt, um ein Problem zu untersuchen. Der Zugriff ist auf maximal 60 Minuten begrenzt und wird vollständig im Audit-Log dokumentiert.',
+    en: 'a member of Lumio support ({admin}) has just signed in to your studio "{studio}" to investigate an issue. The access is limited to 60 minutes at most and is fully recorded in the audit log.',
+  },
+  reason: { de: "Grund: {reason}", en: "Reason: {reason}" },
+  notRequested: {
+    de: "Falls du KEINEN Support-Zugriff angefragt hast und das ungewöhnlich findest, antworte auf diese Mail.",
+    en: "If you did NOT request support access and this seems unusual, reply to this email.",
+  },
+} satisfies Record<string, Phrase>;
+
+export function tmplImpersonationNotice(opts: {
+  displayName: string | null;
+  studioName: string;
+  superAdminEmail: string;
+  reason: string | null;
+  locale?: MailLocale;
+}): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = impersonationNoticePhrases;
+  const greeting = opts.displayName
+    ? phrase(P.greetingNamed, l, { name: opts.displayName })
+    : phrase(P.greetingPlain, l);
+  const vars = { studio: opts.studioName, admin: opts.superAdminEmail };
+  return {
+    subject: phrase(P.subject, l, vars),
+    text:
+      `${greeting}\n\n` +
+      `${phrase(P.body, l, vars)}\n\n` +
+      (opts.reason
+        ? `${phrase(P.reason, l, { reason: opts.reason })}\n\n`
+        : "") +
+      `${phrase(P.notRequested, l)}\n\n` +
+      `${phrase(common.signature, l)}`,
+    html: renderMailLayout({
+      preheader: phrase(P.preheader, l, vars),
+      bodyHtml:
+        mailHeading(phrase(P.heading, l)) +
+        mailParagraph(`${greeting} ${phrase(P.body, l, vars)}`) +
+        (opts.reason
+          ? mailParagraph(phrase(P.reason, l, { reason: opts.reason }))
+          : "") +
+        mailNoticeBox(phrase(P.notRequested, l)),
+    }),
+  };
+}
+
+/**
+ * Vorab-Warnung und Erinnerung vor der Archivierung eines Tenants.
+ *
+ * Beide waren inline in routes/super-tenants.ts bzw. services/sweeper.ts
+ * gebaut. Auffaellig: sie SIEZEN, waehrend jedes andere Template duzt. Das
+ * ist hier bewusst uebernommen statt stillschweigend angeglichen — eine
+ * Anrede-Aenderung gehoert nicht in eine Uebersetzungsaufgabe. Wenn das
+ * vereinheitlicht werden soll, dann sichtbar und in beiden Sprachen.
+ */
+const preArchivePhrases = {
+  noticeSubject: {
+    de: "Wichtig: Ihr Lumio-Konto „{studio}“ wird am {date} archiviert",
+    en: "Important: your Lumio account “{studio}” will be archived on {date}",
+  },
+  reminderSubject: {
+    de: "Erinnerung: Ihr Lumio-Konto „{studio}“ wird in {days} Tagen archiviert",
+    en: "Reminder: your Lumio account “{studio}” will be archived in {days} days",
+  },
+  noticePreheader: {
+    de: "Archivierung am {date} — bitte Daten vorher exportieren",
+    en: "Archiving on {date} — please export your data beforehand",
+  },
+  reminderPreheader: {
+    de: "Noch {days} Tage bis zur Archivierung",
+    en: "{days} days until archiving",
+  },
+  greeting: { de: "Hallo {name},", en: "Hello {name}," },
+  noticeHeading: { de: "Archivierung angekündigt", en: "Archiving announced" },
+  reminderHeading: { de: "Erinnerung: Archivierung", en: "Reminder: archiving" },
+  noticeBody: {
+    de: "wir möchten Sie informieren, dass Ihr Lumio-Konto „{studio}“ am {date} archiviert wird.",
+    en: "we would like to inform you that your Lumio account “{studio}” will be archived on {date}.",
+  },
+  reminderBody: {
+    de: "dies ist eine Erinnerung: Ihr Lumio-Konto „{studio}“ wird am {date} archiviert (in {days} Tagen).",
+    en: "this is a reminder: your Lumio account “{studio}” will be archived on {date} (in {days} days).",
+  },
+  meansHeading: { de: "Was bedeutet das?", en: "What does that mean?" },
+  means1: {
+    de: "Ab diesem Datum können Sie sich nicht mehr einloggen",
+    en: "From that date on you can no longer sign in",
+  },
+  means2: {
+    de: "Ihre Daten bleiben 30 Tage in Karenz erhalten",
+    en: "Your data is retained for a 30-day grace period",
+  },
+  means3: {
+    de: "Danach werden alle Daten endgültig gelöscht",
+    en: "After that all data is permanently deleted",
+  },
+  todoHeading: { de: "Was sollten Sie jetzt tun?", en: "What should you do now?" },
+  todoBody: {
+    de: "Loggen Sie sich ein und exportieren Sie Ihre Daten über die Sidebar → „Datenexport“. Pro Galerie wird ein ZIP-Archiv mit Originaldateien und Metadaten erstellt.",
+    en: "Sign in and export your data via the sidebar → “Data export”. One ZIP archive with original files and metadata is created per gallery.",
+  },
+  reminderTodo: {
+    de: "Falls Sie Ihre Daten noch herunterladen möchten, loggen Sie sich bitte zeitnah ein und nutzen Sie die Sidebar → „Datenexport“. Pro Galerie wird ein ZIP-Archiv mit Originalen und Metadaten erstellt.",
+    en: "If you still want to download your data, please sign in soon and use the sidebar → “Data export”. One ZIP archive with originals and metadata is created per gallery.",
+  },
+  afterArchive: {
+    de: "Nach der Archivierung können Sie sich nicht mehr einloggen. Ein direkter Download-Link wird Ihnen dann automatisch per Mail zugeschickt (30 Tage gültig), aber der Self-Service-Export im Studio ist ab dann nicht mehr verfügbar.",
+    en: "After archiving you can no longer sign in. A direct download link is then emailed to you automatically (valid for 30 days), but the self-service export in the studio is no longer available from that point.",
+  },
+  questions: {
+    de: "Falls Sie das Archivierungsdatum für ein Missverständnis halten oder Fragen haben, antworten Sie bitte zeitnah auf diese Mail.",
+    en: "If you believe the archiving date is a misunderstanding, or you have questions, please reply to this email promptly.",
+  },
+  reminderQuestions: {
+    de: "Falls die Archivierung nicht wie geplant erfolgen soll, antworten Sie bitte zeitnah auf diese Mail.",
+    en: "If the archiving should not go ahead as planned, please reply to this email promptly.",
+  },
+  reminderAnnounce: {
+    de: "Wir senden Ihnen 7 Tage vor dem Stichtag noch eine Erinnerung.",
+    en: "We will send you another reminder 7 days before the date.",
+  },
+} satisfies Record<string, Phrase>;
+
+export function tmplPreArchiveNotice(opts: {
+  displayName: string | null;
+  recipientEmail: string;
+  studioName: string;
+  scheduledFor: Date;
+  /** Ohne Wert die Erst-Ankuendigung, mit Wert die 7-Tage-Erinnerung. */
+  daysLeft?: number;
+  locale?: MailLocale;
+}): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = preArchivePhrases;
+  const isReminder = opts.daysLeft !== undefined;
+  const dateStr = opts.scheduledFor.toLocaleDateString(
+    l === "de" ? "de-DE" : "en-GB",
+    { year: "numeric", month: "long", day: "numeric" }
+  );
+  const vars = {
+    studio: opts.studioName,
+    date: dateStr,
+    days: opts.daysLeft ?? 0,
+  };
+  const greeting = phrase(P.greeting, l, {
+    name: opts.displayName ?? opts.recipientEmail,
+  });
+  const means = [phrase(P.means1, l), phrase(P.means2, l), phrase(P.means3, l)];
+
+  if (isReminder) {
+    return {
+      subject: phrase(P.reminderSubject, l, vars),
+      text:
+        `${greeting}\n\n` +
+        `${phrase(P.reminderBody, l, vars)}\n\n` +
+        `${phrase(P.reminderTodo, l)}\n\n` +
+        `${phrase(P.afterArchive, l)}\n\n` +
+        `${phrase(P.reminderQuestions, l)}\n\n` +
+        `${phrase(common.signature, l)}`,
+      html: renderMailLayout({
+        preheader: phrase(P.reminderPreheader, l, vars),
+        bodyHtml:
+          mailHeading(phrase(P.reminderHeading, l)) +
+          mailParagraph(`${greeting} ${phrase(P.reminderBody, l, vars)}`) +
+          mailParagraph(phrase(P.reminderTodo, l)) +
+          mailNoticeBox(phrase(P.afterArchive, l)) +
+          mailParagraph(phrase(P.reminderQuestions, l)),
+      }),
+    };
+  }
+
+  return {
+    subject: phrase(P.noticeSubject, l, vars),
+    text:
+      `${greeting}\n\n` +
+      `${phrase(P.noticeBody, l, vars)}\n\n` +
+      `${phrase(P.meansHeading, l)}\n` +
+      means.map((x) => `  • ${x}`).join("\n") +
+      `\n\n${phrase(P.todoHeading, l)}\n${phrase(P.todoBody, l)}\n\n` +
+      `${phrase(P.questions, l)}\n\n` +
+      `${phrase(P.reminderAnnounce, l)}\n\n` +
+      `${phrase(common.signature, l)}`,
+    html: renderMailLayout({
+      preheader: phrase(P.noticePreheader, l, vars),
+      bodyHtml:
+        mailHeading(phrase(P.noticeHeading, l)) +
+        mailParagraph(`${greeting} ${phrase(P.noticeBody, l, vars)}`) +
+        mailHeading(phrase(P.meansHeading, l)) +
+        mailBullets(means) +
+        mailHeading(phrase(P.todoHeading, l)) +
+        mailParagraph(phrase(P.todoBody, l)) +
+        mailParagraph(phrase(P.questions, l)) +
+        mailNoticeBox(phrase(P.reminderAnnounce, l)),
+    }),
+  };
+}
+
+/**
+ * Datenexport-Link fuer bereits archivierte Tenants. Siezt wie die
+ * Pre-Archive-Mails — siehe Hinweis dort.
+ */
+const exportReadyPhrases = {
+  subject: {
+    de: "Ihr Datenexport von Lumio ist bereit – {studio}",
+    en: "Your Lumio data export is ready – {studio}",
+  },
+  preheader: {
+    de: "Download-Link 30 Tage gültig",
+    en: "Download link valid for 30 days",
+  },
+  greeting: { de: "Hallo {name},", en: "Hello {name}," },
+  heading: { de: "Datenexport bereit", en: "Data export ready" },
+  body: {
+    de: "Ihr Lumio-Konto „{studio}“ wurde archiviert und Ihre Daten werden in Kürze endgültig gelöscht. Sie können Ihre Galerien (Originaldateien + Metadaten) als ZIP-Archiv unter folgendem Link herunterladen — der Link ist 30 Tage gültig:",
+    en: "Your Lumio account “{studio}” has been archived and your data will be permanently deleted shortly. You can download your galleries (original files + metadata) as ZIP archives from the link below — the link is valid for 30 days:",
+  },
+  inProgress: {
+    de: "Der Export wird gerade erstellt. Pro Galerie dauert das je nach Größe einige Sekunden bis Minuten. Auf der Download-Seite sehen Sie den jeweiligen Status und können fertige Galerien direkt herunterladen.",
+    en: "The export is being generated right now. Depending on size it takes seconds to minutes per gallery. The download page shows the status of each and lets you download finished galleries straight away.",
+  },
+  questions: {
+    de: "Falls Sie weitere Fragen haben, antworten Sie auf diese Mail.",
+    en: "If you have further questions, reply to this email.",
+  },
+  button: { de: "Export herunterladen", en: "Download export" },
+} satisfies Record<string, Phrase>;
+
+export function tmplExportReady(opts: {
+  displayName: string | null;
+  recipientEmail: string;
+  studioName: string;
+  downloadUrl: string;
+  locale?: MailLocale;
+}): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = exportReadyPhrases;
+  const vars = { studio: opts.studioName };
+  const greeting = phrase(P.greeting, l, {
+    name: opts.displayName ?? opts.recipientEmail,
+  });
+  return {
+    subject: phrase(P.subject, l, vars),
+    text:
+      `${greeting}\n\n` +
+      `${phrase(P.body, l, vars)}\n\n` +
+      `${opts.downloadUrl}\n\n` +
+      `${phrase(P.inProgress, l)}\n\n` +
+      `${phrase(P.questions, l)}\n\n` +
+      `${phrase(common.signature, l)}`,
+    html: renderMailLayout({
+      preheader: phrase(P.preheader, l),
+      bodyHtml:
+        mailHeading(phrase(P.heading, l)) +
+        mailParagraph(`${greeting} ${phrase(P.body, l, vars)}`) +
+        mailButton(opts.downloadUrl, phrase(P.button, l)) +
+        mailParagraph(phrase(P.inProgress, l)) +
+        mailParagraph(phrase(P.questions, l)),
+    }),
+  };
+}
+
 export function tmplSupportRequestConfirmation(opts: {
   message: string;
   name: string | null;
