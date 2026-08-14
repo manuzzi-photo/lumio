@@ -18,7 +18,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
-import { useFormat } from "@/lib/i18n";
+import { useFormat, useT } from "@/lib/i18n";
 
 type SystemResponse = Awaited<ReturnType<typeof api.superSystemStatus>>;
 
@@ -31,6 +31,7 @@ export default function SuperSystemPage() {
 }
 
 function SystemContent() {
+  const t = useT();
   const [data, setData] = useState<SystemResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,10 +56,9 @@ function SystemContent() {
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
-      <h1 className="text-2xl font-semibold mb-1">System</h1>
+      <h1 className="text-2xl font-semibold mb-1">{t("super.systemTitle")}</h1>
       <p className="text-ui-sm text-ink-tertiary mb-6">
-        Live-Status der Infrastruktur, Update-Check und Backup-Status.
-        Aktualisiert sich alle 10 Sekunden.
+        {t("super.systemSubtitle")}
       </p>
 
       {error && (
@@ -68,7 +68,7 @@ function SystemContent() {
       )}
 
       {!data ? (
-        <div className="text-sm text-ink-tertiary">Lädt…</div>
+        <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
       ) : (
         <div className="space-y-6">
           <SystemHealthCard health={data.health} />
@@ -91,6 +91,7 @@ function SystemHealthCard({
 }: {
   health: SystemResponse["health"];
 }) {
+  const t = useT();
   const services = [
     { key: "db", label: "PostgreSQL", check: health.db },
     { key: "redis", label: "Redis", check: health.redis },
@@ -100,7 +101,7 @@ function SystemHealthCard({
 
   return (
     <section>
-      <h2 className="text-lg font-semibold mb-3">System-Health</h2>
+      <h2 className="text-lg font-semibold mb-3">{t("super.systemHealth")}</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {services.map((s) => (
           <HealthBadge key={s.key} label={s.label} check={s.check} />
@@ -110,10 +111,10 @@ function SystemHealthCard({
       <div className="rounded-md border border-line-subtle bg-surface-raised p-4 space-y-3">
         <div>
           <div className="text-ui-xs uppercase tracking-[0.12em] text-ink-tertiary mb-2">
-            Queue-Lengths
+            {t("super.systemQueueLengths")}
           </div>
           {Object.keys(health.queues).length === 0 ? (
-            <div className="text-sm text-ink-tertiary italic">Keine Daten.</div>
+            <div className="text-sm text-ink-tertiary italic">{t("super.systemNoData")}</div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-sm font-mono">
               {Object.entries(health.queues).map(([name, len]) => (
@@ -140,7 +141,7 @@ function SystemHealthCard({
 
         {health.diskFreeMib !== null && (
           <div className="flex justify-between text-sm pt-2 border-t border-line-subtle">
-            <span className="text-ink-tertiary">Disk frei (Container)</span>
+            <span className="text-ink-tertiary">{t("super.systemDiskFree")}</span>
             <span className="font-mono">
               {formatMib(health.diskFreeMib)}
             </span>
@@ -202,11 +203,12 @@ function UpdateCheckCard({
 }: {
   update: SystemResponse["update"];
 }) {
+  const t = useT();
   const fmt = useFormat();
   if (update.disabled) {
     return (
       <section>
-        <h2 className="text-lg font-semibold mb-3">Update-Check</h2>
+        <h2 className="text-lg font-semibold mb-3">{t("super.systemUpdateCheck")}</h2>
         <div className="rounded-md border border-line-subtle bg-surface-raised p-4">
           <div className="text-sm text-ink-tertiary">{update.disabled}</div>
           <div className="text-xs text-ink-tertiary mt-2">
@@ -220,7 +222,7 @@ function UpdateCheckCard({
 
   return (
     <section>
-      <h2 className="text-lg font-semibold mb-3">Update-Check</h2>
+      <h2 className="text-lg font-semibold mb-3">{t("super.systemUpdateCheck")}</h2>
       <div
         className={
           "rounded-md border p-4 " +
@@ -276,7 +278,7 @@ function UpdateCheckCard({
         {update.releaseNotes && update.updateAvailable && (
           <details className="mt-3">
             <summary className="cursor-pointer text-sm text-ink-secondary">
-              Release-Notes anzeigen
+              {t("super.systemReleaseNotes")}
             </summary>
             <pre className="mt-2 p-3 bg-surface-sunken rounded text-xs font-mono whitespace-pre-wrap overflow-x-auto">
               {update.releaseNotes}
@@ -317,6 +319,7 @@ function BackupStatusCard({
 }: {
   backup: SystemResponse["backup"][number];
 }) {
+  const t = useT();
   const fmt = useFormat();
   if (!backup.configured) {
     return (
@@ -326,7 +329,7 @@ function BackupStatusCard({
           <div className="text-sm text-ink-secondary mb-2">{backup.message}</div>
           <details className="text-xs">
             <summary className="cursor-pointer text-ink-tertiary">
-              So konfigurierst du es
+              {t("super.systemHowToConfigure")}
             </summary>
             <div className="mt-2 space-y-2">
               <p>
@@ -376,7 +379,7 @@ echo -e "$(date -u +%FT%TZ)\\n$(stat -c%s "$DUMP_PATH")" \\
         <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
           <div>
             <div className="text-ui-xs uppercase tracking-[0.12em] text-ink-tertiary mb-1">
-              Letzter erfolgreicher Backup
+              {t("super.systemLastGoodBackup")}
             </div>
             <div className="text-lg">
               {backup.lastBackupAt

@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
-import { useFormat } from "@/lib/i18n";
+import { useFormat, useT } from "@/lib/i18n";
 
 type SystemResponse = Awaited<ReturnType<typeof api.superSystemStatus>>;
 type BackupStatus = SystemResponse["backup"][number];
@@ -37,6 +37,7 @@ export default function SuperBackupPage() {
 }
 
 function BackupContent() {
+  const t = useT();
   const [system, setSystem] = useState<SystemResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,10 +61,9 @@ function BackupContent() {
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
-      <h1 className="text-2xl font-semibold mb-1">Backup</h1>
+      <h1 className="text-2xl font-semibold mb-1">{t("super.backupTitle")}</h1>
       <p className="text-ui-sm text-ink-tertiary mb-6">
-        Status der System-Backups und Notfall-Export der Originaldateien pro
-        Tenant.
+        {t("super.backupSubtitle")}
       </p>
 
       {error && (
@@ -73,9 +73,9 @@ function BackupContent() {
       )}
 
       <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-3">Monitoring</h2>
+        <h2 className="text-lg font-semibold mb-3">{t("super.backupMonitoring")}</h2>
         {!system ? (
-          <div className="text-sm text-ink-tertiary">Lädt…</div>
+          <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
         ) : (
           <div className="space-y-2">
             {system.backup.map((b) => (
@@ -135,6 +135,7 @@ function BackupStatusRow({ backup }: { backup: BackupStatus }) {
 // ---------------------------------------------------------------------------
 
 function TenantExportSection() {
+  const t = useT();
   const [tenants, setTenants] = useState<TenantList | null>(null);
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState<TenantList[number] | null>(null);
@@ -164,7 +165,7 @@ function TenantExportSection() {
 
   return (
     <section>
-      <h2 className="text-lg font-semibold mb-1">Notfall-Export (Originale)</h2>
+      <h2 className="text-lg font-semibold mb-1">{t("super.backupEmergencyExport")}</h2>
       <p className="text-ui-sm text-ink-tertiary mb-4">
         Exportiert alle Galerien eines Tenants als ZIP (Originale +
         metadata.json), ein Archiv pro Galerie. Download-Links sind 30 Tage
@@ -176,11 +177,11 @@ function TenantExportSection() {
           <input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Tenant suchen (Name oder Slug)…"
+            placeholder={t("super.backupTenantSearchPlaceholder")}
             className="w-full rounded-md border border-line-subtle bg-surface-base px-3 py-2 text-sm mb-3"
           />
           {!tenants ? (
-            <div className="text-sm text-ink-tertiary">Lädt…</div>
+            <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
           ) : (
             <div className="space-y-1 max-h-96 overflow-auto">
               {visible.map((t) => (
@@ -200,7 +201,7 @@ function TenantExportSection() {
               ))}
               {visible.length === 0 && (
                 <div className="text-sm text-ink-tertiary">
-                  Kein Tenant gefunden.
+                  {t("super.backupNoTenantFound")}
                 </div>
               )}
             </div>
@@ -223,6 +224,7 @@ function TenantExportPanel({
   tenant: TenantList[number];
   onBack: () => void;
 }) {
+  const t = useT();
   const [exports, setExports] = useState<ExportList | null>(null);
   const [busy, setBusy] = useState(false);
   const [busyR, setBusyR] = useState(false);
@@ -306,7 +308,7 @@ function TenantExportPanel({
           <button
             onClick={recover}
             disabled={busyR}
-            title="Stellt gelöschte Originale aus den S3-Versionen der letzten 30 Tage als ZIP bereit."
+            title={t("super.backupRestoreHint")}
             className="rounded-md border border-line-subtle px-4 py-2 text-sm font-medium hover:bg-surface-sunken disabled:opacity-50"
           >
             {busyR ? "Sucht…" : "Gelöschte wiederherstellen"}
@@ -321,10 +323,10 @@ function TenantExportPanel({
       )}
 
       {!exports ? (
-        <div className="text-sm text-ink-tertiary">Lädt…</div>
+        <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
       ) : exports.length === 0 ? (
         <div className="text-sm text-ink-tertiary">
-          Noch keine Exporte für diesen Tenant.
+          {t("super.backupNoExports")}
         </div>
       ) : (
         <div className="space-y-2">
@@ -354,6 +356,7 @@ function ExportRow({
   open: boolean;
   onToggle: () => void;
 }) {
+  const t = useT();
   const fmt = useFormat();
   const [detail, setDetail] = useState<ExportDetail | null>(null);
 
@@ -409,7 +412,7 @@ function ExportRow({
       {open && (
         <div className="border-t border-line-subtle p-3 space-y-1">
           {!detail ? (
-            <div className="text-sm text-ink-tertiary">Lädt…</div>
+            <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
           ) : (
             detail.items.map((it) => (
               <div

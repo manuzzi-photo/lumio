@@ -47,7 +47,7 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 - Die Seitenspalte der Administrationsoberfläche zeigt „MRR", „Plan-Katalog" und „Marketing-Mails" nur noch, wenn die Instanz mit Abrechnung läuft (`BILLING_ENABLED=true`). Wer Lumio selbst betreibt und mehrere Studios verwaltet, hatte dort drei Punkte, hinter denen nichts stand.
 - Die Sprache des HTML-Dokuments wird mit der gewählten Oberflächensprache synchron gehalten. Vorlesehilfen und die Übersetzungsabfrage des Browsers gingen vorher immer von Englisch aus.
 - Englisch ist ab jetzt als primäre Projektsprache festgeschrieben, Deutsch als Übersetzung — nachzulesen in `CONTRIBUTING.md`. Ausdrücklich ausgenommen und weiterhin deutsch: die E-Mails an Galeriekunden, der Auftragsverarbeitungsvertrag und die deutschsprachigen Webseiten.
-- Die Tenant-Verwaltung und das Audit-Log der Administrationsoberfläche sind jetzt übersetzbar. Das ist die Strecke, die beim Selbstbetrieb mit mehreren Studios zwingend nötig ist — Studio anlegen, Inhaberin einladen, Vorgänge nachvollziehen. Bisher war dort alles fest auf Deutsch.
+- Die Administrationsoberfläche wird übersetzbar gemacht. Fertig sind: Tenant-Verwaltung, Audit-Log, Nutzerverwaltung, System-Status und Backup. Das deckt die Strecke ab, die beim Selbstbetrieb mit mehreren Studios zwingend nötig ist — Studio anlegen, Inhaberin einladen, Nutzer verwalten, Betrieb überwachen, Vorgänge nachvollziehen. Bisher war dort alles fest auf Deutsch. Die restlichen Seiten folgen.
 
 ### Fixed
 
@@ -59,7 +59,7 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 - The administration sidebar only shows "MRR", "Plan catalogue" and "Marketing emails" when the instance runs with billing (`BILLING_ENABLED=true`). Anyone self-hosting Lumio to manage several studios was looking at three entries with nothing behind them.
 - The HTML document language is kept in sync with the selected interface language. Screen readers and the browser's translation prompt previously always assumed English.
 - English is now established as the primary project language, with German as a translation — see `CONTRIBUTING.md`. Explicitly excluded and still German: the emails to gallery customers, the data processing agreement and the German-language websites.
-- Tenant management and the audit log in the administration interface are now translatable. This is the path a self-hosted multi-studio install cannot avoid — create a studio, invite its owner, trace what happened. Everything there was previously hardcoded German.
+- The administration interface is being made translatable. Done so far: tenant management, audit log, user management, system status and backup. That covers the path a self-hosted multi-studio install cannot avoid — create a studio, invite its owner, manage users, watch the system, trace what happened. Everything there was previously hardcoded German. The remaining pages will follow.
 - In the administration interface, "Marketing emails" and "signed in as" could not be translated.
 
 ## [0.59.0] - 2026-08-07
