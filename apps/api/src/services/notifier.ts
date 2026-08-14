@@ -22,7 +22,10 @@ import {
 } from "./mail.js";
 import { getPlan, effectiveStorageBytes } from "./plans.js";
 import type { MailBranding } from "./mail-layout.js";
-import { tenantMailLocale, userMailLocale } from "./mail-i18n.js";
+import {
+  normalizeLocale,
+  tenantMailLocale,
+} from "./mail-i18n.js";
 import { studioNotifyEnabled } from "./notifications.js";
 
 function studioUrl(galleryId: string): string {
@@ -95,7 +98,7 @@ export async function notifyNewComment(opts: {
     const gallery = await prisma.gallery.findUnique({
       where: { id: opts.galleryId },
       include: {
-        owner: { select: { id: true, email: true, name: true } },
+        owner: { select: { id: true, email: true, name: true, locale: true } },
       },
     });
     if (!gallery?.owner?.email) return;
@@ -108,7 +111,7 @@ export async function notifyNewComment(opts: {
       body: opts.body.slice(0, 500),
       branding: await tenantMailBranding(gallery.tenantId),
       // Empfaenger ist das Studio selbst -> persoenliche Sprache.
-      locale: await userMailLocale(gallery.owner.id),
+      locale: normalizeLocale(gallery.owner.locale),
     });
     await sendMail({ to: gallery.owner.email, ...tpl });
   } catch (err) {
@@ -135,7 +138,7 @@ export async function notifySelectionFinished(opts: {
     const gallery = await prisma.gallery.findUnique({
       where: { id: opts.galleryId },
       include: {
-        owner: { select: { email: true } },
+        owner: { select: { email: true, locale: true } },
       },
     });
     if (!gallery?.owner?.email || !access) return;
@@ -157,6 +160,7 @@ export async function notifySelectionFinished(opts: {
       accessLabel: access.label,
       count,
       branding: await tenantMailBranding(gallery.tenantId),
+      locale: normalizeLocale(gallery.owner.locale),
     });
     await sendMail({ to: gallery.owner.email, ...tpl });
   } catch (err) {
@@ -543,18 +547,24 @@ export async function notifyTeamMemberJoined(opts: {
         role: { in: ["owner", "admin"] },
         id: { not: opts.joinedUserId },
       },
-      select: { email: true },
+      select: { email: true, locale: true },
     });
     if (recipients.length === 0) return;
-    const tpl = tmplTeamMemberJoined({
-      memberName: opts.memberName ?? "",
-      memberEmail: opts.memberEmail,
-      role: opts.role,
-      teamUrl: `${config.PUBLIC_URL}/studio/team`,
-      branding: await tenantMailBranding(opts.tenantId),
-    });
+    const branding = await tenantMailBranding(opts.tenantId);
+    // Pro Empfaenger neu rendern: Owner und Admins koennen verschiedene
+    // Sprachen eingestellt haben, ein gemeinsames Template wuerde die
+    // Einstellung der meisten ignorieren.
     for (const r of recipients) {
-      if (r.email) await sendMail({ to: r.email, ...tpl });
+      if (!r.email) continue;
+      const tpl = tmplTeamMemberJoined({
+        memberName: opts.memberName ?? "",
+        memberEmail: opts.memberEmail,
+        role: opts.role,
+        teamUrl: `${config.PUBLIC_URL}/studio/team`,
+        branding,
+        locale: normalizeLocale(r.locale),
+      });
+      await sendMail({ to: r.email, ...tpl });
     }
   } catch (err) {
     logger.warn({ err }, "notifyTeamMemberJoined failed");
@@ -593,7 +603,7 @@ export async function notifyUploadReceived(opts: {
             id: true,
             title: true,
             tenantId: true,
-            owner: { select: { email: true } },
+            owner: { select: { email: true, locale: true } },
           },
         },
       },
@@ -607,6 +617,7 @@ export async function notifyUploadReceived(opts: {
       linkLabel: link.label,
       galleryUrl: studioUrl(link.gallery.id),
       branding: await tenantMailBranding(link.gallery.tenantId),
+      locale: normalizeLocale(link.gallery.owner.locale),
     });
     await sendMail({ to: link.gallery.owner.email, ...tpl });
   } catch (err) {

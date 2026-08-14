@@ -40,6 +40,7 @@ import { hashPassword } from "../services/auth.js";
 import { createSetupToken, buildSetupUrl } from "../services/setupToken.js";
 import { sendMail, tmplOwnerSetup } from "../services/mail.js";
 import { logEvent } from "../services/audit.js";
+import { userMailLocale } from "../services/mail-i18n.js";
 
 
 const inviteSchema = z.object({
@@ -191,6 +192,7 @@ export async function registerTeamRoutes(app: FastifyInstance) {
     let mailSent = false;
     try {
       const tpl = tmplOwnerSetup({
+        locale: await userMailLocale(user.id),
         displayName: body.name,
         tenantName: tenant.name,
         setupUrl,
@@ -271,6 +273,7 @@ export async function registerTeamRoutes(app: FastifyInstance) {
       let mailSent = false;
       try {
         const tpl = tmplOwnerSetup({
+          locale: await userMailLocale(user.id),
           displayName: user.name ?? user.email,
           tenantName: tenant?.name ?? "Lumio",
           setupUrl,

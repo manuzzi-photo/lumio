@@ -305,30 +305,54 @@ export function tmplNewComment(opts: {
   };
 }
 
+const selectionFinishedPhrases = {
+  subject: { de: 'Auswahl fertig: "{title}"', en: 'Selection finished: "{title}"' },
+  preheader: {
+    de: "{who} hat {files} ausgewählt",
+    en: "{who} selected {files}",
+  },
+  heading: { de: "Auswahl abgeschlossen", en: "Selection finished" },
+  bodyText: {
+    de: "{who} hat die Auswahl abgeschlossen ({files}).",
+    en: "{who} finished their selection ({files}).",
+  },
+  bodyHtml: {
+    de: "{who} hat die Auswahl in „{title}“ abgeschlossen — {files} markiert.",
+    en: "{who} finished the selection in “{title}” — {files} marked.",
+  },
+  button: { de: "Auswahl ansehen", en: "View selection" },
+  fileOne: { de: "1 Datei", en: "1 file" },
+  fileMany: { de: "{n} Dateien", en: "{n} files" },
+} satisfies Record<string, Phrase>;
+
 export function tmplSelectionFinished(opts: {
   galleryTitle: string;
   galleryUrl: string;
   accessLabel: string;
   count: number;
   branding?: MailBranding;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
-  const fileWord = opts.count === 1 ? "Datei" : "Dateien";
+  const l = opts.locale ?? instanceMailLocale();
+  const P = selectionFinishedPhrases;
+  const files =
+    opts.count === 1
+      ? phrase(P.fileOne, l)
+      : phrase(P.fileMany, l, { n: opts.count });
+  const vars = { title: opts.galleryTitle, who: opts.accessLabel, files };
   return {
-    subject: `Auswahl fertig: "${opts.galleryTitle}"`,
+    subject: phrase(P.subject, l, vars),
     text:
-      `${opts.accessLabel} hat die Auswahl abgeschlossen ` +
-      `(${opts.count} ${fileWord}).\n\n` +
-      `Galerie ansehen: ${opts.galleryUrl}\n\n` +
-      `— Lumio`,
+      `${phrase(P.bodyText, l, vars)}\n\n` +
+      `${phrase(common.viewGallery, l)}: ${opts.galleryUrl}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
       branding: opts.branding,
-      preheader: `${opts.accessLabel} hat ${opts.count} ${fileWord} ausgewählt`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Auswahl abgeschlossen`) +
-        mailParagraph(
-          `${opts.accessLabel} hat die Auswahl in „${opts.galleryTitle}" abgeschlossen — ${opts.count} ${fileWord} markiert.`
-        ) +
-        mailButton(opts.galleryUrl, "Auswahl ansehen", opts.branding?.accentColor),
+        mailHeading(phrase(P.heading, l)) +
+        mailParagraph(phrase(P.bodyHtml, l, vars)) +
+        mailButton(opts.galleryUrl, phrase(P.button, l), opts.branding?.accentColor),
     }),
   };
 }
@@ -402,40 +426,88 @@ export function tmplZipReady(opts: {
   };
 }
 
+const storageWarningPhrases = {
+  subject: {
+    de: "Speicher fast voll: {percent}% belegt",
+    en: "Storage almost full: {percent}% used",
+  },
+  preheader: {
+    de: "Dein Speicher ist zu {percent}% belegt",
+    en: "Your storage is {percent}% used",
+  },
+  heading: { de: "Speicher fast voll", en: "Storage almost full" },
+  bodyText: {
+    de: "Dein Lumio-Speicher ist zu {percent}% belegt ({used} von {limit} GB).",
+    en: "Your Lumio storage is {percent}% used ({used} of {limit} GB).",
+  },
+  bodyHtml: {
+    de: "Dein belegter Speicher liegt bei {percent}% — {used} von {limit} GB.",
+    en: "Your used storage is at {percent}% — {used} of {limit} GB.",
+  },
+  consequence: {
+    de: "Ist das Limit erreicht, sind keine neuen Uploads mehr möglich. Du kannst alte Galerien aufräumen oder deinen Speicher erweitern.",
+    en: "Once the limit is reached, no new uploads are possible. You can clear out old galleries or increase your storage.",
+  },
+  button: { de: "Speicher & Tarif", en: "Storage & plan" },
+} satisfies Record<string, Phrase>;
+
 export function tmplStorageWarning(opts: {
   usedGib: number;
   limitGib: number;
   percent: number;
   billingUrl: string;
   branding?: MailBranding;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = storageWarningPhrases;
+  const vars = {
+    percent: opts.percent,
+    used: opts.usedGib,
+    limit: opts.limitGib,
+  };
   return {
-    subject: `Speicher fast voll: ${opts.percent}% belegt`,
+    subject: phrase(P.subject, l, vars),
     text:
-      `Dein Lumio-Speicher ist zu ${opts.percent}% belegt ` +
-      `(${opts.usedGib} von ${opts.limitGib} GB).\n\n` +
-      `Ist das Limit erreicht, sind keine neuen Uploads mehr möglich. Du ` +
-      `kannst alte Galerien aufräumen oder deinen Speicher/Tarif erweitern:\n\n` +
-      `${opts.billingUrl}\n\n— Lumio`,
+      `${phrase(P.bodyText, l, vars)}\n\n` +
+      `${phrase(P.consequence, l)}\n\n` +
+      `${opts.billingUrl}\n\n${phrase(common.signature, l)}`,
     html: renderMailLayout({
       branding: opts.branding,
-      preheader: `Dein Speicher ist zu ${opts.percent}% belegt`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading("Speicher fast voll") +
-        mailParagraph(
-          `Dein belegter Speicher liegt bei ${opts.percent}% — ${opts.usedGib} von ${opts.limitGib} GB.`
-        ) +
-        mailParagraph(
-          `Ist das Limit erreicht, sind keine neuen Uploads mehr möglich. Du kannst alte Galerien aufräumen oder deinen Speicher erweitern.`
-        ) +
-        mailButton(
-          opts.billingUrl,
-          "Speicher & Tarif",
-          opts.branding?.accentColor
-        ),
+        mailHeading(phrase(P.heading, l)) +
+        mailParagraph(phrase(P.bodyHtml, l, vars)) +
+        mailParagraph(phrase(P.consequence, l)) +
+        mailButton(opts.billingUrl, phrase(P.button, l), opts.branding?.accentColor),
     }),
   };
 }
+
+const ownerSetupPhrases = {
+  subject: {
+    de: 'Dein Lumio-Studio "{tenant}" ist bereit',
+    en: 'Your Lumio studio "{tenant}" is ready',
+  },
+  preheader: {
+    de: "Dein Studio „{tenant}“ wartet auf dich",
+    en: "Your studio “{tenant}” is waiting for you",
+  },
+  greeting: { de: "Hallo {name},", en: "Hello {name}," },
+  bodyText: {
+    de: "{by} hat ein Lumio-Studio für dich angelegt:\n  {tenant}\n\nKlick auf den folgenden Link, um dein Passwort zu setzen und direkt loszulegen:",
+    en: "{by} created a Lumio studio for you:\n  {tenant}\n\nUse the link below to set your password and get started:",
+  },
+  bodyHtml: {
+    de: "{by} hat ein Lumio-Studio für dich angelegt: „{tenant}“. Setze jetzt dein Passwort und leg los.",
+    en: "{by} created a Lumio studio for you: “{tenant}”. Set your password now and get started.",
+  },
+  button: { de: "Passwort setzen", en: "Set password" },
+  validity: {
+    de: "Der Link ist {hours} Stunden gültig. Falls die Frist abläuft, melde dich bei {by}.",
+    en: "The link is valid for {hours} hours. If it expires, get in touch with {by}.",
+  },
+} satisfies Record<string, Phrase>;
 
 export function tmplOwnerSetup(opts: {
   displayName: string;
@@ -443,33 +515,71 @@ export function tmplOwnerSetup(opts: {
   setupUrl: string;
   invitedBy: string;
   validHours: number;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = ownerSetupPhrases;
+  const vars = {
+    name: opts.displayName,
+    tenant: opts.tenantName,
+    by: opts.invitedBy,
+    hours: opts.validHours,
+  };
   return {
-    subject: `Dein Lumio-Studio "${opts.tenantName}" ist bereit`,
+    subject: phrase(P.subject, l, vars),
     text:
-      `Hallo ${opts.displayName},\n\n` +
-      `${opts.invitedBy} hat ein Lumio-Studio für dich angelegt:\n` +
-      `  ${opts.tenantName}\n\n` +
-      `Klick auf den folgenden Link, um dein Passwort zu setzen und ` +
-      `direkt loszulegen:\n\n` +
+      `${phrase(P.greeting, l, vars)}\n\n` +
+      `${phrase(P.bodyText, l, vars)}\n\n` +
       `${opts.setupUrl}\n\n` +
-      `Der Link ist ${opts.validHours} Stunden gültig. Falls die Frist ` +
-      `abläuft, melde dich bei ${opts.invitedBy}.\n\n` +
-      `— Lumio`,
+      `${phrase(P.validity, l, vars)}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `Dein Studio „${opts.tenantName}" wartet auf dich`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Hallo ${opts.displayName},`) +
-        mailParagraph(
-          `${opts.invitedBy} hat ein Lumio-Studio für dich angelegt: „${opts.tenantName}". Setze jetzt dein Passwort und leg los.`
-        ) +
-        mailButton(opts.setupUrl, "Passwort setzen") +
-        mailNoticeBox(
-          `Der Link ist ${opts.validHours} Stunden gültig. Falls die Frist abläuft, melde dich bei ${opts.invitedBy}.`
-        ),
+        mailHeading(phrase(P.greeting, l, vars)) +
+        mailParagraph(phrase(P.bodyHtml, l, vars)) +
+        mailButton(opts.setupUrl, phrase(P.button, l)) +
+        mailNoticeBox(phrase(P.validity, l, vars)),
     }),
   };
 }
+
+const passwordResetPhrases = {
+  subject: {
+    de: "Passwort zurücksetzen für „{tenant}“",
+    en: "Reset your password for “{tenant}”",
+  },
+  preheader: {
+    de: "Passwort-Reset für „{tenant}“",
+    en: "Password reset for “{tenant}”",
+  },
+  greeting: { de: "Hallo {name},", en: "Hello {name}," },
+  body: {
+    de: "Du (oder jemand mit deiner E-Mail-Adresse) hat ein neues Passwort für dein Lumio-Studio „{tenant}“ angefordert.",
+    en: "You (or someone with your email address) requested a new password for your Lumio studio “{tenant}”.",
+  },
+  instruction: {
+    de: "Klick auf den folgenden Link, um ein neues Passwort zu setzen:",
+    en: "Use the link below to set a new password:",
+  },
+  button: { de: "Neues Passwort setzen", en: "Set a new password" },
+  validity: {
+    de: "Der Link ist {hours} Stunden gültig.",
+    en: "The link is valid for {hours} hours.",
+  },
+  requestedFromIp: {
+    de: "Angefordert von IP-Adresse: {ip}",
+    en: "Requested from IP address: {ip}",
+  },
+  notYou: {
+    de: "Falls du das NICHT angefordert hast, kannst du diese Mail ignorieren — dein aktuelles Passwort bleibt gültig. Bei verdächtiger Aktivität melde dich bitte beim Studio-Owner.",
+    en: "If you did NOT request this, you can ignore this email — your current password stays valid. If anything looks suspicious, please contact the studio owner.",
+  },
+  notYouShort: {
+    de: "Falls du das NICHT angefordert hast, kannst du diese Mail ignorieren — dein aktuelles Passwort bleibt gültig.",
+    en: "If you did NOT request this, you can ignore this email — your current password stays valid.",
+  },
+} satisfies Record<string, Phrase>;
 
 export function tmplPasswordReset(opts: {
   displayName: string;
@@ -477,44 +587,75 @@ export function tmplPasswordReset(opts: {
   resetUrl: string;
   validHours: number;
   ipAddress?: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = passwordResetPhrases;
+  const vars = {
+    name: opts.displayName,
+    tenant: opts.tenantName,
+    hours: opts.validHours,
+  };
   const ipLine = opts.ipAddress
-    ? `Angefordert von IP-Adresse: ${opts.ipAddress}\n\n`
+    ? `${phrase(P.requestedFromIp, l, { ip: opts.ipAddress })}\n\n`
     : "";
   return {
-    subject: `Passwort zurücksetzen für „${opts.tenantName}"`,
+    subject: phrase(P.subject, l, vars),
     text:
-      `Hallo ${opts.displayName},\n\n` +
-      `Du (oder jemand mit deiner E-Mail-Adresse) hat ein neues Passwort ` +
-      `für dein Lumio-Studio „${opts.tenantName}" angefordert.\n\n` +
-      `Klick auf den folgenden Link, um ein neues Passwort zu setzen:\n\n` +
+      `${phrase(P.greeting, l, vars)}\n\n` +
+      `${phrase(P.body, l, vars)}\n\n` +
+      `${phrase(P.instruction, l)}\n\n` +
       `${opts.resetUrl}\n\n` +
-      `Der Link ist ${opts.validHours} Stunden gültig.\n\n` +
+      `${phrase(P.validity, l, vars)}\n\n` +
       ipLine +
-      `Falls du das NICHT angefordert hast, kannst du diese Mail ignorieren — ` +
-      `dein aktuelles Passwort bleibt gültig. Bei verdächtiger Aktivität ` +
-      `melde dich bitte beim Studio-Owner.\n\n` +
-      `— Lumio`,
+      `${phrase(P.notYou, l)}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `Passwort-Reset für „${opts.tenantName}"`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Hallo ${opts.displayName},`) +
-        mailParagraph(
-          `Du (oder jemand mit deiner E-Mail-Adresse) hat ein neues Passwort für dein Lumio-Studio „${opts.tenantName}" angefordert.`
-        ) +
-        mailButton(opts.resetUrl, "Neues Passwort setzen") +
+        mailHeading(phrase(P.greeting, l, vars)) +
+        mailParagraph(phrase(P.body, l, vars)) +
+        mailButton(opts.resetUrl, phrase(P.button, l)) +
         mailNoticeBox(
-          `Der Link ist ${opts.validHours} Stunden gültig.` +
+          phrase(P.validity, l, vars) +
             (opts.ipAddress
-              ? ` Angefordert von IP-Adresse: ${opts.ipAddress}.`
+              ? " " + phrase(P.requestedFromIp, l, { ip: opts.ipAddress })
               : "")
         ) +
-        mailParagraph(
-          `Falls du das NICHT angefordert hast, kannst du diese Mail ignorieren — dein aktuelles Passwort bleibt gültig.`
-        ),
+        mailParagraph(phrase(P.notYouShort, l)),
     }),
   };
 }
+
+const emailChangeConfirmPhrases = {
+  subject: {
+    de: "Bestätige deine neue E-Mail-Adresse für „{tenant}“",
+    en: "Confirm your new email address for “{tenant}”",
+  },
+  preheader: {
+    de: "Bestätige den Wechsel zu {newEmail}",
+    en: "Confirm the change to {newEmail}",
+  },
+  greeting: { de: "Hallo {name},", en: "Hello {name}," },
+  body: {
+    de: "Du hast deine E-Mail-Adresse für dein Lumio-Studio „{tenant}“ geändert:",
+    en: "You changed the email address for your Lumio studio “{tenant}”:",
+  },
+  fromTo: { de: "  von: {old}\n  zu:  {new}", en: "  from: {old}\n  to:   {new}" },
+  instruction: {
+    de: "Klick auf den folgenden Link, um die Änderung zu bestätigen:",
+    en: "Use the link below to confirm the change:",
+  },
+  button: { de: "Wechsel bestätigen", en: "Confirm change" },
+  validity: {
+    de: "Der Link ist {hours} Stunden gültig. Bis du klickst, bleibt deine alte E-Mail-Adresse aktiv.",
+    en: "The link is valid for {hours} hours. Until you click it, your old address stays active.",
+  },
+  notYou: {
+    de: "Bis du den Link klickst, bleibt deine alte E-Mail-Adresse aktiv. Falls du diesen Wechsel NICHT angefordert hast, ignoriere die Mail einfach.",
+    en: "Until you click the link, your old address stays active. If you did NOT request this change, simply ignore this email.",
+  },
+} satisfies Record<string, Phrase>;
 
 export function tmplEmailChangeConfirm(opts: {
   displayName: string;
@@ -523,73 +664,101 @@ export function tmplEmailChangeConfirm(opts: {
   newEmail: string;
   confirmUrl: string;
   validHours: number;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = emailChangeConfirmPhrases;
+  const vars = {
+    name: opts.displayName,
+    tenant: opts.tenantName,
+    hours: opts.validHours,
+    newEmail: opts.newEmail,
+  };
   return {
-    subject: `Bestätige deine neue E-Mail-Adresse für „${opts.tenantName}"`,
+    subject: phrase(P.subject, l, vars),
     text:
-      `Hallo ${opts.displayName},\n\n` +
-      `Du hast deine E-Mail-Adresse für dein Lumio-Studio ` +
-      `„${opts.tenantName}" geändert:\n\n` +
-      `  von: ${opts.oldEmail}\n` +
-      `  zu:  ${opts.newEmail}\n\n` +
-      `Klick auf den folgenden Link, um die Änderung zu bestätigen:\n\n` +
+      `${phrase(P.greeting, l, vars)}\n\n` +
+      `${phrase(P.body, l, vars)}\n\n` +
+      `${phrase(P.fromTo, l, { old: opts.oldEmail, new: opts.newEmail })}\n\n` +
+      `${phrase(P.instruction, l)}\n\n` +
       `${opts.confirmUrl}\n\n` +
-      `Der Link ist ${opts.validHours} Stunden gültig.\n\n` +
-      `Bis du den Link klickst, bleibt deine alte E-Mail-Adresse aktiv. ` +
-      `Falls du diesen Wechsel NICHT angefordert hast, ignoriere die Mail ` +
-      `einfach.\n\n` +
-      `— Lumio`,
+      `${phrase(P.notYou, l)}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `Bestätige den Wechsel zu ${opts.newEmail}`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Hallo ${opts.displayName},`) +
-        mailParagraph(
-          `Du hast deine E-Mail-Adresse für dein Lumio-Studio „${opts.tenantName}" geändert:`
-        ) +
-        mailParagraphInterpolated(
-          `Von: \${old}\nZu: \${new}`,
-          { old: opts.oldEmail, new: opts.newEmail }
-        ) +
-        mailButton(opts.confirmUrl, "Wechsel bestätigen") +
-        mailNoticeBox(
-          `Der Link ist ${opts.validHours} Stunden gültig. Bis du klickst, bleibt deine alte E-Mail-Adresse aktiv.`
-        ),
+        mailHeading(phrase(P.greeting, l, vars)) +
+        mailParagraph(phrase(P.body, l, vars)) +
+        mailParagraphInterpolated(`\${old} → \${new}`, {
+          old: opts.oldEmail,
+          new: opts.newEmail,
+        }) +
+        mailButton(opts.confirmUrl, phrase(P.button, l)) +
+        mailNoticeBox(phrase(P.validity, l, vars)),
     }),
   };
 }
+
+const emailChangeNoticePhrases = {
+  subject: {
+    de: "E-Mail-Wechsel für „{tenant}“ angefordert",
+    en: "Email change requested for “{tenant}”",
+  },
+  preheader: {
+    de: "E-Mail-Wechsel auf {newEmail} angefordert",
+    en: "Email change to {newEmail} requested",
+  },
+  greeting: { de: "Hallo {name},", en: "Hello {name}," },
+  bodyText: {
+    de: "Es wurde ein Wechsel deiner E-Mail-Adresse für dein Lumio-Studio „{tenant}“ angefordert. Die neue Adresse lautet:\n\n  {newEmail}",
+    en: "A change of your email address for your Lumio studio “{tenant}” was requested. The new address is:\n\n  {newEmail}",
+  },
+  bodyHtml: {
+    de: "Es wurde ein Wechsel deiner E-Mail-Adresse für dein Lumio-Studio „{tenant}“ angefordert. Neue Adresse: {newEmail}.",
+    en: "A change of your email address for your Lumio studio “{tenant}” was requested. New address: {newEmail}.",
+  },
+  linkSent: {
+    de: "An die neue Adresse haben wir einen Bestätigungslink geschickt. Erst nach Klick darauf ist der Wechsel vollzogen.",
+    en: "We sent a confirmation link to the new address. The change only takes effect once it is clicked.",
+  },
+  ifNotYouText: {
+    de: "Wenn du das selbst angefordert hast, brauchst du nichts weiter zu tun. Wenn NICHT, melde dich umgehend beim Studio-Owner und ändere dein Passwort — möglicherweise hat jemand Fremdes Zugriff auf deinen Account.",
+    en: "If you requested this yourself, there is nothing more to do. If NOT, contact the studio owner immediately and change your password — someone else may have access to your account.",
+  },
+  ifNotYouBox: {
+    de: "Wenn du das selbst angefordert hast, ist alles in Ordnung. Wenn NICHT, melde dich beim Studio-Owner und ändere dein Passwort — möglicherweise hat jemand Fremdes Zugriff auf deinen Account.",
+    en: "If you requested this yourself, all is well. If NOT, contact the studio owner and change your password — someone else may have access to your account.",
+  },
+} satisfies Record<string, Phrase>;
 
 export function tmplEmailChangeNotice(opts: {
   displayName: string;
   tenantName: string;
   newEmail: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = emailChangeNoticePhrases;
+  const vars = {
+    name: opts.displayName,
+    tenant: opts.tenantName,
+    newEmail: opts.newEmail,
+  };
   return {
-    subject: `E-Mail-Wechsel für „${opts.tenantName}" angefordert`,
+    subject: phrase(P.subject, l, vars),
     text:
-      `Hallo ${opts.displayName},\n\n` +
-      `Es wurde ein Wechsel deiner E-Mail-Adresse für dein Lumio-Studio ` +
-      `„${opts.tenantName}" angefordert. Die neue Adresse lautet:\n\n` +
-      `  ${opts.newEmail}\n\n` +
-      `An die neue Adresse haben wir einen Bestätigungslink geschickt. ` +
-      `Erst nach Klick darauf ist der Wechsel vollzogen.\n\n` +
-      `Wenn du das selbst angefordert hast, brauchst du nichts weiter ` +
-      `zu tun. Wenn NICHT, melde dich umgehend beim Studio-Owner und ` +
-      `ändere dein Passwort — möglicherweise hat jemand Fremdes Zugriff ` +
-      `auf deinen Account.\n\n` +
-      `— Lumio`,
+      `${phrase(P.greeting, l, vars)}\n\n` +
+      `${phrase(P.bodyText, l, vars)}\n\n` +
+      `${phrase(P.linkSent, l)}\n\n` +
+      `${phrase(P.ifNotYouText, l)}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `E-Mail-Wechsel auf ${opts.newEmail} angefordert`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Hallo ${opts.displayName},`) +
-        mailParagraph(
-          `Es wurde ein Wechsel deiner E-Mail-Adresse für dein Lumio-Studio „${opts.tenantName}" angefordert. Neue Adresse: ${opts.newEmail}.`
-        ) +
-        mailParagraph(
-          `An die neue Adresse haben wir einen Bestätigungslink geschickt. Erst nach Klick darauf ist der Wechsel vollzogen.`
-        ) +
-        mailNoticeBox(
-          `Wenn du das selbst angefordert hast, ist alles in Ordnung. Wenn NICHT, melde dich beim Studio-Owner und ändere dein Passwort — möglicherweise hat jemand Fremdes Zugriff auf deinen Account.`
-        ),
+        mailHeading(phrase(P.greeting, l, vars)) +
+        mailParagraph(phrase(P.bodyHtml, l, vars)) +
+        mailParagraph(phrase(P.linkSent, l)) +
+        mailNoticeBox(phrase(P.ifNotYouBox, l)),
     }),
   };
 }
@@ -1174,32 +1343,74 @@ function mailHeading2sub(text: string): string {
 // Weitere Studio-Benachrichtigungen (Phase 3)
 // =============================================================================
 
+const teamMemberJoinedPhrases = {
+  subject: { de: "Neues Team-Mitglied: {who}", en: "New team member: {who}" },
+  preheader: {
+    de: "{who} ist deinem Team beigetreten",
+    en: "{who} joined your team",
+  },
+  heading: { de: "Neues Team-Mitglied", en: "New team member" },
+  bodyText: {
+    de: "{who} ({email}, Rolle: {role}) hat das Konto eingerichtet und ist deinem Team beigetreten.",
+    en: "{who} ({email}, role: {role}) set up their account and joined your team.",
+  },
+  bodyHtml: {
+    de: "{who} ({email}) hat das Konto eingerichtet und ist deinem Team als „{role}“ beigetreten.",
+    en: "{who} ({email}) set up their account and joined your team as “{role}”.",
+  },
+  button: { de: "Team verwalten", en: "Manage team" },
+} satisfies Record<string, Phrase>;
+
 export function tmplTeamMemberJoined(opts: {
   memberName: string;
   memberEmail: string;
   role: string;
   teamUrl: string;
   branding?: MailBranding;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = teamMemberJoinedPhrases;
   const who = opts.memberName || opts.memberEmail;
+  const vars = { who, email: opts.memberEmail, role: opts.role };
   return {
-    subject: `Neues Team-Mitglied: ${who}`,
+    subject: phrase(P.subject, l, vars),
     text:
-      `${who} (${opts.memberEmail}, Rolle: ${opts.role}) hat das Konto ` +
-      `eingerichtet und ist deinem Team beigetreten.\n\n` +
-      `Team verwalten: ${opts.teamUrl}\n\n— Lumio`,
+      `${phrase(P.bodyText, l, vars)}\n\n` +
+      `${phrase(P.button, l)}: ${opts.teamUrl}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
       branding: opts.branding,
-      preheader: `${who} ist deinem Team beigetreten`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading("Neues Team-Mitglied") +
-        mailParagraph(
-          `${who} (${opts.memberEmail}) hat das Konto eingerichtet und ist deinem Team als „${opts.role}" beigetreten.`
-        ) +
-        mailButton(opts.teamUrl, "Team verwalten", opts.branding?.accentColor),
+        mailHeading(phrase(P.heading, l)) +
+        mailParagraph(phrase(P.bodyHtml, l, vars)) +
+        mailButton(opts.teamUrl, phrase(P.button, l), opts.branding?.accentColor),
     }),
   };
 }
+
+const galleryExpiringPhrases = {
+  subject: {
+    de: "Galerie läuft ab: „{title}“ (in {days})",
+    en: "Gallery expiring: “{title}” (in {days})",
+  },
+  preheader: {
+    de: "„{title}“ läuft in {days} ab",
+    en: "“{title}” expires in {days}",
+  },
+  heading: { de: "Galerie läuft bald ab", en: "Gallery expiring soon" },
+  body: {
+    de: "Die Galerie „{title}“ läuft am {date} ab (in {days}). Danach ist sie für Kunden nicht mehr erreichbar.",
+    en: "The gallery “{title}” expires on {date} (in {days}). After that your customers can no longer reach it.",
+  },
+  hint: {
+    de: "Falls du sie länger online halten möchtest, kannst du das Ablaufdatum in den Galerie-Einstellungen anpassen.",
+    en: "If you want to keep it online for longer, you can change the expiry date in the gallery settings.",
+  },
+  dayOne: { de: "1 Tag", en: "1 day" },
+  dayMany: { de: "{n} Tagen", en: "{n} days" },
+} satisfies Record<string, Phrase>;
 
 export function tmplGalleryExpiring(opts: {
   galleryTitle: string;
@@ -1207,50 +1418,81 @@ export function tmplGalleryExpiring(opts: {
   expiresAtLabel: string;
   galleryUrl: string;
   branding?: MailBranding;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
-  const dayWord = opts.daysLeft === 1 ? "Tag" : "Tagen";
+  const l = opts.locale ?? instanceMailLocale();
+  const P = galleryExpiringPhrases;
+  const days =
+    opts.daysLeft === 1
+      ? phrase(P.dayOne, l)
+      : phrase(P.dayMany, l, { n: opts.daysLeft });
+  const vars = { title: opts.galleryTitle, days, date: opts.expiresAtLabel };
   return {
-    subject: `Galerie läuft ab: „${opts.galleryTitle}" (in ${opts.daysLeft} ${dayWord})`,
+    subject: phrase(P.subject, l, vars),
     text:
-      `Die Galerie „${opts.galleryTitle}" läuft am ${opts.expiresAtLabel} ab ` +
-      `(in ${opts.daysLeft} ${dayWord}). Danach ist sie für Kunden nicht ` +
-      `mehr erreichbar.\n\nGalerie öffnen: ${opts.galleryUrl}\n\n— Lumio`,
+      `${phrase(P.body, l, vars)}\n\n` +
+      `${phrase(common.openGallery, l)}: ${opts.galleryUrl}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
       branding: opts.branding,
-      preheader: `„${opts.galleryTitle}" läuft in ${opts.daysLeft} ${dayWord} ab`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading("Galerie läuft bald ab") +
-        mailParagraph(
-          `Die Galerie „${opts.galleryTitle}" läuft am ${opts.expiresAtLabel} ab (in ${opts.daysLeft} ${dayWord}). Danach ist sie für Kunden nicht mehr erreichbar.`
-        ) +
-        mailParagraph(
-          `Falls du sie länger online halten möchtest, kannst du das Ablaufdatum in den Galerie-Einstellungen anpassen.`
-        ) +
-        mailButton(opts.galleryUrl, "Galerie öffnen", opts.branding?.accentColor),
+        mailHeading(phrase(P.heading, l)) +
+        mailParagraph(phrase(P.body, l, vars)) +
+        mailParagraph(phrase(P.hint, l)) +
+        mailButton(
+          opts.galleryUrl,
+          phrase(common.openGallery, l),
+          opts.branding?.accentColor
+        ),
     }),
   };
 }
+
+const uploadReceivedPhrases = {
+  subject: { de: "Neue Uploads: „{title}“", en: "New uploads: “{title}”" },
+  preheader: {
+    de: "Neue Uploads in „{title}“",
+    en: "New uploads in “{title}”",
+  },
+  heading: { de: "Neue Uploads eingegangen", en: "New uploads received" },
+  bodyText: {
+    de: "Es sind neue Uploads über den Link „{link}“ in der Galerie „{title}“ eingegangen.",
+    en: "New uploads arrived through the link “{link}” in the gallery “{title}”.",
+  },
+  bodyHtml: {
+    de: "Über den Upload-Link „{link}“ sind neue Dateien in „{title}“ eingegangen.",
+    en: "New files arrived in “{title}” through the upload link “{link}”.",
+  },
+} satisfies Record<string, Phrase>;
 
 export function tmplUploadReceived(opts: {
   galleryTitle: string;
   linkLabel: string;
   galleryUrl: string;
   branding?: MailBranding;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = uploadReceivedPhrases;
+  const vars = { title: opts.galleryTitle, link: opts.linkLabel };
   return {
-    subject: `Neue Uploads: „${opts.galleryTitle}"`,
+    subject: phrase(P.subject, l, vars),
     text:
-      `Es sind neue Uploads über den Link „${opts.linkLabel}" in der Galerie ` +
-      `„${opts.galleryTitle}" eingegangen.\n\nGalerie öffnen: ${opts.galleryUrl}\n\n— Lumio`,
+      `${phrase(P.bodyText, l, vars)}\n\n` +
+      `${phrase(common.openGallery, l)}: ${opts.galleryUrl}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
       branding: opts.branding,
-      preheader: `Neue Uploads in „${opts.galleryTitle}"`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading("Neue Uploads eingegangen") +
-        mailParagraph(
-          `Über den Upload-Link „${opts.linkLabel}" sind neue Dateien in „${opts.galleryTitle}" eingegangen.`
-        ) +
-        mailButton(opts.galleryUrl, "Galerie öffnen", opts.branding?.accentColor),
+        mailHeading(phrase(P.heading, l)) +
+        mailParagraph(phrase(P.bodyHtml, l, vars)) +
+        mailButton(
+          opts.galleryUrl,
+          phrase(common.openGallery, l),
+          opts.branding?.accentColor
+        ),
     }),
   };
 }

@@ -62,6 +62,7 @@ import {
   checkBackups,
 } from "../services/system-health.js";
 import { logger } from "../logger.js";
+import { userMailLocale } from "../services/mail-i18n.js";
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 
@@ -1571,6 +1572,7 @@ export async function registerSuperTenantRoutes(app: FastifyInstance) {
       const resetUrl = buildResetUrl(setupResult.token);
 
       const tpl = tmplPasswordReset({
+        locale: await userMailLocale(user.id),
         displayName: user.name ?? user.email,
         tenantName: user.tenant.displayName ?? user.tenant.name,
         resetUrl,
@@ -3526,6 +3528,7 @@ export async function registerSuperTenantRoutes(app: FastifyInstance) {
       const resetUrl = buildResetUrl(setupResult.token);
 
       const tpl = tmplPasswordReset({
+        locale: await userMailLocale(user.id),
         displayName: user.name ?? user.email,
         tenantName: user.tenant.displayName ?? user.tenant.name,
         resetUrl,

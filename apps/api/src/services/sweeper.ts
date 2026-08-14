@@ -45,6 +45,7 @@ import {
   sendPurgeReminders,
   purgeDueArchives,
 } from "./billing-archive.js";
+import { normalizeLocale } from "./mail-i18n.js";
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const STARTUP_DELAY_MS = 30_000;
@@ -242,7 +243,7 @@ async function checkStorageWarnings() {
 
         const owner = await prisma.user.findFirst({
           where: { tenantId: s.tenantId, role: "owner", status: "active" },
-          select: { email: true },
+          select: { email: true, locale: true },
         });
         if (!owner?.email) continue;
 
@@ -254,6 +255,7 @@ async function checkStorageWarnings() {
         await sendMail({
           to: owner.email,
           ...tmplStorageWarning({
+            locale: normalizeLocale(owner.locale),
             usedGib,
             limitGib,
             percent,
@@ -442,7 +444,7 @@ async function checkExpiringGalleries() {
         title: true,
         tenantId: true,
         expiresAt: true,
-        owner: { select: { email: true } },
+        owner: { select: { email: true, locale: true } },
       },
       take: 200,
     });
@@ -466,6 +468,7 @@ async function checkExpiringGalleries() {
         await sendMail({
           to: g.owner.email,
           ...tmplGalleryExpiring({
+            locale: normalizeLocale(g.owner.locale),
             galleryTitle: g.title,
             daysLeft,
             expiresAtLabel: g.expiresAt.toLocaleDateString("de-DE"),

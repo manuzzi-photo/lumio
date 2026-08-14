@@ -59,6 +59,7 @@ import { getEffectiveFlags } from "../services/feature-flags.js";
 import { getStripe } from "../services/stripe-client.js";
 import { resolveTenantBranding } from "../services/branding.js";
 import { presignGet } from "../services/storage.js";
+import { userMailLocale } from "../services/mail-i18n.js";
 
 const loginSchema = z.object({
   email: z.string().email().toLowerCase(),
@@ -1110,6 +1111,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
               kind: "reset",
             });
             const tpl = tmplPasswordReset({
+              locale: await userMailLocale(u.id),
               displayName: u.name ?? u.email,
               tenantName: tenantDisplayName(u.tenant),
               resetUrl: buildResetUrl(token),
@@ -1158,6 +1160,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         const resetUrl = buildResetUrl(token);
         try {
           const tpl = tmplPasswordReset({
+            locale: await userMailLocale(user.id),
             displayName: user.name ?? user.email,
             tenantName: tenantDisplayName(user.tenant),
             resetUrl,

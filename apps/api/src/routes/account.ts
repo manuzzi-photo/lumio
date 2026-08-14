@@ -53,6 +53,7 @@ import {
   requestDeletion,
   cancelDeletion,
 } from "../services/tenant-deletion.js";
+import { userMailLocale } from "../services/mail-i18n.js";
 
 
 const updateNameSchema = z.object({
@@ -299,7 +300,9 @@ export async function registerAccountRoutes(app: FastifyInstance) {
       // fehlschlaegt, damit der Frontend-User es nochmal versuchen
       // kann statt zu glauben es waere durch.
       try {
+        const uLocale = await userMailLocale(u.id);
         const tplConfirm = tmplEmailChangeConfirm({
+          locale: uLocale,
           displayName: u.name ?? u.email,
           tenantName: publicTenantName,
           oldEmail: u.email,
@@ -327,6 +330,7 @@ export async function registerAccountRoutes(app: FastifyInstance) {
       // Info-Mail an die ALTE Adresse — best-effort, kein Hard-Fail.
       try {
         const tplNotice = tmplEmailChangeNotice({
+          locale: await userMailLocale(u.id),
           displayName: u.name ?? u.email,
           tenantName: publicTenantName,
           newEmail: body.newEmail,
