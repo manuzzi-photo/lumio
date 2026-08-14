@@ -752,6 +752,9 @@ export const en: Dict = {
     markDone: "Done",
     poweredBy: "Powered by Lumio",
       videoPosition: "Video position",
+      slideshowMute: "Mute",
+    slideshowUnmute: "Unmute",
+    slideshowVolume: "Volume",
   },
 
   proofing: {
@@ -2193,6 +2196,7 @@ export const en: Dict = {
     namePlaceholder: "e.g. wedding, newborn, portrait",
     whenToUse: "When do I use this template?",
     allowDownload: "Allow download",
+      days: "days",
   },
   impersonate: {
     noToken: "No token in the link.",

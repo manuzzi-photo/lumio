@@ -53,6 +53,7 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ### Fixed
 
+- Neun Stellen zeigten statt eines Textes den internen Schlüsselnamen an — etwa „studio.cancel" auf einem Knopf, oder „studio.tagConfirmDelete" in der Rückfrage vor dem Löschen eines Tags. Das trat in jeder Sprache auf. Betroffen waren Abschnitts-Editor, Template-Editor, Tag- und Webhook-Verwaltung sowie die Tonspur-Knöpfe der Diashow. Danke an @manuzzi, der drei davon gemeldet hat.
 - In der Administrationsoberfläche waren „Marketing-Mails" und „angemeldet als" nicht übersetzbar.
 
 **🇬🇧 English**
@@ -64,6 +65,7 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 - The studio interface is now translatable throughout: selection overview, gallery list, templates, collections, team, account, passkeys, two-factor, print shop, video player and the legal footer. Two places deliberately stay bilingual or German and say why in the code — the language switcher itself and the studio picker on the main domain.
 - Wired up 66 places in the studio area where a translation already existed but the interface still showed German — selection overview, gallery list, templates, collections, team, print shop and various loading indicators. Only affects the English interface; nothing changes in German beyond "Wird geladen…" now consistently reading "Lädt…".
 - The administration interface is being made translatable. Done so far: tenant management, audit log, user management, system status, backup, storage overview, job failures, email deliverability, CSP violations, security, compliance, print providers, broadcasts, the login, the tenant detail page including billing, notes, impersonation and feature flags, system banners, broadcast detail, and MRR, plan catalogue and marketing emails. The administration interface is now fully translatable. That covers the path a self-hosted multi-studio install cannot avoid — create a studio, invite its owner, manage users, watch the system, trace what happened. Everything there was previously hardcoded German. The remaining pages will follow.
+- Nine places showed the internal key name instead of text — "studio.cancel" on a button, or "studio.tagConfirmDelete" in the confirmation before deleting a tag. This happened in every language. Affected the section editor, template editor, tag and webhook management, and the slideshow audio buttons. Thanks to @manuzzi, who reported three of them.
 - In the administration interface, "Marketing emails" and "signed in as" could not be translated.
 
 ## [0.59.0] - 2026-08-07

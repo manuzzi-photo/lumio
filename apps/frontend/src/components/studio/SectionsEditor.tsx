@@ -554,7 +554,7 @@ function SectionEditForm({
           disabled={saving}
           className="text-ui-sm h-8 px-3 rounded text-ink-secondary hover:text-ink-primary hover:bg-surface-overlay disabled:opacity-50 transition-colors duration-motion"
         >
-          {t("studio.cancel")}
+          {t("common.cancel")}
         </button>
         <button
           type="button"
@@ -562,7 +562,7 @@ function SectionEditForm({
           disabled={saving}
           className="text-ui-sm h-8 px-3 rounded bg-accent text-accent-contrast hover:bg-accent-hover disabled:opacity-50 transition-colors duration-motion"
         >
-          {saving ? "…" : t("studio.save")}
+          {saving ? "…" : t("common.save")}
         </button>
       </div>
     </div>

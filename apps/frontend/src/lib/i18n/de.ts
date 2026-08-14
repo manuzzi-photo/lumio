@@ -755,6 +755,9 @@ export const de: Dict = {
     markDone: "Fertig",
     poweredBy: "Powered by Lumio",
       videoPosition: "Video-Position",
+      slideshowMute: "Stummschalten",
+    slideshowUnmute: "Ton einschalten",
+    slideshowVolume: "Lautstärke",
   },
 
   proofing: {
@@ -2200,6 +2203,7 @@ export const de: Dict = {
     namePlaceholder: "z.B. Hochzeit, Newborn, Portrait",
     whenToUse: "Wann nutze ich dieses Template?",
     allowDownload: "Download erlauben",
+      days: "Tage",
   },
   impersonate: {
     noToken: "Kein Token im Link.",

@@ -243,7 +243,7 @@ export default function TemplateEditorPage() {
               onChange={(e) => setBrandingId(e.target.value)}
               className="w-full rounded-md border border-line-subtle px-3 py-2 text-sm bg-surface-raised"
             >
-              <option value="">{t("templates.tenantDefault")}</option>
+              <option value="">{t("studio.brandingTenantDefault")}</option>
               {brandings.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
