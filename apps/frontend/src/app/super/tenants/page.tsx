@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api, type SuperTenantSummary } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { SuperShell } from "@/components/super/SuperShell";
 import { CreateTenantDialog } from "@/components/super/CreateTenantDialog";
 
@@ -15,6 +16,7 @@ export default function SuperTenantsPage() {
 }
 
 function TenantsList() {
+  const t = useT();
   const [tenants, setTenants] = useState<SuperTenantSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -37,9 +39,9 @@ function TenantsList() {
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold">Tenants</h1>
+          <h1 className="text-2xl font-semibold">{t("super.navTenants")}</h1>
           <p className="text-ui-sm text-ink-tertiary mt-0.5">
-            Alle Foto-Studios auf dieser Plattform.
+            {t("super.tenantsSubtitle")}
           </p>
         </div>
         <button
@@ -47,43 +49,48 @@ function TenantsList() {
           onClick={() => setCreating(true)}
           className="h-9 px-4 rounded bg-accent text-accent-contrast font-medium text-ui-sm hover:bg-accent-hover transition-colors duration-motion"
         >
-          + Neuer Tenant
+          {t("super.tenantsNew")}
         </button>
       </div>
 
       {loading ? (
-        <div className="text-ui text-ink-tertiary">Lädt…</div>
+        <div className="text-ui text-ink-tertiary">{t("common.loading")}</div>
       ) : tenants.length === 0 ? (
         <div className="rounded-md border border-dashed border-line-subtle bg-surface-sunken p-12 text-center">
           <p className="text-ui text-ink-tertiary">
-            Noch keine Tenants — leg den ersten an.
+            {t("super.tenantsEmpty")}
           </p>
         </div>
       ) : (
         <ul className="rounded-md border border-line-subtle bg-surface-raised divide-y divide-line-subtle overflow-hidden">
-          {tenants.map((t) => (
-            <li key={t.id}>
+          {tenants.map((tenant) => (
+            <li key={tenant.id}>
               <Link
-                href={`/super/tenants/${t.id}`}
+                href={`/super/tenants/${tenant.id}`}
                 className="flex items-center gap-3 px-4 py-3 hover:bg-surface-overlay transition-colors duration-motion"
               >
-                <StatusDot status={t.status} readOnly={t.readOnly} />
+                <StatusDot status={tenant.status} readOnly={tenant.readOnly} />
                 <div className="flex-1 min-w-0">
                   <div className="text-ui text-ink-primary truncate">
-                    {t.name}
-                    {t.displayName && t.displayName !== t.name && (
+                    {tenant.name}
+                    {tenant.displayName && tenant.displayName !== tenant.name && (
                       <span className="text-ui-xs text-ink-tertiary ml-2 font-normal">
-                        → öffentlich „{t.displayName}"
+                        {t("super.tenantsPublicAs", {
+                          name: tenant.displayName,
+                        })}
                       </span>
                     )}
                   </div>
                   <div className="text-ui-xs text-ink-tertiary truncate font-mono">
-                    {t.slug}
-                    {t.customDomain && ` · ${t.customDomain}`}
+                    {tenant.slug}
+                    {tenant.customDomain && ` · ${tenant.customDomain}`}
                   </div>
                 </div>
                 <div className="text-ui-xs text-ink-tertiary text-right tabular-nums flex-shrink-0">
-                  {t.userCount} User · {t.galleryCount} Galerien
+                  {t("super.tenantsCounts", {
+                    users: tenant.userCount,
+                    galleries: tenant.galleryCount,
+                  })}
                 </div>
               </Link>
             </li>
@@ -111,6 +118,7 @@ function StatusDot({
   status: SuperTenantSummary["status"];
   readOnly?: boolean;
 }) {
+  const t = useT();
   const activeReadOnly = status === "active" && readOnly;
   const color = activeReadOnly
     ? "bg-semantic-warning"
@@ -120,12 +128,12 @@ function StatusDot({
     ? "bg-semantic-warning"
     : "bg-ink-tertiary";
   const title = activeReadOnly
-    ? "Aktiv · Read-only"
+    ? t("super.statusActiveReadOnly")
     : status === "active"
-    ? "Aktiv"
+    ? t("super.statusActive")
     : status === "suspended"
-    ? "Suspendiert"
-    : "Archiviert";
+    ? t("super.statusSuspended")
+    : t("super.statusArchived");
   return (
     <span
       className={`block w-2 h-2 rounded-full flex-shrink-0 ${color}`}

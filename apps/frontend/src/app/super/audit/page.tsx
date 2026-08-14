@@ -25,7 +25,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
-import { useFormat } from "@/lib/i18n";
+import { useFormat, useT } from "@/lib/i18n";
 
 type AuditResponse = Awaited<ReturnType<typeof api.superAuditLog>>;
 type AuditRow = AuditResponse["events"][number];
@@ -39,6 +39,7 @@ export default function SuperAuditPage() {
 }
 
 function AuditContent() {
+  const t = useT();
   const [actorType, setActorType] = useState<
     "" | "user" | "access" | "system" | "super_admin"
   >("");
@@ -110,15 +111,15 @@ function AuditContent() {
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-6xl">
-      <h1 className="text-2xl font-semibold mb-1">Audit-Log</h1>
+      <h1 className="text-2xl font-semibold mb-1">{t("super.auditTitle")}</h1>
       <p className="text-ui-sm text-ink-tertiary mb-6">
-        Vollständige Aktions-Historie über alle Tenants und den Super-Admin.
+        {t("super.auditSubtitle")}
       </p>
 
       <div className="bg-surface-raised border border-line-subtle rounded-md p-4 mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <div>
           <label className="text-xs text-ink-tertiary block mb-1">
-            Actor-Type
+            {t("super.auditActorType")}
           </label>
           <select
             value={actorType}
@@ -134,7 +135,7 @@ function AuditContent() {
         </div>
         <div>
           <label className="text-xs text-ink-tertiary block mb-1">
-            Action-Bereich
+            {t("super.auditActionScope")}
           </label>
           <select
             value={actionPrefix}
@@ -151,7 +152,7 @@ function AuditContent() {
         </div>
         <div>
           <label className="text-xs text-ink-tertiary block mb-1">
-            Tenant-ID
+            {t("super.auditTenantId")}
           </label>
           <input
             value={tenantId}
@@ -161,7 +162,9 @@ function AuditContent() {
           />
         </div>
         <div>
-          <label className="text-xs text-ink-tertiary block mb-1">Von</label>
+          <label className="text-xs text-ink-tertiary block mb-1">
+            {t("super.auditFrom")}
+          </label>
           <input
             type="datetime-local"
             value={from}
@@ -170,7 +173,9 @@ function AuditContent() {
           />
         </div>
         <div>
-          <label className="text-xs text-ink-tertiary block mb-1">Bis</label>
+          <label className="text-xs text-ink-tertiary block mb-1">
+            {t("super.auditTo")}
+          </label>
           <input
             type="datetime-local"
             value={to}
@@ -191,11 +196,11 @@ function AuditContent() {
         <table className="w-full text-sm min-w-[720px]">
           <thead>
             <tr className="border-b border-line-subtle text-xs uppercase tracking-wider text-ink-tertiary text-left">
-              <th className="px-3 py-2 font-medium">Zeit</th>
-              <th className="px-3 py-2 font-medium">Tenant</th>
-              <th className="px-3 py-2 font-medium">Actor</th>
-              <th className="px-3 py-2 font-medium">Action</th>
-              <th className="px-3 py-2 font-medium">Target</th>
+              <th className="px-3 py-2 font-medium">{t("super.auditColTime")}</th>
+              <th className="px-3 py-2 font-medium">{t("super.auditColTenant")}</th>
+              <th className="px-3 py-2 font-medium">{t("super.auditColActor")}</th>
+              <th className="px-3 py-2 font-medium">{t("super.auditColAction")}</th>
+              <th className="px-3 py-2 font-medium">{t("super.auditColTarget")}</th>
             </tr>
           </thead>
           <tbody>
@@ -205,7 +210,7 @@ function AuditContent() {
                   colSpan={5}
                   className="px-3 py-8 text-center text-ink-tertiary"
                 >
-                  Keine Einträge mit diesen Filtern.
+                  {t("super.auditNoEntries")}
                 </td>
               </tr>
             )}
@@ -224,10 +229,12 @@ function AuditContent() {
             disabled={loading}
             className="text-sm px-4 py-2 rounded border border-line-subtle hover:bg-surface-sunken disabled:opacity-50"
           >
-            {loading ? "Lädt…" : "Mehr laden"}
+            {loading ? t("common.loading") : t("super.auditLoadMore")}
           </button>
         ) : rows.length > 0 ? (
-          <span className="text-xs text-ink-tertiary">Ende der Liste</span>
+          <span className="text-xs text-ink-tertiary">
+            {t("super.auditEndOfList")}
+          </span>
         ) : null}
       </div>
     </div>
@@ -235,6 +242,7 @@ function AuditContent() {
 }
 
 function AuditRowItem({ row }: { row: AuditRow }) {
+  const t = useT();
   const fmt = useFormat();
   const [expanded, setExpanded] = useState(false);
   const hasDetails =
@@ -295,18 +303,20 @@ function AuditRowItem({ row }: { row: AuditRow }) {
         <tr className="border-b border-line-subtle bg-surface-sunken/30">
           <td colSpan={5} className="px-3 py-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-              <DetailField label="Actor-ID" value={row.actorId} mono />
-              <DetailField label="Target-ID" value={row.targetId} mono />
-              <DetailField label="IP-Adresse" value={row.ipAddress} mono />
+              <DetailField label={t("super.auditActorId")} value={row.actorId} mono />
+              <DetailField label={t("super.auditTargetId")} value={row.targetId} mono />
+              <DetailField label={t("super.auditIpAddress")} value={row.ipAddress} mono />
               <DetailField
-                label="Event-ID"
+                label={t("super.auditEventId")}
                 value={row.id}
                 mono
               />
             </div>
             {row.payload !== null && row.payload !== undefined && (
               <div className="mt-3">
-                <div className="text-xs text-ink-tertiary mb-1">Payload</div>
+                <div className="text-xs text-ink-tertiary mb-1">
+                  {t("super.auditPayload")}
+                </div>
                 <pre className="text-xs font-mono bg-surface-base border border-line-subtle rounded p-2 overflow-x-auto">
                   {JSON.stringify(row.payload, null, 2)}
                 </pre>

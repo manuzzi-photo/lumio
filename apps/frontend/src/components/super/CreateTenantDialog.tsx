@@ -138,7 +138,7 @@ export function CreateTenantDialog({ onClose, onCreated }: Props) {
             }}
             required
             maxLength={120}
-            placeholder="Studio Müller"
+            placeholder={t("super.ctStudioNamePlaceholder")}
             className="block w-full h-9 px-2.5 rounded bg-surface-sunken border border-line-subtle text-ui text-ink-primary focus:border-accent focus:outline-none"
           />
         </Field>
@@ -152,7 +152,7 @@ export function CreateTenantDialog({ onClose, onCreated }: Props) {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={120}
-            placeholder="z.B. Müller Photography"
+            placeholder={t("super.ctDisplayNamePlaceholder")}
             className="block w-full h-9 px-2.5 rounded bg-surface-sunken border border-line-subtle text-ui text-ink-primary focus:border-accent focus:outline-none"
           />
         </Field>
@@ -193,7 +193,7 @@ export function CreateTenantDialog({ onClose, onCreated }: Props) {
 
         <div className="border-t border-line-subtle pt-3">
           <div className="text-ui-xs uppercase tracking-[0.12em] text-ink-tertiary mb-2">
-            Initial-Owner
+            {t("super.ctInitialOwner")}
           </div>
           <Field label={t("super.name")} required>
             <input
@@ -233,7 +233,7 @@ export function CreateTenantDialog({ onClose, onCreated }: Props) {
             disabled={busy}
             className="h-9 px-4 rounded border border-line-strong text-ui-sm text-ink-secondary hover:text-ink-primary hover:bg-surface-overlay transition-colors duration-motion"
           >
-            Abbrechen
+            {t("common.cancel")}
           </button>
           <button
             type="submit"
