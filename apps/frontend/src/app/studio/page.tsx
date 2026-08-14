@@ -482,7 +482,7 @@ export default function StudioPage() {
               onClick={deleteActiveCollection}
               className="text-ui-xs text-semantic-danger/80 hover:text-semantic-danger ml-2"
             >
-              Aktive löschen
+              {t("studio.deleteActive")}
             </button>
           )}
         </div>
@@ -691,8 +691,7 @@ function SaveCollectionDialog({
         <div>
           <h2 className="text-lg font-medium">{t("studio.newCollectionHeading")}</h2>
           <p className="text-ui-sm text-ink-tertiary mt-1">
-            Speichere einen Filter unter einem Namen. Er erscheint dann
-            oben in der Galerien-Liste als Schnellzugriff.
+            {t("studio.saveFilterHint")}
           </p>
         </div>
 
@@ -721,7 +720,7 @@ function SaveCollectionDialog({
             {t("collections.filter")}
           </div>
           <p className="text-ui-xs text-ink-tertiary mb-3">
-            Galerien müssen alle gesetzten Bedingungen erfüllen.
+            {t("studio.filtersAndHint")}
           </p>
 
           <div className="space-y-3">
@@ -920,7 +919,7 @@ function GalleryCard({
         </span>
       )}
       {stats && stats.likes > 0 && (
-        <span className="inline-flex items-center gap-1" title="Favoriten">
+        <span className="inline-flex items-center gap-1" title={t("studio.favorites")}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 21s-7-4.6-9.5-8.3C.9 10.2 1.5 7 4.3 6c1.9-.7 3.7.2 4.7 1.6C10 6.2 11.8 5.3 13.7 6c2.8 1 3.4 4.2 1.8 6.7C19 16.4 12 21 12 21z" />
           </svg>
@@ -1036,7 +1035,7 @@ function GalleryCard({
                   }}
                   className="w-full text-left px-3 py-1.5 text-ink-secondary hover:text-ink-primary hover:bg-surface-sunken"
                 >
-                  Reaktivieren
+                  {t("studio.reactivate")}
                 </button>
               ) : (
                 <button
@@ -1047,7 +1046,7 @@ function GalleryCard({
                   }}
                   className="w-full text-left px-3 py-1.5 text-semantic-danger/90 hover:text-semantic-danger hover:bg-surface-sunken"
                 >
-                  Archivieren
+                  {t("studio.archive")}
                 </button>
               )}
             </div>
@@ -1265,7 +1264,7 @@ function CreateGalleryDialog({
           />
         </Field>
 
-        <Field label="Beschreibung" htmlFor="desc" optionalLabel>
+        <Field label={t("studio.descriptionLabel")} htmlFor="desc" optionalLabel>
           <Textarea
             id="desc"
             value={description}

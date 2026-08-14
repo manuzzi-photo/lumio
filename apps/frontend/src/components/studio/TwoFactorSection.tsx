@@ -161,7 +161,7 @@ export function TwoFactorSection() {
           </div>
           <details className="text-xs text-ink-tertiary">
             <summary className="cursor-pointer">
-              Manuelle Einrichtung
+              {t("account.manualSetup")}
             </summary>
             <code className="block mt-1 bg-surface-sunken p-2 rounded break-all">
               {state.otpauthUri}

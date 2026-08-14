@@ -17,6 +17,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { StudioSubTabs } from "@/components/studio/StudioSubTabs";
+import { useT } from "@/lib/i18n";
 
 export interface BreadcrumbItem {
   label: string;
@@ -36,12 +37,13 @@ export function PageHeader({
   description,
   actions,
 }: PageHeaderProps) {
+  const t = useT();
   return (
     <>
       <header className="px-6 sm:px-8 lg:px-12 pt-6 pb-5 border-b border-line-subtle">
         {breadcrumb && breadcrumb.length > 0 && (
           <nav
-            aria-label="Breadcrumb"
+            aria-label={t("common.breadcrumb")}
             className="text-ui-xs text-ink-tertiary mb-3 flex items-center gap-1.5"
           >
             {breadcrumb.map((item, i) => (

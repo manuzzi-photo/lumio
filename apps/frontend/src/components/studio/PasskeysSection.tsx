@@ -108,10 +108,9 @@ export function PasskeysSection() {
   if (!supported) {
     return (
       <section className="rounded-lg border border-line-subtle bg-surface-raised p-5">
-        <h2 className="text-sm font-medium">Passkeys</h2>
+        <h2 className="text-sm font-medium">{t("passkeys.heading")}</h2>
         <p className="text-xs text-ink-tertiary mt-1">
-          Dieser Browser unterstützt keine WebAuthn-/Passkey-Anmeldung. Auf
-          einem aktuellen Chrome, Safari oder Firefox sollte es funktionieren.
+          {t("passkeys.unsupported")}
         </p>
       </section>
     );
@@ -121,7 +120,7 @@ export function PasskeysSection() {
     <section className="rounded-lg border border-line-subtle bg-surface-raised p-5 space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-sm font-medium">Passkeys</h2>
+          <h2 className="text-sm font-medium">{t("passkeys.heading")}</h2>
           <p className="text-xs text-ink-tertiary mt-0.5">
             {t("passkeys.desc")}
           </p>

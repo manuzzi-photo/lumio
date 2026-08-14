@@ -47,6 +47,10 @@ export const en: Dict = {
     remove: "Remove",
     upload: "Upload",
     replace: "Replace",
+      imprint: "Imprint",
+    privacy: "Privacy",
+    preview: "Preview",
+    breadcrumb: "Breadcrumb",
   },
 
   nav: {
@@ -115,6 +119,7 @@ export const en: Dict = {
       description: "Confirm the sign-in with your device.",
       waiting: "Waiting for device…",
     },
+      otherCredentials: "← Use different credentials",
   },
 
   studio: {
@@ -612,6 +617,20 @@ export const en: Dict = {
     lbZoomInTitle: "Zoom in (+)",
     lbActualSize: "Actual size",
     lbActualSizeTitle: "Actual size (0)",
+      reactivate: "Reactivate",
+    archive: "Archive",
+    deleteActive: "Delete active",
+    saveFilterHint:
+      "Save a filter under a name. It then appears above the gallery list as a shortcut.",
+    filtersAndHint: "Galleries must match every condition you set.",
+    favorites: "Favorites",
+    descriptionLabel: "Description",
+    duplicatesDetected: "Duplicates detected",
+    studioLogo: "Studio logo",
+    markdownEmpty: "Empty — write something in edit mode.",
+    tagSyncHint:
+      "Tag changes are NOT applied automatically — click “Sync now” on each update.",
+    removeTag: "Remove tag",
   },
 
   gallery: {
@@ -732,6 +751,7 @@ export const en: Dict = {
     modeMark: "Mark",
     markDone: "Done",
     poweredBy: "Powered by Lumio",
+      videoPosition: "Video position",
   },
 
   proofing: {
@@ -753,6 +773,15 @@ export const en: Dict = {
     xmp: "XMP sidecars (ZIP)",
     lightroomHint:
       "Lightroom matches color labels against the active label set. Set Lightroom under Metadata → Color Label Set to Lightroom Default (English). Lumio writes Red/Yellow/Green. With a localized set, ratings work but colors won't match.",
+      favorites: "Favorites",
+    favorite: "Favourite",
+    colorTagNoteLabel: "Note on colour tags:",
+    colFile: "File",
+    colRating: "Rating",
+    colLabel: "Label",
+    colLiked: "Liked",
+    colTeams: "Teams",
+    noSelection: "No customer selection yet.",
   },
 
   settings: {
@@ -837,6 +866,16 @@ export const en: Dict = {
     watermarkHintPre:
       "A change only takes effect when a gallery's watermark is regenerated. Toggle",
     watermarkHintPost: "off and on again, or wait for the next upload.",
+      notifTitle: "Email notifications",
+    notifSubtitle:
+      "Choose what Lumio emails you about. Mail goes to the studio owner.",
+    notifProduct: "Product emails",
+    notifProductHint:
+      "Trial reminders, reactivation notices. At most one email per category.",
+    notifOwnerAdminOnly: "Only owners and admins can change notifications.",
+    notifEnabled: "Enabled",
+    notifDisabled: "Disabled",
+    notifOwnerAdminOnlyShort: "Only owners and admins can change this",
   },
 
   annotation: {
@@ -956,6 +995,8 @@ export const en: Dict = {
     backToCart: "Back to cart",
     unavailable: "Print shop not available",
     backToGallery: "Back to gallery",
+      navLabel: "Print shop navigation",
+    visibleInCatalogue: "Visible in the customer catalogue",
   },
 
   share: {
@@ -1082,6 +1123,11 @@ export const en: Dict = {
     confirmNewPassword: "Confirm new password",
     settingPassword: "Setting…",
     changePassword: "Change password",
+      passwordChangeHint:
+      "For security reasons we need your current password. We send a confirmation link to the new address — the change only takes effect after that.",
+    sessionsEndedHint:
+      "Other active sessions end when you switch. This one stays active.",
+    manualSetup: "Manual setup",
   },
 
   team: {
@@ -1122,6 +1168,12 @@ export const en: Dict = {
       "The invitation to {email} was created, but automatic email delivery failed. Send this user the following setup link manually — it's valid for 72 hours:",
     copyLink: "Copy link",
     copied: "Copied!",
+      resendMail: "Resend email",
+    roleAdminDesc: "Admin — can manage galleries and the team",
+    roleOwnerDesc: "Owner — can additionally assign owner roles",
+    roleMemberDesc: "Member — restricted access",
+    inviteHint:
+      "The invited user receives an email with a setup link (valid for 72 hours) and can then sign in with their own password.",
   },
 
   billing: {
@@ -1277,6 +1329,9 @@ export const en: Dict = {
     headerStyle: "Header style",
     headerLine: "Simple line",
     headerBanner: "Accent banner",
+      strength: "Strength",
+    fontSansSerif: "Sans-serif",
+    fontSerif: "Serif",
   },
 
   dangerZone: {
@@ -1312,6 +1367,10 @@ export const en: Dict = {
     bannerDaysOne: "Permanent deletion in 1 day ({date}).",
     bannerDaysMany: "Permanent deletion in {days} days ({date}).",
     bannerExecuting: "Permanent deletion is being carried out.",
+      deletionRunning: "Studio deletion in progress",
+    requestedOn: "Requested on",
+    stripeSubscription: "Stripe subscription",
+    cancelledRestart: "Cancelled — restart manually on reactivation.",
   },
 
   resetPw: {
@@ -2079,6 +2138,9 @@ export const en: Dict = {
     none: "No passkeys registered yet.",
     add: "Add passkey",
     addError: "Passkey could not be added.",
+      heading: "Passkeys",
+    unsupported:
+      "This browser does not support WebAuthn or passkey sign-in. It should work on a current version of Chrome, Safari or Firefox.",
   },
 
   bulkSel: {
@@ -2110,6 +2172,8 @@ export const en: Dict = {
     draft: "Draft",
     active: "Active",
     archived: "Archived",
+      andHint:
+      "All filters are combined with AND — a gallery must match every condition you set to appear in the collection.",
   },
   templates: {
     watermarkActive: "Watermark active",
@@ -2121,11 +2185,26 @@ export const en: Dict = {
     deleteConfirm: "Delete template? Galleries already created are not affected.",
     defaultDescLabel: "Default description for new galleries",
     defaultDescPlaceholder: "Used as default text in the gallery — editable per gallery.",
+      empty: "No templates created yet.",
+    hint:
+      "Templates save time when creating recurring gallery types such as weddings, newborn or portrait sessions — all settings are pre-filled.",
+    createFirst: "Create the first template →",
+    ratings: "Ratings",
+    namePlaceholder: "e.g. wedding, newborn, portrait",
+    whenToUse: "When do I use this template?",
+    allowDownload: "Allow download",
   },
   impersonate: {
     noToken: "No token in the link.",
     errCookie: "Session cookie was not accepted. Please allow cookies/tracking protection for this domain.",
     errToken: "Token invalid or expired. Please start again from the super admin.",
+      supportLogin: "Support sign-in",
+    creatingSession: "Creating session…",
+    failed: "Impersonation failed",
+    backHome: "Back to the start page",
+    modeLabel: "Impersonation mode",
+    modeBy: "— you are signed in here as support by",
+    end: "End",
   },
 
   storageBanner: {

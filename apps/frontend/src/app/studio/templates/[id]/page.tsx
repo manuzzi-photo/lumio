@@ -170,7 +170,7 @@ export default function TemplateEditorPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              placeholder="Wann nutze ich dieses Template?"
+              placeholder={t("templates.whenToUse")}
               className="w-full rounded-md border border-line-subtle px-3 py-2 text-sm"
             />
           </Field>
@@ -194,7 +194,7 @@ export default function TemplateEditorPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <Toggle
-              label="Download erlauben"
+              label={t("templates.allowDownload")}
               value={downloadEnabled}
               onChange={setDownloadEnabled}
             />
@@ -209,7 +209,7 @@ export default function TemplateEditorPage() {
               onChange={setCommentsEnabled}
             />
             <Toggle
-              label="Ratings"
+              label={t("templates.ratings")}
               value={ratingsEnabled}
               onChange={setRatingsEnabled}
             />

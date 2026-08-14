@@ -43,7 +43,7 @@ export default function PrintShopLayout({
 
       <div
         className="border-b border-line-subtle overflow-x-auto"
-        aria-label="Print-Shop-Navigation"
+        aria-label={t("printShop.navLabel")}
       >
         <nav className="flex items-center gap-0.5 px-6 sm:px-8 lg:px-12 min-w-max">
           {TABS.map((tab) => {

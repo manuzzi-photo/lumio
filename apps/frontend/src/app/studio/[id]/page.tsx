@@ -1898,7 +1898,7 @@ export default function GalleryDetailPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-medium text-ink-primary">
-              Duplikate erkannt
+              {t("studio.duplicatesDetected")}
             </h2>
             <p className="text-ui-sm text-ink-secondary mt-2">
               {dupDialog.duplicates.length === 1

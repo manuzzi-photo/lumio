@@ -260,7 +260,7 @@ function UserRow({
         <div className="flex gap-1 flex-shrink-0">
           {user.status === "invited" && (
             <Button variant="ghost" size="sm" onClick={onResend}>
-              Mail erneut
+              {t("team.resendMail")}
             </Button>
           )}
           <Button variant="ghost" size="sm" onClick={onEdit}>
@@ -397,15 +397,15 @@ function InviteDialog({
             className={inputCls}
           >
             <option value="admin">
-              Admin — kann Galerien und Team verwalten
+              {t("team.roleAdminDesc")}
             </option>
             {canInviteOwner && (
               <option value="owner">
-                Owner — kann zusätzlich Owner-Rollen vergeben
+                {t("team.roleOwnerDesc")}
               </option>
             )}
             <option value="member">
-              Member — eingeschränkter Zugriff
+              {t("team.roleMemberDesc")}
             </option>
           </select>
         </Field>

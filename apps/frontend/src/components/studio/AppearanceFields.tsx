@@ -85,7 +85,7 @@ export function OverlayField({
         />
       </label>
       <label className="flex items-center gap-2 text-sm text-ink-secondary flex-1 min-w-[180px]">
-        Stärke
+        {t("appearance.strength")}
         <input
           type="range"
           min={0}

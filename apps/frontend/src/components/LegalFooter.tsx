@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 /**
  * Dezente Footer-Zeile mit den rechtlichen Links des Betreibers
@@ -19,6 +20,7 @@ export function LegalFooter({
   className?: string;
   align?: "center" | "start";
 }) {
+  const t = useT();
   const [legal, setLegal] = useState<{
     imprintUrl: string | null;
     privacyUrl: string | null;
@@ -54,7 +56,7 @@ export function LegalFooter({
           rel="noopener noreferrer"
           className="hover:text-ink-primary hover:underline"
         >
-          Impressum
+          {t("common.imprint")}
         </a>
       )}
       {legal.imprintUrl && legal.privacyUrl && <span aria-hidden>·</span>}
@@ -65,7 +67,7 @@ export function LegalFooter({
           rel="noopener noreferrer"
           className="hover:text-ink-primary hover:underline"
         >
-          Datenschutz
+          {t("common.privacy")}
         </a>
       )}
     </footer>

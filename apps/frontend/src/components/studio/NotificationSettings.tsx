@@ -82,10 +82,9 @@ export function NotificationSettings({ canEdit }: { canEdit: boolean }) {
     <section className="rounded-lg border border-line-subtle bg-surface-raised p-5 space-y-6">
       {/* Transaktionale Benachrichtigungen */}
       <div>
-        <h2 className="text-lg font-semibold">E-Mail-Benachrichtigungen</h2>
+        <h2 className="text-lg font-semibold">{t("settings.notifTitle")}</h2>
         <p className="text-ui-sm text-ink-tertiary mt-0.5 mb-4">
-          Wähle, worüber dich Lumio per E-Mail informiert. Mails gehen an den
-          Studio-Owner.
+          {t("settings.notifSubtitle")}
         </p>
 
         {loading ? (
@@ -118,9 +117,9 @@ export function NotificationSettings({ canEdit }: { canEdit: boolean }) {
                     title={
                       canEdit
                         ? on
-                          ? "Aktiviert"
-                          : "Deaktiviert"
-                        : "Nur Owner/Admin können das ändern"
+                          ? t("settings.notifEnabled")
+                          : t("settings.notifDisabled")
+                        : t("settings.notifOwnerAdminOnlyShort")
                     }
                   >
                     <span
@@ -140,7 +139,7 @@ export function NotificationSettings({ canEdit }: { canEdit: boolean }) {
       {/* Marketing-Mails (nur wenn Billing aktiv) */}
       {!loading && marketingEnabled !== null && (
         <div className="border-t border-line-subtle pt-5">
-          <h3 className="font-semibold text-ink-primary">Produkt-Mails</h3>
+          <h3 className="font-semibold text-ink-primary">{t("settings.notifProduct")}</h3>
           <p className="text-ui-sm text-ink-tertiary mt-0.5 mb-4">
             Gelegentliche Hinweise zu deinem Trial oder Abo (z.&nbsp;B.
             Ablauf-Erinnerung). Kein Newsletter, keine Werbung Dritter.
@@ -151,8 +150,7 @@ export function NotificationSettings({ canEdit }: { canEdit: boolean }) {
                 Produkt- &amp; Lifecycle-Mails
               </div>
               <div className="text-ui-sm text-ink-tertiary">
-                Trial-Reminder, Reaktivierungs-Hinweise. Maximal eine Mail
-                pro Kategorie.
+                {t("settings.notifProductHint")}
               </div>
             </div>
             <button
@@ -168,9 +166,9 @@ export function NotificationSettings({ canEdit }: { canEdit: boolean }) {
               title={
                 canEdit
                   ? marketingEnabled
-                    ? "Aktiviert"
-                    : "Deaktiviert"
-                  : "Nur Owner/Admin können das ändern"
+                    ? t("settings.notifEnabled")
+                    : t("settings.notifDisabled")
+                  : t("settings.notifOwnerAdminOnlyShort")
               }
             >
               <span
@@ -189,7 +187,7 @@ export function NotificationSettings({ canEdit }: { canEdit: boolean }) {
       )}
       {!canEdit && !loading && (
         <p className="text-ui-xs text-ink-tertiary">
-          Nur Owner und Admins können Benachrichtigungen ändern.
+          {t("settings.notifOwnerAdminOnly")}
         </p>
       )}
     </section>

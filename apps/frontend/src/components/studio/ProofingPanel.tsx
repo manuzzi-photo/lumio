@@ -164,7 +164,7 @@ export function ProofingPanel({
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 21s-7-4.6-9.5-8.3C.9 10.2 1.5 7 4.3 6c1.9-.7 3.7.2 4.7 1.6C10 6.2 11.8 5.3 13.7 6c2.8 1 3.4 4.2 1.8 6.7C19 16.4 12 21 12 21z" />
                 </svg>
-                Favoriten
+                {t("proofing.favorites")}
               </button>
               <button
                 type="button"
@@ -249,8 +249,8 @@ export function ProofingPanel({
                       {hasLike && (
                         <span
                           className="w-5 h-5 rounded-full bg-black/55 text-white inline-flex items-center justify-center shadow-sm"
-                          aria-label="Favorit"
-                          title="Favorit"
+                          aria-label={t("proofing.favorite")}
+                          title={t("proofing.favorite")}
                         >
                           <svg
                             width="11"
@@ -363,9 +363,7 @@ export function ProofingPanel({
         <section className="rounded-lg border border-line-subtle bg-surface-raised p-4">
           <h2 className="text-sm font-medium mb-1">{t("proofing.exports")}</h2>
           <p className="text-xs text-ink-tertiary mb-3">
-            CSV für Tabellenkalkulation, XMP-Sidecars für Lightroom Classic
-            oder Capture One. Lege die XMPs neben deine Original-RAWs, dann
-            in Lightroom <em>Metadaten → Aus Datei lesen</em>.
+            {t("proofing.exportsHint")}
           </p>
           <div className="flex flex-wrap gap-2">
             <a
@@ -384,12 +382,8 @@ export function ProofingPanel({
             </a>
           </div>
           <div className="text-xs text-ink-tertiary mt-3 leading-relaxed">
-            <strong>Hinweis zu Farb-Tags:</strong> Lightroom erkennt
-            Farb-Labels anhand des aktiven Label-Sets. Stelle in Lightroom
-            unter <em>Metadaten → Farbbeschriftungs-Sets</em> auf
-            „Lightroom-Standard" (englisch) — Lumio schreibt „Red"/„Yellow"/
-            „Green". Bei deutschem Label-Set („Rot"/„Gelb"/„Grün") werden
-            die Sterne erkannt, die Farben nicht.
+            <strong>{t("proofing.colorTagNoteLabel")}</strong>{" "}
+            {t("proofing.lightroomHint")}
           </div>
         </section>
 
@@ -406,11 +400,11 @@ export function ProofingPanel({
           <table className="w-full text-sm">
             <thead className="bg-surface-sunken text-xs text-ink-tertiary">
               <tr>
-                <th className="text-left px-4 py-2">Datei</th>
-                <th className="text-center px-4 py-2">Rating</th>
-                <th className="text-center px-4 py-2">Label</th>
-                <th className="text-center px-4 py-2">Liked</th>
-                <th className="text-left px-4 py-2">Teams</th>
+                <th className="text-left px-4 py-2">{t("proofing.colFile")}</th>
+                <th className="text-center px-4 py-2">{t("proofing.colRating")}</th>
+                <th className="text-center px-4 py-2">{t("proofing.colLabel")}</th>
+                <th className="text-center px-4 py-2">{t("proofing.colLiked")}</th>
+                <th className="text-left px-4 py-2">{t("proofing.colTeams")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line-subtle">
@@ -452,7 +446,7 @@ export function ProofingPanel({
                     colSpan={5}
                     className="px-4 py-6 text-center text-sm text-ink-tertiary"
                   >
-                    Noch keine Auswahl von Kunden.
+                    {t("proofing.noSelection")}
                   </td>
                 </tr>
               )}

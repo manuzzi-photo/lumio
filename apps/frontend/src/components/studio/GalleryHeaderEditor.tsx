@@ -697,7 +697,7 @@ function RgbaPicker({
         className="h-8 w-12 rounded border border-line-subtle bg-transparent cursor-pointer"
       />
       <label className="text-ui-xs text-ink-tertiary flex items-center gap-1.5">
-        Stärke
+        {t("appearance.strength")}
         <input
           type="range"
           min={0}
@@ -840,14 +840,14 @@ function FontSelect({
         className="h-9 px-2.5 rounded bg-surface-sunken border border-line-subtle text-ui text-ink-primary focus:border-accent focus:outline-none w-full max-w-sm"
       >
         <option value="">{t("studio.fontDefault")}</option>
-        <optgroup label="Sans-Serif">
+        <optgroup label={t("appearance.fontSansSerif")}>
           {FONT_OPTIONS.filter((f) => f.category === "sans").map((f) => (
             <option key={f.id} value={f.id}>
               {f.label}
             </option>
           ))}
         </optgroup>
-        <optgroup label="Serif">
+        <optgroup label={t("appearance.fontSerif")}>
           {FONT_OPTIONS.filter((f) => f.category === "serif").map((f) => (
             <option key={f.id} value={f.id}>
               {f.label}

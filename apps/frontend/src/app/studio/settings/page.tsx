@@ -554,7 +554,11 @@ export default function StudioSettingsPage() {
             </section>
           )}
 
-        {/* Locale */}
+        {/* Locale.
+            The heading, the hint and the option labels are deliberately NOT
+            translated. Someone who landed on the wrong language has to be able
+            to find this control, and language names are conventionally written
+            in their own language ("Deutsch", not "German"). Leave as is. */}
         <section className="rounded-md border border-line-subtle bg-surface-raised p-5 flex items-center justify-between">
           <div>
             <h2 className="text-ui-md font-medium text-ink-primary">Language / Sprache</h2>

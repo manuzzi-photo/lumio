@@ -49,6 +49,10 @@ export const de: Dict = {
     remove: "Entfernen",
     upload: "Hochladen",
     replace: "Ersetzen",
+      imprint: "Impressum",
+    privacy: "Datenschutz",
+    preview: "Vorschau",
+    breadcrumb: "Breadcrumb",
   },
 
   nav: {
@@ -117,6 +121,7 @@ export const de: Dict = {
       description: "Bestätige die Anmeldung mit deinem Gerät.",
       waiting: "Wartet auf Gerät…",
     },
+      otherCredentials: "← Andere Zugangsdaten verwenden",
   },
 
   studio: {
@@ -614,6 +619,20 @@ export const de: Dict = {
     lbZoomInTitle: "Vergrößern (+)",
     lbActualSize: "Originalgröße",
     lbActualSizeTitle: "Originalgröße (0)",
+      reactivate: "Reaktivieren",
+    archive: "Archivieren",
+    deleteActive: "Aktive löschen",
+    saveFilterHint:
+      "Speichere einen Filter unter einem Namen. Er erscheint dann oben in der Galerien-Liste als Schnellzugriff.",
+    filtersAndHint: "Galerien müssen alle gesetzten Bedingungen erfüllen.",
+    favorites: "Favoriten",
+    descriptionLabel: "Beschreibung",
+    duplicatesDetected: "Duplikate erkannt",
+    studioLogo: "Studio-Logo",
+    markdownEmpty: "Leer — schreibe etwas im Bearbeiten-Modus.",
+    tagSyncHint:
+      "Tag-Änderungen werden NICHT automatisch übernommen — bei jeder Aktualisierung „Jetzt synchronisieren“ klicken.",
+    removeTag: "Tag entfernen",
   },
 
   gallery: {
@@ -735,6 +754,7 @@ export const de: Dict = {
     modeMark: "Markieren",
     markDone: "Fertig",
     poweredBy: "Powered by Lumio",
+      videoPosition: "Video-Position",
   },
 
   proofing: {
@@ -756,6 +776,15 @@ export const de: Dict = {
     xmp: "XMP-Sidecars (ZIP)",
     lightroomHint:
       "Lightroom erkennt Farb-Labels anhand des aktiven Label-Sets. Stelle Lightroom unter Metadaten → Farbbeschriftungs-Sets auf „Lightroom-Standard“ (englisch). Lumio schreibt „Red“/„Yellow“/„Green“. Bei deutschem Label-Set werden Sterne erkannt, Farben nicht.",
+      favorites: "Favoriten",
+    favorite: "Favorit",
+    colorTagNoteLabel: "Hinweis zu Farb-Tags:",
+    colFile: "Datei",
+    colRating: "Rating",
+    colLabel: "Label",
+    colLiked: "Liked",
+    colTeams: "Teams",
+    noSelection: "Noch keine Auswahl von Kunden.",
   },
 
   settings: {
@@ -842,6 +871,16 @@ export const de: Dict = {
     watermarkHintPre:
       "Eine Änderung wirkt erst, wenn das Wasserzeichen einer Galerie neu generiert wird. Schalte",
     watermarkHintPost: "aus und wieder an, oder warte auf den nächsten Upload.",
+      notifTitle: "E-Mail-Benachrichtigungen",
+    notifSubtitle:
+      "Wähle, worüber dich Lumio per E-Mail informiert. Mails gehen an den Studio-Owner.",
+    notifProduct: "Produkt-Mails",
+    notifProductHint:
+      "Trial-Reminder, Reaktivierungs-Hinweise. Maximal eine Mail pro Kategorie.",
+    notifOwnerAdminOnly: "Nur Owner und Admins können Benachrichtigungen ändern.",
+    notifEnabled: "Aktiviert",
+    notifDisabled: "Deaktiviert",
+    notifOwnerAdminOnlyShort: "Nur Owner/Admin können das ändern",
   },
 
   annotation: {
@@ -961,6 +1000,8 @@ export const de: Dict = {
     backToCart: "Zurück zum Warenkorb",
     unavailable: "Print-Shop nicht verfügbar",
     backToGallery: "Zurück zur Galerie",
+      navLabel: "Print-Shop-Navigation",
+    visibleInCatalogue: "Im Endkunden-Katalog sichtbar",
   },
 
   share: {
@@ -1087,6 +1128,11 @@ export const de: Dict = {
     confirmNewPassword: "Neues Passwort bestätigen",
     settingPassword: "Wird gesetzt…",
     changePassword: "Passwort ändern",
+      passwordChangeHint:
+      "Aus Sicherheitsgründen brauchen wir dein aktuelles Passwort. Wir schicken einen Bestätigungslink an die neue Adresse — erst danach ist der Wechsel aktiv.",
+    sessionsEndedHint:
+      "Andere aktive Sitzungen werden beim Wechsel beendet. Diese hier bleibt aktiv.",
+    manualSetup: "Manuelle Einrichtung",
   },
 
   team: {
@@ -1129,6 +1175,12 @@ export const de: Dict = {
       "Die Einladung an {email} wurde erstellt, aber der automatische Mailversand hat nicht geklappt. Schick diesem User den folgenden Setup-Link manuell — er ist 72 Stunden gültig:",
     copyLink: "Link kopieren",
     copied: "Kopiert!",
+      resendMail: "Mail erneut",
+    roleAdminDesc: "Admin — kann Galerien und Team verwalten",
+    roleOwnerDesc: "Owner — kann zusätzlich Owner-Rollen vergeben",
+    roleMemberDesc: "Member — eingeschränkter Zugriff",
+    inviteHint:
+      "Der eingeladene User erhält eine E-Mail mit einem Setup-Link (gültig 72 Stunden) und kann sich danach mit eigenem Passwort anmelden.",
   },
 
   billing: {
@@ -1284,6 +1336,9 @@ export const de: Dict = {
     headerStyle: "Kopf-Stil",
     headerLine: "Schlichte Linie",
     headerBanner: "Akzent-Banner",
+      strength: "Stärke",
+    fontSansSerif: "Sans-Serif",
+    fontSerif: "Serif",
   },
 
   dangerZone: {
@@ -1319,6 +1374,10 @@ export const de: Dict = {
     bannerDaysOne: "Endgültige Löschung in 1 Tag ({date}).",
     bannerDaysMany: "Endgültige Löschung in {days} Tagen ({date}).",
     bannerExecuting: "Endgültige Löschung wird gerade ausgeführt.",
+      deletionRunning: "Studio-Löschung läuft",
+    requestedOn: "Angefordert am",
+    stripeSubscription: "Stripe-Subscription",
+    cancelledRestart: "Gekündigt — bei Reaktivierung manuell neu starten.",
   },
 
   resetPw: {
@@ -2086,6 +2145,9 @@ export const de: Dict = {
     none: "Noch keine Passkeys registriert.",
     add: "Passkey hinzufügen",
     addError: "Passkey konnte nicht hinzugefügt werden.",
+      heading: "Passkeys",
+    unsupported:
+      "Dieser Browser unterstützt keine WebAuthn-/Passkey-Anmeldung. Auf einem aktuellen Chrome, Safari oder Firefox sollte es funktionieren.",
   },
 
   bulkSel: {
@@ -2117,6 +2179,8 @@ export const de: Dict = {
     draft: "Entwurf",
     active: "Aktiv",
     archived: "Archiviert",
+      andHint:
+      "Alle Filter sind UND-verknüpft — eine Galerie muss alle gesetzten Bedingungen erfüllen um in der Collection zu erscheinen.",
   },
   templates: {
     watermarkActive: "Wasserzeichen aktiv",
@@ -2128,11 +2192,26 @@ export const de: Dict = {
     deleteConfirm: "Template löschen? Bereits angelegte Galerien sind nicht betroffen.",
     defaultDescLabel: "Default-Beschreibung für neue Galerien",
     defaultDescPlaceholder: "Wird als Default-Text in die Galerie übernommen — pro Galerie editierbar.",
+      empty: "Noch keine Templates angelegt.",
+    hint:
+      "Templates sparen Zeit beim Anlegen wiederkehrender Galerie-Typen wie Hochzeit, Newborn oder Portrait — alle Einstellungen sind vorbelegt.",
+    createFirst: "Erstes Template erstellen →",
+    ratings: "Ratings",
+    namePlaceholder: "z.B. Hochzeit, Newborn, Portrait",
+    whenToUse: "Wann nutze ich dieses Template?",
+    allowDownload: "Download erlauben",
   },
   impersonate: {
     noToken: "Kein Token im Link.",
     errCookie: "Session-Cookie wurde nicht akzeptiert. Bitte Cookies/Tracking-Schutz für diese Domain erlauben.",
     errToken: "Token ungültig oder abgelaufen. Bitte erneut vom Super-Admin starten.",
+      supportLogin: "Support-Login",
+    creatingSession: "Session wird angelegt…",
+    failed: "Impersonate fehlgeschlagen",
+    backHome: "Zurück zur Startseite",
+    modeLabel: "Impersonate-Modus",
+    modeBy: "— du bist hier als Support eingeloggt durch",
+    end: "Beenden",
   },
 
   storageBanner: {

@@ -314,7 +314,7 @@ export function GalleryShell({
                   rel="noopener noreferrer"
                   className="hover:underline"
                 >
-                  Impressum
+                  {t("common.imprint")}
                 </a>
               )}
               {legal.imprintUrl && legal.privacyUrl && <span aria-hidden>·</span>}
@@ -325,7 +325,7 @@ export function GalleryShell({
                   rel="noopener noreferrer"
                   className="hover:underline"
                 >
-                  Datenschutz
+                  {t("common.privacy")}
                 </a>
               )}
             </div>

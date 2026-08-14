@@ -635,7 +635,7 @@ export default function LoginPage() {
             }}
             className="text-ui-xs text-ink-tertiary hover:text-ink-primary w-full text-center transition-colors duration-motion"
           >
-            ← Andere Zugangsdaten verwenden
+            {t("login.otherCredentials")}
           </button>
         </div>
       )}

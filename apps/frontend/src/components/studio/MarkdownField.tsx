@@ -98,7 +98,7 @@ export function MarkdownField({
             </ReactMarkdown>
           ) : (
             <div className="text-ink-tertiary text-ui-xs italic">
-              Leer — schreibe etwas im Bearbeiten-Modus.
+              {t("studio.markdownEmpty")}
             </div>
           )}
         </div>

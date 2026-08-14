@@ -110,6 +110,7 @@ export function TagPicker({ current, onAssign, onRemove }: Props) {
 
 // -----------------------------------------------------------------------------
 function Chip({ tag, onRemove }: { tag: Tag; onRemove: () => void }) {
+  const t = useT();
   return (
     <span
       className="inline-flex items-center gap-1 h-6 pl-1.5 pr-1 rounded-xs text-ui-xs"
@@ -123,7 +124,7 @@ function Chip({ tag, onRemove }: { tag: Tag; onRemove: () => void }) {
       <button
         type="button"
         onClick={onRemove}
-        aria-label="remove tag"
+        aria-label={t("studio.removeTag")}
         className="w-4 h-4 inline-flex items-center justify-center rounded-xs hover:bg-black/10 dark:hover:bg-white/10"
       >
         ×

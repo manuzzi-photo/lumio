@@ -302,7 +302,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={logo}
-                  alt="Studio-Logo"
+                  alt={t("studio.studioLogo")}
                   className="h-7 max-w-[150px] object-contain"
                 />
               ) : (
@@ -396,6 +396,7 @@ function ImpersonationBanner({
     expiresAt: string;
   };
 }) {
+  const t = useT();
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30000);
@@ -417,8 +418,7 @@ function ImpersonationBanner({
   return (
     <div className="bg-semantic-warning text-black px-4 py-2 text-sm flex items-center justify-center gap-3 flex-wrap">
       <span>
-        <strong>Impersonate-Modus</strong> — du bist hier als Support eingeloggt
-        durch <strong>{imp.bySuperAdminName ?? imp.bySuperAdminEmail}</strong>.
+        <strong>{t("impersonate.modeLabel")}</strong> {t("impersonate.modeBy")} <strong>{imp.bySuperAdminName ?? imp.bySuperAdminEmail}</strong>.
         Alle Aktionen werden protokolliert.
       </span>
       <span className="text-xs opacity-80">
@@ -429,7 +429,7 @@ function ImpersonationBanner({
         onClick={endImpersonation}
         className="text-xs px-2 py-0.5 rounded bg-black/15 hover:bg-black/25 font-medium"
       >
-        Beenden
+        {t("impersonate.end")}
       </button>
     </div>
   );

@@ -57,7 +57,12 @@ export default async function HomePage() {
     redirect("/login");
   }
 
-  // Apex: Tenant-Picker rendern. Form-Submit redirected auf Subdomain.
+  // Apex: render the tenant picker. Form submit redirects to the subdomain.
+  //
+  // NOTE: this is a server component (it awaits headers()), so useT() is not
+  // available and the copy below stays hardcoded German. Localising it needs
+  // the locale resolved server-side from the cookie rather than the client
+  // provider — worth doing, but a separate change.
   return (
     <main className="min-h-screen flex items-center justify-center p-8 bg-surface-canvas">
       <div

@@ -352,9 +352,7 @@ function EmailSection({
             />
           </Row>
           <p className="text-ui-xs text-ink-tertiary leading-relaxed">
-            Aus Sicherheitsgründen brauchen wir dein aktuelles Passwort. Wir
-            schicken einen Bestätigungslink an die neue Adresse — erst danach
-            ist der Wechsel aktiv.
+            {t("account.passwordChangeHint")}
           </p>
           {error && (
             <div className="text-ui-sm text-semantic-danger">{error}</div>
@@ -471,8 +469,7 @@ function PasswordSection() {
             />
           </Row>
           <p className="text-ui-xs text-ink-tertiary leading-relaxed">
-            Andere aktive Sitzungen werden beim Wechsel beendet. Diese hier
-            bleibt aktiv.
+            {t("account.sessionsEndedHint")}
           </p>
           {error && (
             <div className="text-ui-sm text-semantic-danger">{error}</div>

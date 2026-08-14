@@ -408,7 +408,7 @@ function ProductDialog({
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
           />
-          Im Endkunden-Katalog sichtbar
+          {t("printShop.visibleInCatalogue")}
         </label>
 
         {error && <FormError>{error}</FormError>}

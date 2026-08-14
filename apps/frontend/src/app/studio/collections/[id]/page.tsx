@@ -124,9 +124,7 @@ export default function CollectionEditPage() {
         <section className="rounded-lg border border-line-subtle bg-surface-raised p-5 space-y-3">
           <h2 className="text-sm font-medium">{t("collections.filter")}</h2>
           <p className="text-xs text-ink-tertiary">
-            Alle Filter sind UND-verknüpft — eine Galerie muss alle
-            gesetzten Bedingungen erfüllen um in der Collection zu
-            erscheinen.
+            {t("collections.andHint")}
           </p>
 
           <div>

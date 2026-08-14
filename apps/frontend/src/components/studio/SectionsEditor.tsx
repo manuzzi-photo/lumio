@@ -543,8 +543,7 @@ function SectionEditForm({
         )}
         {autoTagId && !syncResult && (
           <p className="mt-1.5 text-ui-xs text-ink-tertiary">
-            Tag-Aenderungen werden NICHT automatisch uebernommen — bei
-            jeder Aktualisierung 'Jetzt synchronisieren' klicken.
+            {t("studio.tagSyncHint")}
           </p>
         )}
       </div>
