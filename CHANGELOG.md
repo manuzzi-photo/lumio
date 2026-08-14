@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.63.0] - 2026-08-14
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist die API, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The API is affected, so only the main server.*
+
+
 ### Fixed
 
 - Vier E-Mails wurden bisher an den Vorlagen vorbei gebaut und waren deshalb in jeder Sprache deutsch: die Mitteilung über einen Support-Zugriff aufs eigene Studio, die Vorab-Ankündigung und die Erinnerung zur Konto-Archivierung sowie der Hinweis auf den bereitstehenden Datenexport. Sie haben jetzt richtige Vorlagen — mit HTML-Fassung, die der Support-Hinweis vorher gar nicht hatte — und folgen der Sprache der angeschriebenen Person. Drei davon siezten als einzige Mails im System und duzen jetzt wie alle anderen.
