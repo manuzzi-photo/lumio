@@ -1181,104 +1181,201 @@ export function tmplDeletionCancelled(opts: {
   };
 }
 
+/**
+ * Loeschungs-Bestaetigung nach DSGVO Art. 17. Der Empfaenger soll sie
+ * aufbewahren koennen — die Aufzaehlung, was geloescht wurde und was
+ * bewusst bleibt, ist der inhaltliche Kern. Englisch deshalb woertlich,
+ * inklusive des Hinweises auf das eigene Verarbeitungsverzeichnis.
+ */
+const deletionExecutedPhrases = {
+  subject: {
+    de: "Dein Lumio-Studio „{studio}“ wurde gelöscht",
+    en: "Your Lumio studio “{studio}” has been deleted",
+  },
+  preheader: {
+    de: "Bestätigung der endgültigen Löschung von „{studio}“",
+    en: "Confirmation of the permanent deletion of “{studio}”",
+  },
+  greeting: { de: "Hallo,", en: "Hello," },
+  heading: { de: "Studio gelöscht", en: "Studio deleted" },
+  introText: {
+    de: "wie angekündigt haben wir dein Lumio-Studio „{studio}“ und alle zugehörigen Daten endgültig gelöscht.",
+    en: "as announced, we have permanently deleted your Lumio studio “{studio}” and all associated data.",
+  },
+  introHtml: {
+    de: "Wie angekündigt haben wir dein Lumio-Studio „{studio}“ und alle zugehörigen Daten endgültig gelöscht.",
+    en: "As announced, we have permanently deleted your Lumio studio “{studio}” and all associated data.",
+  },
+  deletedHeading: { de: "Gelöscht wurden", en: "What was deleted" },
+  deletedText: { de: "Gelöscht wurden:", en: "What was deleted:" },
+  del1: {
+    de: "Alle Bilder und Videos in deinen Galerien",
+    en: "All photos and videos in your galleries",
+  },
+  del2: {
+    de: "Alle Galerien und ihre Konfiguration",
+    en: "All galleries and their configuration",
+  },
+  del3: {
+    de: "Dein Account und alle Team-Accounts",
+    en: "Your account and all team accounts",
+  },
+  del4: { de: "Branding, Watermarks, Templates", en: "Branding, watermarks, templates" },
+  del5: {
+    de: "Audit-Logs (nur die Tenant-spezifischen)",
+    en: "Audit logs (the tenant-specific ones only)",
+  },
+  keptHeading: { de: "Behalten", en: "What was kept" },
+  keptText: { de: "Behalten:", en: "What was kept:" },
+  keptItem: {
+    de: "Stripe-Customer-Datensatz (für Rechnungs-Audit-Trail in Stripe).",
+    en: "The Stripe customer record (for the invoicing audit trail in Stripe).",
+  },
+  keptContact: {
+    de: "Wenn du den auch endgültig gelöscht haben möchtest, schreibe an {address}.",
+    en: "If you want that deleted permanently as well, write to {address}.",
+  },
+  keepThisMail: {
+    de: "Diese Mail ist deine Löschungs-Bestätigung — bitte aufbewahren, falls du sie später für dein eigenes Verarbeitungsverzeichnis brauchst.",
+    en: "This email is your deletion confirmation — please keep it in case you need it for your own record of processing activities.",
+  },
+  sorryToSeeYouGo: { de: "Schade dass du gehst.", en: "Sorry to see you go." },
+  feedbackInvite: {
+    de: "Falls es technische Gründe waren oder ein Feature gefehlt hat: {address} — wir lesen das.",
+    en: "If it was for technical reasons or a missing feature: {address} — we do read it.",
+  },
+} satisfies Record<string, Phrase>;
+
 export function tmplDeletionExecuted(opts: {
   studioName: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = deletionExecutedPhrases;
+  const vars = { studio: opts.studioName };
+  const support = supportAddress();
+  const feedback = feedbackAddress();
+  const keptSuffix = support
+    ? " " + phrase(P.keptContact, l, { address: support })
+    : "";
+  const deleted = [
+    phrase(P.del1, l),
+    phrase(P.del2, l),
+    phrase(P.del3, l),
+    phrase(P.del4, l),
+    phrase(P.del5, l),
+  ];
   return {
-    subject: `Dein Lumio-Studio „${opts.studioName}" wurde gelöscht`,
+    subject: phrase(P.subject, l, vars),
     text:
-      `Hallo,\n\n` +
-      `wie angekündigt haben wir dein Lumio-Studio „${opts.studioName}" ` +
-      `und alle zugehörigen Daten endgültig gelöscht.\n\n` +
-      `Gelöscht wurden:\n` +
-      `  • Alle Bilder und Videos in deinen Galerien\n` +
-      `  • Alle Galerien und ihre Konfiguration\n` +
-      `  • Dein Account und alle Team-Accounts\n` +
-      `  • Branding, Watermarks, Templates\n` +
-      `  • Audit-Logs (nur die Tenant-spezifischen)\n\n` +
-      `Behalten:\n` +
-      `  • Stripe-Customer-Datensatz (für Rechnungs-Audit-Trail in Stripe).${
-        supportAddress()
-          ? `\n    Wenn du den auch endgültig gelöscht haben möchtest, schreibe an ${supportAddress()}.`
-          : ""
+      `${phrase(P.greeting, l)}\n\n` +
+      `${phrase(P.introText, l, vars)}\n\n` +
+      `${phrase(P.deletedText, l)}\n` +
+      deleted.map((x) => `  • ${x}`).join("\n") +
+      `\n\n${phrase(P.keptText, l)}\n` +
+      `  • ${phrase(P.keptItem, l)}${
+        support ? `\n    ${phrase(P.keptContact, l, { address: support })}` : ""
       }\n\n` +
-      `Diese Mail ist deine Löschungs-Bestätigung — bitte aufbewahren ` +
-      `falls du sie später für dein eigenes Verarbeitungsverzeichnis ` +
-      `brauchst.\n\n` +
-      (feedbackAddress()
-        ? `Schade dass du gehst. Falls es technische Gründe waren oder ein ` +
-          `Feature gefehlt hat: ${feedbackAddress()} — wir lesen das.\n\n`
+      `${phrase(P.keepThisMail, l)}\n\n` +
+      (feedback
+        ? `${phrase(P.sorryToSeeYouGo, l)} ${phrase(P.feedbackInvite, l, {
+            address: feedback,
+          })}\n\n`
         : "") +
-      `— Lumio`,
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `Bestätigung der endgültigen Löschung von „${opts.studioName}"`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Studio gelöscht`) +
+        mailHeading(phrase(P.heading, l)) +
+        mailParagraph(phrase(P.introHtml, l, vars)) +
+        mailHeading(phrase(P.deletedHeading, l)) +
+        mailBullets(deleted) +
+        mailHeading(phrase(P.keptHeading, l)) +
+        mailParagraph(`${phrase(P.keptItem, l)}${keptSuffix}`) +
+        mailDivider() +
+        mailNoticeBox(phrase(P.keepThisMail, l)) +
         mailParagraph(
-          `Wie angekündigt haben wir dein Lumio-Studio „${opts.studioName}" und alle zugehörigen Daten endgültig gelöscht.`
-        ) +
-        mailHeading(`Gelöscht wurden`) +
-        mailBullets([
-          "Alle Bilder und Videos in deinen Galerien",
-          "Alle Galerien und ihre Konfiguration",
-          "Dein Account und alle Team-Accounts",
-          "Branding, Watermarks, Templates",
-          "Audit-Logs (nur die Tenant-spezifischen)",
-        ]) +
-        mailHeading(`Behalten`) +
-        mailParagraph(
-          `Stripe-Customer-Datensatz (für Rechnungs-Audit-Trail in Stripe).${
-            supportAddress()
-              ? ` Wenn du den auch endgültig gelöscht haben möchtest, schreibe an ${supportAddress()}.`
+          `${phrase(P.sorryToSeeYouGo, l)}${
+            feedback
+              ? " " + phrase(P.feedbackInvite, l, { address: feedback })
               : ""
           }`
-        ) +
-        mailDivider() +
-        mailNoticeBox(
-          `Diese Mail ist deine Löschungs-Bestätigung — bitte aufbewahren, falls du sie später für dein eigenes Verarbeitungsverzeichnis brauchst.`
-        ) +
-        mailParagraph(
-          `Schade dass du gehst.${feedbackAddress() ? ` Falls es technische Gründe waren oder ein Feature gefehlt hat: ${feedbackAddress()} — wir lesen das.` : ""}`
         ),
     }),
   };
 }
+
+const deletionReminderPhrases = {
+  subject: {
+    de: "Erinnerung: dein Studio „{studio}“ wird in 7 Tagen gelöscht",
+    en: "Reminder: your studio “{studio}” will be deleted in 7 days",
+  },
+  preheader: {
+    de: "Letzte 7 Tage — endgültige Löschung am {date}",
+    en: "Last 7 days — permanent deletion on {date}",
+  },
+  greetingNamed: { de: "Hallo {name},", en: "Hello {name}," },
+  greetingPlain: { de: "Hallo,", en: "Hello," },
+  heading: { de: "Letzte Erinnerung", en: "Final reminder" },
+  bodyText: {
+    de: "am {date} löschen wir dein Lumio-Studio „{studio}“ endgültig — wie von dir angefragt.",
+    en: "on {date} we will permanently delete your Lumio studio “{studio}” — as you requested.",
+  },
+  bodyHtml: {
+    de: "{greeting} — am {date} löschen wir dein Lumio-Studio „{studio}“ endgültig, wie von dir angefragt.",
+    en: "{greeting} — on {date} we will permanently delete your Lumio studio “{studio}”, as you requested.",
+  },
+  lastChanceText: {
+    de: "Das ist deine letzte Erinnerung. Wenn du es dir anders überlegt hast, kannst du die Löschung jetzt noch zurücknehmen:",
+    en: "This is your final reminder. If you have changed your mind, you can still reverse the deletion now:",
+  },
+  lastChanceHtml: {
+    de: "Wenn du es dir anders überlegt hast, kannst du die Löschung jetzt noch zurücknehmen:",
+    en: "If you have changed your mind, you can still reverse the deletion now:",
+  },
+  button: { de: "Löschung zurücknehmen", en: "Reverse deletion" },
+  irreversible: {
+    de: "Nach dem Stichtag sind die Daten unwiderruflich weg.",
+    en: "After that date the data is irretrievably gone.",
+  },
+} satisfies Record<string, Phrase>;
 
 export function tmplDeletionReminder(opts: {
   displayName: string | null;
   studioName: string;
   scheduledFor: Date;
   cancelUrl: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
-  const greeting = opts.displayName ? `Hallo ${opts.displayName},` : "Hallo,";
-  const dateStr = opts.scheduledFor.toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  const l = opts.locale ?? instanceMailLocale();
+  const P = deletionReminderPhrases;
+  const greeting = opts.displayName
+    ? phrase(P.greetingNamed, l, { name: opts.displayName })
+    : phrase(P.greetingPlain, l);
+  const dateStr = opts.scheduledFor.toLocaleDateString(
+    l === "de" ? "de-DE" : "en-GB",
+    { day: "2-digit", month: "long", year: "numeric" }
+  );
+  const vars = { studio: opts.studioName, date: dateStr };
   return {
-    subject: `Erinnerung: dein Studio „${opts.studioName}" wird in 7 Tagen gelöscht`,
+    subject: phrase(P.subject, l, vars),
     text:
       `${greeting}\n\n` +
-      `am ${dateStr} löschen wir dein Lumio-Studio „${opts.studioName}" ` +
-      `endgültig — wie von dir angefragt.\n\n` +
-      `Das ist deine letzte Erinnerung. Wenn du es dir anders überlegt ` +
-      `hast, kannst du die Löschung jetzt noch zurücknehmen:\n\n` +
+      `${phrase(P.bodyText, l, vars)}\n\n` +
+      `${phrase(P.lastChanceText, l)}\n\n` +
       `${opts.cancelUrl}\n\n` +
-      `Nach dem Stichtag sind die Daten unwiderruflich weg.\n\n` +
-      `— Lumio`,
+      `${phrase(P.irreversible, l)}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `Letzte 7 Tage — endgültige Löschung am ${dateStr}`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Letzte Erinnerung`) +
+        mailHeading(phrase(P.heading, l)) +
         mailParagraph(
-          `${greeting.replace(",", "")} — am ${dateStr} löschen wir dein Lumio-Studio „${opts.studioName}" endgültig, wie von dir angefragt.`
+          phrase(P.bodyHtml, l, { ...vars, greeting: greeting.replace(",", "") })
         ) +
-        mailParagraph(
-          `Wenn du es dir anders überlegt hast, kannst du die Löschung jetzt noch zurücknehmen:`
-        ) +
-        mailButton(opts.cancelUrl, "Löschung zurücknehmen") +
-        mailNoticeBox(`Nach dem Stichtag sind die Daten unwiderruflich weg.`),
+        mailParagraph(phrase(P.lastChanceHtml, l)) +
+        mailButton(opts.cancelUrl, phrase(P.button, l)) +
+        mailNoticeBox(phrase(P.irreversible, l)),
     }),
   };
 }
@@ -1290,90 +1387,170 @@ export function tmplDeletionReminder(opts: {
 /** Mail beim Übergang Read-only → Archiv: Galerien sind jetzt offline,
  * Vorschauen werden entfernt, Originale bleiben. Reaktivierung jederzeit
  * möglich bis zum Lösch-Stichtag. */
+/**
+ * Archivierung nach laengerem Abo-Ausfall. Nennt eine harte Frist bis zur
+ * endgueltigen Loeschung — englisch woertlich uebersetzt, damit die Frist
+ * exakt gleich streng klingt.
+ */
+const billingArchivedPhrases = {
+  subject: {
+    de: "Dein Studio „{studio}“ wurde archiviert",
+    en: "Your studio “{studio}” has been archived",
+  },
+  preheader: {
+    de: "Galerien offline — endgültige Löschung am {date}, bis dahin reaktivierbar",
+    en: "Galleries offline — permanent deletion on {date}, reactivatable until then",
+  },
+  greetingNamed: { de: "Hallo {name},", en: "Hello {name}," },
+  greetingPlain: { de: "Hallo,", en: "Hello," },
+  heading: { de: "Studio archiviert", en: "Studio archived" },
+  introText: {
+    de: "dein Lumio-Studio „{studio}“ war länger ohne aktives Abo und wurde jetzt archiviert.",
+    en: "your Lumio studio “{studio}” has been without an active subscription for a while and has now been archived.",
+  },
+  introHtml: {
+    de: "{greeting} — dein Studio „{studio}“ war länger ohne aktives Abo und wurde jetzt archiviert.",
+    en: "{greeting} — your studio “{studio}” has been without an active subscription for a while and has now been archived.",
+  },
+  meansText: { de: "Was das bedeutet:", en: "What that means:" },
+  point1: {
+    de: "Deine Kunden-Galerien sind vorübergehend offline.",
+    en: "Your customer galleries are temporarily offline.",
+  },
+  point2: {
+    de: "Die Original-Dateien bleiben gespeichert — nur die Vorschauen werden entfernt und bei Reaktivierung neu erzeugt.",
+    en: "The original files stay stored — only the previews are removed and regenerated on reactivation.",
+  },
+  point3: {
+    de: "Mit einem neuen Abo ist alles wieder da.",
+    en: "With a new subscription everything is back.",
+  },
+  deadlineText: {
+    de: "Wichtig: Wenn du bis zum {date} kein Abo abschließt, werden alle Daten an diesem Tag endgültig gelöscht.",
+    en: "Important: if you do not take out a subscription by {date}, all data will be permanently deleted on that day.",
+  },
+  deadlineBox: {
+    de: "Ohne neues Abo werden am {date} alle Daten endgültig gelöscht.",
+    en: "Without a new subscription all data will be permanently deleted on {date}.",
+  },
+  reactivateLine: { de: "Studio reaktivieren:", en: "Reactivate studio:" },
+  button: { de: "Studio reaktivieren", en: "Reactivate studio" },
+} satisfies Record<string, Phrase>;
+
 export function tmplBillingArchived(opts: {
   displayName: string | null;
   studioName: string;
   purgeDate: Date;
   reactivateUrl: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
-  const greeting = opts.displayName ? `Hallo ${opts.displayName},` : "Hallo,";
-  const dateStr = opts.purgeDate.toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  const l = opts.locale ?? instanceMailLocale();
+  const P = billingArchivedPhrases;
+  const greeting = opts.displayName
+    ? phrase(P.greetingNamed, l, { name: opts.displayName })
+    : phrase(P.greetingPlain, l);
+  const dateStr = opts.purgeDate.toLocaleDateString(
+    l === "de" ? "de-DE" : "en-GB",
+    { day: "2-digit", month: "long", year: "numeric" }
+  );
+  const vars = { studio: opts.studioName, date: dateStr };
+  const points = [phrase(P.point1, l), phrase(P.point2, l), phrase(P.point3, l)];
   return {
-    subject: `Dein Studio „${opts.studioName}" wurde archiviert`,
+    subject: phrase(P.subject, l, vars),
     text:
       `${greeting}\n\n` +
-      `dein Lumio-Studio „${opts.studioName}" war länger ohne aktives Abo ` +
-      `und wurde jetzt archiviert.\n\n` +
-      `Was das bedeutet:\n` +
-      `  • Deine Kunden-Galerien sind vorübergehend offline.\n` +
-      `  • Die Original-Dateien bleiben gespeichert — nur die Vorschauen ` +
-      `werden entfernt und bei Reaktivierung neu erzeugt.\n` +
-      `  • Mit einem neuen Abo ist alles wieder da.\n\n` +
-      `Wichtig: Wenn du bis zum ${dateStr} kein Abo abschließt, werden ` +
-      `alle Daten an diesem Tag endgültig gelöscht.\n\n` +
-      `Studio reaktivieren:\n${opts.reactivateUrl}\n\n` +
-      `— Lumio`,
+      `${phrase(P.introText, l, vars)}\n\n` +
+      `${phrase(P.meansText, l)}\n` +
+      points.map((x) => `  • ${x}`).join("\n") +
+      `\n\n${phrase(P.deadlineText, l, vars)}\n\n` +
+      `${phrase(P.reactivateLine, l)}\n${opts.reactivateUrl}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `Galerien offline — endgültige Löschung am ${dateStr}, bis dahin reaktivierbar`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Studio archiviert`) +
+        mailHeading(phrase(P.heading, l)) +
         mailParagraph(
-          `${greeting.replace(",", "")} — dein Studio „${opts.studioName}" war länger ohne aktives Abo und wurde jetzt archiviert.`
+          phrase(P.introHtml, l, { ...vars, greeting: greeting.replace(",", "") })
         ) +
-        mailBullets([
-          "Deine Kunden-Galerien sind vorübergehend offline.",
-          "Die Original-Dateien bleiben gespeichert — nur die Vorschauen werden entfernt und bei Reaktivierung neu erzeugt.",
-          "Mit einem neuen Abo ist alles wieder da.",
-        ]) +
-        mailButton(opts.reactivateUrl, "Studio reaktivieren") +
-        mailNoticeBox(
-          `Ohne neues Abo werden am ${dateStr} alle Daten endgültig gelöscht.`
-        ),
+        mailBullets(points) +
+        mailButton(opts.reactivateUrl, phrase(P.button, l)) +
+        mailNoticeBox(phrase(P.deadlineBox, l, vars)),
     }),
   };
 }
 
 /** Reminder ~30 Tage vor der endgültigen Löschung eines archivierten Studios. */
+const billingPurgeReminderPhrases = {
+  subject: {
+    de: "Letzte Erinnerung: „{studio}“ wird am {date} gelöscht",
+    en: "Final reminder: “{studio}” will be deleted on {date}",
+  },
+  preheader: {
+    de: "Endgültige Löschung am {date} — jetzt noch reaktivierbar",
+    en: "Permanent deletion on {date} — still reactivatable now",
+  },
+  greetingNamed: { de: "Hallo {name},", en: "Hello {name}," },
+  greetingPlain: { de: "Hallo,", en: "Hello," },
+  heading: { de: "Letzte Erinnerung", en: "Final reminder" },
+  bodyText: {
+    de: "dein archiviertes Lumio-Studio „{studio}“ wird am {date} endgültig gelöscht — inklusive aller Original-Dateien und Galerien.",
+    en: "your archived Lumio studio “{studio}” will be permanently deleted on {date} — including all original files and galleries.",
+  },
+  bodyHtml: {
+    de: "{greeting} — dein archiviertes Studio „{studio}“ wird am {date} endgültig gelöscht, inklusive aller Original-Dateien und Galerien.",
+    en: "{greeting} — your archived studio “{studio}” will be permanently deleted on {date}, including all original files and galleries.",
+  },
+  keepData: {
+    de: "Wenn du deine Daten behalten möchtest, schließe bis dahin ein Abo ab — dann wird alles wiederhergestellt:",
+    en: "If you want to keep your data, take out a subscription before then — everything will be restored:",
+  },
+  button: { de: "Studio reaktivieren", en: "Reactivate studio" },
+  noRestoreText: {
+    de: "Nach dem Stichtag ist eine Wiederherstellung nicht mehr möglich.",
+    en: "After that date restoration is no longer possible.",
+  },
+  noRestoreBox: {
+    de: "Nach dem Stichtag ist keine Wiederherstellung mehr möglich.",
+    en: "After that date no restoration is possible.",
+  },
+} satisfies Record<string, Phrase>;
+
 export function tmplBillingPurgeReminder(opts: {
   displayName: string | null;
   studioName: string;
   purgeDate: Date;
   reactivateUrl: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
-  const greeting = opts.displayName ? `Hallo ${opts.displayName},` : "Hallo,";
-  const dateStr = opts.purgeDate.toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  const l = opts.locale ?? instanceMailLocale();
+  const P = billingPurgeReminderPhrases;
+  const greeting = opts.displayName
+    ? phrase(P.greetingNamed, l, { name: opts.displayName })
+    : phrase(P.greetingPlain, l);
+  const dateStr = opts.purgeDate.toLocaleDateString(
+    l === "de" ? "de-DE" : "en-GB",
+    { day: "2-digit", month: "long", year: "numeric" }
+  );
+  const vars = { studio: opts.studioName, date: dateStr };
   return {
-    subject: `Letzte Erinnerung: „${opts.studioName}" wird am ${dateStr} gelöscht`,
+    subject: phrase(P.subject, l, vars),
     text:
       `${greeting}\n\n` +
-      `dein archiviertes Lumio-Studio „${opts.studioName}" wird am ` +
-      `${dateStr} endgültig gelöscht — inklusive aller Original-Dateien ` +
-      `und Galerien.\n\n` +
-      `Wenn du deine Daten behalten möchtest, schließe bis dahin ein Abo ` +
-      `ab — dann wird alles wiederhergestellt:\n\n` +
+      `${phrase(P.bodyText, l, vars)}\n\n` +
+      `${phrase(P.keepData, l)}\n\n` +
       `${opts.reactivateUrl}\n\n` +
-      `Nach dem Stichtag ist eine Wiederherstellung nicht mehr möglich.\n\n` +
-      `— Lumio`,
+      `${phrase(P.noRestoreText, l)}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `Endgültige Löschung am ${dateStr} — jetzt noch reaktivierbar`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Letzte Erinnerung`) +
+        mailHeading(phrase(P.heading, l)) +
         mailParagraph(
-          `${greeting.replace(",", "")} — dein archiviertes Studio „${opts.studioName}" wird am ${dateStr} endgültig gelöscht, inklusive aller Original-Dateien und Galerien.`
+          phrase(P.bodyHtml, l, { ...vars, greeting: greeting.replace(",", "") })
         ) +
-        mailParagraph(
-          `Wenn du deine Daten behalten möchtest, schließe bis dahin ein Abo ab — dann wird alles wiederhergestellt:`
-        ) +
-        mailButton(opts.reactivateUrl, "Studio reaktivieren") +
-        mailNoticeBox(`Nach dem Stichtag ist keine Wiederherstellung mehr möglich.`),
+        mailParagraph(phrase(P.keepData, l)) +
+        mailButton(opts.reactivateUrl, phrase(P.button, l)) +
+        mailNoticeBox(phrase(P.noRestoreBox, l)),
     }),
   };
 }

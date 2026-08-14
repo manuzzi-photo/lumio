@@ -28,6 +28,7 @@ import {
   tmplBillingPurgeReminder,
 } from "./mail.js";
 import { logEvent } from "./audit.js";
+import { normalizeLocale } from "./mail-i18n.js";
 
 const DAY_MS = 86_400_000;
 const REMINDER_LEAD_DAYS = 30;
@@ -70,7 +71,7 @@ export async function markDueArchives(): Promise<void> {
           name: true,
           users: {
             where: { role: "owner" },
-            select: { email: true, name: true },
+            select: { email: true, name: true, locale: true },
           },
         },
       },
@@ -95,6 +96,7 @@ export async function markDueArchives(): Promise<void> {
       });
       for (const o of s.tenant.users) {
         const tpl = tmplBillingArchived({
+          locale: normalizeLocale(o.locale),
           displayName: o.name,
           studioName: s.tenant.name,
           purgeDate: purgeAt,
@@ -187,7 +189,7 @@ export async function sendPurgeReminders(): Promise<void> {
           name: true,
           users: {
             where: { role: "owner" },
-            select: { email: true, name: true },
+            select: { email: true, name: true, locale: true },
           },
         },
       },
@@ -199,6 +201,7 @@ export async function sendPurgeReminders(): Promise<void> {
     try {
       for (const o of s.tenant.users) {
         const tpl = tmplBillingPurgeReminder({
+          locale: normalizeLocale(o.locale),
           displayName: o.name,
           studioName: s.tenant.name,
           purgeDate: s.purgeScheduledFor!,

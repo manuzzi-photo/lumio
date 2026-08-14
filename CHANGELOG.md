@@ -31,6 +31,7 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ### Added
 
+- **Alle E-Mails sind jetzt mehrsprachig.** Auch die Löschbestätigung, die 7-Tage-Erinnerung und die beiden Archivierungs-Mails folgen der Sprache der angeschriebenen Person. Fristen und Zusagen sind wörtlich übersetzt — gleiche Tage, gleiche Verbindlichkeit.
 - Die Mails zur Studio-Löschung (Anfrage bestätigt, Löschung zurückgenommen) und der tägliche Bericht an die Plattform-Verwaltung sind übersetzbar. Bei der Löschung sind die englischen Fassungen bewusst wörtlich gehalten: gleiche Fristen, gleiche Verbindlichkeit.
 - Die Lifecycle-Mails rund um den Testzeitraum (Erinnerung, Stornierung, Rückhol-Mail) sind übersetzbar und folgen der Sprache der angeschriebenen Person.
 - Auch die Willkommens-Mail, die Support-Bestätigung, die Print-Bestellmeldung ans Studio und die Benachrichtigung an die Plattform-Verwaltung sind jetzt übersetzbar.
@@ -38,6 +39,7 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 **🇬🇧 English**
 
+- **Every email is now multilingual.** The deletion confirmation, the 7-day reminder and both archiving mails follow the language of the person being written to. Deadlines and commitments are translated literally — same days, same weight.
 - The studio deletion emails (request confirmed, deletion reversed) and the daily platform administration report are translatable. For the deletion mails the English wording is deliberately literal: same deadlines, same commitments.
 - The trial lifecycle emails (reminder, cancellation, win-back) are translatable and follow the language of the person being written to.
 - The welcome email, the support confirmation, the print order notice to the studio and the platform administration notice are now translatable too.

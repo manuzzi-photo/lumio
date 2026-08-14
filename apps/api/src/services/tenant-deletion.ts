@@ -237,7 +237,7 @@ export async function executeHardDeletion(tenantId: string): Promise<{
       stripeCustomerId: true,
       users: {
         where: { role: "owner" },
-        select: { email: true, name: true },
+        select: { email: true, name: true, locale: true },
       },
     },
   });
@@ -271,14 +271,19 @@ export async function executeHardDeletion(tenantId: string): Promise<{
   );
 
   // 1. Mail-Empfaenger sammeln (BEVOR User-Records weg sind)
-  const ownerEmails = tenant.users
-    .map((u) => u.email)
-    .filter((e): e is string => Boolean(e));
+  // Sprache mitnehmen, nicht nur die Adresse: die User-Records sind gleich
+  // weg, ein spaeterer Lookup waere ins Leere gelaufen.
+  const ownerRecipients = tenant.users
+    .filter((u): u is typeof u & { email: string } => Boolean(u.email))
+    .map((u) => ({ email: u.email, locale: normalizeLocale(u.locale) }));
 
   // 2. Mails schicken
-  for (const email of ownerEmails) {
-    const tpl = tmplDeletionExecuted({ studioName: tenant.name });
-    await sendMail({ to: email, ...tpl });
+  for (const r of ownerRecipients) {
+    const tpl = tmplDeletionExecuted({
+      studioName: tenant.name,
+      locale: r.locale,
+    });
+    await sendMail({ to: r.email, ...tpl });
   }
 
   // 3. Alle Files des Tenants sammeln
@@ -345,7 +350,7 @@ export async function executeHardDeletion(tenantId: string): Promise<{
       filesDeleted,
       filesFailed,
       stripeCustomerId: tenant.stripeCustomerId,
-      ownerEmailsNotified: ownerEmails.length,
+      ownerEmailsNotified: ownerRecipients.length,
     },
   });
 
@@ -422,7 +427,7 @@ export async function purgeArchivedTenant(tenantId: string): Promise<{
       stripeCustomerId: true,
       users: {
         where: { role: "owner" },
-        select: { email: true, name: true },
+        select: { email: true, name: true, locale: true },
       },
     },
   });
@@ -446,13 +451,18 @@ export async function purgeArchivedTenant(tenantId: string): Promise<{
     "billing-purge: starting archived-tenant deletion"
   );
 
-  const ownerEmails = tenant.users
-    .map((u) => u.email)
-    .filter((e): e is string => Boolean(e));
-  for (const email of ownerEmails) {
+  // Sprache mitnehmen, nicht nur die Adresse: die User-Records sind gleich
+  // weg, ein spaeterer Lookup waere ins Leere gelaufen.
+  const ownerRecipients = tenant.users
+    .filter((u): u is typeof u & { email: string } => Boolean(u.email))
+    .map((u) => ({ email: u.email, locale: normalizeLocale(u.locale) }));
+  for (const r of ownerRecipients) {
     try {
-      const tpl = tmplDeletionExecuted({ studioName: tenant.name });
-      await sendMail({ to: email, ...tpl });
+      const tpl = tmplDeletionExecuted({
+        studioName: tenant.name,
+        locale: r.locale,
+      });
+      await sendMail({ to: r.email, ...tpl });
     } catch (err) {
       logger.warn({ err, tenantId }, "billing-purge: executed-mail failed (continuing)");
     }
@@ -508,7 +518,7 @@ export async function purgeArchivedTenant(tenantId: string): Promise<{
       filesDeleted,
       filesFailed,
       stripeCustomerId: tenant.stripeCustomerId,
-      ownerEmailsNotified: ownerEmails.length,
+      ownerEmailsNotified: ownerRecipients.length,
     },
   });
 

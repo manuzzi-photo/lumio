@@ -572,6 +572,7 @@ async function sendSelfDeletionReminders() {
       const cancelUrl = `${config.PUBLIC_URL}/studio/settings/account`;
       for (const owner of t.users) {
         const tpl = tmplDeletionReminder({
+          locale: normalizeLocale(owner.locale),
           displayName: owner.name,
           studioName: t.name,
           scheduledFor: t.selfDeletionScheduledFor!,
