@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 
 /**
  * Pre-Archive-Banner — zeigt sich am oberen Rand der Studio-Main-Area,
@@ -20,6 +20,7 @@ import { useT } from "@/lib/i18n";
  * Banner-Status stabil — kein Polling nötig.
  */
 export function PreArchiveBanner() {
+  const fmt = useFormat();
   const t = useT();
   const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
 
@@ -59,7 +60,7 @@ export function PreArchiveBanner() {
     ? t("preArchive.imminent")
     : urgent
     ? t(daysLeft === 1 ? "preArchive.inDaysSg" : "preArchive.inDaysPl", { n: daysLeft })
-    : t("preArchive.onDate", { date: scheduledAt.toLocaleDateString("de-DE"), n: daysLeft });
+    : t("preArchive.onDate", { date: scheduledAt.toLocaleDateString(fmt.bcp47), n: daysLeft });
 
   return (
     <div className={`border-b px-6 py-3 ${cls}`}>

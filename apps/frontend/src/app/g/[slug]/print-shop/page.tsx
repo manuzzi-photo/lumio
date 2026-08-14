@@ -25,8 +25,9 @@ import { useRouter } from "next/navigation";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { api, type PublicFile } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 import { CropFrame, defaultCropForAspect, type Crop } from "@/components/print-shop/CropFrame";
+import type { Formatters } from "@/lib/i18n/format";
 
 type Catalog = Awaited<ReturnType<typeof api.getGalleryPrintShopCatalog>>;
 type ProductRow = Catalog["products"][number];
@@ -269,6 +270,7 @@ function PickerDialog({
   onClose: () => void;
   onAdd: (item: CartItem) => void;
 }) {
+  const fmt = useFormat();
   const t = useT();
   const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(
     catalog.products[0] ?? null
@@ -416,7 +418,7 @@ function PickerDialog({
                       >
                         {selectedProduct.variants.map((v) => (
                           <option key={v.id} value={v.id}>
-                            {v.name} — {formatPrice(v.priceCents, catalog.config.currency)}
+                            {v.name} — {formatPrice(fmt, v.priceCents, catalog.config.currency)}
                           </option>
                         ))}
                       </select>
@@ -450,7 +452,7 @@ function PickerDialog({
                 <div className="text-sm pt-2 border-t border-line-subtle flex justify-between">
                   <span className="text-ink-tertiary">{t("printShop.subtotal")}</span>
                   <span className="font-semibold tabular-nums">
-                    {formatPrice(
+                    {formatPrice(fmt, 
                       (selectedVariant?.priceCents ?? 0) * quantity,
                       catalog.config.currency
                     )}
@@ -502,6 +504,7 @@ function CartStep({
   onRequirePayment: () => void;
   onConfirmed: (orderNumber: string) => void;
 }) {
+  const fmt = useFormat();
   const t = useT();
   const [shippingMethodId, setShippingMethodId] = useState<string>(
     catalog.shipping[0]?.id ?? ""
@@ -695,7 +698,7 @@ function CartStep({
                 className="w-16 rounded border border-line-subtle bg-surface-raised px-2 py-1 text-sm"
               />
               <div className="text-sm tabular-nums w-20 text-right">
-                {formatPrice(
+                {formatPrice(fmt, 
                   it.variant.priceCents * it.quantity,
                   catalog.config.currency
                 )}
@@ -723,7 +726,7 @@ function CartStep({
         >
           {catalog.shipping.map((m) => (
             <option key={m.id} value={m.id}>
-              {m.name} — {formatPrice(m.priceCents, catalog.config.currency)}
+              {m.name} — {formatPrice(fmt, m.priceCents, catalog.config.currency)}
               {m.estimatedDaysMin &&
                 ` (${t("printShop.shippingDays", { min: m.estimatedDaysMin, max: m.estimatedDaysMax ?? m.estimatedDaysMin })})`}
             </option>
@@ -851,13 +854,13 @@ function CartStep({
             <div className="flex justify-between">
               <dt className="text-ink-tertiary">{t("printShop.subtotal")}</dt>
               <dd className="tabular-nums">
-                {formatPrice(totals.subtotalCents, totals.currency)}
+                {formatPrice(fmt, totals.subtotalCents, totals.currency)}
               </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-ink-tertiary">{t("printShop.shipping")}</dt>
               <dd className="tabular-nums">
-                {formatPrice(totals.shippingCents, totals.currency)}
+                {formatPrice(fmt, totals.shippingCents, totals.currency)}
               </dd>
             </div>
             <div className="flex justify-between">
@@ -869,13 +872,13 @@ function CartStep({
                 )
               </dt>
               <dd className="tabular-nums">
-                {formatPrice(totals.taxCents, totals.currency)}
+                {formatPrice(fmt, totals.taxCents, totals.currency)}
               </dd>
             </div>
             <div className="flex justify-between pt-2 border-t border-line-subtle font-semibold">
               <dt>{t("printShop.total")}</dt>
               <dd className="tabular-nums">
-                {formatPrice(totals.totalCents, totals.currency)}
+                {formatPrice(fmt, totals.totalCents, totals.currency)}
               </dd>
             </div>
           </dl>
@@ -1101,9 +1104,6 @@ function PaymentForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-function formatPrice(cents: number, currency = "EUR"): string {
-  return (cents / 100).toLocaleString("de-DE", {
-    style: "currency",
-    currency,
-  });
+function formatPrice(fmt: Formatters, cents: number, currency = "EUR"): string {
+  return fmt.currencyFromMinor(cents, currency);
 }

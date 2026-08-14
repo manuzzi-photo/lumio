@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, type DpaStatus, type DpaCompany } from "@/lib/api";
 import { PageHeader } from "@/components/studio/PageHeader";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 
 type FormState = {
   legalName: string;
@@ -39,6 +39,7 @@ const inputCls =
 const labelCls = "block text-ui-sm text-ink-secondary mb-1";
 
 export default function StudioAvvPage() {
+  const fmt = useFormat();
   const t = useT();
   const [status, setStatus] = useState<DpaStatus | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -178,7 +179,7 @@ export default function StudioAvvPage() {
                 <div className="text-ui-sm">
                   <div className="font-medium text-emerald-700">{t("avv.statusDoneTitle")}</div>
                   <div className="text-ink-secondary mt-0.5">
-                    {t("avv.doneDetail", { date: new Date(acceptance.acceptedAt).toLocaleDateString("de-DE"), byName: acceptance.acceptedByName ? t("avv.byName", { name: acceptance.acceptedByName }) : "", version: acceptance.version })}
+                    {t("avv.doneDetail", { date: new Date(acceptance.acceptedAt).toLocaleDateString(fmt.bcp47), byName: acceptance.acceptedByName ? t("avv.byName", { name: acceptance.acceptedByName }) : "", version: acceptance.version })}
                   </div>
                 </div>
               </div>

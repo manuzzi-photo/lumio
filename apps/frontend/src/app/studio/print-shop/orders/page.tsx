@@ -6,7 +6,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
+import type { Formatters } from "@/lib/i18n/format";
 
 type Order = Awaited<
   ReturnType<typeof api.listPrintOrders>
@@ -24,6 +25,7 @@ const STATUS_FILTERS = [
 ];
 
 export default function PrintOrdersPage() {
+  const fmt = useFormat();
   const t = useT();
   const [orders, setOrders] = useState<Order[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -115,12 +117,12 @@ export default function PrintOrdersPage() {
                       {o.guestName} &lt;{o.guestEmail}&gt;
                     </div>
                     <div className="text-xs text-ink-tertiary mt-0.5">
-                      {new Date(o.createdAt).toLocaleString("de-DE")}
+                      {new Date(o.createdAt).toLocaleString(fmt.bcp47)}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-sm font-semibold tabular-nums">
-                      {formatPrice(o.totalCents, o.currency)}
+                      {formatPrice(fmt, o.totalCents, o.currency)}
                     </div>
                   </div>
                 </div>
@@ -146,11 +148,8 @@ export default function PrintOrdersPage() {
   );
 }
 
-function formatPrice(cents: number, currency = "EUR"): string {
-  return (cents / 100).toLocaleString("de-DE", {
-    style: "currency",
-    currency,
-  });
+function formatPrice(fmt: Formatters, cents: number, currency = "EUR"): string {
+  return fmt.currencyFromMinor(cents, currency);
 }
 
 export function StatusBadge({ status }: { status: string }) {

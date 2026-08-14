@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useFormat } from "@/lib/i18n";
 
 type SystemResponse = Awaited<ReturnType<typeof api.superSystemStatus>>;
 type BackupStatus = SystemResponse["backup"][number];
@@ -94,6 +95,7 @@ function BackupContent() {
 // ---------------------------------------------------------------------------
 
 function BackupStatusRow({ backup }: { backup: BackupStatus }) {
+  const fmt = useFormat();
   const tone =
     backup.health === "ok"
       ? "text-semantic-success"
@@ -110,7 +112,7 @@ function BackupStatusRow({ backup }: { backup: BackupStatus }) {
         {backup.lastBackupAt && (
           <div className="text-xs text-ink-tertiary mt-1">
             Zuletzt:{" "}
-            {new Date(backup.lastBackupAt).toLocaleString("de-DE", {
+            {new Date(backup.lastBackupAt).toLocaleString(fmt.bcp47, {
               day: "2-digit",
               month: "short",
               year: "numeric",
@@ -352,6 +354,7 @@ function ExportRow({
   open: boolean;
   onToggle: () => void;
 }) {
+  const fmt = useFormat();
   const [detail, setDetail] = useState<ExportDetail | null>(null);
 
   useEffect(() => {
@@ -389,7 +392,7 @@ function ExportRow({
           <span className="text-xs rounded bg-surface-sunken px-1.5 py-0.5 text-ink-tertiary">
             {sourceLabel(exportSummary.source)}
           </span>
-          {new Date(exportSummary.createdAt).toLocaleString("de-DE", {
+          {new Date(exportSummary.createdAt).toLocaleString(fmt.bcp47, {
             day: "2-digit",
             month: "short",
             year: "numeric",

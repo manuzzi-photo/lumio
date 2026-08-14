@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useFormat } from "@/lib/i18n";
 
 type Response = Awaited<ReturnType<typeof api.superListBroadcasts>>;
 
@@ -109,6 +110,7 @@ function BroadcastRow({
   b: Response["broadcasts"][number];
   audienceLabel: string;
 }) {
+  const fmt = useFormat();
   const progress =
     b.totalRecipients > 0
       ? Math.floor(
@@ -133,7 +135,7 @@ function BroadcastRow({
             {audienceLabel} · {b.totalRecipients}{" "}
             {b.totalRecipients === 1 ? "Empfänger" : "Empfänger"}
             {" · "}
-            {new Date(b.createdAt).toLocaleString("de-DE", {
+            {new Date(b.createdAt).toLocaleString(fmt.bcp47, {
               day: "2-digit",
               month: "short",
               year: "numeric",
@@ -152,7 +154,7 @@ function BroadcastRow({
             b.status === "failed") && (
             <div className="text-xs">
               <span className="text-semantic-success">
-                {b.sentCount.toLocaleString("de-DE")} gesendet
+                {b.sentCount.toLocaleString(fmt.bcp47)} gesendet
               </span>
               {b.failedCount > 0 && (
                 <>

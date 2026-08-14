@@ -6,7 +6,8 @@ import {
   browserSupportsWebAuthn,
 } from "@simplewebauthn/browser";
 import { api, type WebauthnCredential } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
+import type { Formatters } from "@/lib/i18n/format";
 
 /**
  * Studio-Settings-Sektion zum Verwalten von Passkeys.
@@ -23,6 +24,7 @@ import { useT } from "@/lib/i18n";
  * konfiguriert hat, kann auch ohne TOTP-App ein 2FA-Login machen.
  */
 export function PasskeysSection() {
+  const fmt = useFormat();
   const t = useT();
   const [credentials, setCredentials] = useState<WebauthnCredential[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,8 +158,8 @@ export function PasskeysSection() {
               <div>
                 <div className="font-medium">{c.label}</div>
                 <div className="text-xs text-ink-tertiary mt-0.5">
-                  Hinzugefügt {formatDate(c.createdAt)}
-                  {c.lastUsedAt && ` · zuletzt verwendet ${formatDate(c.lastUsedAt)}`}
+                  Hinzugefügt {formatDate(fmt, c.createdAt)}
+                  {c.lastUsedAt && ` · zuletzt verwendet ${formatDate(fmt, c.lastUsedAt)}`}
                 </div>
               </div>
               <button
@@ -175,11 +177,6 @@ export function PasskeysSection() {
   );
 }
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("de-DE", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+function formatDate(fmt: Formatters, iso: string): string {
+  return fmt.date(iso, { year: "numeric", month: "short", day: "numeric" });
 }

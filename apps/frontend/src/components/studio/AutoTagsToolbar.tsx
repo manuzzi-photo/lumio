@@ -25,9 +25,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 
 export function AutoTagsToolbar({ galleryId }: { galleryId: string }) {
+  const fmt = useFormat();
   const t = useT();
   const [available, setAvailable] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<"re-tag" | "bulk" | null>(null);
@@ -229,7 +230,7 @@ export function AutoTagsToolbar({ galleryId }: { galleryId: string }) {
         {stats?.lastTaggedAt && (
           <>
             {t("autoTags.lastTagging")}
-            {new Date(stats.lastTaggedAt).toLocaleString("de-DE")}
+            {new Date(stats.lastTaggedAt).toLocaleString(fmt.bcp47)}
           </>
         )}
       </p>
@@ -248,6 +249,7 @@ function Stat({
   subtitle?: string;
   highlight?: boolean;
 }) {
+  const fmt = useFormat();
   return (
     <div
       className={
@@ -258,7 +260,7 @@ function Stat({
     >
       <div className="text-ui-xs text-ink-tertiary">{label}</div>
       <div className="text-sm font-semibold tabular-nums">
-        {value.toLocaleString("de-DE")}
+        {value.toLocaleString(fmt.bcp47)}
         {subtitle && (
           <span className="ml-1 text-xs text-ink-tertiary font-normal">
             {subtitle}

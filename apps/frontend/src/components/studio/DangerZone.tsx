@@ -27,7 +27,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 
 interface DeletionStatus {
   isPendingDeletion: boolean;
@@ -80,6 +80,7 @@ export function DangerZone({
   userRole: "owner" | "admin" | "member";
   onMutated?: () => void;
 }) {
+  const fmt = useFormat();
   const t = useT();
   const [showModal, setShowModal] = useState(false);
   const { status, reload } = useDeletionStatus();
@@ -134,7 +135,7 @@ export function DangerZone({
             <>
               <dt className="text-ink-secondary">Angefordert am</dt>
               <dd className="text-ink-primary">
-                {requestedDate.toLocaleString("de-DE", {
+                {requestedDate.toLocaleString(fmt.bcp47, {
                   day: "2-digit",
                   month: "long",
                   year: "numeric",
@@ -146,7 +147,7 @@ export function DangerZone({
           )}
           <dt className="text-ink-secondary">{t("dangerZone.finalDeletion")}</dt>
           <dd className="text-ink-primary font-medium">
-            {scheduledDate.toLocaleDateString("de-DE", {
+            {scheduledDate.toLocaleDateString(fmt.bcp47, {
               day: "2-digit",
               month: "long",
               year: "numeric",
@@ -363,6 +364,7 @@ export function PendingDeletionBanner({
   status: DeletionStatus | null;
   onCancelled?: () => void;
 }) {
+  const fmt = useFormat();
   const t = useT();
   const [pending, setPending] = useState(false);
 
@@ -394,11 +396,11 @@ export function PendingDeletionBanner({
           {daysLeft > 0
             ? daysLeft === 1
               ? t("dangerZone.bannerDaysOne", {
-                  date: scheduledDate.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" }),
+                  date: scheduledDate.toLocaleDateString(fmt.bcp47, { day: "2-digit", month: "long", year: "numeric" }),
                 })
               : t("dangerZone.bannerDaysMany", {
                   days: daysLeft,
-                  date: scheduledDate.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" }),
+                  date: scheduledDate.toLocaleDateString(fmt.bcp47, { day: "2-digit", month: "long", year: "numeric" }),
                 })
             : t("dangerZone.bannerExecuting")}
           <div className="opacity-80 mt-0.5">

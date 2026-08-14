@@ -18,6 +18,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useFormat } from "@/lib/i18n";
 
 type Announcement = Awaited<
   ReturnType<typeof api.superListAnnouncements>
@@ -143,6 +144,7 @@ function AnnouncementRowItem({
   onDelete: () => void;
   confirmingDelete: boolean;
 }) {
+  const fmt = useFormat();
   const now = Date.now();
   const isActive =
     (!row.activeFrom || new Date(row.activeFrom).getTime() <= now) &&
@@ -186,10 +188,10 @@ function AnnouncementRowItem({
           </div>
           <div className="text-xs text-ink-tertiary">
             {row.activeFrom
-              ? `ab ${new Date(row.activeFrom).toLocaleString("de-DE")}`
+              ? `ab ${new Date(row.activeFrom).toLocaleString(fmt.bcp47)}`
               : "sofort aktiv"}
             {row.activeUntil
-              ? ` bis ${new Date(row.activeUntil).toLocaleString("de-DE")}`
+              ? ` bis ${new Date(row.activeUntil).toLocaleString(fmt.bcp47)}`
               : " · unbefristet"}
             {" · "}von {row.createdByEmail}
           </div>

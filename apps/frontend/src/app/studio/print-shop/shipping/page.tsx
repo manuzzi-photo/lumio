@@ -10,7 +10,8 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ShippingMethodCreateInput } from "@/lib/api";
 import { Button, Input } from "@/components/ui";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
+import type { Formatters } from "@/lib/i18n/format";
 
 type Method = Awaited<
   ReturnType<typeof api.listShippingMethods>
@@ -20,6 +21,7 @@ type ProviderMine = Awaited<
 >["providers"][number];
 
 export default function ShippingMethodsPage() {
+  const fmt = useFormat();
   const t = useT();
   const [methods, setMethods] = useState<Method[] | null>(null);
   const [providers, setProviders] = useState<ProviderMine[] | null>(null);
@@ -119,7 +121,7 @@ export default function ShippingMethodsPage() {
                   )}
                 </div>
                 <div className="text-xs text-ink-tertiary">
-                  {formatPrice(m.priceCents)}
+                  {formatPrice(fmt, m.priceCents)}
                   {(m.estimatedDaysMin || m.estimatedDaysMax) && (
                     <>
                       {" · "}
@@ -167,11 +169,8 @@ export default function ShippingMethodsPage() {
   );
 }
 
-function formatPrice(cents: number): string {
-  return (cents / 100).toLocaleString("de-DE", {
-    style: "currency",
-    currency: "EUR",
-  });
+function formatPrice(fmt: Formatters, cents: number): string {
+  return fmt.currencyFromMinor(cents);
 }
 
 function ShippingDialog({

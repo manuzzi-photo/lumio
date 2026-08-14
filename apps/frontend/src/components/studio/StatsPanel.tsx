@@ -18,7 +18,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, type GalleryStats } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 
 export function StatsPanel({
@@ -379,6 +379,7 @@ function buildLastNDays(n: number): string[] {
  * machen.
  */
 function FunnelSection({ galleryId }: { galleryId: string }) {
+  const fmt = useFormat();
   const [funnel, setFunnel] = useState<
     | {
         steps: Array<{ key: string; label: string; count: number }>;
@@ -427,7 +428,7 @@ function FunnelSection({ galleryId }: { galleryId: string }) {
               <div className="flex justify-between items-center mb-1">
                 <span>{s.label}</span>
                 <span className="tabular-nums text-ink-secondary">
-                  {s.count.toLocaleString("de-DE")}
+                  {s.count.toLocaleString(fmt.bcp47)}
                   {conv && (
                     <span className="ml-2 text-xs text-ink-tertiary">
                       ({conv})

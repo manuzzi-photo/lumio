@@ -2202,6 +2202,8 @@ export const de: Dict = {
     navJobs: "Job-Fehler",
     navSecurity: "Security",
     navCompliance: "Compliance",
+    navMarketingMails: "Marketing-Mails",
+    loggedInAs: "angemeldet als",
     copyLink: "Link kopieren",
     done: "Fertig",
     name: "Name",

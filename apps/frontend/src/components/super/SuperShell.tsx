@@ -29,6 +29,11 @@ export function SuperShell({ children }: { children: React.ReactNode }) {
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Billing-only sections are hidden when the instance runs without billing
+  // (self-hosted agency setups). Defaults to true so the nav does not flicker
+  // for the SaaS case and stays complete if /instance is unavailable on an
+  // older API.
+  const [billingEnabled, setBillingEnabled] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -43,6 +48,15 @@ export function SuperShell({ children }: { children: React.ReactNode }) {
     })();
   }, [router]);
 
+  useEffect(() => {
+    api
+      .getInstanceInfo()
+      .then((info) => setBillingEnabled(info.billingEnabled))
+      .catch(() => {
+        /* keep the full nav if the flag can't be read */
+      });
+  }, []);
+
   // Drawer schliessen bei Route-Wechsel
   useEffect(() => {
     setMobileOpen(false);
@@ -51,7 +65,7 @@ export function SuperShell({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface-canvas">
-        <div className="text-ui text-ink-tertiary">Lädt…</div>
+        <div className="text-ui text-ink-tertiary">{t("common.loading")}</div>
       </div>
     );
   }
@@ -125,11 +139,13 @@ export function SuperShell({ children }: { children: React.ReactNode }) {
             active={pathname?.startsWith("/super/storage") ?? false}
             label={t("super.navStorage")}
           />
-          <SidebarLink
-            href="/super/mrr"
-            active={pathname?.startsWith("/super/mrr") ?? false}
-            label={t("super.navMrr")}
-          />
+          {billingEnabled && (
+            <SidebarLink
+              href="/super/mrr"
+              active={pathname?.startsWith("/super/mrr") ?? false}
+              label={t("super.navMrr")}
+            />
+          )}
           <SidebarLink
             href="/super/announcements"
             active={pathname?.startsWith("/super/announcements") ?? false}
@@ -165,21 +181,25 @@ export function SuperShell({ children }: { children: React.ReactNode }) {
             active={pathname?.startsWith("/super/csp") ?? false}
             label={t("super.navCsp")}
           />
-          <SidebarLink
-            href="/super/plan-catalog"
-            active={pathname?.startsWith("/super/plan-catalog") ?? false}
-            label={t("super.navPlanCatalog")}
-          />
+          {billingEnabled && (
+            <SidebarLink
+              href="/super/plan-catalog"
+              active={pathname?.startsWith("/super/plan-catalog") ?? false}
+              label={t("super.navPlanCatalog")}
+            />
+          )}
           <SidebarLink
             href="/super/mail-log"
             active={pathname?.startsWith("/super/mail-log") ?? false}
             label={t("super.navMailLog")}
           />
-          <SidebarLink
-            href="/super/marketing"
-            active={pathname?.startsWith("/super/marketing") ?? false}
-            label="Marketing-Mails"
-          />
+          {billingEnabled && (
+            <SidebarLink
+              href="/super/marketing"
+              active={pathname?.startsWith("/super/marketing") ?? false}
+              label={t("super.navMarketingMails")}
+            />
+          )}
           <SidebarLink
             href="/super/jobs"
             active={pathname?.startsWith("/super/jobs") ?? false}
@@ -199,7 +219,7 @@ export function SuperShell({ children }: { children: React.ReactNode }) {
 
         <div className="border-t border-line-subtle p-4">
           <div className="text-ui-xs text-ink-tertiary mb-1">
-            angemeldet als
+            {t("super.loggedInAs")}
           </div>
           <div className="text-ui-sm text-ink-secondary truncate">
             {admin.displayName}

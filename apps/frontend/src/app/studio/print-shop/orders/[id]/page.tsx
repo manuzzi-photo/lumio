@@ -17,13 +17,15 @@ import { api } from "@/lib/api";
 import type { PrintOrderDetail } from "@/lib/api";
 import { Button, Input, Textarea } from "@/components/ui";
 import { StatusBadge } from "../page";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
+import type { Formatters } from "@/lib/i18n/format";
 
 export default function OrderDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const fmt = useFormat();
   const { id } = use(params);
   const t = useT();
   const [order, setOrder] = useState<PrintOrderDetail | null>(null);
@@ -143,7 +145,7 @@ export default function OrderDetailPage({
               {order.guestName} &lt;{order.guestEmail}&gt;
             </div>
             <div className="text-xs text-ink-tertiary mt-0.5">
-              {t("orderDetail.orderedOn", { date: new Date(order.createdAt).toLocaleString("de-DE") })}
+              {t("orderDetail.orderedOn", { date: new Date(order.createdAt).toLocaleString(fmt.bcp47) })}
               {" · "}
               {t("orderDetail.galleryLabel")}{" "}
               <Link
@@ -156,7 +158,7 @@ export default function OrderDetailPage({
           </div>
           <div className="text-right shrink-0">
             <div className="text-xl font-semibold tabular-nums">
-              {formatPrice(order.totalCents, order.currency)}
+              {formatPrice(fmt, order.totalCents, order.currency)}
             </div>
             <div className="text-xs text-ink-tertiary">
               {order.paymentMode === "stripe_connect"
@@ -281,7 +283,7 @@ export default function OrderDetailPage({
                 </div>
               </div>
               <div className="text-sm tabular-nums">
-                {formatPrice(it.totalPriceCents, order.currency)}
+                {formatPrice(fmt, it.totalPriceCents, order.currency)}
               </div>
             </li>
           ))}
@@ -290,7 +292,7 @@ export default function OrderDetailPage({
           <div className="flex justify-between">
             <dt className="text-ink-tertiary">{t("orderDetail.subtotal")}</dt>
             <dd className="tabular-nums">
-              {formatPrice(order.subtotalCents, order.currency)}
+              {formatPrice(fmt, order.subtotalCents, order.currency)}
             </dd>
           </div>
           <div className="flex justify-between">
@@ -299,26 +301,26 @@ export default function OrderDetailPage({
               {order.shippingMethod && ` (${order.shippingMethod.name})`}
             </dt>
             <dd className="tabular-nums">
-              {formatPrice(order.shippingCents, order.currency)}
+              {formatPrice(fmt, order.shippingCents, order.currency)}
             </dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-ink-tertiary">{t("orderDetail.vat")}</dt>
             <dd className="tabular-nums">
-              {formatPrice(order.taxCents, order.currency)}
+              {formatPrice(fmt, order.taxCents, order.currency)}
             </dd>
           </div>
           <div className="flex justify-between pt-2 border-t border-line-subtle font-semibold">
             <dt>{t("orderDetail.total")}</dt>
             <dd className="tabular-nums">
-              {formatPrice(order.totalCents, order.currency)}
+              {formatPrice(fmt, order.totalCents, order.currency)}
             </dd>
           </div>
           {order.applicationFeeCents > 0 && (
             <div className="flex justify-between text-xs text-ink-tertiary pt-1">
               <dt>{t("orderDetail.lumioShare")}</dt>
               <dd className="tabular-nums">
-                −{formatPrice(order.applicationFeeCents, order.currency)}
+                −{formatPrice(fmt, order.applicationFeeCents, order.currency)}
               </dd>
             </div>
           )}
@@ -366,7 +368,7 @@ export default function OrderDetailPage({
           {order.events.map((e) => (
             <li key={e.id} className="flex gap-3 text-sm">
               <span className="text-ink-tertiary text-xs tabular-nums shrink-0 w-32 sm:w-40">
-                {new Date(e.createdAt).toLocaleString("de-DE")}
+                {new Date(e.createdAt).toLocaleString(fmt.bcp47)}
               </span>
               <span className="flex-1 min-w-0">
                 <strong>{t(eventLabel(e.eventType))}</strong>
@@ -520,11 +522,8 @@ function AddressBlock({ addr }: { addr: Record<string, string> }) {
   );
 }
 
-function formatPrice(cents: number, currency = "EUR"): string {
-  return (cents / 100).toLocaleString("de-DE", {
-    style: "currency",
-    currency,
-  });
+function formatPrice(fmt: Formatters, cents: number, currency = "EUR"): string {
+  return fmt.currencyFromMinor(cents, currency);
 }
 
 function transitionsForStatus(status: string): Array<

@@ -25,6 +25,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useFormat } from "@/lib/i18n";
 
 type AuditResponse = Awaited<ReturnType<typeof api.superAuditLog>>;
 type AuditRow = AuditResponse["events"][number];
@@ -234,11 +235,12 @@ function AuditContent() {
 }
 
 function AuditRowItem({ row }: { row: AuditRow }) {
+  const fmt = useFormat();
   const [expanded, setExpanded] = useState(false);
   const hasDetails =
     !!row.payload || !!row.targetId || !!row.actorId || !!row.ipAddress;
 
-  const dateStr = new Date(row.createdAt).toLocaleString("de-DE", {
+  const dateStr = new Date(row.createdAt).toLocaleString(fmt.bcp47, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

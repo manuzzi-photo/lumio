@@ -6,7 +6,8 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
+import type { Formatters } from "@/lib/i18n/format";
 
 type Order = Awaited<ReturnType<typeof api.getGalleryPrintOrder>>;
 
@@ -15,6 +16,7 @@ export default function PrintOrderConfirmationPage({
 }: {
   params: Promise<{ slug: string; orderNumber: string }>;
 }) {
+  const fmt = useFormat();
   const { slug, orderNumber } = use(params);
   const t = useT();
   const [order, setOrder] = useState<Order | null>(null);
@@ -95,7 +97,7 @@ export default function PrintOrderConfirmationPage({
                   </div>
                 </div>
                 <div className="tabular-nums">
-                  {formatPrice(it.totalPriceCents, order.currency)}
+                  {formatPrice(fmt, it.totalPriceCents, order.currency)}
                 </div>
               </li>
             ))}
@@ -105,7 +107,7 @@ export default function PrintOrderConfirmationPage({
             <div className="flex justify-between">
               <dt className="text-ink-tertiary">{t("orderPage.subtotal")}</dt>
               <dd className="tabular-nums">
-                {formatPrice(order.totals.subtotalCents, order.currency)}
+                {formatPrice(fmt, order.totals.subtotalCents, order.currency)}
               </dd>
             </div>
             <div className="flex justify-between">
@@ -113,19 +115,19 @@ export default function PrintOrderConfirmationPage({
                 {t("orderPage.shipping")}{order.shippingMethod && ` (${order.shippingMethod})`}
               </dt>
               <dd className="tabular-nums">
-                {formatPrice(order.totals.shippingCents, order.currency)}
+                {formatPrice(fmt, order.totals.shippingCents, order.currency)}
               </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-ink-tertiary">{t("orderPage.vat")}</dt>
               <dd className="tabular-nums">
-                {formatPrice(order.totals.taxCents, order.currency)}
+                {formatPrice(fmt, order.totals.taxCents, order.currency)}
               </dd>
             </div>
             <div className="flex justify-between pt-2 border-t border-line-subtle font-semibold">
               <dt>{t("orderPage.total")}</dt>
               <dd className="tabular-nums">
-                {formatPrice(order.totals.totalCents, order.currency)}
+                {formatPrice(fmt, order.totals.totalCents, order.currency)}
               </dd>
             </div>
           </dl>
@@ -165,9 +167,6 @@ export default function PrintOrderConfirmationPage({
   );
 }
 
-function formatPrice(cents: number, currency = "EUR"): string {
-  return (cents / 100).toLocaleString("de-DE", {
-    style: "currency",
-    currency,
-  });
+function formatPrice(fmt: Formatters, cents: number, currency = "EUR"): string {
+  return fmt.currencyFromMinor(cents, currency);
 }

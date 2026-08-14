@@ -18,6 +18,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useFormat } from "@/lib/i18n";
 
 type SystemResponse = Awaited<ReturnType<typeof api.superSystemStatus>>;
 
@@ -201,6 +202,7 @@ function UpdateCheckCard({
 }: {
   update: SystemResponse["update"];
 }) {
+  const fmt = useFormat();
   if (update.disabled) {
     return (
       <section>
@@ -251,7 +253,7 @@ function UpdateCheckCard({
             {update.publishedAt && (
               <div className="text-xs text-ink-tertiary mt-1">
                 Release vom{" "}
-                {new Date(update.publishedAt).toLocaleDateString("de-DE", {
+                {new Date(update.publishedAt).toLocaleDateString(fmt.bcp47, {
                   day: "2-digit",
                   month: "long",
                   year: "numeric",
@@ -292,7 +294,7 @@ function UpdateCheckCard({
         {update.checkedAt && (
           <div className="text-xs text-ink-tertiary mt-3">
             Geprüft:{" "}
-            {new Date(update.checkedAt).toLocaleString("de-DE", {
+            {new Date(update.checkedAt).toLocaleString(fmt.bcp47, {
               day: "2-digit",
               month: "short",
               year: "numeric",
@@ -315,6 +317,7 @@ function BackupStatusCard({
 }: {
   backup: SystemResponse["backup"][number];
 }) {
+  const fmt = useFormat();
   if (!backup.configured) {
     return (
       <section>
@@ -377,7 +380,7 @@ echo -e "$(date -u +%FT%TZ)\\n$(stat -c%s "$DUMP_PATH")" \\
             </div>
             <div className="text-lg">
               {backup.lastBackupAt
-                ? new Date(backup.lastBackupAt).toLocaleString("de-DE", {
+                ? new Date(backup.lastBackupAt).toLocaleString(fmt.bcp47, {
                     day: "2-digit",
                     month: "long",
                     year: "numeric",

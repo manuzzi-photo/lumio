@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
+import type { Formatters } from "@/lib/i18n/format";
 
 export default function SuperDashboardPage() {
   return (
@@ -119,6 +120,7 @@ function PendingDeletionRow({
   tenant: StatsResponse["pendingDeletions"][number];
   onChange: () => void;
 }) {
+  const fmt = useFormat();
   const t = useT();
   const [confirming, setConfirming] = useState(false);
   const [working, setWorking] = useState(false);
@@ -136,7 +138,7 @@ function PendingDeletionRow({
       : null;
 
   const dateStr = tenant.scheduledFor
-    ? new Date(tenant.scheduledFor).toLocaleDateString("de-DE", {
+    ? new Date(tenant.scheduledFor).toLocaleDateString(fmt.bcp47, {
         day: "2-digit",
         month: "long",
         year: "numeric",
@@ -232,6 +234,7 @@ function StatCard({
   value: number;
   tone?: "neutral" | "success" | "warning";
 }) {
+  const fmt = useFormat();
   const toneClass =
     tone === "success"
       ? "text-semantic-success"
@@ -244,7 +247,7 @@ function StatCard({
         {label}
       </div>
       <div className={`text-3xl font-semibold mt-2 ${toneClass}`}>
-        {value.toLocaleString("de-DE")}
+        {value.toLocaleString(fmt.bcp47)}
       </div>
     </div>
   );
@@ -258,6 +261,7 @@ function RecentSignupsList({
 }: {
   signups: StatsResponse["recentSignups"];
 }) {
+  const fmt = useFormat();
   const t = useT();
   return (
     <section>
@@ -286,7 +290,7 @@ function RecentSignupsList({
                   </div>
                 </div>
                 <div className="text-xs text-ink-tertiary shrink-0">
-                  {relativeTime(s.createdAt, t)}
+                  {relativeTime(s.createdAt, t, fmt)}
                 </div>
               </div>
             </Link>
@@ -469,7 +473,8 @@ function SignupsSparkline({
 
 function relativeTime(
   iso: string,
-  t: (key: string, vars?: Record<string, string | number>) => string
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  fmt: Formatters
 ): string {
   const ms = Date.now() - new Date(iso).getTime();
   const m = Math.floor(ms / 60000);
@@ -479,11 +484,7 @@ function relativeTime(
   if (h < 24) return t("superDash.hAgo", { h });
   const d = Math.floor(h / 24);
   if (d < 30) return t(d === 1 ? "superDash.dayAgo" : "superDash.daysAgo", { d });
-  return new Date(iso).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return fmt.date(iso, { day: "2-digit", month: "short", year: "numeric" });
 }
 
 // ---------------------------------------------------------------------------

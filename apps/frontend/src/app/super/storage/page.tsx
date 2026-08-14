@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useFormat } from "@/lib/i18n";
 
 type StorageResponse = Awaited<ReturnType<typeof api.superTenantsStorage>>;
 
@@ -29,6 +30,7 @@ export default function SuperStoragePage() {
 }
 
 function StorageContent() {
+  const fmt = useFormat();
   const [data, setData] = useState<StorageResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,16 +68,16 @@ function StorageContent() {
       {data && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <StatCard label="Aktive Tenants" value={data.tenants.length.toLocaleString("de-DE")} />
+            <StatCard label="Aktive Tenants" value={data.tenants.length.toLocaleString(fmt.bcp47)} />
             <StatCard label="Gesamt-Storage" value={formatBytes(totalUsedBytes)} />
             <StatCard
               label="Über Limit"
-              value={overLimitCount.toLocaleString("de-DE")}
+              value={overLimitCount.toLocaleString(fmt.bcp47)}
               tone={overLimitCount > 0 ? "danger" : "neutral"}
             />
             <StatCard
               label="Über 80%"
-              value={nearLimitCount.toLocaleString("de-DE")}
+              value={nearLimitCount.toLocaleString(fmt.bcp47)}
               tone={nearLimitCount > 0 ? "warning" : "neutral"}
             />
           </div>

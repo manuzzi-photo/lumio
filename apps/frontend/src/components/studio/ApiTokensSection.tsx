@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { api, type ApiTokenSummary } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
+import type { Formatters } from "@/lib/i18n/format";
 
 /**
  * Studio-Settings-Sektion zum Verwalten von API-Tokens.
@@ -16,6 +17,7 @@ import { useT } from "@/lib/i18n";
  * Token erzeugen.
  */
 export function ApiTokensSection() {
+  const fmt = useFormat();
   const t = useT();
   const [tokens, setTokens] = useState<ApiTokenSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,9 +149,9 @@ export function ApiTokensSection() {
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{tok.name}</div>
                 <div className="text-xs text-ink-tertiary mt-0.5">
-                  {t("apiTokens.createdAt", { date: formatDate(tok.createdAt) })}
+                  {t("apiTokens.createdAt", { date: formatDate(fmt, tok.createdAt) })}
                   {tok.lastUsedAt
-                    ? t("apiTokens.lastUsed", { date: formatDate(tok.lastUsedAt) })
+                    ? t("apiTokens.lastUsed", { date: formatDate(fmt, tok.lastUsedAt) })
                     : t("apiTokens.neverUsed")}
                 </div>
               </div>
@@ -168,11 +170,6 @@ export function ApiTokensSection() {
   );
 }
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("de-DE", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+function formatDate(fmt: Formatters, iso: string): string {
+  return fmt.date(iso, { year: "numeric", month: "short", day: "numeric" });
 }

@@ -18,7 +18,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 
 type Announcement = Awaited<
   ReturnType<typeof api.listActiveAnnouncements>
@@ -104,6 +104,7 @@ function AnnouncementRow({
   a: Announcement;
   onDismiss: (id: string) => void;
 }) {
+  const fmt = useFormat();
   const t = useT();
   const canDismiss = a.severity !== "critical" && a.dismissible;
   const colorClasses = (() => {
@@ -127,7 +128,7 @@ function AnnouncementRow({
         {a.activeUntil && (
           <span className="ml-2 opacity-70 text-xs">
             (bis{" "}
-            {new Date(a.activeUntil).toLocaleString("de-DE", {
+            {new Date(a.activeUntil).toLocaleString(fmt.bcp47, {
               day: "2-digit",
               month: "2-digit",
               year: "numeric",

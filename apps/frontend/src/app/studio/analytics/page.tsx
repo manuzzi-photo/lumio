@@ -26,8 +26,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { api } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
+import type { Formatters } from "@/lib/i18n/format";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ const RANGE_PRESETS = [
 ];
 
 export default function AnalyticsPage() {
+  const fmt = useFormat();
   const t = useT();
   const [data, setData] = useState<Overview | null>(null);
   const [days, setDays] = useState(30);
@@ -119,7 +121,7 @@ export default function AnalyticsPage() {
               <KpiCard
                 label={t("analytics.printRevenue")}
                 value={(data.totals.printRevenueCents / 100).toLocaleString(
-                  "de-DE",
+                  fmt.bcp47,
                   { style: "currency", currency: "EUR" }
                 )}
                 highlight
@@ -145,12 +147,12 @@ export default function AnalyticsPage() {
                   <CartesianGrid stroke="var(--brand-border)" strokeDasharray="3 3" />
                   <XAxis
                     dataKey="day"
-                    tickFormatter={(v) => fmtDate(v)}
+                    tickFormatter={(v) => fmtDate(fmt, v)}
                     fontSize={12}
                   />
                   <YAxis fontSize={12} allowDecimals={false} />
                   <Tooltip
-                    labelFormatter={(v) => fmtDate(v)}
+                    labelFormatter={(v) => fmtDate(fmt, v)}
                     contentStyle={{
                       background: "var(--brand-surface-raised)",
                       border: "1px solid var(--brand-border)",
@@ -191,7 +193,7 @@ export default function AnalyticsPage() {
                     />
                     <XAxis
                       dataKey="day"
-                      tickFormatter={(v) => fmtDate(v)}
+                      tickFormatter={(v) => fmtDate(fmt, v)}
                       fontSize={12}
                     />
                     <YAxis
@@ -199,7 +201,7 @@ export default function AnalyticsPage() {
                       fontSize={12}
                     />
                     <Tooltip
-                      labelFormatter={(v) => fmtDate(v as string)}
+                      labelFormatter={(v) => fmtDate(fmt, v as string)}
                       formatter={(v) => fmtBytes(Number(v))}
                       contentStyle={{
                         background: "var(--brand-surface-raised)",
@@ -247,6 +249,7 @@ function KpiCard({
   value: number | string;
   highlight?: boolean;
 }) {
+  const fmt = useFormat();
   return (
     <div
       className={
@@ -259,7 +262,7 @@ function KpiCard({
         {label}
       </div>
       <div className="text-2xl font-semibold tabular-nums">
-        {typeof value === "number" ? value.toLocaleString("de-DE") : value}
+        {typeof value === "number" ? value.toLocaleString(fmt.bcp47) : value}
       </div>
     </div>
   );
@@ -289,6 +292,7 @@ function TopList({
   metricKey: string;
   metricLabel: string;
 }) {
+  const fmt = useFormat();
   const t = useT();
   if (rows.length === 0 || rows.every((r) => (r[metricKey] ?? 0) === 0)) {
     return (
@@ -316,7 +320,7 @@ function TopList({
             </Link>
           </div>
           <span className="tabular-nums shrink-0">
-            {(r[metricKey] as number).toLocaleString("de-DE")}{" "}
+            {(r[metricKey] as number).toLocaleString(fmt.bcp47)}{" "}
             <span className="text-ink-tertiary text-xs">{metricLabel}</span>
           </span>
         </li>
@@ -325,9 +329,8 @@ function TopList({
   );
 }
 
-function fmtDate(d: string | Date): string {
-  const date = typeof d === "string" ? new Date(d) : d;
-  return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+function fmtDate(fmt: Formatters, d: string | Date): string {
+  return fmt.date(d, { day: "2-digit", month: "2-digit" });
 }
 
 function fmtBytes(bytes: number): string {

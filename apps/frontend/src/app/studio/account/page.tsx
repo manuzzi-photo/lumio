@@ -24,7 +24,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { api } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 import { DangerZone } from "@/components/studio/DangerZone";
@@ -60,6 +60,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default function AccountPage() {
+  const fmt = useFormat();
   const t = useT();
   const router = useRouter();
   const [data, setData] = useState<AccountData | null>(null);
@@ -118,7 +119,7 @@ export default function AccountPage() {
         </Row>
         <Row label={t("account.memberSince")}>
           <span className="text-ui text-ink-primary">
-            {new Date(data.user.createdAt).toLocaleDateString("de-DE", {
+            {new Date(data.user.createdAt).toLocaleDateString(fmt.bcp47, {
               year: "numeric",
               month: "long",
               day: "numeric",
@@ -128,7 +129,7 @@ export default function AccountPage() {
         {data.user.lastLoginAt && (
           <Row label={t("account.lastLogin")}>
             <span className="text-ui text-ink-primary">
-              {new Date(data.user.lastLoginAt).toLocaleString("de-DE")}
+              {new Date(data.user.lastLoginAt).toLocaleString(fmt.bcp47)}
             </span>
           </Row>
         )}
@@ -249,6 +250,7 @@ function EmailSection({
   pendingChange: AccountData["pendingEmailChange"];
   onChanged: () => Promise<void>;
 }) {
+  const fmt = useFormat();
   const t = useT();
   const [open, setOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
@@ -305,7 +307,7 @@ function EmailSection({
             </span>
           </div>
           <div className="text-ui-xs text-ink-tertiary">
-            {t("account.changePendingHint", { date: new Date(pendingChange.expiresAt).toLocaleString("de-DE") })}
+            {t("account.changePendingHint", { date: new Date(pendingChange.expiresAt).toLocaleString(fmt.bcp47) })}
           </div>
           <div>
             <button

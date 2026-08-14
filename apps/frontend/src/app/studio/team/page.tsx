@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 
@@ -214,6 +214,7 @@ function UserRow({
   onDelete: () => void;
   onResend: () => void;
 }) {
+  const fmt = useFormat();
   const t = useT();
   // Schutz vor letztem Owner — keine Aktionen die das ändern wuerden.
   const isLastOwner =
@@ -250,7 +251,7 @@ function UserRow({
           {user.email}
           {user.lastLoginAt && (
             <span className="ml-2">
-              · {t("team.lastActive", { date: new Date(user.lastLoginAt).toLocaleDateString("de-DE") })}
+              · {t("team.lastActive", { date: new Date(user.lastLoginAt).toLocaleDateString(fmt.bcp47) })}
             </span>
           )}
         </div>

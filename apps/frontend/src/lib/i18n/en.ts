@@ -2195,6 +2195,8 @@ export const en: Dict = {
     navJobs: "Job failures",
     navSecurity: "Security",
     navCompliance: "Compliance",
+    navMarketingMails: "Marketing emails",
+    loggedInAs: "signed in as",
     copyLink: "Copy link",
     done: "Done",
     name: "Name",

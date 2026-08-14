@@ -10,7 +10,7 @@ import {
   type AccountStorage,
 } from "@/lib/api";
 import { PageHeader } from "@/components/studio/PageHeader";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 import { Button, Card } from "@/components/ui";
 
 /**
@@ -22,6 +22,7 @@ import { Button, Card } from "@/components/ui";
  * kommt in Sprint 2).
  */
 export default function BillingPage() {
+  const fmt = useFormat();
   const t = useT();
   const [usage, setUsage] = useState<BillingUsage | null>(null);
   // Self-Hosted-Modus (BILLING_ENABLED=false): statt Plänen zeigen wir
@@ -222,7 +223,7 @@ export default function BillingPage() {
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <div className="font-medium text-amber-900">
-                {t("billing.subEndsOn", { date: new Date(sub.currentPeriodEnd).toLocaleDateString("de-DE") })}
+                {t("billing.subEndsOn", { date: new Date(sub.currentPeriodEnd).toLocaleDateString(fmt.bcp47) })}
               </div>
               <div className="text-ui-sm text-amber-800 mt-1 max-w-2xl">
                 {t("billing.cancelInfo")}
@@ -270,7 +271,7 @@ export default function BillingPage() {
               <div className="text-ui-xs text-ink-tertiary">
                 {t("billing.trialEndsOn")}
                 <div className="text-ui-sm text-ink-primary font-medium">
-                  {new Date(usage.trialEndsAt).toLocaleDateString("de-DE")}
+                  {new Date(usage.trialEndsAt).toLocaleDateString(fmt.bcp47)}
                 </div>
               </div>
               {sub?.status === "trialing" && sub.hasStripeId && (

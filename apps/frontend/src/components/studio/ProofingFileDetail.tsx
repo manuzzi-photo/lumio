@@ -26,7 +26,7 @@ import {
   type Comment,
   type GalleryFile,
 } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 import { useImageZoom } from "@/lib/useImageZoom";
 import {
   AnnotationOverlay,
@@ -47,6 +47,7 @@ interface Props {
 }
 
 export function ProofingFileDetail({ galleryId, file, onClose }: Props) {
+  const fmt = useFormat();
   const t = useT();
   const [comments, setComments] = useState<Comment[] | null>(null);
   const [strokes, setStrokes] = useState<AnnotationStroke[]>([]);
@@ -387,7 +388,7 @@ export function ProofingFileDetail({ galleryId, file, onClose }: Props) {
                       {c.authorLabel}
                     </div>
                     <div className="text-ui-xs text-ink-tertiary">
-                      {new Date(c.createdAt).toLocaleString("de-DE", {
+                      {new Date(c.createdAt).toLocaleString(fmt.bcp47, {
                         dateStyle: "short",
                         timeStyle: "short",
                       })}

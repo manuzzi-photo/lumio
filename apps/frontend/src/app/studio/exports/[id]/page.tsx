@@ -12,7 +12,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
 import { api } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 
@@ -40,6 +40,7 @@ interface ExportData {
 }
 
 export default function ExportDetailPage() {
+  const fmt = useFormat();
   const t = useT();
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -124,7 +125,7 @@ export default function ExportDetailPage() {
       <PageHeader
         breadcrumb={[{ label: t("nav.studio"), href: "/studio" }, { label: t("exportsList.title"), href: "/studio/exports" }, { label: t("exportDetail.title") }]}
         title={t("exportDetail.title")}
-        description={t("exportDetail.createdExpires", { created: new Date(data.createdAt).toLocaleString("de-DE"), expires: new Date(data.expiresAt).toLocaleDateString("de-DE") })}
+        description={t("exportDetail.createdExpires", { created: new Date(data.createdAt).toLocaleString(fmt.bcp47), expires: new Date(data.expiresAt).toLocaleDateString(fmt.bcp47) })}
       />
 
       <div className="mb-5 flex items-center justify-between gap-3">

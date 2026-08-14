@@ -12,12 +12,13 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 import type {
   PrintProductCreateInput,
   PrintVariantCreateInput,
 } from "@/lib/api";
 import { Button, Input, Select, Textarea } from "@/components/ui";
+import type { Formatters } from "@/lib/i18n/format";
 
 type Product = Awaited<
   ReturnType<typeof api.listPrintProducts>
@@ -37,6 +38,7 @@ const CATEGORIES = [
 ] as const;
 
 export default function PrintProductsPage() {
+  const fmt = useFormat();
   const t = useT();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [providers, setProviders] = useState<ProviderMine[] | null>(null);
@@ -234,10 +236,10 @@ export default function PrintProductsPage() {
                           </span>
                         </span>
                         <span className="text-sm tabular-nums">
-                          {formatPrice(v.priceCents)}
+                          {formatPrice(fmt, v.priceCents)}
                           {v.costCents !== null && (
                             <span className="text-ink-tertiary text-xs ml-1">
-                              {t("printProducts.costNote", { price: formatPrice(v.costCents) })}
+                              {t("printProducts.costNote", { price: formatPrice(fmt, v.costCents) })}
                             </span>
                           )}
                         </span>
@@ -301,11 +303,8 @@ export default function PrintProductsPage() {
   );
 }
 
-function formatPrice(cents: number): string {
-  return (cents / 100).toLocaleString("de-DE", {
-    style: "currency",
-    currency: "EUR",
-  });
+function formatPrice(fmt: Formatters, cents: number): string {
+  return fmt.currencyFromMinor(cents);
 }
 
 function ProductDialog({

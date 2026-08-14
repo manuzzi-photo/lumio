@@ -21,7 +21,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { api } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 
 interface PublicExportItem {
   id: string;
@@ -52,6 +52,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function PublicExportPage() {
+  const fmt = useFormat();
   const t = useT();
   const params = useParams<{ token: string }>();
   const token = params.token;
@@ -163,7 +164,7 @@ export default function PublicExportPage() {
             </li>
           </ul>
           <p className="text-ui-xs text-ink-tertiary pt-2">
-            {t("exportPage.availableUntil", { date: new Date(data.export.expiresAt).toLocaleDateString("de-DE") })}
+            {t("exportPage.availableUntil", { date: new Date(data.export.expiresAt).toLocaleDateString(fmt.bcp47) })}
           </p>
         </div>
 

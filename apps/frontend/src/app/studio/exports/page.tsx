@@ -23,7 +23,7 @@ import Link from "next/link";
 import { api, type Gallery } from "@/lib/api";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 
 interface ExportListItem {
   id: string;
@@ -48,6 +48,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function ExportsPage() {
+  const fmt = useFormat();
   const t = useT();
   const [exports, setExports] = useState<ExportListItem[]>([]);
   const [galleries, setGalleries] = useState<Gallery[]>([]);
@@ -203,11 +204,11 @@ export default function ExportsPage() {
                       {t(e.itemCount === 1 ? "exportsList.gallery" : "exportsList.galleries")}
                     </div>
                     <div className="text-ui-xs text-ink-tertiary mt-0.5">
-                      {new Date(e.createdAt).toLocaleString("de-DE")}
+                      {new Date(e.createdAt).toLocaleString(fmt.bcp47)}
                       {e.status === "ready" && (
                         <>
                           {" "}
-                          {t("exportsList.expiresOn", { date: new Date(e.expiresAt).toLocaleDateString("de-DE") })}
+                          {t("exportsList.expiresOn", { date: new Date(e.expiresAt).toLocaleDateString(fmt.bcp47) })}
                         </>
                       )}
                     </div>

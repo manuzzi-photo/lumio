@@ -39,13 +39,26 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 - Every version of the symbol now lives under `brand/` in the repository — symbol, wordmark, lockups, the *Cloud* and *Self-Hosted* product variants, each in regular and inverted form, plus favicons, email PNGs and the scripts that generate them. `brand/preview.html` shows the whole set in a browser, including real pixel sizes from 16 px up. The fonts used (Quicksand, Inter) ship under `brand/fonts/` together with their SIL OFL licence texts, so everything can be regenerated without network access — a run from a fresh copy reproduces the files byte for byte. The rules remain in `docs/BRAND.md`.
 
+- The README now carries the symbol instead of a text heading, using `<picture>` for GitHub's light and dark modes, plus badges for release, licence and deployment. The social preview card for GitHub lives under `brand/social/` — it has to be uploaded once in the repository settings, GitHub does not read it from the repo.
+
 ### Changed
--
+
+- Datum, Uhrzeit, Zahlen, Preise und Sortierungen folgen jetzt überall der eingestellten Sprache. Bisher war in der Oberfläche an rund 80 Stellen das deutsche Format festverdrahtet — bei englischer Bedienung standen dort deutsche Datumsangaben. Betrifft Studio, Kundengalerien und die Administrationsoberfläche.
+- Die Seitenspalte der Administrationsoberfläche zeigt „MRR", „Plan-Katalog" und „Marketing-Mails" nur noch, wenn die Instanz mit Abrechnung läuft (`BILLING_ENABLED=true`). Wer Lumio selbst betreibt und mehrere Studios verwaltet, hatte dort drei Punkte, hinter denen nichts stand.
+- Die Sprache des HTML-Dokuments wird mit der gewählten Oberflächensprache synchron gehalten. Vorlesehilfen und die Übersetzungsabfrage des Browsers gingen vorher immer von Englisch aus.
+- Englisch ist ab jetzt als primäre Projektsprache festgeschrieben, Deutsch als Übersetzung — nachzulesen in `CONTRIBUTING.md`. Ausdrücklich ausgenommen und weiterhin deutsch: die E-Mails an Galeriekunden, der Auftragsverarbeitungsvertrag und die deutschsprachigen Webseiten.
 
 ### Fixed
--
 
-- The README now carries the symbol instead of a text heading, using `<picture>` for GitHub's light and dark modes, plus badges for release, licence and deployment. The social preview card for GitHub lives under `brand/social/` — it has to be uploaded once in the repository settings, GitHub does not read it from the repo.
+- In der Administrationsoberfläche waren „Marketing-Mails" und „angemeldet als" nicht übersetzbar.
+
+**🇬🇧 English**
+
+- Dates, times, numbers, prices and sorting now follow the selected language throughout. Around 80 places in the interface had the German format hardcoded, so an English interface still showed German dates. Affects the studio, customer galleries and the administration interface.
+- The administration sidebar only shows "MRR", "Plan catalogue" and "Marketing emails" when the instance runs with billing (`BILLING_ENABLED=true`). Anyone self-hosting Lumio to manage several studios was looking at three entries with nothing behind them.
+- The HTML document language is kept in sync with the selected interface language. Screen readers and the browser's translation prompt previously always assumed English.
+- English is now established as the primary project language, with German as a translation — see `CONTRIBUTING.md`. Explicitly excluded and still German: the emails to gallery customers, the data processing agreement and the German-language websites.
+- In the administration interface, "Marketing emails" and "signed in as" could not be translated.
 
 ## [0.59.0] - 2026-08-07
 

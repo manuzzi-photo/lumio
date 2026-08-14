@@ -9,6 +9,8 @@ import {
 } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { InviteOwnerDialog } from "@/components/super/InviteOwnerDialog";
+import { useFormat } from "@/lib/i18n";
+import type { Formatters } from "@/lib/i18n/format";
 
 export default function SuperTenantDetailPage() {
   return (
@@ -19,6 +21,7 @@ export default function SuperTenantDetailPage() {
 }
 
 function TenantDetail() {
+  const fmt = useFormat();
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -393,7 +396,7 @@ function TenantDetail() {
               <span className="font-medium text-ink-primary">
                 Self-Service-Löschung läuft — Hard-Delete am{" "}
                 {new Date(tenant.selfDeletionScheduledFor).toLocaleDateString(
-                  "de-DE",
+                  fmt.bcp47,
                   { day: "2-digit", month: "long", year: "numeric" }
                 )}
               </span>
@@ -439,14 +442,14 @@ function TenantDetail() {
             <Label>Galerien</Label>
             <span>{tenant.galleryCount}</span>
             <Label>Angelegt</Label>
-            <span>{new Date(tenant.createdAt).toLocaleString("de-DE")}</span>
+            <span>{new Date(tenant.createdAt).toLocaleString(fmt.bcp47)}</span>
             <Label>Letztes Update</Label>
-            <span>{new Date(tenant.updatedAt).toLocaleString("de-DE")}</span>
+            <span>{new Date(tenant.updatedAt).toLocaleString(fmt.bcp47)}</span>
             {tenant.archivedAt && (
               <>
                 <Label>Archiviert am</Label>
                 <span>
-                  {new Date(tenant.archivedAt).toLocaleString("de-DE")}
+                  {new Date(tenant.archivedAt).toLocaleString(fmt.bcp47)}
                 </span>
               </>
             )}
@@ -876,6 +879,7 @@ function ScheduledArchiveBanner({
   onArchiveNow: () => void;
   busy: boolean;
 }) {
+  const fmt = useFormat();
   const date = new Date(scheduledAt);
   const remainingMs = date.getTime() - Date.now();
   const reached = remainingMs <= 0;
@@ -893,7 +897,7 @@ function ScheduledArchiveBanner({
           <span className="font-medium text-ink-primary">
             {reached
               ? `Stichtag erreicht — Archivierung steht aus`
-              : `Archivierung geplant für ${date.toLocaleDateString("de-DE")} (in ${daysLeft} Tag${daysLeft === 1 ? "" : "en"})`}
+              : `Archivierung geplant für ${date.toLocaleDateString(fmt.bcp47)} (in ${daysLeft} Tag${daysLeft === 1 ? "" : "en"})`}
           </span>
           <div className="text-ui-xs text-ink-tertiary mt-1">
             {reached ? (
@@ -1158,6 +1162,7 @@ function BillingBlock({
   tenantId: string;
   onChanged: () => void;
 }) {
+  const fmt = useFormat();
   const plan = subscription.plan;
   const [extendOpen, setExtendOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -1204,10 +1209,10 @@ function BillingBlock({
 
   const price = (() => {
     if (subscription.billingInterval === "yearly" && plan.priceYearlyCents !== null) {
-      return formatPrice(plan.priceYearlyCents, plan.currency) + " / Jahr";
+      return formatPrice(fmt, plan.priceYearlyCents, plan.currency) + " / Jahr";
     }
     if (plan.priceMonthlyCents !== null) {
-      return formatPrice(plan.priceMonthlyCents, plan.currency) + " / Monat";
+      return formatPrice(fmt, plan.priceMonthlyCents, plan.currency) + " / Monat";
     }
     return null;
   })();
@@ -1258,7 +1263,7 @@ function BillingBlock({
           <span className="text-ink-tertiary">
             {" "}
             · seit{" "}
-            {new Date(subscription.readOnlySince).toLocaleDateString("de-DE")}
+            {new Date(subscription.readOnlySince).toLocaleDateString(fmt.bcp47)}
           </span>
         </div>
       )}
@@ -1266,7 +1271,7 @@ function BillingBlock({
       {subscription.cancelAtPeriodEnd && subscription.currentPeriodEnd && (
         <div className="rounded-md border border-semantic-warning/30 bg-semantic-warning/8 px-3 py-2 text-ui-sm">
           <span className="font-medium">Gekündigt zum </span>
-          {new Date(subscription.currentPeriodEnd).toLocaleDateString("de-DE")}{" "}
+          {new Date(subscription.currentPeriodEnd).toLocaleDateString(fmt.bcp47)}{" "}
           — danach automatisch beendet.
         </div>
       )}
@@ -1301,7 +1306,7 @@ function BillingBlock({
             <span className="flex items-center gap-3 flex-wrap">
               <span>
                 {new Date(subscription.trialEndsAt).toLocaleDateString(
-                  "de-DE",
+                  fmt.bcp47,
                   {
                     day: "2-digit",
                     month: "long",
@@ -1329,11 +1334,11 @@ function BillingBlock({
             <span>
               {new Date(
                 subscription.currentPeriodStart
-              ).toLocaleDateString("de-DE")}
+              ).toLocaleDateString(fmt.bcp47)}
               {" – "}
               {new Date(
                 subscription.currentPeriodEnd
-              ).toLocaleDateString("de-DE")}
+              ).toLocaleDateString(fmt.bcp47)}
             </span>
           </>
         )}
@@ -1698,6 +1703,7 @@ function ExtendTrialDialog({
   onClose: () => void;
   onExtended: () => void;
 }) {
+  const fmt = useFormat();
   const [days, setDays] = useState(7);
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -1774,7 +1780,7 @@ function ExtendTrialDialog({
           <div className="text-sm text-ink-secondary">
             Neues Trial-Ende:{" "}
             <strong>
-              {projectedEnd.toLocaleDateString("de-DE", {
+              {projectedEnd.toLocaleDateString(fmt.bcp47, {
                 day: "2-digit",
                 month: "long",
                 year: "numeric",
@@ -1849,11 +1855,8 @@ function SubscriptionStatusBadge({ status }: { status: string }) {
   );
 }
 
-function formatPrice(cents: number, currency: string): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency,
-  }).format(cents / 100);
+function formatPrice(fmt: Formatters, cents: number, currency: string): string {
+  return fmt.currencyFromMinor(cents, currency);
 }
 
 function daysUntil(iso: string): string {
@@ -1873,6 +1876,7 @@ function daysUntil(iso: string): string {
 // Edits — eine Note ist ein Zeitpunkts-Snapshot ("hat heute angerufen").
 // Wenn der User nachjustieren will, schreibt er eine neue Note.
 function NotesSection({ tenantId }: { tenantId: string }) {
+  const fmt = useFormat();
   type Note = Awaited<
     ReturnType<typeof api.superListTenantNotes>
   >["notes"][number];
@@ -1985,7 +1989,7 @@ function NotesSection({ tenantId }: { tenantId: string }) {
               </div>
               <div className="text-ui-xs text-ink-tertiary mt-1">
                 {n.authorName ?? n.authorEmail} ·{" "}
-                {new Date(n.createdAt).toLocaleString("de-DE", {
+                {new Date(n.createdAt).toLocaleString(fmt.bcp47, {
                   day: "2-digit",
                   month: "short",
                   year: "numeric",
@@ -2352,6 +2356,7 @@ function FlagRow({
   busy: boolean;
   onToggle: () => void;
 }) {
+  const fmt = useFormat();
   const badgeColor = (() => {
     switch (flag.badge) {
       case "beta":
@@ -2390,7 +2395,7 @@ function FlagRow({
                 <>
                   {" "}
                   am{" "}
-                  {new Date(flag.overrideSetAt).toLocaleDateString("de-DE", {
+                  {new Date(flag.overrideSetAt).toLocaleDateString(fmt.bcp47, {
                     day: "2-digit",
                     month: "short",
                     year: "numeric",

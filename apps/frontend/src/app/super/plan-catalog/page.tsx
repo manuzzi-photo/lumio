@@ -7,6 +7,8 @@ import {
   type PlanCatalogDbOnly,
 } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import type { Formatters } from "@/lib/i18n/format";
+import { useFormat } from "@/lib/i18n";
 
 export default function SuperPlanCatalogPage() {
   return (
@@ -16,14 +18,14 @@ export default function SuperPlanCatalogPage() {
   );
 }
 
-function eur(cents: number | null | undefined): string {
+function eur(fmt: Formatters, cents: number | null | undefined): string {
   if (cents == null) return "—";
-  return `${(cents / 100).toLocaleString("de-DE")} €`;
+  return `${fmt.number(cents / 100)} €`;
 }
 
-function gib(v: number | null | undefined): string {
+function gib(fmt: Formatters, v: number | null | undefined): string {
   if (v == null) return "—";
-  return `${v.toLocaleString("de-DE")} GB`;
+  return `${fmt.number(v)} GB`;
 }
 
 function yesNo(v: boolean): string {
@@ -134,6 +136,7 @@ function PlanCatalogView() {
 }
 
 function PlanCard({ plan }: { plan: PlanCatalogEntry }) {
+  const fmt = useFormat();
   const driftFields = new Set(plan.drift.map((d) => d.field));
   const hasDrift = plan.drift.length > 0;
 
@@ -152,20 +155,20 @@ function PlanCard({ plan }: { plan: PlanCatalogEntry }) {
     {
       field: "storageGib",
       label: "Speicher",
-      code: gib(plan.code.storageGib),
-      db: gib(plan.db?.storageGib),
+      code: gib(fmt, plan.code.storageGib),
+      db: gib(fmt, plan.db?.storageGib),
     },
     {
       field: "priceMonthlyCents",
       label: "Preis / Monat",
-      code: eur(plan.code.priceMonthlyCents),
-      db: eur(plan.db?.priceMonthlyCents),
+      code: eur(fmt, plan.code.priceMonthlyCents),
+      db: eur(fmt, plan.db?.priceMonthlyCents),
     },
     {
       field: "priceYearlyCents",
       label: "Preis / Jahr",
-      code: eur(plan.code.priceYearlyCents),
-      db: eur(plan.db?.priceYearlyCents),
+      code: eur(fmt, plan.code.priceYearlyCents),
+      db: eur(fmt, plan.db?.priceYearlyCents),
     },
     {
       field: "watermark",

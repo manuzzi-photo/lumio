@@ -22,6 +22,8 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useFormat } from "@/lib/i18n";
+import type { Formatters } from "@/lib/i18n/format";
 
 type MrrResponse = Awaited<ReturnType<typeof api.superMrr>>;
 
@@ -34,6 +36,7 @@ export default function SuperMrrPage() {
 }
 
 function MrrContent() {
+  const fmt = useFormat();
   const [data, setData] = useState<MrrResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,21 +70,21 @@ function MrrContent() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
             <HeroCard
               label="MRR aktuell"
-              value={formatEur(data.current.mrrCents)}
+              value={formatEur(fmt, data.current.mrrCents)}
               big
             />
             <HeroCard
               label="Trialing-MRR (Forecast)"
-              value={formatEur(data.current.trialingMrrCents)}
+              value={formatEur(fmt, data.current.trialingMrrCents)}
               subtle
             />
             <HeroCard
               label="Aktive paid Subs"
-              value={data.current.activeSubs.toLocaleString("de-DE")}
+              value={data.current.activeSubs.toLocaleString(fmt.bcp47)}
             />
             <HeroCard
               label="Trial-Subs"
-              value={data.current.trialingSubs.toLocaleString("de-DE")}
+              value={data.current.trialingSubs.toLocaleString(fmt.bcp47)}
               subtle
             />
           </div>
@@ -140,6 +143,7 @@ function MrrTrend({
 }: {
   history: MrrResponse["history"];
 }) {
+  const fmt = useFormat();
   const W = 800;
   const H = 200;
   const PAD = 8;
@@ -224,7 +228,7 @@ function MrrTrend({
         </svg>
         <div className="mt-2 flex items-center justify-between text-xs text-ink-tertiary">
           <span>{history[0].date}</span>
-          <span>max: {formatEur(max)}</span>
+          <span>max: {formatEur(fmt, max)}</span>
           <span>{history[history.length - 1].date}</span>
         </div>
       </div>
@@ -237,6 +241,7 @@ function PerPlanTable({
 }: {
   perPlan: MrrResponse["current"]["perPlan"];
 }) {
+  const fmt = useFormat();
   const entries = Object.entries(perPlan).sort(
     ([, a], [, b]) => b.mrrCents - a.mrrCents
   );
@@ -270,7 +275,7 @@ function PerPlanTable({
                   </td>
                   <td className="px-3 py-2 text-right">{p.count}</td>
                   <td className="px-3 py-2 text-right font-mono">
-                    {formatEur(p.mrrCents)}
+                    {formatEur(fmt, p.mrrCents)}
                   </td>
                   <td className="px-3 py-2 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -294,7 +299,7 @@ function PerPlanTable({
                 {entries.reduce((sum, [, p]) => sum + p.count, 0)}
               </td>
               <td className="px-3 py-2 text-right font-mono font-medium">
-                {formatEur(total)}
+                {formatEur(fmt, total)}
               </td>
               <td className="px-3 py-2 text-right text-xs text-ink-tertiary">
                 100%
@@ -308,10 +313,6 @@ function PerPlanTable({
   );
 }
 
-function formatEur(cents: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(cents / 100);
+function formatEur(fmt: Formatters, cents: number): string {
+  return fmt.currencyFromMinor(cents, "EUR", { maximumFractionDigits: 0 });
 }

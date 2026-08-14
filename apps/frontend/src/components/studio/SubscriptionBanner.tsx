@@ -22,9 +22,10 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { api, type BillingSubscriptionInfo } from "@/lib/api";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 
 export function SubscriptionBanner() {
+  const fmt = useFormat();
   const t = useT();
   const [sub, setSub] = useState<BillingSubscriptionInfo | null>(null);
   const [busy, setBusy] = useState(false);
@@ -161,7 +162,7 @@ export function SubscriptionBanner() {
                   {t(sub.trialDaysRemaining === 1 ? "subBanner.trialDaysSg" : "subBanner.trialDaysPl", { n: sub.trialDaysRemaining })}
                 </strong>{" "}
                 {hasCard
-                  ? t("subBanner.trialFirstBill", { date: new Date(sub.trialEndsAt!).toLocaleDateString("de-DE") })
+                  ? t("subBanner.trialFirstBill", { date: new Date(sub.trialEndsAt!).toLocaleDateString(fmt.bcp47) })
                   : t("subBanner.trialNoCard")}
               </>
             )}

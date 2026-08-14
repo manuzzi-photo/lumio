@@ -3,20 +3,25 @@
 /**
  * Lumio Frontend — i18n
  *
- * Sehr leichtgewichtige Lösung:
- *   - Dictionary-Lookup mit Fallback-Chain (current → 'en' → key)
- *   - Locale wird aus Cookie ODER navigator.language abgeleitet
- *   - Pluralisation über Intl.PluralRules
- *   - Datums-/Zahlenformate über Intl.* direkt
+ * Deliberately lightweight:
+ *   - Dictionary lookup with a fallback chain (active → 'en' → key)
+ *   - Locale derived from a cookie OR navigator.language
+ *   - Pluralisation via Intl.PluralRules
+ *   - Dates, numbers, currencies and sorting via the helpers in i18n/format,
+ *     always bound to the active locale — see useFormat()
  *
- * Wir unterstützen aktuell:
- *   - 'en' (Default)
+ * English is the primary language and the fallback for missing keys; every
+ * other locale is a translation of en.ts. See CONTRIBUTING.md.
+ *
+ * Currently supported:
+ *   - 'en' (default)
  *   - 'de'
  *
- * Strings werden in lib/i18n/<locale>.ts gepflegt.
+ * Strings live in lib/i18n/<locale>.ts.
  */
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { dictionaries, type Locale, type Dict } from "./i18n/dict";
+import { createFormatters, type Formatters } from "./i18n/format";
 
 const LOCALE_COOKIE = "lumio_locale";
 const DEFAULT_LOCALE: Locale = "en";
@@ -65,11 +70,19 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
 
-  // Erst nach Hydration den echten Locale setzen — sonst Mismatch zwischen
-  // SSR und Client
+  // Resolve the real locale only after hydration, otherwise SSR and client
+  // markup diverge.
   useEffect(() => {
     setLocaleState(detectLocale());
   }, []);
+
+  // Keep the document language in sync with the interface language. The SSR
+  // default is lang="en"; screen readers, browser translation prompts and
+  // CSS :lang() selectors all depend on this being accurate.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   const setLocale = (l: Locale) => {
     writeCookie(LOCALE_COOKIE, l);
@@ -135,15 +148,35 @@ export function useLocale() {
 }
 
 /**
- * Plural-Helper: liefert `one` oder `other` basierend auf der Anzahl.
- * Beispiel: plural(t, 'files.count', n) → "1 file" / "5 files"
+ * Date, number, currency and sort formatters bound to the active locale.
+ *
+ * Use this instead of calling `toLocaleDateString` / `Intl.*` with a literal
+ * locale — a hardcoded "de-DE" renders German dates inside the English UI.
+ *
+ *   const fmt = useFormat();
+ *   fmt.date(gallery.createdAt)            // 08/14/2026 vs. 14.08.2026
+ *   fmt.currencyFromMinor(order.totalCents, order.currency)
+ *   items.sort((a, b) => fmt.compare(a.name, b.name))
+ */
+export function useFormat(): Formatters {
+  const { locale } = useLocale();
+  return useMemo(() => createFormatters(locale), [locale]);
+}
+
+/**
+ * Plural helper: picks `one` or `other` based on the count.
+ * Example: plural(t, 'files.count', n) → "1 file" / "5 files"
+ *
+ * Pass the active locale from useLocale() so the plural category matches the
+ * rendered language; it falls back to cookie/navigator detection otherwise.
  */
 export function plural(
   t: I18nContextValue["t"],
   baseKey: string,
-  count: number
+  count: number,
+  locale?: Locale
 ): string {
-  const rules = new Intl.PluralRules(detectLocale());
+  const rules = new Intl.PluralRules(locale ?? detectLocale());
   const cat = rules.select(count); // "one" | "other" | …
   return t(`${baseKey}.${cat}`, { count }) || t(`${baseKey}.other`, { count });
 }

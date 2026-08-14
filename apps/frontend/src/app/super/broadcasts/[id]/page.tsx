@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useFormat } from "@/lib/i18n";
 
 type Response = Awaited<ReturnType<typeof api.superGetBroadcast>>;
 
@@ -28,6 +29,7 @@ export default function BroadcastDetailPage() {
 }
 
 function Detail() {
+  const fmt = useFormat();
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -119,7 +121,7 @@ function Detail() {
           <h1 className="text-2xl font-semibold mb-1">{b.subject}</h1>
           <div className="text-ui-sm text-ink-tertiary">
             {b.audience} ·{" "}
-            {new Date(b.createdAt).toLocaleString("de-DE", {
+            {new Date(b.createdAt).toLocaleString(fmt.bcp47, {
               day: "2-digit",
               month: "long",
               year: "numeric",
@@ -149,16 +151,16 @@ function Detail() {
         <StatCard label="Status" value={b.status} tone={statusTone(b.status)} mono />
         <StatCard
           label="Empfänger gesamt"
-          value={b.totalRecipients.toLocaleString("de-DE")}
+          value={b.totalRecipients.toLocaleString(fmt.bcp47)}
         />
         <StatCard
           label="Versendet"
-          value={b.sentCount.toLocaleString("de-DE")}
+          value={b.sentCount.toLocaleString(fmt.bcp47)}
           tone="success"
         />
         <StatCard
           label="Fehler"
-          value={b.failedCount.toLocaleString("de-DE")}
+          value={b.failedCount.toLocaleString(fmt.bcp47)}
           tone={b.failedCount > 0 ? "danger" : "neutral"}
         />
       </div>
@@ -180,7 +182,7 @@ function Detail() {
 
       {b.optedOutSkippedCount > 0 && (
         <div className="text-sm text-ink-tertiary mb-4">
-          {b.optedOutSkippedCount.toLocaleString("de-DE")} User wurden
+          {b.optedOutSkippedCount.toLocaleString(fmt.bcp47)} User wurden
           übersprungen (Opt-Out aktiv).
         </div>
       )}

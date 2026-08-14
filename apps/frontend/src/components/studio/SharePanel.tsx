@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, type GalleryAccess } from "@/lib/api";
 import { EmailChipsInput } from "@/components/studio/EmailChipsInput";
-import { useT } from "@/lib/i18n";
+import { useT, useFormat} from "@/lib/i18n";
 
 export function SharePanel({
   galleryId,
@@ -16,6 +16,7 @@ export function SharePanel({
   initialPublicAccess?: boolean;
   initialHasPassword?: boolean;
 }) {
+  const fmt = useFormat();
   const t = useT();
   const [publicAccess, setPublicAccess] = useState(initialPublicAccess);
   const [savingAccessMode, setSavingAccessMode] = useState(false);
@@ -476,7 +477,7 @@ export function SharePanel({
                           new Date(a.expiresAt) < new Date() ? (
                             <span className="text-red-600">
                               {t("share.expiredOn", {
-                                date: new Date(a.expiresAt).toLocaleString("de-DE", {
+                                date: new Date(a.expiresAt).toLocaleString(fmt.bcp47, {
                                   dateStyle: "medium",
                                   timeStyle: "short",
                                 }),
@@ -485,7 +486,7 @@ export function SharePanel({
                           ) : (
                             <span className="text-ink-tertiary">
                               {t("share.expiresOn", {
-                                date: new Date(a.expiresAt).toLocaleString("de-DE", {
+                                date: new Date(a.expiresAt).toLocaleString(fmt.bcp47, {
                                   dateStyle: "medium",
                                   timeStyle: "short",
                                 }),
