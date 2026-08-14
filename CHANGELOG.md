@@ -31,12 +31,12 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ### Fixed
 
-- Vier E-Mails wurden bisher an den Vorlagen vorbei gebaut und waren deshalb in jeder Sprache deutsch: die Mitteilung über einen Support-Zugriff aufs eigene Studio, die Vorab-Ankündigung und die Erinnerung zur Konto-Archivierung sowie der Hinweis auf den bereitstehenden Datenexport. Sie haben jetzt richtige Vorlagen — mit HTML-Fassung, die der Support-Hinweis vorher gar nicht hatte — und folgen der Sprache der angeschriebenen Person.
+- Vier E-Mails wurden bisher an den Vorlagen vorbei gebaut und waren deshalb in jeder Sprache deutsch: die Mitteilung über einen Support-Zugriff aufs eigene Studio, die Vorab-Ankündigung und die Erinnerung zur Konto-Archivierung sowie der Hinweis auf den bereitstehenden Datenexport. Sie haben jetzt richtige Vorlagen — mit HTML-Fassung, die der Support-Hinweis vorher gar nicht hatte — und folgen der Sprache der angeschriebenen Person. Drei davon siezten als einzige Mails im System und duzen jetzt wie alle anderen.
 - Zwei E-Mails trugen ein deutsches Datum, obwohl der Text bereits in der Sprache des Empfängers verschickt wurde: die Ablauf-Warnung für Galerien und der tägliche Bericht an die Plattform-Verwaltung.
 
 **🇬🇧 English**
 
-- Four emails were assembled without going through a template and were therefore German in every language: the notice that support accessed your studio, the advance warning and the reminder about account archiving, and the pointer to a prepared data export. They now have proper templates — including an HTML version, which the support notice never had — and follow the language of the person being written to.
+- Four emails were assembled without going through a template and were therefore German in every language: the notice that support accessed your studio, the advance warning and the reminder about account archiving, and the pointer to a prepared data export. They now have proper templates — including an HTML version, which the support notice never had — and follow the language of the person being written to. Three of them were the only mails using formal German address; they now match everything else.
 - Two emails carried a German date even though the surrounding text already went out in the recipient's language: the gallery expiry warning and the daily platform administration report.
 
 ## [0.62.0] - 2026-08-14

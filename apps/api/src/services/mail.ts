@@ -2339,18 +2339,16 @@ export function tmplImpersonationNotice(opts: {
  * Vorab-Warnung und Erinnerung vor der Archivierung eines Tenants.
  *
  * Beide waren inline in routes/super-tenants.ts bzw. services/sweeper.ts
- * gebaut. Auffaellig: sie SIEZEN, waehrend jedes andere Template duzt. Das
- * ist hier bewusst uebernommen statt stillschweigend angeglichen — eine
- * Anrede-Aenderung gehoert nicht in eine Uebersetzungsaufgabe. Wenn das
- * vereinheitlicht werden soll, dann sichtbar und in beiden Sprachen.
+ * gebaut und siezten als einzige Mails im System. Beim Templatisieren auf
+ * "du" vereinheitlicht, wie in jeder anderen Vorlage.
  */
 const preArchivePhrases = {
   noticeSubject: {
-    de: "Wichtig: Ihr Lumio-Konto „{studio}“ wird am {date} archiviert",
+    de: "Wichtig: Dein Lumio-Konto „{studio}“ wird am {date} archiviert",
     en: "Important: your Lumio account “{studio}” will be archived on {date}",
   },
   reminderSubject: {
-    de: "Erinnerung: Ihr Lumio-Konto „{studio}“ wird in {days} Tagen archiviert",
+    de: "Erinnerung: Dein Lumio-Konto „{studio}“ wird in {days} Tagen archiviert",
     en: "Reminder: your Lumio account “{studio}” will be archived in {days} days",
   },
   noticePreheader: {
@@ -2365,49 +2363,49 @@ const preArchivePhrases = {
   noticeHeading: { de: "Archivierung angekündigt", en: "Archiving announced" },
   reminderHeading: { de: "Erinnerung: Archivierung", en: "Reminder: archiving" },
   noticeBody: {
-    de: "wir möchten Sie informieren, dass Ihr Lumio-Konto „{studio}“ am {date} archiviert wird.",
+    de: "wir möchten dich informieren, dass dein Lumio-Konto „{studio}“ am {date} archiviert wird.",
     en: "we would like to inform you that your Lumio account “{studio}” will be archived on {date}.",
   },
   reminderBody: {
-    de: "dies ist eine Erinnerung: Ihr Lumio-Konto „{studio}“ wird am {date} archiviert (in {days} Tagen).",
+    de: "dies ist eine Erinnerung: Dein Lumio-Konto „{studio}“ wird am {date} archiviert (in {days} Tagen).",
     en: "this is a reminder: your Lumio account “{studio}” will be archived on {date} (in {days} days).",
   },
   meansHeading: { de: "Was bedeutet das?", en: "What does that mean?" },
   means1: {
-    de: "Ab diesem Datum können Sie sich nicht mehr einloggen",
+    de: "Ab diesem Datum kannst du dich nicht mehr einloggen",
     en: "From that date on you can no longer sign in",
   },
   means2: {
-    de: "Ihre Daten bleiben 30 Tage in Karenz erhalten",
+    de: "Deine Daten bleiben 30 Tage in Karenz erhalten",
     en: "Your data is retained for a 30-day grace period",
   },
   means3: {
     de: "Danach werden alle Daten endgültig gelöscht",
     en: "After that all data is permanently deleted",
   },
-  todoHeading: { de: "Was sollten Sie jetzt tun?", en: "What should you do now?" },
+  todoHeading: { de: "Was solltest du jetzt tun?", en: "What should you do now?" },
   todoBody: {
-    de: "Loggen Sie sich ein und exportieren Sie Ihre Daten über die Sidebar → „Datenexport“. Pro Galerie wird ein ZIP-Archiv mit Originaldateien und Metadaten erstellt.",
+    de: "Logg dich ein und exportiere deine Daten über die Sidebar → „Datenexport“. Pro Galerie wird ein ZIP-Archiv mit Originaldateien und Metadaten erstellt.",
     en: "Sign in and export your data via the sidebar → “Data export”. One ZIP archive with original files and metadata is created per gallery.",
   },
   reminderTodo: {
-    de: "Falls Sie Ihre Daten noch herunterladen möchten, loggen Sie sich bitte zeitnah ein und nutzen Sie die Sidebar → „Datenexport“. Pro Galerie wird ein ZIP-Archiv mit Originalen und Metadaten erstellt.",
+    de: "Falls du deine Daten noch herunterladen möchtest, logg dich bitte zeitnah ein und nutze die Sidebar → „Datenexport“. Pro Galerie wird ein ZIP-Archiv mit Originalen und Metadaten erstellt.",
     en: "If you still want to download your data, please sign in soon and use the sidebar → “Data export”. One ZIP archive with originals and metadata is created per gallery.",
   },
   afterArchive: {
-    de: "Nach der Archivierung können Sie sich nicht mehr einloggen. Ein direkter Download-Link wird Ihnen dann automatisch per Mail zugeschickt (30 Tage gültig), aber der Self-Service-Export im Studio ist ab dann nicht mehr verfügbar.",
+    de: "Nach der Archivierung kannst du dich nicht mehr einloggen. Ein direkter Download-Link wird dir dann automatisch per Mail zugeschickt (30 Tage gültig), aber der Self-Service-Export im Studio ist ab dann nicht mehr verfügbar.",
     en: "After archiving you can no longer sign in. A direct download link is then emailed to you automatically (valid for 30 days), but the self-service export in the studio is no longer available from that point.",
   },
   questions: {
-    de: "Falls Sie das Archivierungsdatum für ein Missverständnis halten oder Fragen haben, antworten Sie bitte zeitnah auf diese Mail.",
+    de: "Falls du das Archivierungsdatum für ein Missverständnis hältst oder Fragen hast, antworte bitte zeitnah auf diese Mail.",
     en: "If you believe the archiving date is a misunderstanding, or you have questions, please reply to this email promptly.",
   },
   reminderQuestions: {
-    de: "Falls die Archivierung nicht wie geplant erfolgen soll, antworten Sie bitte zeitnah auf diese Mail.",
+    de: "Falls die Archivierung nicht wie geplant erfolgen soll, antworte bitte zeitnah auf diese Mail.",
     en: "If the archiving should not go ahead as planned, please reply to this email promptly.",
   },
   reminderAnnounce: {
-    de: "Wir senden Ihnen 7 Tage vor dem Stichtag noch eine Erinnerung.",
+    de: "Wir senden dir 7 Tage vor dem Stichtag noch eine Erinnerung.",
     en: "We will send you another reminder 7 days before the date.",
   },
 } satisfies Record<string, Phrase>;
@@ -2487,12 +2485,11 @@ export function tmplPreArchiveNotice(opts: {
 }
 
 /**
- * Datenexport-Link fuer bereits archivierte Tenants. Siezt wie die
- * Pre-Archive-Mails — siehe Hinweis dort.
+ * Datenexport-Link fuer bereits archivierte Tenants.
  */
 const exportReadyPhrases = {
   subject: {
-    de: "Ihr Datenexport von Lumio ist bereit – {studio}",
+    de: "Dein Datenexport von Lumio ist bereit – {studio}",
     en: "Your Lumio data export is ready – {studio}",
   },
   preheader: {
@@ -2502,15 +2499,15 @@ const exportReadyPhrases = {
   greeting: { de: "Hallo {name},", en: "Hello {name}," },
   heading: { de: "Datenexport bereit", en: "Data export ready" },
   body: {
-    de: "Ihr Lumio-Konto „{studio}“ wurde archiviert und Ihre Daten werden in Kürze endgültig gelöscht. Sie können Ihre Galerien (Originaldateien + Metadaten) als ZIP-Archiv unter folgendem Link herunterladen — der Link ist 30 Tage gültig:",
+    de: "Dein Lumio-Konto „{studio}“ wurde archiviert und deine Daten werden in Kürze endgültig gelöscht. Du kannst deine Galerien (Originaldateien + Metadaten) als ZIP-Archiv unter folgendem Link herunterladen — der Link ist 30 Tage gültig:",
     en: "Your Lumio account “{studio}” has been archived and your data will be permanently deleted shortly. You can download your galleries (original files + metadata) as ZIP archives from the link below — the link is valid for 30 days:",
   },
   inProgress: {
-    de: "Der Export wird gerade erstellt. Pro Galerie dauert das je nach Größe einige Sekunden bis Minuten. Auf der Download-Seite sehen Sie den jeweiligen Status und können fertige Galerien direkt herunterladen.",
+    de: "Der Export wird gerade erstellt. Pro Galerie dauert das je nach Größe einige Sekunden bis Minuten. Auf der Download-Seite siehst du den jeweiligen Status und kannst fertige Galerien direkt herunterladen.",
     en: "The export is being generated right now. Depending on size it takes seconds to minutes per gallery. The download page shows the status of each and lets you download finished galleries straight away.",
   },
   questions: {
-    de: "Falls Sie weitere Fragen haben, antworten Sie auf diese Mail.",
+    de: "Falls du weitere Fragen hast, antworte auf diese Mail.",
     en: "If you have further questions, reply to this email.",
   },
   button: { de: "Export herunterladen", en: "Download export" },
