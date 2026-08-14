@@ -896,51 +896,89 @@ export function tmplGalleryInvite(opts: {
   };
 }
 
+const welcomePhrases = {
+  subject: {
+    de: "Willkommen bei Lumio — dein Studio „{studio}“ ist startklar",
+    en: "Welcome to Lumio — your studio “{studio}” is ready",
+  },
+  preheader: {
+    de: "Dein Studio „{studio}“ ist startklar",
+    en: "Your studio “{studio}” is ready",
+  },
+  greetingNamed: { de: "Hallo {name},", en: "Hello {name}," },
+  greetingPlain: { de: "Hallo,", en: "Hello," },
+  heading: { de: "Willkommen bei Lumio", en: "Welcome to Lumio" },
+  bodyText: {
+    de: "dein Lumio-Studio „{studio}“ ist angelegt und einsatzbereit. Du bist im {plan}-Plan mit einem 14-tägigen Trial — kostenlos bis zum {date}, kein Risiko.",
+    en: "your Lumio studio “{studio}” is set up and ready. You are on the {plan} plan with a 14-day trial — free until {date}, no risk.",
+  },
+  bodyHtml: {
+    de: "{prefix}dein Studio „{studio}“ ist angelegt und einsatzbereit. Du bist im {plan}-Plan mit einem 14-tägigen Trial — kostenlos bis zum {date}.",
+    en: "{prefix}your studio “{studio}” is set up and ready. You are on the {plan} plan with a 14-day trial — free until {date}.",
+  },
+  loginAt: { de: "Einloggen kannst du dich jederzeit unter:", en: "You can sign in any time at:" },
+  firstSteps: { de: "Erste Schritte für dein Studio:", en: "First steps for your studio:" },
+  firstStepsHeading: { de: "Erste Schritte", en: "First steps" },
+  step1: {
+    de: "Branding anpassen (Logo, Farben, eigene Domain)",
+    en: "Set up your branding (logo, colours, custom domain)",
+  },
+  step2: {
+    de: "Eine erste Galerie anlegen und ein paar Bilder hochladen",
+    en: "Create a first gallery and upload a few photos",
+  },
+  step3: {
+    de: "Test-Share-Link an dich selbst schicken, um den Endkunden-Workflow zu durchlaufen",
+    en: "Send yourself a test share link to walk through the customer flow",
+  },
+  button: { de: "Studio öffnen", en: "Open studio" },
+  seeYouSoon: { de: "Bis bald", en: "See you soon" },
+} satisfies Record<string, Phrase>;
+
 export function tmplWelcome(opts: {
   displayName: string | null;
   studioName: string;
   studioUrl: string;
   trialEndsAt: Date;
   planName: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
-  const greeting = opts.displayName ? `Hallo ${opts.displayName},` : "Hallo,";
-  const trialEnd = opts.trialEndsAt.toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  const l = opts.locale ?? instanceMailLocale();
+  const P = welcomePhrases;
+  const greeting = opts.displayName
+    ? phrase(P.greetingNamed, l, { name: opts.displayName })
+    : phrase(P.greetingPlain, l);
+  const trialEnd = opts.trialEndsAt.toLocaleDateString(
+    l === "de" ? "de-DE" : "en-GB",
+    { day: "2-digit", month: "long", year: "numeric" }
+  );
+  const vars = {
+    studio: opts.studioName,
+    plan: opts.planName,
+    date: trialEnd,
+    prefix: opts.displayName ? opts.displayName + ", " : "",
+  };
+  const steps = [phrase(P.step1, l), phrase(P.step2, l), phrase(P.step3, l)];
   return {
-    subject: `Willkommen bei Lumio — dein Studio „${opts.studioName}" ist startklar`,
+    subject: phrase(P.subject, l, vars),
     text:
       `${greeting}\n\n` +
-      `dein Lumio-Studio „${opts.studioName}" ist angelegt und einsatzbereit. ` +
-      `Du bist im ${opts.planName}-Plan mit einem 14-tägigen Trial — kostenlos ` +
-      `bis zum ${trialEnd}, kein Risiko.\n\n` +
-      `Einloggen kannst du dich jederzeit unter:\n` +
-      `  ${opts.studioUrl}\n\n` +
-      `Erste Schritte für dein Studio:\n` +
-      `  • Branding anpassen (Logo, Farben, eigene Domain)\n` +
-      `  • Eine erste Galerie anlegen und ein paar Bilder hochladen\n` +
-      `  • Test-Share-Link an dich selbst schicken, um den Endkunden-` +
-      `Workflow zu durchlaufen\n\n` +
+      `${phrase(P.bodyText, l, vars)}\n\n` +
+      `${phrase(P.loginAt, l)}\n  ${opts.studioUrl}\n\n` +
+      `${phrase(P.firstSteps, l)}\n` +
+      steps.map((x) => `  • ${x}`).join("\n") +
+      `\n\n` +
       (supportHint() ? `${supportHint()}\n\n` : "") +
-      `Bis bald\n` +
-      `— Lumio`,
+      `${phrase(P.seeYouSoon, l)}\n${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `Dein Studio „${opts.studioName}" ist startklar`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Willkommen bei Lumio`) +
-        mailParagraph(
-          `${opts.displayName ? opts.displayName + ", " : ""}dein Studio „${opts.studioName}" ist angelegt und einsatzbereit. Du bist im ${opts.planName}-Plan mit einem 14-tägigen Trial — kostenlos bis zum ${trialEnd}.`
-        ) +
-        mailButton(opts.studioUrl, "Studio öffnen") +
+        mailHeading(phrase(P.heading, l)) +
+        mailParagraph(phrase(P.bodyHtml, l, vars)) +
+        mailButton(opts.studioUrl, phrase(P.button, l)) +
         mailDivider() +
-        mailHeading(`Erste Schritte`) +
-        mailBullets([
-          "Branding anpassen (Logo, Farben, eigene Domain)",
-          "Eine erste Galerie anlegen und ein paar Bilder hochladen",
-          "Test-Share-Link an dich selbst schicken, um den Endkunden-Workflow zu durchlaufen",
-        ]) +
+        mailHeading(phrase(P.firstStepsHeading, l)) +
+        mailBullets(steps) +
         (supportHint() ? mailNoticeBox(supportHint()!) : ""),
     }),
   };
@@ -1236,33 +1274,50 @@ export function tmplBillingPurgeReminder(opts: {
 // Super-Admin / Plattform-Benachrichtigungen (ohne Tenant-Branding)
 // =============================================================================
 
+/** Empfaenger: Super-Admins -> Sprache der Instanz. */
+const superNewTenantPhrases = {
+  subject: { de: "Neuer Tenant: {name} ({plan})", en: "New tenant: {name} ({plan})" },
+  preheader: { de: "Neuer Tenant: {name}", en: "New tenant: {name}" },
+  heading: { de: "Neuer Tenant registriert", en: "New tenant registered" },
+  intro: { de: "Neuer Tenant registriert:", en: "New tenant registered:" },
+  fieldName: { de: "Name", en: "Name" },
+  fieldSlug: { de: "Slug", en: "Slug" },
+  fieldPlan: { de: "Plan", en: "Plan" },
+  fieldOwner: { de: "Owner", en: "Owner" },
+  superAdmin: { de: "Super-Admin", en: "Super admin" },
+  button: { de: "Im Super-Admin öffnen", en: "Open in super admin" },
+} satisfies Record<string, Phrase>;
+
 export function tmplSuperNewTenant(opts: {
   tenantName: string;
   slug: string;
   plan: string;
   ownerEmail: string;
   superUrl: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const P = superNewTenantPhrases;
+  const vars = { name: opts.tenantName, plan: opts.plan };
+  const rows = [
+    `${phrase(P.fieldName, l)}: ${opts.tenantName}`,
+    `${phrase(P.fieldSlug, l)}: ${opts.slug}`,
+    `${phrase(P.fieldPlan, l)}: ${opts.plan}`,
+    `${phrase(P.fieldOwner, l)}: ${opts.ownerEmail}`,
+  ];
   return {
-    subject: `Neuer Tenant: ${opts.tenantName} (${opts.plan})`,
+    subject: phrase(P.subject, l, vars),
     text:
-      `Neuer Tenant registriert:\n\n` +
-      `Name:  ${opts.tenantName}\n` +
-      `Slug:  ${opts.slug}\n` +
-      `Plan:  ${opts.plan}\n` +
-      `Owner: ${opts.ownerEmail}\n\n` +
-      `Super-Admin: ${opts.superUrl}\n\n— Lumio`,
+      `${phrase(P.intro, l)}\n\n` +
+      rows.join("\n") +
+      `\n\n${phrase(P.superAdmin, l)}: ${opts.superUrl}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
-      preheader: `Neuer Tenant: ${opts.tenantName}`,
+      preheader: phrase(P.preheader, l, vars),
       bodyHtml:
-        mailHeading("Neuer Tenant registriert") +
-        mailBullets([
-          `Name: ${opts.tenantName}`,
-          `Slug: ${opts.slug}`,
-          `Plan: ${opts.plan}`,
-          `Owner: ${opts.ownerEmail}`,
-        ]) +
-        mailButton(opts.superUrl, "Im Super-Admin öffnen"),
+        mailHeading(phrase(P.heading, l)) +
+        mailBullets(rows) +
+        mailButton(opts.superUrl, phrase(P.button, l)),
     }),
   };
 }
@@ -1748,28 +1803,51 @@ export function tmplSupportRequest(
   };
 }
 
+const supportConfirmPhrases = {
+  subject: { de: "Deine Support-Anfrage ist angekommen", en: "We received your support request" },
+  preheader: {
+    de: "Wir haben deine Anfrage erhalten und melden uns innerhalb eines Werktags.",
+    en: "We received your request and will reply within one working day.",
+  },
+  greetingNamed: { de: "Hallo {name},", en: "Hello {name}," },
+  greetingPlain: { de: "Hallo,", en: "Hello," },
+  heading: { de: "Anfrage angekommen", en: "Request received" },
+  body: {
+    de: "danke für deine Nachricht. Wir haben sie erhalten und melden uns innerhalb eines Werktags bei dir.",
+    en: "thank you for your message. We received it and will get back to you within one working day.",
+  },
+  recap: {
+    de: "Zur Sicherheit hier noch einmal, was du uns geschickt hast:",
+    en: "For your records, here is what you sent us:",
+  },
+  yourMessage: { de: "Deine Nachricht", en: "Your message" },
+  team: { de: "— Dein Lumio-Team", en: "— Your Lumio team" },
+} satisfies Record<string, Phrase>;
+
 export function tmplSupportRequestConfirmation(opts: {
   message: string;
   name: string | null;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
-  const greeting = opts.name ? `Hallo ${opts.name},` : `Hallo,`;
+  const l = opts.locale ?? instanceMailLocale();
+  const P = supportConfirmPhrases;
+  const greeting = opts.name
+    ? phrase(P.greetingNamed, l, { name: opts.name })
+    : phrase(P.greetingPlain, l);
   return {
-    subject: `Deine Support-Anfrage ist angekommen`,
+    subject: phrase(P.subject, l),
     text:
       `${greeting}\n\n` +
-      `danke für deine Nachricht. Wir haben sie erhalten und melden uns ` +
-      `innerhalb eines Werktags bei dir.\n\n` +
-      `Zur Sicherheit hier noch einmal, was du uns geschickt hast:\n\n` +
+      `${phrase(P.body, l)}\n\n` +
+      `${phrase(P.recap, l)}\n\n` +
       `${opts.message}\n\n` +
-      `— Dein Lumio-Team`,
+      `${phrase(P.team, l)}`,
     html: renderMailLayout({
-      preheader: `Wir haben deine Anfrage erhalten und melden uns innerhalb eines Werktags.`,
+      preheader: phrase(P.preheader, l),
       bodyHtml:
-        mailHeading(`Anfrage angekommen`) +
-        mailParagraph(
-          `${greeting} danke für deine Nachricht. Wir haben sie erhalten und melden uns innerhalb eines Werktags bei dir.`
-        ) +
-        mailHeading(`Deine Nachricht`) +
+        mailHeading(phrase(P.heading, l)) +
+        mailParagraph(`${greeting} ${phrase(P.body, l)}`) +
+        mailHeading(phrase(P.yourMessage, l)) +
         mailParagraph(opts.message.replace(/\n/g, "<br>")),
     }),
   };

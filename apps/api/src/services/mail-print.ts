@@ -183,6 +183,25 @@ const printGuestPhrases = {
   regards: { de: "Viele Grüße,", en: "Kind regards," },
 } satisfies Record<string, Phrase>;
 
+/** Empfaenger: das Studio -> persoenliche Sprache des Owners. */
+const printStudioPhrases = {
+  subject: {
+    de: "Neue Print-Bestellung: {order}",
+    en: "New print order: {order}",
+  },
+  intro: { de: "Neue Bestellung im Print-Shop:", en: "New order in the print shop:" },
+  orderNumber: { de: "Bestellnummer", en: "Order number" },
+  customer: { de: "Kunde", en: "Customer" },
+  paymentMode: { de: "Bezahlmodus", en: "Payment" },
+  payOnline: { de: "Online (Stripe)", en: "Online (Stripe)" },
+  payOffline: { de: "Offline-Rechnung", en: "Offline invoice" },
+  total: { de: "Gesamtsumme", en: "Total" },
+  items: { de: "Artikel", en: "Items" },
+  deliveryAddress: { de: "Lieferadresse", en: "Delivery address" },
+  customerNote: { de: "Hinweis vom Kunden:", en: "Note from the customer:" },
+  openOrder: { de: "Zur Bestellung im Studio:", en: "Open the order in the studio:" },
+} satisfies Record<string, Phrase>;
+
 export function tmplPrintOrderConfirmGuest(opts: {
   studioName: string;
   /** Studio-Branding; ohne Angabe greift das Lumio-Branding. */
@@ -273,44 +292,51 @@ export function tmplPrintOrderNotifyStudio(opts: {
   branding?: MailBranding;
   order: OrderLike;
   baseUrl: string;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
   const { order, baseUrl, branding } = opts;
+  const l = opts.locale ?? instanceMailLocale();
+  const S = printStudioPhrases;
   const orderUrl = `${baseUrl.replace(/\/+$/, "")}/studio/print-shop/orders/${order.id}`;
-  const subject = `Neue Print-Bestellung: ${order.orderNumber}`;
+  const subject = phrase(S.subject, l, { order: order.orderNumber });
+  const payLabel =
+    order.paymentMode === "stripe_connect"
+      ? phrase(S.payOnline, l)
+      : phrase(S.payOffline, l);
 
   const text =
-    `Neue Bestellung im Print-Shop:
+    `${phrase(S.intro, l)}
 
-Bestellnummer: ${order.orderNumber}
-Kunde: ${order.guestName} <${order.guestEmail}>
-Bezahlmodus: ${order.paymentMode === "stripe_connect" ? "Online (Stripe)" : "Offline-Rechnung"}
-Gesamtsumme: ${formatPrice(order.totalCents, order.currency)}
+${phrase(S.orderNumber, l)}: ${order.orderNumber}
+${phrase(S.customer, l)}: ${order.guestName} <${order.guestEmail}>
+${phrase(S.paymentMode, l)}: ${payLabel}
+${phrase(S.total, l)}: ${formatPrice(order.totalCents, order.currency, l)}
 
-Artikel:
-${itemsTextBlock(order.items, order.currency)}
+${phrase(S.items, l)}:
+${itemsTextBlock(order.items, order.currency, l)}
 
-Lieferadresse:
+${phrase(S.deliveryAddress, l)}:
 ${formatAddress(order.shippingAddress)}
 
-${order.guestNote ? `Hinweis vom Kunden:\n${order.guestNote}\n` : ""}
-Zur Bestellung im Studio:
+${order.guestNote ? `${phrase(S.customerNote, l)}\n${order.guestNote}\n` : ""}
+${phrase(S.openOrder, l)}
 ${orderUrl}`;
 
   const html = renderMailLayout({
     branding,
     bodyHtml: `
-  <p>Neue Bestellung im Print-Shop:</p>
+  <p>${escapeHtml(phrase(S.intro, l))}</p>
   <table style="border-collapse:collapse;">
-    <tr><td style="padding:4px 12px 4px 0;color:#888;">Bestellnummer:</td><td style="padding:4px 0;"><strong style="font-family:monospace;">${order.orderNumber}</strong></td></tr>
-    <tr><td style="padding:4px 12px 4px 0;color:#888;">Kunde:</td><td style="padding:4px 0;">${escapeHtml(order.guestName)} &lt;${escapeHtml(order.guestEmail)}&gt;</td></tr>
-    <tr><td style="padding:4px 12px 4px 0;color:#888;">Bezahlmodus:</td><td style="padding:4px 0;">${order.paymentMode === "stripe_connect" ? "Online (Stripe)" : "Offline-Rechnung"}</td></tr>
-    <tr><td style="padding:4px 12px 4px 0;color:#888;">Gesamtsumme:</td><td style="padding:4px 0;font-weight:600;">${formatPrice(order.totalCents, order.currency)}</td></tr>
+    <tr><td style="padding:4px 12px 4px 0;color:#888;">${escapeHtml(phrase(S.orderNumber, l))}:</td><td style="padding:4px 0;"><strong style="font-family:monospace;">${order.orderNumber}</strong></td></tr>
+    <tr><td style="padding:4px 12px 4px 0;color:#888;">${escapeHtml(phrase(S.customer, l))}:</td><td style="padding:4px 0;">${escapeHtml(order.guestName)} &lt;${escapeHtml(order.guestEmail)}&gt;</td></tr>
+    <tr><td style="padding:4px 12px 4px 0;color:#888;">${escapeHtml(phrase(S.paymentMode, l))}:</td><td style="padding:4px 0;">${escapeHtml(payLabel)}</td></tr>
+    <tr><td style="padding:4px 12px 4px 0;color:#888;">${escapeHtml(phrase(S.total, l))}:</td><td style="padding:4px 0;font-weight:600;">${formatPrice(order.totalCents, order.currency, l)}</td></tr>
   </table>
-  <h3>Artikel</h3>
+  <h3>${escapeHtml(phrase(S.items, l))}</h3>
   <table style="width:100%;border-collapse:collapse;">
-    ${itemsHtmlBlock(order.items, order.currency)}
+    ${itemsHtmlBlock(order.items, order.currency, l)}
   </table>
-  <h3 style="margin-top:20px;">Lieferadresse</h3>
+  <h3 style="margin-top:20px;">${escapeHtml(phrase(S.deliveryAddress, l))}</h3>
   <pre style="font-family:inherit;white-space:pre-wrap;margin:0;color:#444;">${escapeHtml(formatAddress(order.shippingAddress))}</pre>
   ${order.guestNote ? `<h3 style="margin-top:20px;">Hinweis vom Kunden</h3><blockquote style="border-left:3px solid #ddd;padding-left:12px;margin:0;color:#444;">${escapeHtml(order.guestNote)}</blockquote>` : ""}
   <p style="margin-top:24px;">

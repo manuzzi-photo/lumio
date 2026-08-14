@@ -17,7 +17,11 @@ import {
 import { config } from "../../config.js";
 import { studioNotifyEnabled } from "../notifications.js";
 import { tenantMailBranding } from "../notifier.js";
-import { tenantMailLocale } from "../mail-i18n.js";
+import {
+  instanceMailLocale,
+  normalizeLocale,
+  tenantMailLocale,
+} from "../mail-i18n.js";
 
 // Order-Number: LP-YYYYMMDD-XXXX, mit XXXX = 4 hex random.
 // Kurz genug zum telefonieren, lang genug fuer Eindeutigkeit.
@@ -466,7 +470,7 @@ export async function sendOrderMails(
   // User mit role=owner.)
   const owner = await prisma.user.findFirst({
     where: { tenantId: order.tenantId, role: "owner", status: "active" },
-    select: { email: true },
+    select: { email: true, locale: true },
     orderBy: { createdAt: "asc" },
   });
   const ownerEmail = owner?.email ?? null;
@@ -491,6 +495,10 @@ export async function sendOrderMails(
   const mailBranding = await tenantMailBranding(order.tenantId);
   // Gast-Mails: Empfaenger hat kein Konto, Sprache folgt dem Studio.
   const guestLocale = await tenantMailLocale(order.tenantId);
+  // Studio-Mail: persoenliche Sprache des Owners, nicht die Kundensprache.
+  const ownerLocale = owner
+    ? normalizeLocale(owner.locale)
+    : instanceMailLocale();
 
   if (trigger === "paid") {
     // Endkunde: Bestaetigung
@@ -509,6 +517,7 @@ export async function sendOrderMails(
       await sendMail({
         to: ownerEmail,
         ...tmplPrintOrderNotifyStudio({
+          locale: ownerLocale,
           branding: mailBranding,
           studioName,
           order: orderForMail,

@@ -31,6 +31,7 @@ import {
   tmplSupportRequest,
   tmplSupportRequestConfirmation,
 } from "../services/mail.js";
+import { userMailLocale } from "../services/mail-i18n.js";
 
 const supportRequestSchema = z.object({
   /** Freitext des Nutzers. */
@@ -129,7 +130,11 @@ export async function registerSupportRoutes(app: FastifyInstance) {
       // ankommt, ist die Anfrage trotzdem zugestellt.
       void sendMail({
         to: from,
-        ...tmplSupportRequestConfirmation({ message, name: s.user.name ?? null }),
+        ...tmplSupportRequestConfirmation({
+          message,
+          name: s.user.name ?? null,
+          locale: await userMailLocale(s.user.id),
+        }),
       });
 
       req.log.info(

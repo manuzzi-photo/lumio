@@ -23,8 +23,10 @@ import {
 import { getPlan, effectiveStorageBytes } from "./plans.js";
 import type { MailBranding } from "./mail-layout.js";
 import {
+  instanceMailLocale,
   normalizeLocale,
   tenantMailLocale,
+  userMailLocale,
 } from "./mail-i18n.js";
 import { studioNotifyEnabled } from "./notifications.js";
 
@@ -366,6 +368,7 @@ export async function sendWelcomeMail(opts: {
       select: {
         email: true,
         name: true,
+        locale: true,
         tenant: {
           select: {
             name: true,
@@ -384,6 +387,7 @@ export async function sendWelcomeMail(opts: {
     if (!user.tenant.subscription.trialEndsAt) return;
 
     const tpl = tmplWelcome({
+      locale: normalizeLocale(user.locale),
       displayName: user.name,
       studioName: user.tenant.name,
       studioUrl: config.PUBLIC_URL,
@@ -423,6 +427,7 @@ export async function notifySuperAdminsNewTenant(opts: {
     const recipients = await superAdminEmails();
     if (recipients.length === 0) return;
     const tpl = tmplSuperNewTenant({
+      locale: instanceMailLocale(),
       tenantName: opts.tenantName,
       slug: opts.slug,
       plan: opts.plan,

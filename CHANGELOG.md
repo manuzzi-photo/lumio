@@ -31,10 +31,12 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ### Added
 
+- Auch die Willkommens-Mail, die Support-Bestätigung, die Print-Bestellmeldung ans Studio und die Benachrichtigung an die Plattform-Verwaltung sind jetzt übersetzbar.
 - Weitere Benachrichtigungen ans Studio-Team sind jetzt übersetzbar und folgen der Sprache der jeweiligen Person: Auswahl abgeschlossen, Speicherwarnung, Galerie läuft ab, neue Uploads, neues Team-Mitglied, Konto-Einrichtung, Passwort zurücksetzen und der E-Mail-Wechsel. Bekommen mehrere Personen dieselbe Benachrichtigung, erhält jede sie in ihrer eigenen Sprache.
 
 **🇬🇧 English**
 
+- The welcome email, the support confirmation, the print order notice to the studio and the platform administration notice are now translatable too.
 - More notifications to the studio team are now translatable and follow each person's own language: selection finished, storage warning, gallery expiring, new uploads, new team member, account setup, password reset and the email change flow. Where several people receive the same notification, each gets it in their own language.
 
 ## [0.61.0] - 2026-08-14
