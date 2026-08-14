@@ -16,6 +16,12 @@ import {
   mailButton,
   type MailBranding,
 } from "./mail-layout.js";
+import {
+  instanceMailLocale,
+  phrase,
+  type MailLocale,
+  type Phrase,
+} from "./mail-i18n.js";
 
 /** Kontaktadresse fuer Print-Mails: Studio-Support > Instanz-Support.
  *  Frueher stand hier fest support@lumio-cloud.de — fuer Self-Hoster
@@ -50,8 +56,13 @@ interface OrderLike {
   taxCents: number;
 }
 
-function formatPrice(cents: number, currency = "EUR"): string {
-  return (cents / 100).toLocaleString("de-DE", {
+/** Preis in der Sprache des Empfaengers, nicht fest de-DE. */
+function formatPrice(
+  cents: number,
+  currency = "EUR",
+  locale: MailLocale = "de"
+): string {
+  return (cents / 100).toLocaleString(locale === "de" ? "de-DE" : "en-GB", {
     style: "currency",
     currency,
   });
@@ -71,18 +82,26 @@ function formatAddress(a: unknown): string {
     .join("\n");
 }
 
-function itemsTextBlock(items: OrderLike["items"], currency: string): string {
+function itemsTextBlock(
+  items: OrderLike["items"],
+  currency: string,
+  locale: MailLocale = "de"
+): string {
   return items
     .map(
       (i) =>
         `  • ${i.quantity}× ${i.printProductVariant.name} ` +
         `(${i.printProductVariant.widthMm}×${i.printProductVariant.heightMm} mm) ` +
-        `— ${formatPrice(i.totalPriceCents, currency)}`
+        `— ${formatPrice(i.totalPriceCents, currency, locale)}`
     )
     .join("\n");
 }
 
-function itemsHtmlBlock(items: OrderLike["items"], currency: string): string {
+function itemsHtmlBlock(
+  items: OrderLike["items"],
+  currency: string,
+  locale: MailLocale = "de"
+): string {
   return items
     .map(
       (i) =>
@@ -92,7 +111,7 @@ function itemsHtmlBlock(items: OrderLike["items"], currency: string): string {
              <br><small style="color:#888;">${i.printProductVariant.widthMm}×${i.printProductVariant.heightMm} mm</small>
            </td>
            <td style="padding:6px 12px;border-bottom:1px solid #eee;text-align:right;font-variant-numeric:tabular-nums;">
-             ${formatPrice(i.totalPriceCents, currency)}
+             ${formatPrice(i.totalPriceCents, currency, locale)}
            </td>
          </tr>`
     )
@@ -110,72 +129,134 @@ function escapeHtml(s: string): string {
 // =============================================================================
 // 1) Endkunde — Bestellbestaetigung (nach 'paid')
 // =============================================================================
+
+/**
+ * Empfaenger dieser beiden Vorlagen: die GAESTE, die im Print-Shop
+ * bestellt haben. Kein Konto, keine bekannte Sprache — also folgt sie
+ * dem Studio (Tenant.locale), siehe mail-i18n.ts.
+ *
+ * Die Studio-Vorlage dazwischen (tmplPrintOrderNotifyStudio) gehoert in
+ * die andere Gruppe und wird spaeter mit den uebrigen Betreiber-Mails
+ * umgestellt.
+ */
+const printGuestPhrases = {
+  confirmSubject: {
+    de: "Deine Bestellung {order} bei {studio}",
+    en: "Your order {order} with {studio}",
+  },
+  greeting: { de: "Hallo {name},", en: "Hello {name}," },
+  thanks: {
+    de: "vielen Dank für deine Bestellung bei {studio}.",
+    en: "thank you for your order with {studio}.",
+  },
+  orderNumber: { de: "Bestellnummer", en: "Order number" },
+  items: { de: "Artikel", en: "Items" },
+  subtotal: { de: "Zwischensumme", en: "Subtotal" },
+  shipping: { de: "Versand", en: "Shipping" },
+  tax: { de: "MwSt", en: "VAT" },
+  total: { de: "Gesamtsumme", en: "Total" },
+  deliveryAddress: { de: "Lieferadresse", en: "Delivery address" },
+  offlineInvoice: {
+    de: "Du bekommst von {studio} in Kürze eine Rechnung. Sobald die Zahlung eingeht, wird deine Bestellung produziert und verschickt.",
+    en: "{studio} will send you an invoice shortly. Once payment arrives, your order goes into production and ships.",
+  },
+  inProduction: {
+    de: "Wir bereiten deine Bestellung jetzt zur Produktion vor. Du bekommst eine weitere Mail sobald sie versendet wird.",
+    en: "We are preparing your order for production now. You will get another email once it ships.",
+  },
+  questions: { de: "Bei Fragen: {contact}", en: "Questions? {contact}" },
+  questionsLabel: { de: "Bei Fragen:", en: "Questions?" },
+  shippedSubject: {
+    de: "Deine Bestellung {order} ist auf dem Weg",
+    en: "Your order {order} is on its way",
+  },
+  shippedBody: {
+    de: "deine Bestellung {order} ist auf dem Weg zu dir.",
+    en: "your order {order} is on its way to you.",
+  },
+  tracking: { de: "Sendungsverfolgung:", en: "Tracking:" },
+  trackPackage: { de: "Paket verfolgen", en: "Track package" },
+  noTracking: {
+    de: "Wir haben leider noch keine Tracking-Nummer, deine Bestellung wurde aber verschickt.",
+    en: "We do not have a tracking number yet, but your order has shipped.",
+  },
+  regards: { de: "Viele Grüße,", en: "Kind regards," },
+} satisfies Record<string, Phrase>;
+
 export function tmplPrintOrderConfirmGuest(opts: {
   studioName: string;
   /** Studio-Branding; ohne Angabe greift das Lumio-Branding. */
   branding?: MailBranding;
   supportEmail: string;
   order: OrderLike;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
   const { studioName, supportEmail, order, branding } = opts;
-  const subject = `Deine Bestellung ${order.orderNumber} bei ${studioName}`;
+  const l = opts.locale ?? instanceMailLocale();
+  const P = printGuestPhrases;
+  const vars = {
+    order: order.orderNumber,
+    studio: studioName,
+    name: order.guestName,
+  };
+  const subject = phrase(P.confirmSubject, l, vars);
 
   const text =
-    `Hallo ${order.guestName},
+    `${phrase(P.greeting, l, vars)}
 
-vielen Dank für deine Bestellung bei ${studioName}.
+${phrase(P.thanks, l, vars)}
 
-Bestellnummer: ${order.orderNumber}
+${phrase(P.orderNumber, l)}: ${order.orderNumber}
 
-Artikel:
-${itemsTextBlock(order.items, order.currency)}
+${phrase(P.items, l)}:
+${itemsTextBlock(order.items, order.currency, l)}
 
-Zwischensumme: ${formatPrice(order.subtotalCents, order.currency)}
-Versand${order.shippingMethod ? ` (${order.shippingMethod.name})` : ""}: ${formatPrice(order.shippingCents, order.currency)}
-MwSt: ${formatPrice(order.taxCents, order.currency)}
-Gesamtsumme: ${formatPrice(order.totalCents, order.currency)}
+${phrase(P.subtotal, l)}: ${formatPrice(order.subtotalCents, order.currency, l)}
+${phrase(P.shipping, l)}${order.shippingMethod ? ` (${order.shippingMethod.name})` : ""}: ${formatPrice(order.shippingCents, order.currency, l)}
+${phrase(P.tax, l)}: ${formatPrice(order.taxCents, order.currency, l)}
+${phrase(P.total, l)}: ${formatPrice(order.totalCents, order.currency, l)}
 
-Lieferadresse:
+${phrase(P.deliveryAddress, l)}:
 ${formatAddress(order.shippingAddress)}
 
 ${
   order.paymentMode === "offline_invoice"
-    ? `Du bekommst von ${studioName} in Kürze eine Rechnung. Sobald die Zahlung eingeht, wird deine Bestellung produziert und verschickt.`
-    : "Wir bereiten deine Bestellung jetzt zur Produktion vor. Du bekommst eine weitere Mail sobald sie versendet wird."
+    ? phrase(P.offlineInvoice, l, vars)
+    : phrase(P.inProduction, l)
 }
 
-${printSupport(supportEmail) ? `Bei Fragen: ${printSupport(supportEmail)}` : ""}
+${printSupport(supportEmail) ? phrase(P.questions, l, { contact: printSupport(supportEmail)! }) : ""}
 
-Viele Grüße,
+${phrase(P.regards, l)}
 ${studioName}`;
 
   const html = renderMailLayout({
     branding,
     bodyHtml: `
-  <p>Hallo ${escapeHtml(order.guestName)},</p>
-  <p>vielen Dank für deine Bestellung bei <strong>${escapeHtml(studioName)}</strong>.</p>
+  <p>${escapeHtml(phrase(P.greeting, l, vars))}</p>
+  <p>${escapeHtml(phrase(P.thanks, l, { studio: studioName }))}</p>
   <p style="background:#f5f5f5;padding:10px 14px;border-radius:4px;display:inline-block;">
-    Bestellnummer: <strong style="font-family:monospace;">${order.orderNumber}</strong>
+    ${escapeHtml(phrase(P.orderNumber, l))}: <strong style="font-family:monospace;">${order.orderNumber}</strong>
   </p>
-  <h3 style="margin-top:24px;">Artikel</h3>
+  <h3 style="margin-top:24px;">${escapeHtml(phrase(P.items, l))}</h3>
   <table style="width:100%;border-collapse:collapse;">
-    ${itemsHtmlBlock(order.items, order.currency)}
-    <tr><td style="padding:6px 12px;color:#888;">Zwischensumme</td><td style="padding:6px 12px;text-align:right;font-variant-numeric:tabular-nums;">${formatPrice(order.subtotalCents, order.currency)}</td></tr>
-    <tr><td style="padding:6px 12px;color:#888;">Versand${order.shippingMethod ? " (" + escapeHtml(order.shippingMethod.name) + ")" : ""}</td><td style="padding:6px 12px;text-align:right;font-variant-numeric:tabular-nums;">${formatPrice(order.shippingCents, order.currency)}</td></tr>
-    <tr><td style="padding:6px 12px;color:#888;">MwSt</td><td style="padding:6px 12px;text-align:right;font-variant-numeric:tabular-nums;">${formatPrice(order.taxCents, order.currency)}</td></tr>
-    <tr><td style="padding:10px 12px;font-weight:600;border-top:2px solid #222;">Gesamtsumme</td><td style="padding:10px 12px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;border-top:2px solid #222;">${formatPrice(order.totalCents, order.currency)}</td></tr>
+    ${itemsHtmlBlock(order.items, order.currency, l)}
+    <tr><td style="padding:6px 12px;color:#888;">${escapeHtml(phrase(P.subtotal, l))}</td><td style="padding:6px 12px;text-align:right;font-variant-numeric:tabular-nums;">${formatPrice(order.subtotalCents, order.currency, l)}</td></tr>
+    <tr><td style="padding:6px 12px;color:#888;">${escapeHtml(phrase(P.shipping, l))}${order.shippingMethod ? " (" + escapeHtml(order.shippingMethod.name) + ")" : ""}</td><td style="padding:6px 12px;text-align:right;font-variant-numeric:tabular-nums;">${formatPrice(order.shippingCents, order.currency, l)}</td></tr>
+    <tr><td style="padding:6px 12px;color:#888;">${escapeHtml(phrase(P.tax, l))}</td><td style="padding:6px 12px;text-align:right;font-variant-numeric:tabular-nums;">${formatPrice(order.taxCents, order.currency, l)}</td></tr>
+    <tr><td style="padding:10px 12px;font-weight:600;border-top:2px solid #222;">${escapeHtml(phrase(P.total, l))}</td><td style="padding:10px 12px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;border-top:2px solid #222;">${formatPrice(order.totalCents, order.currency, l)}</td></tr>
   </table>
-  <h3 style="margin-top:24px;">Lieferadresse</h3>
+  <h3 style="margin-top:24px;">${escapeHtml(phrase(P.deliveryAddress, l))}</h3>
   <pre style="font-family:inherit;white-space:pre-wrap;margin:0;color:#444;">${escapeHtml(formatAddress(order.shippingAddress))}</pre>
   <p style="margin-top:24px;color:#444;">
     ${
       order.paymentMode === "offline_invoice"
-        ? `Du bekommst von ${escapeHtml(studioName)} in Kürze eine Rechnung. Sobald die Zahlung eingeht, wird deine Bestellung produziert und verschickt.`
-        : "Wir bereiten deine Bestellung jetzt zur Produktion vor. Du bekommst eine weitere Mail sobald sie versendet wird."
+        ? escapeHtml(phrase(P.offlineInvoice, l, { studio: studioName }))
+        : escapeHtml(phrase(P.inProduction, l))
     }
   </p>
   <p style="color:#888;font-size:13px;margin-top:24px;">
-    ${printSupport(supportEmail) ? `Bei Fragen: <a href="mailto:${escapeHtml(printSupport(supportEmail)!)}">${escapeHtml(printSupport(supportEmail)!)}</a>` : ""}
+    ${printSupport(supportEmail) ? `${escapeHtml(phrase(P.questionsLabel, l))} <a href="mailto:${escapeHtml(printSupport(supportEmail)!)}">${escapeHtml(printSupport(supportEmail)!)}</a>` : ""}
   </p>
 `,
   });
@@ -250,50 +331,58 @@ export function tmplPrintOrderShippedGuest(opts: {
   branding?: MailBranding;
   supportEmail: string;
   order: OrderLike;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
   const { studioName, supportEmail, order, branding } = opts;
-  const subject = `Deine Bestellung ${order.orderNumber} ist auf dem Weg`;
+  const l = opts.locale ?? instanceMailLocale();
+  const P = printGuestPhrases;
+  const vars = {
+    order: order.orderNumber,
+    studio: studioName,
+    name: order.guestName,
+  };
+  const subject = phrase(P.shippedSubject, l, vars);
 
   const trackingLine = order.trackingNumber
-    ? `Sendungsverfolgung: ${order.trackingNumber}` +
+    ? `${phrase(P.tracking, l)} ${order.trackingNumber}` +
       (order.trackingCarrier ? ` (${order.trackingCarrier})` : "") +
       (order.trackingUrl ? `\n${order.trackingUrl}` : "")
-    : "Wir haben leider noch keine Tracking-Nummer, deine Bestellung wurde aber verschickt.";
+    : phrase(P.noTracking, l);
 
   const text =
-    `Hallo ${order.guestName},
+    `${phrase(P.greeting, l, vars)}
 
-deine Bestellung ${order.orderNumber} ist auf dem Weg zu dir.
+${phrase(P.shippedBody, l, vars)}
 
 ${trackingLine}
 
-Lieferadresse:
+${phrase(P.deliveryAddress, l)}:
 ${formatAddress(order.shippingAddress)}
 
-Viele Grüße,
+${phrase(P.regards, l)}
 ${studioName}
 
-${printSupport(supportEmail) ? `Bei Fragen: ${printSupport(supportEmail)}` : ""}`;
+${printSupport(supportEmail) ? phrase(P.questions, l, { contact: printSupport(supportEmail)! }) : ""}`;
 
   const html = renderMailLayout({
     branding,
     bodyHtml: `
-  <p>Hallo ${escapeHtml(order.guestName)},</p>
-  <p>deine Bestellung <strong style="font-family:monospace;">${order.orderNumber}</strong> ist auf dem Weg zu dir.</p>
+  <p>${escapeHtml(phrase(P.greeting, l, vars))}</p>
+  <p>${escapeHtml(phrase(P.shippedBody, l, { order: "" })).replace("{order}", "")}<strong style="font-family:monospace;">${order.orderNumber}</strong></p>
   ${
     order.trackingNumber
       ? `<p style="background:#f5f5f5;padding:10px 14px;border-radius:4px;">
-           <strong>Sendungsverfolgung:</strong> ${escapeHtml(order.trackingNumber)}
+           <strong>${escapeHtml(phrase(P.tracking, l))}</strong> ${escapeHtml(order.trackingNumber)}
            ${order.trackingCarrier ? ` (${escapeHtml(order.trackingCarrier)})` : ""}
-           ${order.trackingUrl ? `<br><a href="${escapeHtml(order.trackingUrl)}">Paket verfolgen</a>` : ""}
+           ${order.trackingUrl ? `<br><a href="${escapeHtml(order.trackingUrl)}">${escapeHtml(phrase(P.trackPackage, l))}</a>` : ""}
          </p>`
-      : `<p style="color:#666;">Wir haben leider noch keine Tracking-Nummer, deine Bestellung wurde aber verschickt.</p>`
+      : `<p style="color:#666;">${escapeHtml(phrase(P.noTracking, l))}</p>`
   }
-  <h3>Lieferadresse</h3>
+  <h3>${escapeHtml(phrase(P.deliveryAddress, l))}</h3>
   <pre style="font-family:inherit;white-space:pre-wrap;margin:0;color:#444;">${escapeHtml(formatAddress(order.shippingAddress))}</pre>
-  <p style="margin-top:24px;color:#444;">Viele Grüße,<br>${escapeHtml(studioName)}</p>
+  <p style="margin-top:24px;color:#444;">${escapeHtml(phrase(P.regards, l))}<br>${escapeHtml(studioName)}</p>
   <p style="color:#888;font-size:13px;margin-top:24px;">
-    ${printSupport(supportEmail) ? `Bei Fragen: <a href="mailto:${escapeHtml(printSupport(supportEmail)!)}">${escapeHtml(printSupport(supportEmail)!)}</a>` : ""}
+    ${printSupport(supportEmail) ? `${escapeHtml(phrase(P.questionsLabel, l))} <a href="mailto:${escapeHtml(printSupport(supportEmail)!)}">${escapeHtml(printSupport(supportEmail)!)}</a>` : ""}
   </p>
 `,
   });

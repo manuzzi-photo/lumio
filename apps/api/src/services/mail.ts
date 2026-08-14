@@ -333,30 +333,71 @@ export function tmplSelectionFinished(opts: {
   };
 }
 
+/**
+ * Empfaenger: die KUNDEN des Studios (Adressen am GalleryAccess).
+ * Sprache folgt daher dem Studio, siehe mail-i18n.ts.
+ */
+const zipReadyPhrases = {
+  subject: {
+    de: 'Download bereit: "{title}"',
+    en: 'Download ready: "{title}"',
+  },
+  preheader: {
+    de: "Dein ZIP-Download ({files}) ist fertig",
+    en: "Your ZIP download ({files}) is ready",
+  },
+  heading: { de: "Download bereit", en: "Download ready" },
+  bodyText: {
+    de: "Dein ZIP-Download mit {files} ist fertig:",
+    en: "Your ZIP download with {files} is ready:",
+  },
+  bodyHtml: {
+    de: "Dein ZIP-Download mit {files} aus „{title}“ ist fertig.",
+    en: "Your ZIP download with {files} from “{title}” is ready.",
+  },
+  button: { de: "ZIP herunterladen", en: "Download ZIP" },
+  validity: {
+    de: "Der Link ist 7 Tage gültig.",
+    en: "The link is valid for 7 days.",
+  },
+  fileOne: { de: "1 Datei", en: "1 file" },
+  fileMany: { de: "{n} Dateien", en: "{n} files" },
+} satisfies Record<string, Phrase>;
+
 export function tmplZipReady(opts: {
   galleryTitle: string;
   downloadUrl: string;
   fileCount: number;
   branding?: MailBranding;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
-  const fileWord = opts.fileCount === 1 ? "Datei" : "Dateien";
+  const l = opts.locale ?? instanceMailLocale();
+  // Singular/Plural als eigene Phrasen statt Wortanhang: das traegt auch
+  // in Sprachen, die die Zahl anders behandeln als Deutsch/Englisch.
+  const files =
+    opts.fileCount === 1
+      ? phrase(zipReadyPhrases.fileOne, l)
+      : phrase(zipReadyPhrases.fileMany, l, { n: opts.fileCount });
+  const vars = { title: opts.galleryTitle, files };
   return {
-    subject: `Download bereit: "${opts.galleryTitle}"`,
+    subject: phrase(zipReadyPhrases.subject, l, vars),
     text:
-      `Dein ZIP-Download mit ${opts.fileCount} ${fileWord} ist fertig:\n\n` +
+      `${phrase(zipReadyPhrases.bodyText, l, vars)}\n\n` +
       `${opts.downloadUrl}\n\n` +
-      `Der Link ist 7 Tage gültig.\n\n` +
-      `— Lumio`,
+      `${phrase(zipReadyPhrases.validity, l)}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
       branding: opts.branding,
-      preheader: `Dein ZIP-Download (${opts.fileCount} ${fileWord}) ist fertig`,
+      preheader: phrase(zipReadyPhrases.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Download bereit`) +
-        mailParagraph(
-          `Dein ZIP-Download mit ${opts.fileCount} ${fileWord} aus „${opts.galleryTitle}" ist fertig.`
+        mailHeading(phrase(zipReadyPhrases.heading, l)) +
+        mailParagraph(phrase(zipReadyPhrases.bodyHtml, l, vars)) +
+        mailButton(
+          opts.downloadUrl,
+          phrase(zipReadyPhrases.button, l),
+          opts.branding?.accentColor
         ) +
-        mailButton(opts.downloadUrl, "ZIP herunterladen", opts.branding?.accentColor) +
-        mailNoticeBox("Der Link ist 7 Tage gültig."),
+        mailNoticeBox(phrase(zipReadyPhrases.validity, l)),
     }),
   };
 }

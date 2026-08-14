@@ -17,6 +17,7 @@ import {
 import { config } from "../../config.js";
 import { studioNotifyEnabled } from "../notifications.js";
 import { tenantMailBranding } from "../notifier.js";
+import { tenantMailLocale } from "../mail-i18n.js";
 
 // Order-Number: LP-YYYYMMDD-XXXX, mit XXXX = 4 hex random.
 // Kurz genug zum telefonieren, lang genug fuer Eindeutigkeit.
@@ -488,6 +489,8 @@ export async function sendOrderMails(
   // Studio-Branding einmal aufloesen und an alle drei Print-Mails geben.
   // Ohne eigenes Logo greift darin die Lumio-Bildmarke.
   const mailBranding = await tenantMailBranding(order.tenantId);
+  // Gast-Mails: Empfaenger hat kein Konto, Sprache folgt dem Studio.
+  const guestLocale = await tenantMailLocale(order.tenantId);
 
   if (trigger === "paid") {
     // Endkunde: Bestaetigung
@@ -498,6 +501,7 @@ export async function sendOrderMails(
         studioName,
         supportEmail,
         order: orderForMail,
+        locale: guestLocale,
       }),
     });
     // Studio: Eingang
@@ -520,6 +524,7 @@ export async function sendOrderMails(
         studioName,
         supportEmail,
         order: orderForMail,
+        locale: guestLocale,
       }),
     });
   }

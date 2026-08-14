@@ -212,6 +212,8 @@ export async function notifyZipReadyOnce(opts: {
       downloadUrl,
       fileCount: zip.fileCount,
       branding: await tenantMailBranding(zip.gallery.tenantId),
+      // Empfaenger sind die Kunden des Studios -> Sprache des Studios.
+      locale: await tenantMailLocale(zip.gallery.tenantId),
     });
     // ZIP-Ready geht an alle hinterlegten Adressen — wer den Download
     // angestoßen hat, ist im aktuellen Datenmodell nicht trennbar von
