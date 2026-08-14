@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.62.0] - 2026-08-14
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen sind Frontend und API, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server.*
+
+
 ### Added
 
 - **Alle E-Mails sind jetzt mehrsprachig.** Auch die Löschbestätigung, die 7-Tage-Erinnerung und die beiden Archivierungs-Mails folgen der Sprache der angeschriebenen Person. Fristen und Zusagen sind wörtlich übersetzt — gleiche Tage, gleiche Verbindlichkeit.
