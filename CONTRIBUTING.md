@@ -33,6 +33,46 @@ Lumio is under the **Functional Source License 1.1 (FSL-1.1-ALv2)** — a *sourc
 
 If a commercial dual license for proprietary forks is to be offered, we reserve the right to a DCO or CLA for significant contributions — to be discussed once it becomes practically relevant.
 
+## Language policy
+
+**English is the project's primary language. German is a translation.**
+
+This applies to:
+
+- **Frontend UI** — `en.ts` is the reference dictionary. New keys are added to
+  `en.ts` first, then to `de.ts` and any other locale. English is the default
+  locale and the fallback for missing keys.
+- **Code comments and identifiers** — new comments in English. Existing German
+  comments are rewritten opportunistically when a file is touched anyway; no
+  separate mass-rename commits.
+- **Commit messages and PR descriptions** — English.
+- **Documentation** — English is the canonical `.md`, German lives in `*.de.md`.
+- **Locale-sensitive formatting** — dates, numbers, currencies and sorting
+  follow the *active* interface locale. Never hardcode a locale identifier
+  such as `"de-DE"` in `Intl.*`, `toLocaleDateString`, `toLocaleString` or
+  `localeCompare`.
+
+### Deliberate exceptions
+
+These stay German-first, on purpose:
+
+- **Transactional emails sent by the API.** Recipients are the *end customers*
+  of a studio, not the studio operator. Their language follows the studio, not
+  our default. Until a per-tenant locale exists, the templates in
+  `apps/api/src/services/mail*.ts` remain German — switching them to English
+  would be a regression for every existing German studio.
+- **The data processing agreement** (`apps/api/src/services/dpa.ts`). It is a
+  contract under Art. 28 GDPR between two German legal entities; the German
+  version is the legally binding one. An English version can be *added* later,
+  but it would be a non-binding translation and needs a data protection
+  officer's review.
+- **The German marketing sites** (`lumio-app.de`, `lumio-cloud.de`). They
+  address the German market and are separate repositories. Only
+  `lumio-cloud.com` is English-first.
+- **`CHANGELOG.md`** entries are bilingual, German text first, then an
+  `**🇬🇧 English**` divider. This is a release-tooling constraint, not a
+  statement about language priority.
+
 ## Adding a translation
 
 The frontend UI strings live as TypeScript dictionaries in

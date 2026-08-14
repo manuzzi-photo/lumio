@@ -33,6 +33,47 @@ Lumio steht unter der **Functional Source License 1.1 (FSL-1.1-ALv2)** — einer
 
 Falls eine kommerzielle Dual-Lizenz für proprietäre Forks angeboten werden soll, behalten wir uns ein DCO oder CLA für signifikante Beiträge vor — wird diskutiert, sobald das praxisrelevant wird.
 
+## Sprachrichtlinie
+
+**Englisch ist die primäre Projektsprache. Deutsch ist eine Übersetzung.**
+
+Das gilt für:
+
+- **Frontend-UI** — `en.ts` ist das Referenz-Dictionary. Neue Keys kommen zuerst
+  nach `en.ts`, dann nach `de.ts` und in weitere Sprachen. Englisch ist das
+  Default-Locale und der Fallback für fehlende Keys.
+- **Code-Kommentare und Bezeichner** — neue Kommentare auf Englisch. Bestehende
+  deutsche Kommentare werden mitgezogen, wenn eine Datei ohnehin angefasst wird;
+  keine separaten Massen-Umschreibungs-Commits.
+- **Commit-Messages und PR-Beschreibungen** — Englisch.
+- **Dokumentation** — Englisch ist die kanonische `.md`, Deutsch liegt in
+  `*.de.md`.
+- **Locale-abhängige Formatierung** — Datum, Zahlen, Währungen und Sortierung
+  folgen dem *aktiven* Interface-Locale. Niemals einen Locale-Identifier wie
+  `"de-DE"` in `Intl.*`, `toLocaleDateString`, `toLocaleString` oder
+  `localeCompare` hartkodieren.
+
+### Bewusste Ausnahmen
+
+Diese bleiben absichtlich deutsch-first:
+
+- **Transaktions-E-Mails der API.** Empfänger sind die *Endkunden* eines Studios,
+  nicht der Studio-Betreiber. Deren Sprache folgt dem Studio, nicht unserem
+  Default. Solange kein Locale pro Tenant existiert, bleiben die Templates in
+  `apps/api/src/services/mail*.ts` deutsch — eine Umstellung auf Englisch wäre
+  ein Rückschritt für jedes bestehende deutsche Studio.
+- **Der Auftragsverarbeitungsvertrag** (`apps/api/src/services/dpa.ts`). Er ist
+  ein Vertrag nach Art. 28 DSGVO zwischen zwei deutschen Rechtspersonen; die
+  deutsche Fassung ist die verbindliche. Eine englische Version kann später
+  *ergänzt* werden, wäre dann aber eine unverbindliche Übersetzung und braucht
+  eine Prüfung durch den Datenschutzbeauftragten.
+- **Die deutschen Marketing-Sites** (`lumio-app.de`, `lumio-cloud.de`). Sie
+  adressieren den deutschen Markt und liegen in eigenen Repositories. Nur
+  `lumio-cloud.com` ist englisch-first.
+- **`CHANGELOG.md`**-Einträge sind zweisprachig, deutscher Text zuerst, dann ein
+  `**🇬🇧 English**`-Trenner. Das ist eine Vorgabe des Release-Tooling, keine
+  Aussage über Sprachpriorität.
+
 ## Eine Übersetzung hinzufügen
 
 Die UI-Texte des Frontends liegen als TypeScript-Dictionaries in
