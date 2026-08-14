@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Zwei E-Mails trugen ein deutsches Datum, obwohl der Text bereits in der Sprache des Empfängers verschickt wurde: die Ablauf-Warnung für Galerien und der tägliche Bericht an die Plattform-Verwaltung.
+
+**🇬🇧 English**
+
+- Two emails carried a German date even though the surrounding text already went out in the recipient's language: the gallery expiry warning and the daily platform administration report.
+
 ## [0.62.0] - 2026-08-14
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen sind Frontend und API, also nur der Hauptserver.

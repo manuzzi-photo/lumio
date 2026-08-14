@@ -507,14 +507,18 @@ export async function sendSuperAdminDigest(): Promise<void> {
       .sort((a, b) => b.percent - a.percent)
       .map((t) => ({ name: t.name, percent: t.percent }));
 
-    const dateLabel = new Date().toLocaleDateString("de-DE", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
+    const digestLocale = instanceMailLocale();
+    const dateLabel = new Date().toLocaleDateString(
+      digestLocale === "de" ? "de-DE" : "en-GB",
+      {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }
+    );
 
     const tpl = tmplSuperDigest({
-      locale: instanceMailLocale(),
+      locale: digestLocale,
       dateLabel,
       newTenants,
       activeTenants,

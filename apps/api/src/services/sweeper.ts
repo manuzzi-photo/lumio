@@ -465,13 +465,18 @@ async function checkExpiringGalleries() {
           1,
           Math.ceil((g.expiresAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000))
         );
+        const ownerLocale = normalizeLocale(g.owner.locale);
         await sendMail({
           to: g.owner.email,
           ...tmplGalleryExpiring({
-            locale: normalizeLocale(g.owner.locale),
+            locale: ownerLocale,
             galleryTitle: g.title,
             daysLeft,
-            expiresAtLabel: g.expiresAt.toLocaleDateString("de-DE"),
+            // Datum in der Sprache des Empfaengers rendern, nicht fest de-DE:
+            // sonst traegt eine englische Mail ein deutsches Datum.
+            expiresAtLabel: g.expiresAt.toLocaleDateString(
+              ownerLocale === "de" ? "de-DE" : "en-GB"
+            ),
             galleryUrl: `${config.PUBLIC_URL}/studio/${g.id}`,
           }),
         });

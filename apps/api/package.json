@@ -5,6 +5,7 @@
   "description": "Lumio API server — Fastify + TypeScript",
   "type": "module",
   "scripts": {
+    "check:mail-i18n": "node scripts/check-mail-i18n.mjs",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
