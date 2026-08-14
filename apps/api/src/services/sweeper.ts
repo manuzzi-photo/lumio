@@ -558,7 +558,7 @@ async function sendSelfDeletionReminders() {
       selfDeletionScheduledFor: true,
       users: {
         where: { role: "owner" },
-        select: { email: true, name: true },
+        select: { email: true, name: true, locale: true },
       },
     },
   });
@@ -687,7 +687,7 @@ async function sendTrialReminders() {
             name: true,
             users: {
               where: { role: "owner", status: "active" },
-              select: { email: true, name: true },
+              select: { email: true, name: true, locale: true },
             },
           },
         },
@@ -703,6 +703,7 @@ async function sendTrialReminders() {
         await sendMail({
           to: owner.email,
           ...tmplTrialReminder({
+            locale: normalizeLocale(owner.locale),
             displayName: owner.name,
             studioName: sub.tenant.name,
             studioUrl: config.PUBLIC_URL,
@@ -750,7 +751,7 @@ async function sendTrialCancelledMails() {
             name: true,
             users: {
               where: { role: "owner", status: "active" },
-              select: { email: true, name: true },
+              select: { email: true, name: true, locale: true },
             },
           },
         },
@@ -766,6 +767,7 @@ async function sendTrialCancelledMails() {
         await sendMail({
           to: owner.email,
           ...tmplTrialCancelled({
+            locale: normalizeLocale(owner.locale),
             displayName: owner.name,
             studioName: sub.tenant.name,
             studioUrl: config.PUBLIC_URL,
@@ -814,7 +816,7 @@ async function sendTrialExpiredWinbacks() {
             name: true,
             users: {
               where: { role: "owner", status: "active" },
-              select: { email: true, name: true },
+              select: { email: true, name: true, locale: true },
             },
           },
         },
@@ -829,6 +831,7 @@ async function sendTrialExpiredWinbacks() {
         await sendMail({
           to: owner.email,
           ...tmplWinback({
+            locale: normalizeLocale(owner.locale),
             displayName: owner.name,
             studioName: sub.tenant.name,
             studioUrl: config.PUBLIC_URL,
@@ -885,7 +888,7 @@ async function sendChurnedWinbacks() {
             name: true,
             users: {
               where: { role: "owner", status: "active" },
-              select: { email: true, name: true },
+              select: { email: true, name: true, locale: true },
             },
           },
         },
@@ -900,6 +903,7 @@ async function sendChurnedWinbacks() {
         await sendMail({
           to: owner.email,
           ...tmplWinback({
+            locale: normalizeLocale(owner.locale),
             displayName: owner.name,
             studioName: sub.tenant.name,
             studioUrl: config.PUBLIC_URL,
