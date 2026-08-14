@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.61.0] - 2026-08-14
+
+Pull genügt. Die Datenbank wird beim Start automatisch erweitert (zwei neue, leere Spalten) — kein manueller Schritt. Betroffen sind Frontend und API, also nur der Hauptserver.
+
+*A pull is enough. The database gains two new empty columns automatically on start — no manual step. Frontend and API are affected, so only the main server.*
+
+
 ### Added
 
 - Studios können unter Einstellungen festlegen, in welcher Sprache Lumio ihre Kunden anschreibt — unabhängig davon, in welcher Sprache sie selbst arbeiten. Wer nichts einstellt, bleibt bei der Vorgabe der Instanz. Zusätzlich merkt sich Lumio pro Person die im Studio gewählte Sprache und verschickt Benachrichtigungen an sie darin; in einer Agentur kann also jede Person Deutsch oder Englisch bekommen, ohne dass das die Kundensprache verändert.
