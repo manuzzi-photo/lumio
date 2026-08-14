@@ -54,6 +54,11 @@ const updateSettingsSchema = z.object({
    *  Owner darf ihn ändern (Berechtigung wird in der Route geprüft).
    *  Roh entgegennehmen; Format/Reserviert/Verfügbarkeit prüft die
    *  Route via validateSlugFormat + DB-Lookup. */
+  /** Sprache der Mails an die KUNDEN dieses Studios (Galerie-Einladung,
+   *  Ablauf-Hinweis). Nicht die Sprache der Oberflaeche und nicht die der
+   *  Mails ans Team — letztere haengt pro Person an User.locale.
+   *  null = Instanz-Default (DEFAULT_MAIL_LOCALE). */
+  mailLocale: z.enum(["de", "en"]).nullable().optional(),
   slug: z.string().max(40).optional(),
   watermarkText: z.string().max(200).nullable().optional(),
   customDomain: z
@@ -132,6 +137,7 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
         slug: true,
         name: true,
         displayName: true,
+        locale: true,
         watermarkText: true,
         watermarkImageKey: true,
         customDomain: true,
@@ -200,6 +206,30 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       // null wenn kein BILLING_ENABLED / keine Subscription
       marketingEmailsEnabled: t.subscription?.marketingEmailsEnabled ?? null,
     };
+  });
+
+  /**
+   * Persoenliche Mail-Sprache.
+   *
+   * Wird vom Sprachwaehler im Studio mitgeschrieben. Bewusst OHNE
+   * Rollenpruefung: jede Person darf ihre eigene Sprache setzen, das ist
+   * keine Studio-Einstellung. Die Oberflaeche selbst haengt weiterhin am
+   * Cookie — dieser Wert gilt nur fuer Mails an diese Person, die ja
+   * serverseitig entstehen, wenn niemand im Browser sitzt.
+   *
+   * Best-effort aus Sicht des Frontends: schlaegt der Aufruf fehl,
+   * bleibt die Oberflaeche trotzdem umgestellt.
+   */
+  app.put("/settings/my-locale", async (req, reply) => {
+    const s = req.requireAuth();
+    const body = z
+      .object({ locale: z.enum(["de", "en"]).nullable() })
+      .parse(req.body);
+    await prisma.user.update({
+      where: { id: s.user.id },
+      data: { locale: body.locale },
+    });
+    return reply.send({ locale: body.locale });
   });
 
   app.put("/settings/notifications", async (req, reply) => {
@@ -326,6 +356,7 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
         ...(body.displayName !== undefined
           ? { displayName: body.displayName }
           : {}),
+        ...(body.mailLocale !== undefined ? { locale: body.mailLocale } : {}),
         ...(body.watermarkText !== undefined
           ? { watermarkText: body.watermarkText }
           : {}),
@@ -352,6 +383,7 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
         slug: true,
         name: true,
         displayName: true,
+        locale: true,
         watermarkText: true,
         watermarkImageKey: true,
         customDomain: true,

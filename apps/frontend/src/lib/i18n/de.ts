@@ -884,6 +884,11 @@ export const de: Dict = {
     notifEnabled: "Aktiviert",
     notifDisabled: "Deaktiviert",
     notifOwnerAdminOnlyShort: "Nur Owner/Admin können das ändern",
+      mailLocaleTitle: "Sprache der Kunden-E-Mails",
+    mailLocaleHint:
+      "In dieser Sprache schreibt Lumio deine Kunden an — Galerie-Einladungen, Ablauf-Hinweise. Deine Kunden haben kein Konto, wir kennen ihre Sprache also nicht und folgen deiner Angabe.",
+    mailLocaleDefault: "Vorgabe der Instanz",
+    mailLocaleSaved: "Gespeichert",
   },
 
   annotation: {

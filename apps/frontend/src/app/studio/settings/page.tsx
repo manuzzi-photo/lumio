@@ -563,18 +563,68 @@ export default function StudioSettingsPage() {
           <div>
             <h2 className="text-ui-md font-medium text-ink-primary">Language / Sprache</h2>
             <p className="text-xs text-ink-tertiary mt-0.5">
-              Studio interface language.
+              Studio interface language. Also used for emails we send you.
             </p>
           </div>
           <select
             value={locale}
-            onChange={(e) => setLocale(e.target.value as "en" | "de")}
+            onChange={(e) => {
+              const next = e.target.value as "en" | "de";
+              setLocale(next);
+              // Write-through fuer den Mailversand. Die Oberflaeche haengt
+              // weiterhin am Cookie — dieser Wert entscheidet nur, in
+              // welcher Sprache Lumio DIESE Person anschreibt, denn Mails
+              // entstehen serverseitig, wenn kein Browser beteiligt ist.
+              // Best-effort: ein Fehler darf die Umstellung nicht
+              // blockieren, das Cookie ist bereits gesetzt.
+              void api.updateMyMailLocale(next).catch(() => {});
+            }}
             className="text-sm rounded-md border border-line-subtle px-2 py-1 bg-surface-raised"
           >
             <option value="en">English</option>
             <option value="de">Deutsch</option>
           </select>
         </section>
+
+        {/* Sprache der Mails an die KUNDEN des Studios. Bewusst getrennt
+            vom Sprachwaehler darueber: der betrifft diese Person, dieser
+            hier betrifft alle, die das Studio anschreibt. */}
+        {settings && (
+          <section className="rounded-md border border-line-subtle bg-surface-raised p-5 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-ui-md font-medium text-ink-primary">
+                {t("settings.mailLocaleTitle")}
+              </h2>
+              <p className="text-xs text-ink-tertiary mt-0.5 max-w-prose">
+                {t("settings.mailLocaleHint")}
+              </p>
+            </div>
+            <select
+              value={settings.locale ?? ""}
+              onChange={async (e) => {
+                const raw = e.target.value;
+                const next = raw === "" ? null : (raw as "en" | "de");
+                // Optimistisch setzen, damit das Feld nicht zurueckspringt.
+                setSettings({ ...settings, locale: next });
+                try {
+                  const res = await api.updateTenantSettings({
+                    mailLocale: next,
+                  });
+                  setSettings(res.tenant);
+                } catch {
+                  // Serverstand gewinnt, wenn der Schreibvorgang scheitert.
+                  const fresh = await api.getTenantSettings().catch(() => null);
+                  if (fresh) setSettings(fresh.tenant);
+                }
+              }}
+              className="text-sm rounded-md border border-line-subtle px-2 py-1 bg-surface-raised shrink-0"
+            >
+              <option value="">{t("settings.mailLocaleDefault")}</option>
+              <option value="de">Deutsch</option>
+              <option value="en">English</option>
+            </select>
+          </section>
+        )}
 
         {/* Motion / Animationen */}
         <MotionSection />

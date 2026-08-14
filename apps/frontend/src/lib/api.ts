@@ -1947,6 +1947,14 @@ export const api = {
       { method: "PUT", body: JSON.stringify({ prefs }) }
     ),
 
+  /** Persoenliche Mail-Sprache. Best-effort: Fehler duerfen die
+   *  Sprachumstellung der Oberflaeche nicht blockieren. */
+  updateMyMailLocale: (locale: "de" | "en" | null) =>
+    request<{ locale: "de" | "en" | null }>("/settings/my-locale", {
+      method: "PUT",
+      body: JSON.stringify({ locale }),
+    }),
+
   getTenantSettings: () =>
     request<{
       tenant: TenantSettings;
@@ -2006,6 +2014,8 @@ export const api = {
 
   updateTenantSettings: (patch: {
     displayName?: string | null;
+    /** Sprache der Mails an die Kunden. Null = Instanz-Default. */
+    mailLocale?: "de" | "en" | null;
     slug?: string;
     watermarkText?: string | null;
     customDomain?: string | null;
@@ -4111,6 +4121,8 @@ export interface TenantSettings {
   /** Oeffentlicher Anzeigename (Login, Mails, Welcome). Wenn null,
    *  fallen alle Caller auf 'name' zurueck. */
   displayName: string | null;
+  /** Sprache der Mails an die Kunden dieses Studios. Null = Instanz-Default. */
+  locale: "de" | "en" | null;
   watermarkText: string | null;
   watermarkImageKey: string | null;
   customDomain?: string | null;
