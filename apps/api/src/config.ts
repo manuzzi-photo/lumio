@@ -94,6 +94,13 @@ const envSchema = z.object({
   // SUPPORT_EMAIL benutzt.
   FEEDBACK_EMAIL: z.string().optional(),
 
+  // Sprache fuer ausgehende Mails, wenn weder am Tenant noch am User
+  // eine gesetzt ist. Betrifft NUR Mails — die Oberflaeche haengt am
+  // Cookie des jeweiligen Browsers und wird hiervon nicht beeinflusst.
+  // Optional mit Default, also kein Breaking Change fuer Self-Hoster:
+  // ohne Eintrag bleibt alles auf Deutsch wie bisher.
+  DEFAULT_MAIL_LOCALE: z.enum(["de", "en"]).default("de"),
+
   SMTP_SECURE: z
     .string()
     .default("false")

@@ -39,6 +39,13 @@ model Tenant {
   // separater Aussenwirkung (z.B. interner Name 'Samuel Rojahn',
   // oeffentlich 'Samuel & Chiara Photography').
   displayName String?
+
+  /// Sprache der Mails an die KUNDEN dieses Studios (Galerie-Einladung,
+  /// Upload-Bestaetigung, Ablauf-Hinweis). Deren Sprache kennen wir nicht,
+  /// also folgt sie dem Studio. NICHT die Sprache der Mails an das Studio-
+  /// Team — die steht pro User in User.locale.
+  /// null = Instanz-Default (DEFAULT_MAIL_LOCALE).
+  locale      String?
   status      String   @default("active") // active | suspended | archived
   customDomain String? @unique
 
@@ -237,6 +244,13 @@ model User {
   /// Wenn true: dieser User erhaelt keine Broadcast-Mails mehr.
   /// System-Mails (Password-Reset, Galerie-Einladungen, Lifecycle-
   /// Mails) gehen UNABHAENGIG raus — die sind kein Marketing.
+  /// Sprache der Mails AN DIESEN USER (Kommentar-Benachrichtigung,
+  /// Speicherwarnung, Passwort-Reset ...). Wird beim Sprachwechsel im
+  /// Studio mitgeschrieben; die Oberflaeche selbst haengt weiterhin am
+  /// Cookie, dieses Feld dient nur dem Mailversand.
+  /// null = Instanz-Default (DEFAULT_MAIL_LOCALE).
+  locale       String?
+
   broadcastOptOut Boolean @default(false)
   /// Stabiles Token fuer Unsubscribe-Links. Wird lazy beim ersten
   /// Broadcast-Versand generiert. Frei rotierbar.

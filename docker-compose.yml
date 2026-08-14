@@ -158,6 +158,10 @@ services:
       # bleibt ausgeblendet (GET /instance → supportFormEnabled=false).
       - SUPPORT_EMAIL=${SUPPORT_EMAIL:-}
       - FEEDBACK_EMAIL=${FEEDBACK_EMAIL:-}
+      # Sprache ausgehender Mails, wenn am Studio bzw. am User keine
+      # gesetzt ist. Nur Mails — die Oberflaeche folgt weiterhin dem
+      # Browser. Ohne Wert: de.
+      - DEFAULT_MAIL_LOCALE=${DEFAULT_MAIL_LOCALE:-de}
       - MAX_FILE_SIZE_MIB=${MAX_FILE_SIZE_MIB:-2048}
       - BILLING_ENABLED=${BILLING_ENABLED:-false}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}

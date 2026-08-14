@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Added
+
+- Grundlage für mehrsprachige E-Mails. Studios können künftig festlegen, in welcher Sprache ihre Kunden angeschrieben werden, und jedes Team-Mitglied bekommt seine eigenen Benachrichtigungen in seiner Sprache. Umgestellt sind bisher die Galerie-Einladung und die Kommentar-Benachrichtigung; die übrigen Vorlagen folgen. Neue optionale Einstellung `DEFAULT_MAIL_LOCALE` (`de` oder `en`, Standard `de`) für alles, wo noch nichts hinterlegt ist. Ohne Eingriff bleibt alles auf Deutsch wie bisher.
+
+**🇬🇧 English**
+
+- Groundwork for multilingual email. Studios will be able to choose the language their customers are written in, and each team member gets their own notifications in their own language. Converted so far: the gallery invitation and the comment notification; the remaining templates follow. New optional setting `DEFAULT_MAIL_LOCALE` (`de` or `en`, default `de`) for anything not yet set. Without any action everything stays German exactly as before.
+
 ## [0.60.0] - 2026-08-14
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist ausschließlich das Frontend, also nur der Hauptserver.

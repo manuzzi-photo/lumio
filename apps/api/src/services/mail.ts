@@ -13,6 +13,13 @@ import nodemailer, { type Transporter } from "nodemailer";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 import { prisma } from "../db.js";
+import {
+  common,
+  instanceMailLocale,
+  phrase,
+  type MailLocale,
+  type Phrase,
+} from "./mail-i18n.js";
 
 let _transport: Transporter | null = null;
 let _initAttempted = false;
@@ -241,28 +248,59 @@ import {
   type MailBranding,
 } from "./mail-layout.js";
 
+/**
+ * Empfaenger: Studio-Team. Sprache kommt daher aus User.locale, siehe
+ * mail-i18n.ts. `locale` ist optional, damit bestehende Aufrufer ohne
+ * Anpassung weiterlaufen — ohne Angabe gilt DEFAULT_MAIL_LOCALE.
+ */
+const newCommentPhrases = {
+  subject: {
+    de: 'Neuer Kommentar in "{title}"',
+    en: 'New comment in "{title}"',
+  },
+  preheader: {
+    de: '{author} hat in "{title}" kommentiert',
+    en: '{author} commented in "{title}"',
+  },
+  heading: {
+    de: "Neuer Kommentar in „{title}“",
+    en: "New comment in “{title}”",
+  },
+  intro: {
+    de: "{author} hat einen Kommentar hinterlassen:",
+    en: "{author} left a comment:",
+  },
+} satisfies Record<string, Phrase>;
+
 export function tmplNewComment(opts: {
   galleryTitle: string;
   galleryUrl: string;
   authorLabel: string;
   body: string;
   branding?: MailBranding;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
+  const l = opts.locale ?? instanceMailLocale();
+  const vars = { title: opts.galleryTitle, author: opts.authorLabel };
   return {
-    subject: `Neuer Kommentar in "${opts.galleryTitle}"`,
+    subject: phrase(newCommentPhrases.subject, l, vars),
     text:
-      `${opts.authorLabel} hat einen Kommentar hinterlassen:\n\n` +
+      `${phrase(newCommentPhrases.intro, l, vars)}\n\n` +
       `"${opts.body}"\n\n` +
-      `Galerie ansehen: ${opts.galleryUrl}\n\n` +
-      `— Lumio`,
+      `${phrase(common.viewGallery, l)}: ${opts.galleryUrl}\n\n` +
+      `${phrase(common.signature, l)}`,
     html: renderMailLayout({
       branding: opts.branding,
-      preheader: `${opts.authorLabel} hat in "${opts.galleryTitle}" kommentiert`,
+      preheader: phrase(newCommentPhrases.preheader, l, vars),
       bodyHtml:
-        mailHeading(`Neuer Kommentar in „${opts.galleryTitle}"`) +
-        mailParagraph(`${opts.authorLabel} hat einen Kommentar hinterlassen:`) +
+        mailHeading(phrase(newCommentPhrases.heading, l, vars)) +
+        mailParagraph(phrase(newCommentPhrases.intro, l, vars)) +
         mailQuoteBlock(opts.body, opts.branding?.accentColor) +
-        mailButton(opts.galleryUrl, "Galerie öffnen", opts.branding?.accentColor),
+        mailButton(
+          opts.galleryUrl,
+          phrase(common.openGallery, l),
+          opts.branding?.accentColor
+        ),
     }),
   };
 }
@@ -520,6 +558,51 @@ export function tmplEmailChangeNotice(opts: {
  * bekommt (Logo + Akzentfarbe vom Studio). Geht an Endkunden, deshalb
  * soll der Fotograf vorne stehen, nicht Lumio.
  */
+/**
+ * Empfaenger: die KUNDEN des Studios. Deren eigene Sprache kennen wir
+ * nicht — sie haben kein Konto und waren evtl. noch nie da. Die Sprache
+ * folgt deshalb dem Studio (Tenant.locale), siehe mail-i18n.ts.
+ */
+const galleryInvitePhrases = {
+  subject: {
+    de: "Deine Galerie „{title}“ von {studio}",
+    en: "Your gallery “{title}” from {studio}",
+  },
+  preheader: {
+    de: "Deine Galerie „{title}“ ist bereit",
+    en: "Your gallery “{title}” is ready",
+  },
+  greetingFallback: { de: "Hallo", en: "Hello" },
+  introText: {
+    de: "{name},\n\ndeine Galerie „{title}“ ist da. Über den folgenden Link kannst du:\n\n",
+    en: "{name},\n\nyour gallery “{title}” is ready. Using the link below you can:\n\n",
+  },
+  introHtml: {
+    de: "{name}, deine Galerie „{title}“ ist da.",
+    en: "{name}, your gallery “{title}” is ready.",
+  },
+  whatYouCanDo: {
+    de: "Was du in der Galerie tun kannst:",
+    en: "What you can do in the gallery:",
+  },
+  capView: { de: "Bilder ansehen", en: "View the photos" },
+  capSelect: {
+    de: "Lieblings-Bilder markieren",
+    en: "Mark your favourites",
+  },
+  capDownload: { de: "Bilder herunterladen", en: "Download the photos" },
+  openGalleryLine: { de: "Galerie öffnen:", en: "Open the gallery:" },
+  expiry: {
+    de: "Der Link ist gültig bis {date}.",
+    en: "The link is valid until {date}.",
+  },
+  sentVia: { de: "(verschickt via Lumio)", en: "(sent via Lumio)" },
+  footerNote: {
+    de: "Diese Mail wurde von {studio} über Lumio verschickt.",
+    en: "This email was sent by {studio} via Lumio.",
+  },
+} satisfies Record<string, Phrase>;
+
 export function tmplGalleryInvite(opts: {
   galleryTitle: string;
   shareUrl: string;
@@ -531,68 +614,74 @@ export function tmplGalleryInvite(opts: {
   expiresAt?: Date | null;
   /** Optional: Studio-Branding fuer die HTML-Mail. */
   branding?: MailBranding;
+  locale?: MailLocale;
 }): { subject: string; text: string; html: string } {
-  const greetingName = opts.recipientLabel || "Hallo";
-  const expiryLine = opts.expiresAt
-    ? `\nDer Link ist gültig bis ${opts.expiresAt.toLocaleDateString(
-        "de-DE",
-        { day: "2-digit", month: "long", year: "numeric" }
-      )}.\n`
-    : "";
+  const l = opts.locale ?? instanceMailLocale();
+  const greetingName =
+    opts.recipientLabel || phrase(galleryInvitePhrases.greetingFallback, l);
+  const vars = {
+    title: opts.galleryTitle,
+    studio: opts.studioName,
+    name: greetingName,
+  };
 
-  const capabilities: string[] = [];
-  capabilities.push("Bilder ansehen");
-  if (opts.canSelect) capabilities.push("Lieblings-Bilder markieren");
-  if (opts.canDownload) capabilities.push("Bilder herunterladen");
+  // Datum in der Sprache des Empfaengers, nicht fest de-DE.
+  const expiryText = opts.expiresAt
+    ? phrase(galleryInvitePhrases.expiry, l, {
+        date: opts.expiresAt.toLocaleDateString(l === "de" ? "de-DE" : "en-GB", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        }),
+      })
+    : "";
+  const expiryLine = expiryText ? `\n${expiryText}\n` : "";
+
+  const capabilities: string[] = [phrase(galleryInvitePhrases.capView, l)];
+  if (opts.canSelect)
+    capabilities.push(phrase(galleryInvitePhrases.capSelect, l));
+  if (opts.canDownload)
+    capabilities.push(phrase(galleryInvitePhrases.capDownload, l));
   const capLines = capabilities.map((c) => `  • ${c}`).join("\n");
 
   const intro = opts.personalMessage
     ? `${opts.personalMessage}\n\n`
-    : `${greetingName},\n\n` +
-      `deine Galerie „${opts.galleryTitle}" ist da. ` +
-      `Über den folgenden Link kannst du:\n\n`;
+    : phrase(galleryInvitePhrases.introText, l, vars);
 
   const accent = opts.branding?.accentColor ?? null;
 
   return {
-    subject: `Deine Galerie „${opts.galleryTitle}" von ${opts.studioName}`,
+    subject: phrase(galleryInvitePhrases.subject, l, vars),
     text:
       intro +
-      (opts.personalMessage ? `Was du in der Galerie tun kannst:\n` : "") +
+      (opts.personalMessage
+        ? `${phrase(galleryInvitePhrases.whatYouCanDo, l)}\n`
+        : "") +
       capLines +
       `\n\n` +
-      `Galerie öffnen:\n${opts.shareUrl}\n` +
+      `${phrase(galleryInvitePhrases.openGalleryLine, l)}\n${opts.shareUrl}\n` +
       expiryLine +
       `\n` +
       `— ${opts.studioName}\n` +
       `\n` +
-      `(verschickt via Lumio)`,
+      `${phrase(galleryInvitePhrases.sentVia, l)}`,
     html: renderMailLayout({
       branding: {
         ...(opts.branding ?? {}),
         brandName: opts.studioName,
-        footerNote: `Diese Mail wurde von ${opts.studioName} über Lumio verschickt.`,
+        footerNote: phrase(galleryInvitePhrases.footerNote, l, vars),
       },
       preheader: opts.personalMessage
         ? opts.personalMessage.slice(0, 100)
-        : `Deine Galerie „${opts.galleryTitle}" ist bereit`,
+        : phrase(galleryInvitePhrases.preheader, l, vars),
       bodyHtml:
         (opts.personalMessage
           ? mailQuoteBlock(opts.personalMessage, accent)
-          : mailParagraph(
-              `${greetingName}, deine Galerie „${opts.galleryTitle}" ist da.`
-            )) +
-        mailParagraph(`Was du in der Galerie tun kannst:`) +
+          : mailParagraph(phrase(galleryInvitePhrases.introHtml, l, vars))) +
+        mailParagraph(phrase(galleryInvitePhrases.whatYouCanDo, l)) +
         mailBullets(capabilities) +
-        mailButton(opts.shareUrl, "Galerie öffnen", accent) +
-        (opts.expiresAt
-          ? mailNoticeBox(
-              `Der Link ist gültig bis ${opts.expiresAt.toLocaleDateString(
-                "de-DE",
-                { day: "2-digit", month: "long", year: "numeric" }
-              )}.`
-            )
-          : ""),
+        mailButton(opts.shareUrl, phrase(common.openGallery, l), accent) +
+        (expiryText ? mailNoticeBox(expiryText) : ""),
     }),
   };
 }

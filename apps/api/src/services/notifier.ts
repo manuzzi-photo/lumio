@@ -22,6 +22,7 @@ import {
 } from "./mail.js";
 import { getPlan, effectiveStorageBytes } from "./plans.js";
 import type { MailBranding } from "./mail-layout.js";
+import { tenantMailLocale, userMailLocale } from "./mail-i18n.js";
 import { studioNotifyEnabled } from "./notifications.js";
 
 function studioUrl(galleryId: string): string {
@@ -94,7 +95,7 @@ export async function notifyNewComment(opts: {
     const gallery = await prisma.gallery.findUnique({
       where: { id: opts.galleryId },
       include: {
-        owner: { select: { email: true, name: true } },
+        owner: { select: { id: true, email: true, name: true } },
       },
     });
     if (!gallery?.owner?.email) return;
@@ -106,6 +107,8 @@ export async function notifyNewComment(opts: {
       authorLabel: opts.authorLabel,
       body: opts.body.slice(0, 500),
       branding: await tenantMailBranding(gallery.tenantId),
+      // Empfaenger ist das Studio selbst -> persoenliche Sprache.
+      locale: await userMailLocale(gallery.owner.id),
     });
     await sendMail({ to: gallery.owner.email, ...tpl });
   } catch (err) {
@@ -317,6 +320,8 @@ export async function sendGalleryInvitation(opts: {
       branding: (await tenantMailBranding(access.gallery.tenantId)) ?? {
         brandName: studioDisplayName,
       },
+      // Empfaenger sind die Kunden des Studios -> Sprache des Studios.
+      locale: await tenantMailLocale(access.gallery.tenantId),
     });
 
     // Pro Empfaenger eine eigene Mail (keine BCC-Sammelmail). Vorteile:
