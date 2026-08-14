@@ -225,7 +225,7 @@ function NameSection({
       <div className="flex justify-end gap-2 pt-1">
         {saved && (
           <span className="text-ui-sm text-semantic-success self-center">
-            ✓ Gespeichert
+            {t("settings.saved")}
           </span>
         )}
         <Button

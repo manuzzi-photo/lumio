@@ -200,7 +200,7 @@ export function AssetField({
             className={`border rounded text-xs text-center flex items-center justify-center ${previewBg} ${previewCls}`}
             style={previewStyle}
           >
-            <span className={emptyTextCls}>Noch nichts hochgeladen.</span>
+            <span className={emptyTextCls}>{t("brandingEditor.nothingUploaded")}</span>
           </div>
         )}
         <div className="flex justify-between items-center gap-2">

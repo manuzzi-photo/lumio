@@ -105,7 +105,7 @@ export default function AnalyticsPage() {
       )}
 
       {loading && !data && (
-        <div className="text-sm text-ink-tertiary">Lädt…</div>
+        <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
       )}
 
       {data && (

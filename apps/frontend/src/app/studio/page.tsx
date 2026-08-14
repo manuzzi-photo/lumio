@@ -249,7 +249,7 @@ export default function StudioPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen text-ui text-ink-tertiary">
-        Lädt…
+        {t("common.loading")}
       </div>
     );
   }
@@ -416,7 +416,7 @@ export default function StudioPage() {
             existiert, damit der Erstellen-Button immer da ist. */}
         <div className="mb-3 flex flex-wrap gap-1.5 items-center">
           <span className="text-ui-xs uppercase tracking-[0.12em] text-ink-tertiary mr-2">
-            Smart Collections
+            {t("collections.breadcrumb")}
           </span>
           {collections.map((c) => {
             const active = activeCollection === c.id;
@@ -516,7 +516,7 @@ export default function StudioPage() {
               onClick={clearFilters}
               className="text-ui-xs text-ink-tertiary hover:text-ink-secondary ml-1"
             >
-              Filter zurücksetzen
+              {t("studio.tagsFilterClear")}
             </button>
           )}
         </div>
@@ -718,7 +718,7 @@ function SaveCollectionDialog({
 
         <div className="border-t border-line-subtle pt-4">
           <div className="text-ui-xs uppercase tracking-wide text-ink-tertiary mb-2">
-            Filter
+            {t("collections.filter")}
           </div>
           <p className="text-ui-xs text-ink-tertiary mb-3">
             Galerien müssen alle gesetzten Bedingungen erfüllen.
@@ -767,7 +767,7 @@ function SaveCollectionDialog({
             {allTags.length > 0 && (
               <div>
                 <label className="block text-ui-xs text-ink-secondary mb-1">
-                  Tags
+                  {t("studio.tagsTitle")}
                 </label>
                 <div className="flex flex-wrap gap-1.5">
                   {allTags.map((tag) => {
@@ -902,7 +902,7 @@ function GalleryCard({
     <div className="flex items-center gap-2.5 text-ui-xs text-ink-tertiary">
       <span>{t("studio.nFiles", { n: g.fileCount ?? 0 })}</span>
       {stats && stats.visits > 0 && (
-        <span className="inline-flex items-center gap-1" title="Besuche">
+        <span className="inline-flex items-center gap-1" title={t("analytics.visits")}>
           <svg
             width="12"
             height="12"
@@ -1025,7 +1025,7 @@ function GalleryCard({
                 }}
                 className="w-full text-left px-3 py-1.5 text-ink-secondary hover:text-ink-primary hover:bg-surface-sunken"
               >
-                Teilen
+                {t("studio.tabShare")}
               </button>
               {g.status === "archived" ? (
                 <button

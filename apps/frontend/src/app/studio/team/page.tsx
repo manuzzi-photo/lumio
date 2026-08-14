@@ -117,7 +117,7 @@ export default function TeamPage() {
 
       {loading ? (
         <div className="text-ui-sm text-ink-tertiary py-8 text-center">
-          Wird geladen…
+          {t("common.loading")}
         </div>
       ) : (
         <section className="rounded-md border border-line-subtle bg-surface-raised divide-y divide-line-subtle">
@@ -524,9 +524,9 @@ function EditDialog({
             disabled={pending || roleLocked}
             className={inputCls}
           >
-            {canSetOwnerRole && <option value="owner">Owner</option>}
-            <option value="admin">Admin</option>
-            <option value="member">Member</option>
+            {canSetOwnerRole && <option value="owner">{t("team.roleOwner")}</option>}
+            <option value="admin">{t("team.roleAdmin")}</option>
+            <option value="member">{t("team.roleMember")}</option>
           </select>
         </Field>
         {user.status !== "invited" && (

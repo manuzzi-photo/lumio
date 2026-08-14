@@ -36,7 +36,7 @@ export default function TemplatesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen text-ui text-ink-tertiary">
-        Lädt…
+        {t("common.loading")}
       </div>
     );
   }
@@ -95,8 +95,8 @@ export default function TemplatesPage() {
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-1.5 text-[10px]">
-                    <Badge on={tpl.downloadEnabled}>Download</Badge>
-                    <Badge on={tpl.watermarkEnabled}>Watermark</Badge>
+                    <Badge on={tpl.downloadEnabled}>{t("gallery.download")}</Badge>
+                    <Badge on={tpl.watermarkEnabled}>{t("billing.featWatermark")}</Badge>
                     <Badge on={tpl.commentsEnabled}>{t("templates.comments")}</Badge>
                     <Badge on={tpl.ratingsEnabled}>Ratings</Badge>
                     {tpl.defaultExpiryDays && (
@@ -201,7 +201,7 @@ function CreateTemplateDialog({
             onClick={onClose}
             className="text-sm px-3 py-2 rounded-md border border-line-subtle hover:bg-surface-sunken"
           >
-            Abbrechen
+            {t("common.cancel")}
           </button>
           <button
             type="submit"

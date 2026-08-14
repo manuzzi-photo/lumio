@@ -127,7 +127,7 @@ export function DangerZone({
           Studio-Löschung läuft
         </h2>
         <dl className="grid grid-cols-[200px_1fr] gap-y-2 gap-x-3 text-ui-sm">
-          <dt className="text-ink-secondary">Status</dt>
+          <dt className="text-ink-secondary">{t("studio.statusLabel")}</dt>
           <dd className="text-ink-primary font-medium">
             Pending Deletion (Karenzphase)
           </dd>

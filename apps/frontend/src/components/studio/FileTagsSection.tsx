@@ -43,7 +43,7 @@ export function FileTagsSection({ fileId }: { fileId: string }) {
   return (
     <div className="border-b border-line-subtle">
       <div className="px-4 py-3 text-ui-sm font-medium text-ink-primary flex items-center justify-between">
-        <span>Tags</span>
+        <span>{t("studio.tagsTitle")}</span>
         {tags.length > 0 && (
           <span className="text-ui-xs text-ink-tertiary font-normal">
             {tags.length}

@@ -1940,7 +1940,7 @@ export default function GalleryDetailPage() {
                 size="sm"
                 onClick={() => setDupDialog(null)}
               >
-                Abbrechen
+                {t("common.cancel")}
               </Button>
               {dupDialog.newFiles.length > 0 && (
                 <Button
@@ -2019,7 +2019,7 @@ export default function GalleryDetailPage() {
                 onClick={() => setConfirmDialog(null)}
                 disabled={bulkPending}
               >
-                Abbrechen
+                {t("common.cancel")}
               </Button>
               <Button
                 variant={confirmDialog.confirmVariant}
@@ -2073,14 +2073,14 @@ export default function GalleryDetailPage() {
                 size="sm"
                 onClick={() => setLimitDialog(null)}
               >
-                Schließen
+                {t("common.close")}
               </Button>
               <Link
                 href="/studio/billing"
                 className="inline-flex items-center px-4 h-9 rounded-md bg-accent text-ink-on-accent text-ui-sm font-medium hover:bg-accent-hover transition-colors duration-motion"
                 onClick={() => setLimitDialog(null)}
               >
-                Plan & Speicher
+                {t("billing.title")}
               </Link>
             </div>
           </div>
@@ -2379,7 +2379,7 @@ function Lightbox({
         aria-label={t("studio.lbClose")}
         className="absolute top-3 left-4 z-30 flex items-center gap-2 text-white/80 hover:text-white transition-colors text-ui-sm leading-none"
       >
-        <span className="text-xl leading-none">✕</span> Schließen
+        <span className="text-xl leading-none">✕</span> {t("common.close")}
       </button>
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 text-white/60 text-ui-sm tabular-nums">
         {i + 1} / {files.length}
@@ -2418,7 +2418,7 @@ function Lightbox({
           </div>
         ) : (
           <div className="text-white/50 text-ui px-12 py-24">
-            Keine Vorschau verfügbar
+            {t("annotation.studioDetail.noPreview")}
           </div>
         )
       ) : url ? (
@@ -2448,7 +2448,7 @@ function Lightbox({
         </div>
       ) : (
         <div className="text-white/50 text-ui px-12 py-24">
-          Keine Vorschau verfügbar
+          {t("annotation.studioDetail.noPreview")}
         </div>
       )}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 text-center text-white/60 text-ui-sm max-w-[80vw] truncate px-4">
@@ -2801,8 +2801,8 @@ function _FileTile({
       {file.kind === "video" && file.thumbUrl && (
         <div
           className="absolute bottom-1.5 left-1.5 w-5 h-5 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center pointer-events-none ring-1 ring-white/25"
-          title="Video"
-          aria-label="Video"
+          title={t("studio.uploadAllow.kindVideo")}
+          aria-label={t("studio.uploadAllow.kindVideo")}
         >
           <svg
             viewBox="0 0 24 24"

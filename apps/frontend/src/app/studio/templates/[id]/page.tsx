@@ -115,7 +115,7 @@ export default function TemplateEditorPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen text-ui text-ink-tertiary">
-        Lädt…
+        {t("common.loading")}
       </div>
     );
   }
@@ -141,7 +141,7 @@ export default function TemplateEditorPage() {
         actions={
           <>
             <Button variant="danger" onClick={remove}>
-              Löschen
+              {t("common.delete")}
             </Button>
             <Button variant="primary" onClick={save} disabled={saving}>
               {saving ? "Speichert…" : t("common.save")}
@@ -158,7 +158,7 @@ export default function TemplateEditorPage() {
         )}
 
         <section className="rounded-md border border-line-subtle bg-surface-raised p-5 space-y-4">
-          <Field label="Name">
+          <Field label={t("studio.nameLabel")}>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -175,7 +175,7 @@ export default function TemplateEditorPage() {
             />
           </Field>
 
-          <Field label="Modus">
+          <Field label={t("studio.modeLabel")}>
             <select
               value={mode}
               onChange={(e) =>
@@ -204,7 +204,7 @@ export default function TemplateEditorPage() {
               onChange={setWatermarkEnabled}
             />
             <Toggle
-              label="Kommentare"
+              label={t("templates.comments")}
               value={commentsEnabled}
               onChange={setCommentsEnabled}
             />
@@ -237,7 +237,7 @@ export default function TemplateEditorPage() {
             />
           </Field>
 
-          <Field label="Branding">
+          <Field label={t("settings.branding")}>
             <select
               value={brandingId}
               onChange={(e) => setBrandingId(e.target.value)}

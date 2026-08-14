@@ -76,7 +76,7 @@ export function ProofingPanel({
           embedded ? "py-16" : "h-screen"
         }`}
       >
-        Lädt…
+        {t("common.loading")}
       </div>
     );
   }
@@ -187,7 +187,7 @@ export function ProofingPanel({
                 >
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
-                Kommentare
+                {t("proofing.comments")}
               </button>
               {filterActive && (
                 <button
@@ -297,11 +297,11 @@ export function ProofingPanel({
 
         {/* Top-Stats */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Dateien" value={data.totals.fileCount} />
-          <StatCard label="Mit Like" value={data.totals.withLike} />
-          <StatCard label="Mit Rating" value={data.totals.withRating} />
+          <StatCard label={t("proofing.files")} value={data.totals.fileCount} />
+          <StatCard label={t("proofing.withLike")} value={data.totals.withLike} />
+          <StatCard label={t("proofing.withRating")} value={data.totals.withRating} />
           <StatCard
-            label="Farb-Tags gesamt"
+            label={t("proofing.colorTags")}
             value={Object.values(data.totals.byLabel).reduce(
               (sum, n) => sum + n,
               0
@@ -312,7 +312,7 @@ export function ProofingPanel({
         {/* Label-Verteilung */}
         {Object.keys(data.totals.byLabel).length > 0 && (
           <section className="rounded-md border border-line-subtle bg-surface-raised p-4">
-            <h2 className="text-ui-md font-medium mb-3">Farb-Tags</h2>
+            <h2 className="text-ui-md font-medium mb-3">{t("proofing.colorTagsHeader")}</h2>
             <div className="flex flex-wrap gap-3">
               {Object.entries(data.totals.byLabel).map(([label, count]) => (
                 <div
@@ -334,15 +334,15 @@ export function ProofingPanel({
         {data.perAccess.length > 0 && (
           <section className="rounded-lg border border-line-subtle bg-surface-raised">
             <h2 className="text-sm font-medium px-4 py-3 border-b border-line-subtle">
-              Beteiligung pro Share-Link
+              {t("proofing.perAccess")}
             </h2>
             <table className="w-full text-sm">
               <thead className="bg-surface-sunken text-xs text-ink-tertiary">
                 <tr>
-                  <th className="text-left px-4 py-2">Bezeichnung</th>
-                  <th className="text-right px-4 py-2">Picks/Likes</th>
-                  <th className="text-right px-4 py-2">Likes</th>
-                  <th className="text-right px-4 py-2">Kommentare</th>
+                  <th className="text-left px-4 py-2">{t("proofing.label")}</th>
+                  <th className="text-right px-4 py-2">{t("proofing.picks")}</th>
+                  <th className="text-right px-4 py-2">{t("proofing.likes")}</th>
+                  <th className="text-right px-4 py-2">{t("proofing.comments")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line-subtle">
@@ -361,7 +361,7 @@ export function ProofingPanel({
 
         {/* Export-Aktionen */}
         <section className="rounded-lg border border-line-subtle bg-surface-raised p-4">
-          <h2 className="text-sm font-medium mb-1">Exporte</h2>
+          <h2 className="text-sm font-medium mb-1">{t("proofing.exports")}</h2>
           <p className="text-xs text-ink-tertiary mb-3">
             CSV für Tabellenkalkulation, XMP-Sidecars für Lightroom Classic
             oder Capture One. Lege die XMPs neben deine Original-RAWs, dann
@@ -373,7 +373,7 @@ export function ProofingPanel({
               className="text-sm px-3 py-1.5 rounded bg-accent text-accent-contrast hover:bg-accent-hover"
               download
             >
-              CSV herunterladen
+              {t("proofing.csv")}
             </a>
             <a
               href={api.xmpExportUrl(data.gallery.id)}

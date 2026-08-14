@@ -520,7 +520,7 @@ export default function AppearancePage() {
         )}
 
         {loading ? (
-          <div className="text-sm text-ink-tertiary">Lädt…</div>
+          <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
         ) : !appearance ? null : (
           <>
             {/* ============ STUDIO-BACKEND ============ */}

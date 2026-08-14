@@ -167,7 +167,7 @@ export function PasskeysSection() {
                 onClick={() => removePasskey(c.id, c.label)}
                 className="text-xs text-semantic-danger hover:underline"
               >
-                Entfernen
+                {t("common.remove")}
               </button>
             </li>
           ))}

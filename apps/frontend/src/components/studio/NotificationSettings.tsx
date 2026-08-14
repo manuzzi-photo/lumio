@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 interface NotificationEvent {
   key: string;
@@ -15,6 +16,7 @@ interface NotificationEvent {
  * Lädt und speichert eigenständig; speichert direkt beim Umschalten.
  */
 export function NotificationSettings({ canEdit }: { canEdit: boolean }) {
+  const t = useT();
   const [events, setEvents] = useState<NotificationEvent[]>([]);
   const [prefs, setPrefs] = useState<Record<string, boolean>>({});
   // null = kein Billing aktiviert / keine Subscription → Toggle nicht zeigen
@@ -87,7 +89,7 @@ export function NotificationSettings({ canEdit }: { canEdit: boolean }) {
         </p>
 
         {loading ? (
-          <div className="text-ui-sm text-ink-tertiary">Lädt…</div>
+          <div className="text-ui-sm text-ink-tertiary">{t("common.loading")}</div>
         ) : (
           <div className="divide-y divide-line-subtle">
             {events.map((e) => {

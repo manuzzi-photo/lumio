@@ -34,7 +34,7 @@ export default function PrintShopLayout({
     <>
       <header className="px-6 sm:px-8 lg:px-12 pt-6 pb-5 border-b border-line-subtle">
         <h1 className="text-display text-ink-primary font-medium tracking-tight">
-          Print-Shop
+          {t("nav.printShop")}
         </h1>
         <p className="text-ui text-ink-tertiary mt-1.5">
           {t("printAdmin.layoutDesc")}

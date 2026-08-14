@@ -85,7 +85,7 @@ export default function CollectionEditPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen text-ui text-ink-tertiary">
-        Lädt…
+        {t("common.loading")}
       </div>
     );
   }
@@ -105,7 +105,7 @@ export default function CollectionEditPage() {
           <h2 className="text-sm font-medium">{t("collections.nameIcon")}</h2>
           <div>
             <label className="block text-ui-xs uppercase tracking-wide text-ink-tertiary mb-1">
-              Name
+              {t("studio.nameLabel")}
             </label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
@@ -131,7 +131,7 @@ export default function CollectionEditPage() {
 
           <div>
             <label className="block text-ui-xs uppercase tracking-wide text-ink-tertiary mb-1">
-              Modus
+              {t("studio.modeLabel")}
             </label>
             <select
               value={filter.mode ?? ""}
@@ -151,7 +151,7 @@ export default function CollectionEditPage() {
 
           <div>
             <label className="block text-ui-xs uppercase tracking-wide text-ink-tertiary mb-1">
-              Status
+              {t("studio.statusLabel")}
             </label>
             <select
               value={filter.status ?? ""}
@@ -202,7 +202,7 @@ export default function CollectionEditPage() {
 
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => router.push("/studio")}>
-            Abbrechen
+            {t("common.cancel")}
           </Button>
           <Button variant="primary" onClick={save} disabled={saving || !name.trim()}>
             {saving ? "Speichert…" : t("common.save")}
