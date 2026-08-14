@@ -21,6 +21,7 @@ import type { Locale } from "./dict";
 const BCP47: Record<Locale, string> = {
   en: "en-US",
   de: "de-DE",
+  it: "it-IT",
 };
 
 /** Fallback currency when a caller has no explicit one. */

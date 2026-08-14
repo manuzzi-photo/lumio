@@ -569,7 +569,7 @@ export default function StudioSettingsPage() {
           <select
             value={locale}
             onChange={(e) => {
-              const next = e.target.value as "en" | "de";
+              const next = e.target.value as "en" | "de" | "it";
               setLocale(next);
               // Write-through fuer den Mailversand. Die Oberflaeche haengt
               // weiterhin am Cookie — dieser Wert entscheidet nur, in
@@ -577,12 +577,17 @@ export default function StudioSettingsPage() {
               // entstehen serverseitig, wenn kein Browser beteiligt ist.
               // Best-effort: ein Fehler darf die Umstellung nicht
               // blockieren, das Cookie ist bereits gesetzt.
-              void api.updateMyMailLocale(next).catch(() => {});
+              // Mail-Sprache unterstuetzt serverseitig aktuell nur de/en
+              // (siehe MailLocale) — fuer it daher kein Aufruf.
+              if (next !== "it") {
+                void api.updateMyMailLocale(next).catch(() => {});
+              }
             }}
             className="text-sm rounded-md border border-line-subtle px-2 py-1 bg-surface-raised"
           >
             <option value="en">English</option>
             <option value="de">Deutsch</option>
+            <option value="it">Italiano</option>
           </select>
         </section>
 
