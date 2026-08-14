@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
-import { useFormat } from "@/lib/i18n";
+import { useFormat, useT} from "@/lib/i18n";
 
 type Response = Awaited<ReturnType<typeof api.superGetBroadcast>>;
 
@@ -29,6 +29,7 @@ export default function BroadcastDetailPage() {
 }
 
 function Detail() {
+  const t = useT();
   const fmt = useFormat();
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -87,7 +88,7 @@ function Detail() {
             {error}
           </div>
         ) : (
-          <div className="text-sm text-ink-tertiary">Lädt…</div>
+          <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
         )}
       </div>
     );
@@ -112,7 +113,7 @@ function Detail() {
           onClick={() => router.push("/super/broadcasts")}
           className="text-ui-xs text-ink-tertiary hover:text-ink-secondary"
         >
-          ← Broadcasts
+          {t("super.bdBack")}
         </button>
       </div>
 
@@ -141,25 +142,25 @@ function Detail() {
                 : "text-sm px-3 py-2 rounded-md border border-line-subtle text-ink-secondary hover:text-semantic-danger hover:bg-surface-sunken"
             }
           >
-            {confirmingDelete ? "Sicher? Nochmal klicken" : "Löschen"}
+            {confirmingDelete ? t("super.bdConfirmDelete") : t("super.tdDeleteNote")}
           </button>
         )}
       </div>
 
       {/* Status-Karten */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatCard label="Status" value={b.status} tone={statusTone(b.status)} mono />
+        <StatCard label={t("super.bdStatus")} value={b.status} tone={statusTone(b.status)} mono />
         <StatCard
-          label="Empfänger gesamt"
+          label={t("super.bdTotalRecipients")}
           value={b.totalRecipients.toLocaleString(fmt.bcp47)}
         />
         <StatCard
-          label="Versendet"
+          label={t("super.bdSent")}
           value={b.sentCount.toLocaleString(fmt.bcp47)}
           tone="success"
         />
         <StatCard
-          label="Fehler"
+          label={t("super.bdErrors")}
           value={b.failedCount.toLocaleString(fmt.bcp47)}
           tone={b.failedCount > 0 ? "danger" : "neutral"}
         />
@@ -168,7 +169,7 @@ function Detail() {
       {b.status === "sending" && (
         <div className="mb-6">
           <div className="flex items-baseline justify-between mb-1">
-            <span className="text-sm text-ink-secondary">Fortschritt</span>
+            <span className="text-sm text-ink-secondary">{t("super.bdProgress")}</span>
             <span className="text-sm text-ink-tertiary">{progress}%</span>
           </div>
           <div className="h-2 bg-surface-sunken rounded overflow-hidden">
@@ -190,7 +191,7 @@ function Detail() {
       {b.errorMessage && (
         <div className="rounded-md border border-semantic-danger/30 bg-semantic-danger/8 px-3 py-2 mb-4">
           <div className="text-xs font-medium text-semantic-danger mb-1">
-            Fehler (erstes Vorkommen)
+            {t("super.bdFirstError")}
           </div>
           <div className="text-sm text-ink-secondary font-mono whitespace-pre-wrap">
             {b.errorMessage}
@@ -199,10 +200,10 @@ function Detail() {
       )}
 
       {/* HTML-Vorschau */}
-      <h2 className="text-lg font-semibold mb-2">Versendeter Inhalt</h2>
+      <h2 className="text-lg font-semibold mb-2">{t("super.bdSentContent")}</h2>
       <div className="rounded-md border border-line-subtle bg-white overflow-hidden mb-6">
         <iframe
-          title="Mail-Vorschau"
+          title={t("super.bdMailPreview")}
           srcDoc={b.bodyHtml}
           className="w-full"
           style={{ height: "60vh", border: "none" }}
@@ -211,7 +212,7 @@ function Detail() {
 
       <details className="text-sm">
         <summary className="cursor-pointer text-ink-tertiary">
-          Markdown-Quelle
+          {t("super.bdMarkdownSource")}
         </summary>
         <pre className="mt-2 p-3 bg-surface-sunken rounded text-xs font-mono whitespace-pre-wrap">
           {b.bodyMarkdown}

@@ -18,7 +18,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
-import { useFormat } from "@/lib/i18n";
+import { useFormat, useT} from "@/lib/i18n";
 
 type Announcement = Awaited<
   ReturnType<typeof api.superListAnnouncements>
@@ -33,6 +33,7 @@ export default function SuperAnnouncementsPage() {
 }
 
 function AnnouncementsContent() {
+  const t = useT();
   const [rows, setRows] = useState<Announcement[] | null>(null);
   const [editing, setEditing] = useState<
     | { kind: "new" }
@@ -78,10 +79,9 @@ function AnnouncementsContent() {
     <div className="px-4 sm:px-8 py-6 max-w-4xl">
       <div className="flex items-baseline justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">System-Banner</h1>
+          <h1 className="text-2xl font-semibold mb-1">{t("super.annTitle")}</h1>
           <p className="text-ui-sm text-ink-tertiary">
-            Sichtbar in jedem Studio im Header. Für Wartungsfenster,
-            Status-Hinweise, Feature-Ankündigungen.
+            {t("super.annSubtitle")}
           </p>
         </div>
         <button
@@ -89,7 +89,7 @@ function AnnouncementsContent() {
           onClick={() => setEditing({ kind: "new" })}
           className="text-sm px-3 py-2 rounded-md bg-accent text-accent-contrast hover:bg-accent-hover"
         >
-          + Neues Banner
+          {t("super.annNew")}
         </button>
       </div>
 
@@ -100,10 +100,10 @@ function AnnouncementsContent() {
       )}
 
       {!rows ? (
-        <div className="text-sm text-ink-tertiary">Lädt…</div>
+        <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
       ) : rows.length === 0 ? (
         <div className="text-sm text-ink-tertiary italic">
-          Noch keine Banner angelegt.
+          {t("super.annEmpty")}
         </div>
       ) : (
         <div className="space-y-2">
@@ -144,6 +144,7 @@ function AnnouncementRowItem({
   onDelete: () => void;
   confirmingDelete: boolean;
 }) {
+  const t = useT();
   const fmt = useFormat();
   const now = Date.now();
   const isActive =
@@ -173,12 +174,12 @@ function AnnouncementRowItem({
             </span>
             {!isActive && (
               <span className="text-xs px-2 py-0.5 rounded bg-surface-sunken text-ink-tertiary">
-                inaktiv
+                {t("super.annInactive")}
               </span>
             )}
             {!row.dismissible && (
               <span className="text-xs text-ink-tertiary">
-                · nicht ausblendbar
+                {t("super.annNotDismissible")}
               </span>
             )}
             <strong className="text-sm">{row.title}</strong>
@@ -202,7 +203,7 @@ function AnnouncementRowItem({
             onClick={onEdit}
             className="text-xs px-2 py-1 rounded border border-line-subtle hover:bg-surface-sunken"
           >
-            Bearbeiten
+            {t("super.tdEdit")}
           </button>
           <button
             type="button"
@@ -213,7 +214,7 @@ function AnnouncementRowItem({
                 : "text-xs px-2 py-1 rounded border border-line-subtle text-ink-secondary hover:text-semantic-danger hover:bg-surface-sunken"
             }
           >
-            {confirmingDelete ? "Sicher?" : "Löschen"}
+            {confirmingDelete ? t("super.tdSure") : t("super.tdDeleteNote")}
           </button>
         </div>
       </div>
@@ -230,6 +231,7 @@ function AnnouncementDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useT();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
   const [severity, setSeverity] = useState<"info" | "warning" | "critical">(
@@ -286,19 +288,19 @@ function AnnouncementDialog({
         </h2>
 
         <div>
-          <label className="text-sm font-medium block mb-1">Titel</label>
+          <label className="text-sm font-medium block mb-1">{t("super.annHeadline")}</label>
           <input
             required
             maxLength={200}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full rounded-md border border-line-subtle px-3 py-2 text-sm"
-            placeholder="z.B. Geplante Wartung am Sonntag"
+            placeholder={t("super.annTitlePlaceholder")}
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium block mb-1">Text</label>
+          <label className="text-sm font-medium block mb-1">{t("super.annText")}</label>
           <textarea
             required
             maxLength={2000}
@@ -306,12 +308,12 @@ function AnnouncementDialog({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             className="w-full rounded-md border border-line-subtle px-3 py-2 text-sm"
-            placeholder="Details — was passiert, wann genau, was muss der User tun?"
+            placeholder={t("super.annTextPlaceholder")}
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium block mb-1">Schweregrad</label>
+          <label className="text-sm font-medium block mb-1">{t("super.annSeverity")}</label>
           <div className="grid grid-cols-3 gap-2">
             {(["info", "warning", "critical"] as const).map((s) => (
               <button
@@ -333,7 +335,7 @@ function AnnouncementDialog({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-sm font-medium block mb-1">
-              Aktiv ab <span className="text-ink-tertiary">(optional)</span>
+              {t("super.annActiveFrom")} <span className="text-ink-tertiary">{t("super.annOptional")}</span>
             </label>
             <input
               type="datetime-local"
@@ -344,7 +346,7 @@ function AnnouncementDialog({
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">
-              Aktiv bis <span className="text-ink-tertiary">(optional)</span>
+              {t("super.annActiveUntil")} <span className="text-ink-tertiary">{t("super.annOptional")}</span>
             </label>
             <input
               type="datetime-local"
@@ -364,7 +366,7 @@ function AnnouncementDialog({
             disabled={severity === "critical"}
           />
           <span>
-            User kann den Banner wegklicken
+            {t("super.annDismissible")}
             <span className="block text-xs text-ink-tertiary">
               {severity === "critical"
                 ? "Critical-Banner sind nie wegklickbar."
@@ -383,7 +385,7 @@ function AnnouncementDialog({
             onClick={onClose}
             className="text-sm px-3 py-2 rounded-md border border-line-subtle hover:bg-surface-sunken"
           >
-            Abbrechen
+            {t("common.cancel")}
           </button>
           <button
             type="submit"

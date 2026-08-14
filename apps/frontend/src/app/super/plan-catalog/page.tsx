@@ -8,7 +8,7 @@ import {
 } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import type { Formatters } from "@/lib/i18n/format";
-import { useFormat } from "@/lib/i18n";
+import { useFormat, useT} from "@/lib/i18n";
 
 export default function SuperPlanCatalogPage() {
   return (
@@ -33,6 +33,7 @@ function yesNo(v: boolean): string {
 }
 
 function PlanCatalogView() {
+  const t = useT();
   const [plans, setPlans] = useState<PlanCatalogEntry[]>([]);
   const [dbOnly, setDbOnly] = useState<PlanCatalogDbOnly[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,17 +58,15 @@ function PlanCatalogView() {
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
-      <h1 className="text-2xl font-semibold mb-2">Plan-Katalog</h1>
+      <h1 className="text-2xl font-semibold mb-2">{t("super.pcTitle")}</h1>
       <p className="text-ui-sm text-ink-tertiary mb-6 max-w-2xl">
-        Vergleicht die zentrale Plan-Definition im Code (Quelle der Wahrheit für
-        Limits &amp; Preise) mit der DB-Tabelle <code>billing_plans</code>, die
-        beim Boot daraus gespiegelt wird und die Stripe-Preis-IDs hält. Weicht
-        etwas ab, lief die Spiegelung nicht durch — das hier hätte den
-        Storage-Bug (1000 statt 3000 GB) sofort gezeigt.
+        {t("super.pcSubtitleBefore")}
+        <code>billing_plans</code>
+        {t("super.pcSubtitleAfter")}
       </p>
 
       {loading ? (
-        <div className="text-ui text-ink-tertiary">Lädt…</div>
+        <div className="text-ui text-ink-tertiary">{t("common.loading")}</div>
       ) : (
         <>
           <div className="mb-6 flex flex-wrap gap-2 text-ui-sm">
@@ -96,12 +95,12 @@ function PlanCatalogView() {
           {dbOnly.length > 0 && (
             <div className="mt-8">
               <h2 className="text-ui font-semibold mb-2">
-                Nur in der DB (kein Code-Pendant)
+                {t("super.pcDbOnly")}
               </h2>
               <p className="text-ui-sm text-ink-tertiary mb-3 max-w-2xl">
-                Diese Pläne existieren in <code>billing_plans</code>, aber nicht
-                im Code — z. B. Alt-/Custom-Pläne. Limits werden für sie nicht
-                aus dem Code erzwungen.
+                {t("super.pcDbOnlyBefore")}
+                <code>billing_plans</code>
+                {t("super.pcDbOnlyAfter")}
               </p>
               <div className="border border-line-subtle rounded-md bg-surface-raised overflow-hidden">
                 <table className="w-full text-ui-sm">
@@ -117,9 +116,9 @@ function PlanCatalogView() {
                         <td className="px-3 py-2">{d.name}</td>
                         <td className="px-3 py-2 text-right">
                           {d.isActive ? (
-                            <span className="text-semantic-success">aktiv</span>
+                            <span className="text-semantic-success">{t("super.pcActive")}</span>
                           ) : (
-                            <span className="text-ink-tertiary">inaktiv</span>
+                            <span className="text-ink-tertiary">{t("super.pcInactive")}</span>
                           )}
                         </td>
                       </tr>
@@ -136,6 +135,7 @@ function PlanCatalogView() {
 }
 
 function PlanCard({ plan }: { plan: PlanCatalogEntry }) {
+  const t = useT();
   const fmt = useFormat();
   const driftFields = new Set(plan.drift.map((d) => d.field));
   const hasDrift = plan.drift.length > 0;
@@ -148,31 +148,31 @@ function PlanCard({ plan }: { plan: PlanCatalogEntry }) {
   }> = [
     {
       field: "name",
-      label: "Name",
+      label: t("super.pcFieldName"),
       code: plan.code.name,
       db: plan.db?.name ?? "—",
     },
     {
       field: "storageGib",
-      label: "Speicher",
+      label: t("super.pcFieldStorage"),
       code: gib(fmt, plan.code.storageGib),
       db: gib(fmt, plan.db?.storageGib),
     },
     {
       field: "priceMonthlyCents",
-      label: "Preis / Monat",
+      label: t("super.pcFieldPricePerMonth"),
       code: eur(fmt, plan.code.priceMonthlyCents),
       db: eur(fmt, plan.db?.priceMonthlyCents),
     },
     {
       field: "priceYearlyCents",
-      label: "Preis / Jahr",
+      label: t("super.pcFieldPricePerYear"),
       code: eur(fmt, plan.code.priceYearlyCents),
       db: eur(fmt, plan.db?.priceYearlyCents),
     },
     {
       field: "watermark",
-      label: "Watermark",
+      label: t("super.pcFieldWatermark"),
       code: yesNo(plan.code.watermark),
       db: plan.db ? yesNo(plan.db.watermark) : "—",
     },
@@ -196,16 +196,19 @@ function PlanCard({ plan }: { plan: PlanCatalogEntry }) {
         </div>
         <div className="flex items-center gap-2">
           {plan.missingInDb ? (
-            <Badge tone="warning" label="fehlt in DB" />
+            <Badge tone="warning" label={t("super.pcMissingInDb")} />
           ) : (
             <>
               {hasDrift ? (
-                <Badge tone="warning" label={`${plan.drift.length}× Drift`} />
+                <Badge
+                  tone="warning"
+                  label={t("super.pcDrift", { n: plan.drift.length })}
+                />
               ) : (
-                <Badge tone="success" label="synchron" />
+                <Badge tone="success" label={t("super.pcInSync")} />
               )}
               {plan.db && !plan.db.isActive && (
-                <Badge tone="muted" label="inaktiv" />
+                <Badge tone="muted" label={t("super.pcInactive")} />
               )}
             </>
           )}
@@ -215,8 +218,8 @@ function PlanCard({ plan }: { plan: PlanCatalogEntry }) {
       <table className="w-full text-ui-sm">
         <thead className="text-ink-tertiary text-ui-xs uppercase tracking-wide">
           <tr className="border-b border-line-subtle">
-            <th className="text-left font-medium px-4 py-1.5">Feld</th>
-            <th className="text-left font-medium px-4 py-1.5">Code</th>
+            <th className="text-left font-medium px-4 py-1.5">{t("super.pcColField")}</th>
+            <th className="text-left font-medium px-4 py-1.5">{t("super.pcColCode")}</th>
             <th className="text-left font-medium px-4 py-1.5">DB</th>
           </tr>
         </thead>
@@ -244,7 +247,7 @@ function PlanCard({ plan }: { plan: PlanCatalogEntry }) {
           })}
           {plan.db && (
             <tr className="last:border-0">
-              <td className="px-4 py-1.5 text-ink-secondary">Stripe-Preise</td>
+              <td className="px-4 py-1.5 text-ink-secondary">{t("super.pcStripePrices")}</td>
               <td className="px-4 py-1.5 text-ink-tertiary text-ui-xs">—</td>
               <td className="px-4 py-1.5 text-ui-xs">
                 <span

@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
+import { useT } from "@/lib/i18n";
 
 type Config = Awaited<ReturnType<typeof api.superGetMarketingConfig>>;
 
@@ -22,6 +23,7 @@ export default function SuperMarketingPage() {
 }
 
 function MarketingContent() {
+  const t = useT();
   const [data, setData] = useState<Config | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,7 @@ function MarketingContent() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(err instanceof Error ? err.message : t("common.error"));
     } finally {
       setSaving(false);
     }
@@ -50,11 +52,9 @@ function MarketingContent() {
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-3xl">
-      <h1 className="text-2xl font-semibold mb-1">Marketing-E-Mails</h1>
+      <h1 className="text-2xl font-semibold mb-1">{t("super.mkTitle")}</h1>
       <p className="text-ui-sm text-ink-tertiary mb-6">
-        Steuert alle automatischen Lifecycle-Mails (Trial-Reminder, Winback).
-        Der globale Schalter überstimmt alle per-Tenant-Einstellungen.
-        Per-Tenant-Overrides sind im jeweiligen Tenant-Detail-View verfügbar.
+        {t("super.mkSubtitle")}
       </p>
 
       {error && (
@@ -64,7 +64,7 @@ function MarketingContent() {
       )}
 
       {!data ? (
-        <div className="text-sm text-ink-tertiary">Lädt…</div>
+        <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
       ) : (
         <div className="space-y-4">
 
@@ -72,12 +72,9 @@ function MarketingContent() {
           <section className="rounded-lg border border-line-subtle bg-surface-raised p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="font-semibold text-ink-primary">Globaler Kill-Switch</h2>
+                <h2 className="font-semibold text-ink-primary">{t("super.mkKillSwitch")}</h2>
                 <p className="text-ui-sm text-ink-tertiary mt-0.5">
-                  Wenn deaktiviert: alle automatischen Marketing-Mails werden
-                  eingestellt, unabhängig von per-Tenant-Einstellungen.
-                  Transaktionale Mails (Passwort-Reset, Galerieeinladungen etc.)
-                  sind nicht betroffen.
+                  {t("super.mkKillSwitchHint")}
                 </p>
               </div>
               <button
@@ -101,7 +98,7 @@ function MarketingContent() {
             </div>
             {saved && (
               <p className="text-ui-xs text-semantic-success mt-2">
-                ✓ Gespeichert
+                {t("super.mkSaved")}
               </p>
             )}
             <div className="mt-3 inline-flex items-center gap-2 rounded-md px-2.5 py-1 text-ui-sm font-medium border"
@@ -116,19 +113,19 @@ function MarketingContent() {
 
           {/* Stats */}
           <section className="rounded-lg border border-line-subtle bg-surface-raised p-5">
-            <h2 className="font-semibold text-ink-primary mb-3">Opt-out-Statistik</h2>
+            <h2 className="font-semibold text-ink-primary mb-3">{t("super.mkOptOutStats")}</h2>
             <div className="grid grid-cols-3 gap-3">
               <StatCard
-                label="Abonnements gesamt"
+                label={t("super.mkTotalSubs")}
                 value={data.stats.totalSubscriptions}
               />
               <StatCard
-                label="Marketing-Mails aktiviert"
+                label={t("super.mkMarketingEnabled")}
                 value={data.stats.optedIn}
                 highlight="green"
               />
               <StatCard
-                label="Abgemeldet"
+                label={t("super.mkOptedOut")}
                 value={data.stats.optedOut}
                 highlight={data.stats.optedOut > 0 ? "red" : undefined}
               />
@@ -137,13 +134,25 @@ function MarketingContent() {
 
           {/* Info */}
           <section className="rounded-lg border border-line-subtle bg-surface-raised p-5 text-ui-sm text-ink-secondary space-y-2">
-            <h2 className="font-semibold text-ink-primary mb-1">Was wird gesendet?</h2>
+            <h2 className="font-semibold text-ink-primary mb-1">{t("super.mkWhatIsSent")}</h2>
             <div className="grid gap-2">
               {[
-                { when: "3 Tage vor Trial-Ende", what: "Freundlicher Hinweis mit Feature-Tipps" },
-                { when: "Trial aktiv, aber bereits storniert", what: "Einmalige Mail mit Reaktivierungs-CTA" },
-                { when: "Trial abgelaufen ohne Upgrade", what: "Einmalige Winback-Mail (max. 7 Tage nach Ablauf)" },
-                { when: "Zahlendes Abo gekündigt", what: "Einmalige Winback-Mail (1–2 Tage nach Ablauf)" },
+                {
+                  when: t("super.mkWhen3DaysBeforeTrialEnd"),
+                  what: t("super.mkWhat3DaysBeforeTrialEnd"),
+                },
+                {
+                  when: t("super.mkWhenTrialCancelled"),
+                  what: t("super.mkWhatTrialCancelled"),
+                },
+                {
+                  when: t("super.mkWhenTrialExpired"),
+                  what: t("super.mkWhatTrialExpired"),
+                },
+                {
+                  when: t("super.mkWhenPaidCancelled"),
+                  what: t("super.mkWhatPaidCancelled"),
+                },
               ].map((row) => (
                 <div key={row.when} className="flex gap-3">
                   <span className="shrink-0 font-medium text-ink-primary w-52">{row.when}</span>
@@ -152,9 +161,7 @@ function MarketingContent() {
               ))}
             </div>
             <p className="pt-1 text-ink-tertiary">
-              Jede Mail-Kategorie wird pro Tenant nur einmal gesendet (Sent-Lock).
-              Jede Mail enthält einen Abmelde-Link, der keinen Login benötigt (90 Tage gültig).
-              Per-Tenant-Overrides sind im Tenant-Detail-View setzbar.
+              {t("super.mkFooterHint")}
             </p>
           </section>
         </div>

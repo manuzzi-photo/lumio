@@ -22,7 +22,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
-import { useFormat } from "@/lib/i18n";
+import { useFormat, useT} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
 
 type MrrResponse = Awaited<ReturnType<typeof api.superMrr>>;
@@ -36,6 +36,7 @@ export default function SuperMrrPage() {
 }
 
 function MrrContent() {
+  const t = useT();
   const fmt = useFormat();
   const [data, setData] = useState<MrrResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,10 +52,9 @@ function MrrContent() {
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl">
-      <h1 className="text-2xl font-semibold mb-1">MRR · Monthly Recurring Revenue</h1>
+      <h1 className="text-2xl font-semibold mb-1">{t("super.mrrTitle")}</h1>
       <p className="text-ui-sm text-ink-tertiary mb-6">
-        Aktuelle Live-Berechnung plus Tages-Snapshots (90 Tage). Yearly-Subs
-        werden durch 12 normalisiert. Trialing-MRR ist Forecast.
+        {t("super.mrrSubtitle")}
       </p>
 
       {error && (
@@ -64,26 +64,26 @@ function MrrContent() {
       )}
 
       {!data ? (
-        <div className="text-sm text-ink-tertiary">Lädt…</div>
+        <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
             <HeroCard
-              label="MRR aktuell"
+              label={t("super.mrrCurrent")}
               value={formatEur(fmt, data.current.mrrCents)}
               big
             />
             <HeroCard
-              label="Trialing-MRR (Forecast)"
+              label={t("super.mrrTrialForecast")}
               value={formatEur(fmt, data.current.trialingMrrCents)}
               subtle
             />
             <HeroCard
-              label="Aktive paid Subs"
+              label={t("super.mrrActivePaidSubs")}
               value={data.current.activeSubs.toLocaleString(fmt.bcp47)}
             />
             <HeroCard
-              label="Trial-Subs"
+              label={t("super.mrrTrialSubs")}
               value={data.current.trialingSubs.toLocaleString(fmt.bcp47)}
               subtle
             />
@@ -97,8 +97,7 @@ function MrrContent() {
 
           {data.history.length < 2 && (
             <div className="mt-6 rounded-md border border-line-subtle bg-surface-raised p-4 text-ui-sm text-ink-tertiary">
-              Trend-Sparkline kommt sobald genug Tagessnapshots vorliegen
-              (täglich via Sweeper, idempotent).
+              {t("super.mrrNoTrend")}
             </div>
           )}
         </>
@@ -143,6 +142,7 @@ function MrrTrend({
 }: {
   history: MrrResponse["history"];
 }) {
+  const t = useT();
   const fmt = useFormat();
   const W = 800;
   const H = 200;
@@ -183,11 +183,11 @@ function MrrTrend({
         <div className="flex gap-3 text-xs text-ink-tertiary">
           <span className="inline-flex items-center gap-1">
             <span className="inline-block w-3 h-0.5 bg-accent" />
-            MRR
+            {t("super.mrrLabel")}
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="inline-block w-3 h-0.5 border-t border-dashed border-ink-tertiary" />
-            inkl. Trialing-Forecast
+            {t("super.mrrInclTrialForecast")}
           </span>
         </div>
       </div>
@@ -241,6 +241,7 @@ function PerPlanTable({
 }: {
   perPlan: MrrResponse["current"]["perPlan"];
 }) {
+  const t = useT();
   const fmt = useFormat();
   const entries = Object.entries(perPlan).sort(
     ([, a], [, b]) => b.mrrCents - a.mrrCents
@@ -250,16 +251,16 @@ function PerPlanTable({
 
   return (
     <section>
-      <h2 className="text-lg font-semibold mb-3">MRR pro Plan</h2>
+      <h2 className="text-lg font-semibold mb-3">{t("super.mrrPerPlan")}</h2>
       <div className="border border-line-subtle rounded-md bg-surface-raised overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[480px]">
           <thead>
             <tr className="border-b border-line-subtle text-xs uppercase tracking-wider text-ink-tertiary text-left">
-              <th className="px-3 py-2 font-medium">Plan</th>
-              <th className="px-3 py-2 font-medium text-right">Subs</th>
-              <th className="px-3 py-2 font-medium text-right">MRR</th>
-              <th className="px-3 py-2 font-medium text-right">Anteil</th>
+              <th className="px-3 py-2 font-medium">{t("super.mrrColPlan")}</th>
+              <th className="px-3 py-2 font-medium text-right">{t("super.mrrColSubs")}</th>
+              <th className="px-3 py-2 font-medium text-right">{t("super.mrrLabel")}</th>
+              <th className="px-3 py-2 font-medium text-right">{t("super.mrrColShare")}</th>
             </tr>
           </thead>
           <tbody>
@@ -294,7 +295,7 @@ function PerPlanTable({
               );
             })}
             <tr className="border-t-2 border-line-strong bg-surface-sunken/40">
-              <td className="px-3 py-2 font-medium">Gesamt</td>
+              <td className="px-3 py-2 font-medium">{t("super.mrrColTotal")}</td>
               <td className="px-3 py-2 text-right font-medium">
                 {entries.reduce((sum, [, p]) => sum + p.count, 0)}
               </td>
