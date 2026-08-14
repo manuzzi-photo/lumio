@@ -272,7 +272,7 @@ function TenantExportPanel({
       const m = err instanceof Error ? err.message : "Fehler";
       setMsg(
         m.includes("no_deleted_originals")
-          ? "Keine wiederherstellbaren gelöschten Originale gefunden (evtl. außerhalb des 30-Tage-Fensters)."
+          ? t("super.backupNoRestorable")
           : `Fehler: ${m}`
       );
     } finally {
@@ -309,7 +309,7 @@ function TenantExportPanel({
             title={t("super.backupRestoreHint")}
             className="rounded-md border border-line-subtle px-4 py-2 text-sm font-medium hover:bg-surface-sunken disabled:opacity-50"
           >
-            {busyR ? "Sucht…" : "Gelöschte wiederherstellen"}
+            {busyR ? t("super.backupSearching") : t("super.backupRestoreDeleted")}
           </button>
         </div>
       </div>

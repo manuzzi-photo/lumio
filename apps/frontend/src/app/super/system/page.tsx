@@ -234,7 +234,9 @@ function UpdateCheckCard({
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <div className="text-ui-xs uppercase tracking-[0.12em] text-ink-tertiary mb-1">
-              {update.updateAvailable ? "Update verfügbar" : "Aktuell"}
+              {update.updateAvailable
+                ? t("super.systemUpdateAvailable")
+                : t("super.systemUpToDate")}
             </div>
             <div className="text-lg">
               <span className="font-mono">{update.currentVersion}</span>

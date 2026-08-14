@@ -193,6 +193,7 @@ function Pill({
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const t = useT();
   const tone =
     status === "active"
       ? "success"
@@ -200,10 +201,10 @@ function StatusBadge({ status }: { status: string }) {
       ? "muted"
       : "warning";
   const label: Record<string, string> = {
-    active: "aktiv",
-    suspended: "gesperrt",
-    archived: "archiviert",
-    pending_deletion: "Löschung",
+    active: t("super.complianceStatusActive"),
+    suspended: t("super.complianceStatusSuspended"),
+    archived: t("super.complianceStatusArchived"),
+    pending_deletion: t("super.complianceStatusPendingDeletion"),
   };
   return <Pill text={label[status] ?? status} tone={tone as never} />;
 }

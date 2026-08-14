@@ -110,6 +110,7 @@ function BroadcastRow({
   b: Response["broadcasts"][number];
   audienceLabel: string;
 }) {
+  const t = useT();
   const fmt = useFormat();
   const progress =
     b.totalRecipients > 0
@@ -133,7 +134,9 @@ function BroadcastRow({
           </div>
           <div className="text-xs text-ink-tertiary">
             {audienceLabel} · {b.totalRecipients}{" "}
-            {b.totalRecipients === 1 ? "Empfänger" : "Empfänger"}
+            {b.totalRecipients === 1
+              ? t("super.broadcastsRecipientsOne")
+              : t("super.broadcastsRecipientsMany")}
             {" · "}
             {new Date(b.createdAt).toLocaleString(fmt.bcp47, {
               day: "2-digit",

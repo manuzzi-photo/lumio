@@ -242,7 +242,7 @@ function UsersList() {
             onClick={() => void fetchPage(users.length, false)}
             className="text-ui-sm px-3 py-1.5 rounded-md border border-line-subtle hover:bg-surface-sunken disabled:opacity-50"
           >
-            {loading ? "Lädt…" : "Mehr laden"}
+            {loading ? t("common.loading") : t("super.auditLoadMore")}
           </button>
         )}
       </div>
@@ -771,7 +771,7 @@ function EditUserDialog({
             disabled={busy || user.status !== "active"}
             title={
               user.status !== "active"
-                ? "Nur für aktive User"
+                ? t("super.usersActiveOnly")
                 : "Passwort-Reset-Link senden"
             }
             className="text-ui-sm px-3 py-2 rounded-md border border-line-subtle hover:bg-surface-sunken disabled:opacity-50"
@@ -834,7 +834,7 @@ function CreateUserDialog({
     e.preventDefault();
     setError(null);
     if (!tenantId) {
-      setError("Bitte einen Tenant wählen.");
+      setError(t("super.usersPickTenant"));
       return;
     }
     setBusy(true);

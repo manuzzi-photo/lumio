@@ -194,15 +194,16 @@ function Stat({
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const t = useT();
   const map: Record<string, string> = {
     sent: "bg-semantic-success/10 text-semantic-success",
     failed: "bg-semantic-danger/10 text-semantic-danger",
     skipped: "bg-surface-sunken text-ink-tertiary",
   };
   const label: Record<string, string> = {
-    sent: "gesendet",
-    failed: "Fehler",
-    skipped: "übersprungen",
+    sent: t("super.mailStatusSent"),
+    failed: t("super.mailStatusFailed"),
+    skipped: t("super.mailStatusSkipped"),
   };
   const cls = map[status] ?? "bg-surface-sunken text-ink-tertiary";
   return (

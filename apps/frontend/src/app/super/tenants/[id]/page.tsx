@@ -9,7 +9,7 @@ import {
 } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { InviteOwnerDialog } from "@/components/super/InviteOwnerDialog";
-import { useFormat } from "@/lib/i18n";
+import { useFormat, useT} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
 
 export default function SuperTenantDetailPage() {
@@ -21,6 +21,7 @@ export default function SuperTenantDetailPage() {
 }
 
 function TenantDetail() {
+  const t = useT();
   const fmt = useFormat();
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -119,7 +120,7 @@ function TenantDetail() {
       const msg =
         err instanceof Error
           ? err.message
-          : "Fehler beim Löschen (nur möglich, wenn der Tenant nicht aktiv zahlend ist).";
+          : t("super.tdDeleteError");
       setDeleteDialog({ ...deleteDialog, pending: false, error: msg });
     }
   }
@@ -151,7 +152,7 @@ function TenantDetail() {
       // Erfolg → zurück zur Tenant-Liste
       router.push("/super/tenants");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Fehler beim Löschen";
+      const msg = err instanceof Error ? err.message : t("super.tdDeleteErrorShort");
       setDeleteDialog({
         ...deleteDialog,
         pending: false,
@@ -214,7 +215,7 @@ function TenantDetail() {
   }
 
   if (loading || !tenant) {
-    return <div className="px-4 sm:px-8 py-6 text-ink-tertiary">Lädt…</div>;
+    return <div className="px-4 sm:px-8 py-6 text-ink-tertiary">{t("common.loading")}</div>;
   }
 
   return (
@@ -225,7 +226,7 @@ function TenantDetail() {
           onClick={() => router.push("/super/tenants")}
           className="hover:text-ink-secondary"
         >
-          Tenants
+          {t("super.tdBackToTenants")}
         </button>{" "}
         /
       </div>
@@ -250,7 +251,7 @@ function TenantDetail() {
               disabled={actionBusy}
               variant="warning"
             >
-              Suspendieren
+              {t("super.tdSuspend")}
             </ActionButton>
           )}
           {tenant.status === "suspended" && (
@@ -259,7 +260,7 @@ function TenantDetail() {
               disabled={actionBusy}
               variant="success"
             >
-              Reaktivieren
+              {t("super.tdReactivate")}
             </ActionButton>
           )}
           {tenant.status === "active" && !tenant.archiveScheduledAt && (
@@ -268,7 +269,7 @@ function TenantDetail() {
               disabled={actionBusy}
               variant="warning"
             >
-              Archive vorplanen
+              {t("super.tdSchedulePreArchive")}
             </ActionButton>
           )}
           {tenant.status !== "archived" && (
@@ -277,7 +278,7 @@ function TenantDetail() {
               disabled={actionBusy}
               variant="danger"
             >
-              Archivieren
+              {t("super.tdArchive")}
             </ActionButton>
           )}
           {(!tenant.subscription ||
@@ -295,7 +296,7 @@ function TenantDetail() {
               disabled={actionBusy}
               variant="danger"
             >
-              Sofort löschen (Test)
+              {t("super.tdDeleteNowTest")}
             </ActionButton>
           )}
           {/* Hard-Delete erst nach Karenz. Button nur sichtbar wenn:
@@ -317,7 +318,7 @@ function TenantDetail() {
                 disabled={actionBusy}
                 variant="danger"
               >
-                Endgültig löschen
+                {t("super.tdDeleteFinal")}
               </ActionButton>
             )}
         </div>
@@ -352,7 +353,7 @@ function TenantDetail() {
               <span className="font-medium text-ink-primary">
                 {tenant.karenz.active
                   ? `Karenzfrist läuft — Hard-Delete in ${tenant.karenz.remainingDays} Tag${tenant.karenz.remainingDays === 1 ? "" : "en"} möglich`
-                  : "Karenzfrist abgelaufen — Hard-Delete jetzt möglich"}
+                  : t("super.tdGraceExpired")}
               </span>
               <div className="text-ui-xs text-ink-tertiary mt-1">
                 {tenant.karenz.active ? (
@@ -367,9 +368,7 @@ function TenantDetail() {
                   </>
                 ) : (
                   <>
-                    Du kannst den Tenant jetzt endgültig löschen. Alle Daten,
-                    Galerien, Files und S3-Objekte werden entfernt — das ist
-                    irreversibel.
+                    {t("super.tdDeleteFinalHint")}
                   </>
                 )}
               </div>
@@ -380,7 +379,7 @@ function TenantDetail() {
                 disabled={actionBusy}
                 variant="ghost"
               >
-                Datenexport anstoßen
+                {t("super.tdTriggerExport")}
               </ActionButton>
             </div>
           </div>
@@ -401,14 +400,13 @@ function TenantDetail() {
                 )}
               </span>
               <div className="text-ui-xs text-ink-tertiary mt-1">
-                Owner kann sich bis dahin selbst zurücknehmen. Falls nicht,
-                kannst du im Dashboard manuell canceln.
+                {t("super.tdCancelGraceHint")}
               </div>
             </div>
           </div>
         )}
 
-      <Section title="Billing">
+      <Section title={t("super.tdTabBilling")}>
         {tenant.subscription ? (
           <BillingBlock
             subscription={tenant.subscription}
@@ -423,7 +421,7 @@ function TenantDetail() {
         )}
       </Section>
 
-      <Section title="Metadaten">
+      <Section title={t("super.tdTabMetadata")}>
         {editingMeta ? (
           <EditMetaForm
             tenant={tenant}
@@ -435,19 +433,19 @@ function TenantDetail() {
           />
         ) : (
           <dl className="text-ui-sm grid grid-cols-[140px_1fr] gap-y-1.5">
-            <Label>Slug</Label>
+            <Label>{t("super.tdSlug")}</Label>
             <span className="font-mono">{tenant.slug}</span>
-            <Label>Custom-Domain</Label>
+            <Label>{t("super.tdCustomDomain")}</Label>
             <span className="font-mono">{tenant.customDomain ?? "—"}</span>
-            <Label>Galerien</Label>
+            <Label>{t("super.tdGalleries")}</Label>
             <span>{tenant.galleryCount}</span>
-            <Label>Angelegt</Label>
+            <Label>{t("super.tdCreated")}</Label>
             <span>{new Date(tenant.createdAt).toLocaleString(fmt.bcp47)}</span>
-            <Label>Letztes Update</Label>
+            <Label>{t("super.tdLastUpdate")}</Label>
             <span>{new Date(tenant.updatedAt).toLocaleString(fmt.bcp47)}</span>
             {tenant.archivedAt && (
               <>
-                <Label>Archiviert am</Label>
+                <Label>{t("super.tdArchivedOn")}</Label>
                 <span>
                   {new Date(tenant.archivedAt).toLocaleString(fmt.bcp47)}
                 </span>
@@ -461,13 +459,13 @@ function TenantDetail() {
             onClick={() => setEditingMeta(true)}
             className="mt-3 text-ui-sm text-accent hover:text-accent-hover"
           >
-            Bearbeiten
+            {t("super.tdEdit")}
           </button>
         )}
       </Section>
 
       <Section
-        title="User"
+        title={t("super.tdTabUsers")}
         action={
           tenant.status === "active" && (
             <button
@@ -475,13 +473,13 @@ function TenantDetail() {
               onClick={() => setInviting(true)}
               className="text-ui-sm text-accent hover:text-accent-hover"
             >
-              + Owner einladen
+              {t("super.tdInviteOwner")}
             </button>
           )
         }
       >
         {tenant.users.length === 0 ? (
-          <p className="text-ui-sm text-ink-tertiary">Keine User.</p>
+          <p className="text-ui-sm text-ink-tertiary">{t("super.tdNoUsers")}</p>
         ) : (
           <ul className="divide-y divide-line-subtle">
             {tenant.users.map((u) => (
@@ -557,12 +555,12 @@ function TenantDetail() {
           >
             <h2 className="text-lg font-medium text-ink-primary">
               {deleteDialog.mode === "purge"
-                ? "Test-Tenant sofort löschen?"
-                : "Tenant endgültig löschen?"}
+                ? t("super.tdPurgeConfirmTitle")
+                : t("super.tdDeleteConfirmTitle")}
             </h2>
             <div className="text-ui-sm text-ink-secondary mt-3 space-y-2">
               <p>
-                Folgendes wird <span className="font-medium">irreversibel</span>{" "}
+                {t("super.tdIrreversibleIntro")} <span className="font-medium">{t("super.tdIrreversible")}</span>{" "}
                 entfernt:
               </p>
               <ul className="list-disc pl-5 space-y-0.5 text-ui-xs">
@@ -570,19 +568,19 @@ function TenantDetail() {
                   Alle Galerien, Files und Renditions ({tenant.galleryCount}{" "}
                   Galerien)
                 </li>
-                <li>Alle User-Accounts dieses Tenants</li>
+                <li>{t("super.tdIrreversibleUsers")}</li>
                 <li>Alle S3-Objekte unter t/{tenant.id.slice(0, 8)}…/</li>
-                <li>Branding, Templates, Webhooks, Tags</li>
+                <li>{t("super.tdIrreversibleBranding")}</li>
                 <li>
                   {deleteDialog.mode === "purge"
-                    ? "Billing-Subscription + Stripe-Customer (wird in Stripe gelöscht)"
+                    ? t("super.tdIrreversibleBilling")
                     : "Billing-Subscription (lokal — Stripe-Customer bleibt)"}
                 </li>
               </ul>
               <p className="pt-2">
                 {deleteDialog.mode === "purge"
-                  ? "Ohne Archivierung und ohne Karenzfrist. Die Stripe-Subscription wird gekündigt und der Stripe-Customer gelöscht. Nur für nicht-zahlende Test-/Trial-Tenants. Audit-Logs bleiben erhalten."
-                  : "Audit-Logs bleiben erhalten. Stripe-Customer bleibt im Stripe-Dashboard für die Buchhaltung."}
+                  ? t("super.tdPurgeHint")
+                  : t("super.tdDeleteHint")}
               </p>
             </div>
             <div className="mt-4">
@@ -621,7 +619,7 @@ function TenantDetail() {
                 disabled={deleteDialog.pending}
                 variant="ghost"
               >
-                Abbrechen
+                {t("common.cancel")}
               </ActionButton>
               <ActionButton
                 onClick={
@@ -636,10 +634,10 @@ function TenantDetail() {
                 variant="danger"
               >
                 {deleteDialog.pending
-                  ? "Lösche…"
+                  ? t("super.tdDeleting")
                   : deleteDialog.mode === "purge"
-                  ? "Sofort löschen"
-                  : "Endgültig löschen"}
+                  ? t("super.tdDeleteNow")
+                  : t("super.tdDeleteFinal")}
               </ActionButton>
             </div>
           </div>
@@ -660,17 +658,14 @@ function TenantDetail() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-medium text-ink-primary">
-              Archivierung vorplanen
+              {t("super.tdSchedulePreArchiveTitle")}
             </h2>
             <p className="text-ui-sm text-ink-secondary mt-3">
-              Setzt einen Stichtag, an dem du den Tenant manuell archivieren
-              wirst. Studio zeigt dem Tenant einen Countdown-Banner mit Link
-              zum Datenexport. Wir schicken jetzt eine Initial-Mail und 7 Tage
-              vor Stichtag eine Erinnerung an alle aktiven Owner.
+              {t("super.tdSchedulePreArchiveHint")}
             </p>
             <div className="mt-4">
               <label className="text-ui-xs text-ink-secondary block mb-1.5">
-                Stichtag
+                {t("super.tdTargetDate")}
               </label>
               <input
                 type="date"
@@ -691,7 +686,7 @@ function TenantDetail() {
                 disabled={schedulePending}
                 variant="ghost"
               >
-                Abbrechen
+                {t("common.cancel")}
               </ActionButton>
               <ActionButton
                 onClick={performSchedule}
@@ -716,7 +711,7 @@ function TenantDetail() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-medium text-ink-primary">
-              Archivierung vorgeplant
+              {t("super.tdPreArchiveScheduled")}
             </h2>
             <p className="text-ui-sm text-ink-secondary mt-3">
               Initial-Benachrichtigung wurde an {scheduleResult.mailsSent} von{" "}
@@ -728,7 +723,7 @@ function TenantDetail() {
                 onClick={() => setScheduleResult(null)}
                 variant="ghost"
               >
-                Schließen
+                {t("common.close")}
               </ActionButton>
             </div>
           </div>
@@ -745,7 +740,7 @@ function TenantDetail() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-medium text-ink-primary">
-              Datenexport anstoßen?
+              {t("super.tdExportTitle")}
             </h2>
             <p className="text-ui-sm text-ink-secondary mt-3">
               Für alle {tenant.galleryCount} Galerien dieses Tenants wird je
@@ -753,9 +748,7 @@ function TenantDetail() {
             </p>
             {tenant.status === "archived" && (
               <p className="text-ui-sm text-ink-secondary mt-2">
-                Da der Tenant archiviert ist, wird ein Token-Link generiert
-                und per Mail an alle aktiven Owner geschickt. Der Tenant kann
-                ohne Login darauf zugreifen (30 Tage gültig).
+                {t("super.tdExportArchivedHint")}
               </p>
             )}
             {exportError && (
@@ -769,14 +762,16 @@ function TenantDetail() {
                 disabled={exportPending}
                 variant="ghost"
               >
-                Abbrechen
+                {t("common.cancel")}
               </ActionButton>
               <ActionButton
                 onClick={triggerExport}
                 disabled={exportPending}
                 variant="success"
               >
-                {exportPending ? "Stoße an…" : "Export starten"}
+                {exportPending
+                  ? t("super.tdExportStarting")
+                  : t("super.tdExportStart")}
               </ActionButton>
             </div>
           </div>
@@ -795,7 +790,7 @@ function TenantDetail() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-medium text-ink-primary">
-              Export wurde gestartet
+              {t("super.tdExportStarted")}
             </h2>
             <p className="text-ui-sm text-ink-secondary mt-3">
               {exportResult.itemCount}{" "}
@@ -811,9 +806,7 @@ function TenantDetail() {
                   </>
                 ) : (
                   <>
-                    Token wurde erzeugt, aber keine aktiven Owner zum
-                    Mailen vorhanden. Du findest den Link in den Audit-
-                    Logs.
+                    {t("super.tdExportNoOwners")}
                   </>
                 )}
               </p>
@@ -823,7 +816,7 @@ function TenantDetail() {
                 onClick={() => setExportResult(null)}
                 variant="ghost"
               >
-                Schließen
+                {t("common.close")}
               </ActionButton>
             </div>
           </div>
@@ -879,6 +872,7 @@ function ScheduledArchiveBanner({
   onArchiveNow: () => void;
   busy: boolean;
 }) {
+  const t = useT();
   const fmt = useFormat();
   const date = new Date(scheduledAt);
   const remainingMs = date.getTime() - Date.now();
@@ -902,16 +896,11 @@ function ScheduledArchiveBanner({
           <div className="text-ui-xs text-ink-tertiary mt-1">
             {reached ? (
               <>
-                Der geplante Termin ist verstrichen. Klicke „Jetzt archivieren",
-                um die Archivierung manuell auszulösen (Stripe-Cancel + 30 Tage
-                Karenz starten). Solange du nichts tust, kann der Tenant
-                weiter arbeiten.
+                {t("super.tdPreArchiveOverdue")}
               </>
             ) : (
               <>
-                Tenant hat eine Initial-Mail erhalten. 7 Tage vor Stichtag folgt
-                automatisch eine Erinnerung. Im Studio sieht der Tenant einen
-                Countdown-Banner mit Link zum Datenexport.
+                {t("super.tdPreArchiveInfo")}
               </>
             )}
           </div>
@@ -924,7 +913,7 @@ function ScheduledArchiveBanner({
               disabled={busy}
               className="h-8 px-3 rounded border text-ui-sm disabled:opacity-50 transition-colors duration-motion border-semantic-danger/40 text-semantic-danger hover:bg-semantic-danger/10"
             >
-              Jetzt archivieren
+              {t("super.tdArchiveNow")}
             </button>
           )}
           <button
@@ -933,7 +922,7 @@ function ScheduledArchiveBanner({
             disabled={busy}
             className="h-8 px-3 rounded border text-ui-sm disabled:opacity-50 transition-colors duration-motion border-line-subtle text-ink-secondary hover:bg-surface-sunken"
           >
-            Plan zurückziehen
+            {t("super.tdWithdrawPlan")}
           </button>
         </div>
       </div>
@@ -1009,6 +998,7 @@ function EditMetaForm({
   onSaved: () => Promise<void> | void;
   onCancel: () => void;
 }) {
+  const t = useT();
   const [slug, setSlug] = useState(tenant.slug);
   const [name, setName] = useState(tenant.name);
   const [displayName, setDisplayName] = useState(tenant.displayName ?? "");
@@ -1060,7 +1050,7 @@ function EditMetaForm({
   return (
     <div className="space-y-3">
       <label className="block">
-        <span className="text-ui-sm text-ink-secondary">Slug</span>
+        <span className="text-ui-sm text-ink-secondary">{t("super.tdSlug")}</span>
         <input
           type="text"
           value={slug}
@@ -1075,13 +1065,13 @@ function EditMetaForm({
           Wird zur Subdomain. Kleinbuchstaben, Ziffern, Bindestriche.
           {slugChanged && (
             <span className="block mt-0.5 text-semantic-warning">
-              ⚠ Ändern bricht bestehende Subdomain-URLs.
+              {t("super.tdSlugWarning")}
             </span>
           )}
         </span>
       </label>
       <label className="block">
-        <span className="text-ui-sm text-ink-secondary">Name (intern)</span>
+        <span className="text-ui-sm text-ink-secondary">{t("super.tdNameInternal")}</span>
         <input
           type="text"
           value={name}
@@ -1091,7 +1081,7 @@ function EditMetaForm({
       </label>
       <label className="block">
         <span className="text-ui-sm text-ink-secondary">
-          Öffentlicher Anzeigename
+          {t("super.tdPublicDisplayName")}
         </span>
         <input
           type="text"
@@ -1102,12 +1092,11 @@ function EditMetaForm({
           className="mt-1 w-full h-9 px-2.5 rounded bg-surface-sunken border border-line-subtle text-ui text-ink-primary focus:border-accent focus:outline-none"
         />
         <span className="block mt-1 text-ui-xs text-ink-tertiary">
-          Sichtbar im Login, in E-Mails an Kunden. Owner kann das auch
-          selbst im Studio ändern.
+          {t("super.tdPublicDisplayHint")}
         </span>
       </label>
       <label className="block">
-        <span className="text-ui-sm text-ink-secondary">Custom-Domain</span>
+        <span className="text-ui-sm text-ink-secondary">{t("super.tdCustomDomain")}</span>
         <input
           type="text"
           value={customDomain}
@@ -1123,7 +1112,7 @@ function EditMetaForm({
           disabled={busy}
           className="h-8 px-3 rounded border border-line-strong text-ui-sm text-ink-secondary"
         >
-          Abbrechen
+          {t("common.cancel")}
         </button>
         <button
           type="button"
@@ -1162,6 +1151,7 @@ function BillingBlock({
   tenantId: string;
   onChanged: () => void;
 }) {
+  const t = useT();
   const fmt = useFormat();
   const plan = subscription.plan;
   const [extendOpen, setExtendOpen] = useState(false);
@@ -1189,10 +1179,7 @@ function BillingBlock({
   async function removeSubscription() {
     if (
       !confirm(
-        "Kostenloses Abo entfernen? Der Tenant fällt danach auf Trial-Limits " +
-          "zurück (bestehende Galerien bleiben, aber Uploads/neue Galerien sind " +
-          "bis zur Buchung begrenzt). Der Owner kann dann im Studio regulär " +
-          "über Stripe einen Plan buchen."
+        t("super.tdRemoveSubscriptionConfirm")
       )
     )
       return;
@@ -1259,7 +1246,7 @@ function BillingBlock({
           Abo (status=canceled) blieb dadurch im Super-Admin unsichtbar. */}
       {subscription.readOnlySince && (
         <div className="rounded-md border border-semantic-warning/30 bg-semantic-warning/8 px-3 py-2 text-ui-sm">
-          <span className="font-medium text-semantic-warning">Read-Only</span>
+          <span className="font-medium text-semantic-warning">{t("super.tdReadOnly")}</span>
           <span className="text-ink-tertiary">
             {" "}
             · seit{" "}
@@ -1270,7 +1257,7 @@ function BillingBlock({
 
       {subscription.cancelAtPeriodEnd && subscription.currentPeriodEnd && (
         <div className="rounded-md border border-semantic-warning/30 bg-semantic-warning/8 px-3 py-2 text-ui-sm">
-          <span className="font-medium">Gekündigt zum </span>
+          <span className="font-medium">{t("super.tdCancelledOn")} </span>
           {new Date(subscription.currentPeriodEnd).toLocaleDateString(fmt.bcp47)}{" "}
           — danach automatisch beendet.
         </div>
@@ -1282,12 +1269,12 @@ function BillingBlock({
           {plan.name} <span className="text-ink-tertiary">({plan.slug})</span>
           {subscription.comped && (
             <span className="ml-2 inline-block rounded px-1.5 py-0.5 text-ui-xs bg-semantic-success/15 text-semantic-success font-medium">
-              Gratis (comped)
+              {t("super.tdFreeComped")}
             </span>
           )}
         </span>
 
-        <Label>Preis</Label>
+        <Label>{t("super.tdPrice")}</Label>
         <span>{price ?? <span className="text-ink-tertiary">—</span>}</span>
 
         <Label>Status</Label>
@@ -1295,14 +1282,16 @@ function BillingBlock({
           <SubscriptionStatusBadge status={subscription.status} />
         </span>
 
-        <Label>Billing</Label>
+        <Label>{t("super.tdBilling")}</Label>
         <span>
-          {subscription.billingInterval === "yearly" ? "Jährlich" : "Monatlich"}
+          {subscription.billingInterval === "yearly"
+            ? t("super.tdYearly")
+            : t("super.tdMonthly")}
         </span>
 
         {subscription.status === "trialing" && subscription.trialEndsAt && (
           <>
-            <Label>Trial-Ende</Label>
+            <Label>{t("super.tdTrialEnd")}</Label>
             <span className="flex items-center gap-3 flex-wrap">
               <span>
                 {new Date(subscription.trialEndsAt).toLocaleDateString(
@@ -1322,7 +1311,7 @@ function BillingBlock({
                 onClick={() => setExtendOpen(true)}
                 className="text-ui-xs text-accent hover:underline"
               >
-                Verlängern
+                {t("super.tdExtend")}
               </button>
             </span>
           </>
@@ -1330,7 +1319,7 @@ function BillingBlock({
 
         {subscription.currentPeriodStart && subscription.currentPeriodEnd && (
           <>
-            <Label>Aktuelle Periode</Label>
+            <Label>{t("super.tdCurrentPeriod")}</Label>
             <span>
               {new Date(
                 subscription.currentPeriodStart
@@ -1343,7 +1332,7 @@ function BillingBlock({
           </>
         )}
 
-        <Label>Speicher</Label>
+        <Label>{t("super.tdStorage")}</Label>
         <span>
           {storageGib.toFixed(2)} GiB
           {totalStorageGib !== null && ` von ${totalStorageGib} GiB`}
@@ -1366,7 +1355,7 @@ function BillingBlock({
           )}
         </span>
 
-        <Label>Galerien</Label>
+        <Label>{t("super.tdGalleries")}</Label>
         <span>
           {subscription.galleriesCount}
           {plan.galleriesMax !== null && ` von ${plan.galleriesMax}`}
@@ -1375,10 +1364,9 @@ function BillingBlock({
 
       <div className="pt-3 border-t border-line-subtle flex items-start justify-between gap-4 text-ui-sm">
         <div>
-          <span className="font-medium text-ink-primary">Marketing-Mails</span>
+          <span className="font-medium text-ink-primary">{t("super.tdMarketingMails")}</span>
           <p className="text-ink-tertiary mt-0.5 text-ui-xs">
-            Trial-Reminder, Winback. Überstimmt den globalen Kill-Switch nur
-            in Richtung Deaktivieren.
+            {t("super.tdMarketingMailsHint")}
           </p>
         </div>
         <button
@@ -1410,7 +1398,7 @@ function BillingBlock({
               rel="noopener noreferrer"
               className="text-accent hover:text-accent-hover"
             >
-              ↗ Customer in Stripe
+              {t("super.tdStripeCustomer")}
             </a>
           )}
           {stripeSubUrl && (
@@ -1420,7 +1408,7 @@ function BillingBlock({
               rel="noopener noreferrer"
               className="text-accent hover:text-accent-hover"
             >
-              ↗ Subscription in Stripe
+              {t("super.tdStripeSubscription")}
             </a>
           )}
         </div>
@@ -1429,7 +1417,7 @@ function BillingBlock({
       <div className="pt-3 border-t border-line-subtle flex items-center gap-3 text-ui-sm">
         {stripeManaged ? (
           <span className="text-ink-tertiary">
-            Über Stripe verwaltet — Plan-Wechsel im Stripe-Dashboard.
+            {t("super.tdManagedByStripe")}
           </span>
         ) : (
           <>
@@ -1438,7 +1426,7 @@ function BillingBlock({
               onClick={() => setAssignOpen(true)}
               className="text-sm px-3 py-1.5 rounded-md border border-line-subtle hover:bg-surface-sunken"
             >
-              Plan zuweisen / ändern
+              {t("super.tdAssignOrChangePlan")}
             </button>
             <button
               type="button"
@@ -1490,19 +1478,19 @@ function NoSubscriptionBlock({
   tenantId: string;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [assignOpen, setAssignOpen] = useState(false);
   return (
     <div className="space-y-3">
       <div className="text-ui-sm text-ink-secondary">
-        Kein Abo hinterlegt — der Tenant läuft auf Trial-Limits. Weise einen
-        Plan zu, um ihn freizuschalten (für Partner als Gratis-Abo ohne Stripe).
+        {t("super.tdNoSubscription")}
       </div>
       <button
         type="button"
         onClick={() => setAssignOpen(true)}
         className="text-sm px-3 py-1.5 rounded-md bg-accent text-accent-contrast hover:bg-accent-hover"
       >
-        Plan zuweisen
+        {t("super.tdAssignPlan")}
       </button>
       {assignOpen && (
         <AssignPlanDialog
@@ -1545,6 +1533,7 @@ function AssignPlanDialog({
   onClose: () => void;
   onAssigned: () => void;
 }) {
+  const t = useT();
   const initialPlan = ASSIGNABLE_PLANS.some((p) => p.slug === currentPlanSlug)
     ? (currentPlanSlug as "start" | "solo" | "studio" | "pro")
     : "pro";
@@ -1590,7 +1579,7 @@ function AssignPlanDialog({
         onSubmit={submit}
         className="w-full max-w-md bg-surface-raised border border-line-subtle shadow-2xl rounded-lg p-6 space-y-4"
       >
-        <h2 className="text-lg font-semibold">Plan zuweisen</h2>
+        <h2 className="text-lg font-semibold">{t("super.tdAssignPlan")}</h2>
 
         <div>
           <label htmlFor="assign-plan" className="text-sm font-medium block mb-1">
@@ -1613,16 +1602,15 @@ function AssignPlanDialog({
         </div>
 
         <div className="rounded-md border border-line-subtle bg-surface-sunken px-3 py-2 text-ui-xs text-ink-secondary">
-          Wird als <strong>kostenloses Abo</strong> zugewiesen — kein Stripe,
-          keine Karte, kein Ablauf, zählt nicht zur MRR. Für Partner-/
-          Goodwill-Konten. Zahlende Kunden upgraden über den Stripe-Self-Service
-          im Studio.
+          {t("super.tdAssignedAs")}{" "}
+          <strong>{t("super.tdFreeSubscription")}</strong>
+          {t("super.tdFreeSubscriptionHint")}
         </div>
 
         <div>
           <label htmlFor="assign-interval" className="text-sm font-medium block mb-1">
             Abrechnungsintervall{" "}
-            <span className="text-ink-tertiary">(bei Gratis-Abo nur kosmetisch)</span>
+            <span className="text-ink-tertiary">{t("super.tdCosmeticOnly")}</span>
           </label>
           <select
             id="assign-interval"
@@ -1632,15 +1620,15 @@ function AssignPlanDialog({
             }
             className="w-full rounded-md border border-line-subtle px-3 py-2 text-sm bg-surface-raised"
           >
-            <option value="monthly">Monatlich</option>
-            <option value="yearly">Jährlich</option>
+            <option value="monthly">{t("super.tdMonthly")}</option>
+            <option value="yearly">{t("super.tdYearly")}</option>
           </select>
         </div>
 
         <div>
           <label htmlFor="assign-storage" className="text-sm font-medium block mb-1">
             Zusatz-Speicher{" "}
-            <span className="text-ink-tertiary">(GiB, optional)</span>
+            <span className="text-ink-tertiary">{t("super.tdGibOptional")}</span>
           </label>
           <input
             id="assign-storage"
@@ -1657,14 +1645,14 @@ function AssignPlanDialog({
 
         <div>
           <label htmlFor="assign-reason" className="text-sm font-medium block mb-1">
-            Grund <span className="text-ink-tertiary">(optional, intern)</span>
+            {t("super.tdReason")} <span className="text-ink-tertiary">{t("super.tdOptionalInternal")}</span>
           </label>
           <input
             id="assign-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             maxLength={500}
-            placeholder="z.B. Partner-Account, kostenlos vereinbart"
+            placeholder={t("super.tdReasonPlaceholder")}
             className="w-full rounded-md border border-line-subtle px-3 py-2 text-sm"
           />
         </div>
@@ -1677,7 +1665,7 @@ function AssignPlanDialog({
             onClick={onClose}
             className="text-sm px-3 py-2 rounded-md border border-line-subtle hover:bg-surface-sunken"
           >
-            Abbrechen
+            {t("common.cancel")}
           </button>
           <button
             type="submit"
@@ -1703,6 +1691,7 @@ function ExtendTrialDialog({
   onClose: () => void;
   onExtended: () => void;
 }) {
+  const t = useT();
   const fmt = useFormat();
   const [days, setDays] = useState(7);
   const [reason, setReason] = useState("");
@@ -1744,10 +1733,10 @@ function ExtendTrialDialog({
         onSubmit={submit}
         className="w-full max-w-md bg-surface-raised border border-line-subtle shadow-2xl rounded-lg p-6 space-y-4"
       >
-        <h2 className="text-lg font-semibold">Trial verlängern</h2>
+        <h2 className="text-lg font-semibold">{t("super.tdExtendTrial")}</h2>
 
         <div>
-          <label className="text-sm font-medium block mb-2">Um wie viele Tage?</label>
+          <label className="text-sm font-medium block mb-2">{t("super.tdExtendByDays")}</label>
           <div className="flex flex-wrap gap-1.5">
             {[1, 7, 14, 30].map((opt) => (
               <button
@@ -1791,14 +1780,14 @@ function ExtendTrialDialog({
 
         <div>
           <label htmlFor="extend-reason" className="text-sm font-medium block mb-1">
-            Grund <span className="text-ink-tertiary">(optional, intern)</span>
+            {t("super.tdReason")} <span className="text-ink-tertiary">{t("super.tdOptionalInternal")}</span>
           </label>
           <input
             id="extend-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             maxLength={500}
-            placeholder="z.B. Hat angerufen, braucht mehr Zeit zum Evaluieren"
+            placeholder={t("super.tdExtendReasonPlaceholder")}
             className="w-full rounded-md border border-line-subtle px-3 py-2 text-sm"
           />
         </div>
@@ -1813,14 +1802,16 @@ function ExtendTrialDialog({
             onClick={onClose}
             className="text-sm px-3 py-2 rounded-md border border-line-subtle hover:bg-surface-sunken"
           >
-            Abbrechen
+            {t("common.cancel")}
           </button>
           <button
             type="submit"
             disabled={submitting}
             className="text-sm px-3 py-2 rounded-md bg-accent text-accent-contrast hover:bg-accent-hover disabled:opacity-50"
           >
-            {submitting ? "Verlängert…" : `Um ${days} Tage verlängern`}
+            {submitting
+              ? t("super.tdExtending")
+              : t("super.tdExtendByDaysAction", { days })}
           </button>
         </div>
       </form>
@@ -1876,6 +1867,7 @@ function daysUntil(iso: string): string {
 // Edits — eine Note ist ein Zeitpunkts-Snapshot ("hat heute angerufen").
 // Wenn der User nachjustieren will, schreibt er eine neue Note.
 function NotesSection({ tenantId }: { tenantId: string }) {
+  const t = useT();
   const fmt = useFormat();
   type Note = Awaited<
     ReturnType<typeof api.superListTenantNotes>
@@ -1927,31 +1919,33 @@ function NotesSection({ tenantId }: { tenantId: string }) {
       await api.superDeleteTenantNote(tenantId, noteId);
       setNotes((curr) => (curr ?? []).filter((n) => n.id !== noteId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler beim Löschen");
+      setError(
+        err instanceof Error ? err.message : t("super.tdDeleteErrorShort")
+      );
     }
   }
 
   return (
-    <Section title="Interne Notizen">
+    <Section title={t("super.tdNotesTitle")}>
       <form onSubmit={submit} className="mb-4">
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={2}
           maxLength={2000}
-          placeholder="z.B. Hat am 28.5. wegen Trial-Verlängerung angerufen — 7 Tage zusätzlich verprochen."
+          placeholder={t("super.tdNotesPlaceholder")}
           className="w-full rounded-md border border-line-subtle px-3 py-2 text-ui-sm bg-surface-base"
         />
         <div className="flex items-center justify-between mt-2">
           <span className="text-ui-xs text-ink-tertiary">
-            Nur für dich sichtbar. Tenant sieht das nie.
+            {t("super.tdNotesHint")}
           </span>
           <button
             type="submit"
             disabled={!body.trim() || submitting}
             className="h-8 px-3 rounded bg-accent text-accent-contrast text-ui-sm disabled:opacity-50"
           >
-            {submitting ? "Speichert…" : "Notiz hinzufügen"}
+            {submitting ? t("super.tdSaving") : t("super.tdAddNote")}
           </button>
         </div>
         {error && (
@@ -1960,10 +1954,10 @@ function NotesSection({ tenantId }: { tenantId: string }) {
       </form>
 
       {notes === null ? (
-        <div className="text-ui-sm text-ink-tertiary">Lädt…</div>
+        <div className="text-ui-sm text-ink-tertiary">{t("common.loading")}</div>
       ) : notes.length === 0 ? (
         <div className="text-ui-sm text-ink-tertiary italic">
-          Noch keine Notizen.
+          {t("super.tdNotesEmpty")}
         </div>
       ) : (
         <ul className="space-y-2">
@@ -1984,7 +1978,9 @@ function NotesSection({ tenantId }: { tenantId: string }) {
                       : "text-ui-xs text-ink-tertiary hover:text-semantic-danger shrink-0"
                   }
                 >
-                  {confirmingDeleteId === n.id ? "Sicher?" : "Löschen"}
+                  {confirmingDeleteId === n.id
+                    ? t("super.tdSure")
+                    : t("super.tdDeleteNote")}
                 </button>
               </div>
               <div className="text-ui-xs text-ink-tertiary mt-1">
@@ -2018,6 +2014,7 @@ function PasswordResetButton({
   tenantId: string;
   userId: string;
 }) {
+  const t = useT();
   const [state, setState] = useState<
     | { kind: "idle" }
     | { kind: "confirming" }
@@ -2067,7 +2064,7 @@ function PasswordResetButton({
     return (
       <div className="flex flex-col items-end gap-1 max-w-[260px]">
         <div className="text-ui-xs text-semantic-success">
-          Reset-Mail verschickt
+          {t("super.tdResetMailSent")}
         </div>
         <div className="text-ui-xs text-ink-tertiary truncate w-full text-right font-mono">
           {state.resetUrl}
@@ -2092,7 +2089,7 @@ function PasswordResetButton({
           onClick={() => setState({ kind: "idle" })}
           className="block ml-auto text-ui-xs text-ink-tertiary hover:underline mt-0.5"
         >
-          Erneut versuchen
+          {t("super.tdRetry")}
         </button>
       </div>
     );
@@ -2137,6 +2134,7 @@ function ImpersonateButton({
   userLabel: string;
   studioName: string;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   return (
@@ -2146,7 +2144,7 @@ function ImpersonateButton({
         onClick={() => setOpen(true)}
         className="text-ui-xs px-2 py-1 rounded border border-line-subtle hover:bg-surface-sunken whitespace-nowrap"
       >
-        Impersonate
+        {t("super.tdImpersonate")}
       </button>
       {open && (
         <ImpersonateDialog
@@ -2174,6 +2172,7 @@ function ImpersonateDialog({
   studioName: string;
   onClose: () => void;
 }) {
+  const t = useT();
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -2181,7 +2180,7 @@ function ImpersonateDialog({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (reason.trim().length < 3) {
-      setError("Grund bitte ausfüllen (mindestens 3 Zeichen).");
+      setError(t("super.tdReasonRequired"));
       return;
     }
     setSubmitting(true);
@@ -2212,22 +2211,23 @@ function ImpersonateDialog({
         className="w-full max-w-md bg-surface-raised border border-line-subtle shadow-2xl rounded-lg p-6 space-y-4"
       >
         <div>
-          <h2 className="text-lg font-semibold">Impersonate aktivieren</h2>
+          <h2 className="text-lg font-semibold">{t("super.tdImpersonateActivate")}</h2>
           <p className="text-ui-sm text-ink-secondary mt-1">
-            Du loggst dich als <strong>{userLabel}</strong> im Studio{" "}
-            <strong>{studioName}</strong> ein. Maximal 60 Minuten gültig.
+            {t("super.tdImpersonateAs", {
+              user: userLabel,
+              studio: studioName,
+            })}
           </p>
         </div>
 
         <div className="rounded-md border border-semantic-warning/30 bg-semantic-warning/8 p-3 text-ui-sm">
-          <strong className="block mb-1">DSGVO-Hinweis</strong>
-          Der User erhält automatisch eine E-Mail über deinen Support-Zugriff.
-          Alle Aktionen sind im Audit-Log nachvollziehbar.
+          <strong className="block mb-1">{t("super.tdGdprNotice")}</strong>
+          {t("super.tdGdprHint")}
         </div>
 
         <div>
           <label htmlFor="imp-reason" className="text-sm font-medium block mb-1">
-            Grund <span className="text-semantic-danger">*</span>
+            {t("super.tdReason")} <span className="text-semantic-danger">*</span>
           </label>
           <input
             id="imp-reason"
@@ -2237,7 +2237,7 @@ function ImpersonateDialog({
             minLength={3}
             maxLength={500}
             autoFocus
-            placeholder="z.B. Hat um Hilfe bei fehlerhafter Galerie-Auswahl gebeten (Ticket #123)"
+            placeholder={t("super.tdNotesPlaceholderAlt")}
             className="w-full rounded-md border border-line-subtle px-3 py-2 text-sm"
           />
         </div>
@@ -2250,7 +2250,7 @@ function ImpersonateDialog({
             onClick={onClose}
             className="text-sm px-3 py-2 rounded-md border border-line-subtle hover:bg-surface-sunken"
           >
-            Abbrechen
+            {t("common.cancel")}
           </button>
           <button
             type="submit"
@@ -2273,6 +2273,7 @@ function ImpersonateDialog({
 // Wenn Toggle wieder auf Default zurueck-gestellt wird, loescht das
 // Backend den Override automatisch (Sauberkeit).
 function FeatureFlagsSection({ tenantId }: { tenantId: string }) {
+  const t = useT();
   type Flag = Awaited<
     ReturnType<typeof api.superGetTenantFeatureFlags>
   >["flags"][number];
@@ -2312,12 +2313,12 @@ function FeatureFlagsSection({ tenantId }: { tenantId: string }) {
   }
 
   return (
-    <Section title="Feature-Flags">
+    <Section title={t("super.tdFlagsTitle")}>
       {error && (
         <div className="text-sm text-semantic-danger mb-3">{error}</div>
       )}
       {!flags ? (
-        <div className="text-sm text-ink-tertiary">Lädt…</div>
+        <div className="text-sm text-ink-tertiary">{t("common.loading")}</div>
       ) : (
         <div className="space-y-2">
           {flags.map((f) => (
@@ -2329,7 +2330,7 @@ function FeatureFlagsSection({ tenantId }: { tenantId: string }) {
             />
           ))}
           <p className="text-xs text-ink-tertiary pt-2 border-t border-line-subtle">
-            Zurück auf Default = Override wird gelöscht.
+            {t("super.tdFlagDefaultHint")}
           </p>
         </div>
       )}
