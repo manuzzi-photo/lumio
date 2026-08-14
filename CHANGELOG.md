@@ -29,6 +29,12 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.60.0] - 2026-08-14
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist ausschließlich das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. Only the frontend is affected, so only the main server.*
+
 ### Added
 
 - Alle Fassungen der Bildmarke liegen jetzt unter `brand/` im Repo — Bildmarke, Wortmarke, Lockups, Produktvarianten mit *Cloud* und *Self-Hosted*, jeweils normal und invers, dazu Favicons, Mail-PNGs und die Skripte, aus denen das alles entsteht. `brand/preview.html` zeigt den Bestand im Browser, inklusive echter Pixelgrößen ab 16 px. Die verwendeten Schriften (Quicksand, Inter) liegen unter `brand/fonts/` samt SIL-OFL-Lizenztexten mit dabei, sodass sich alle Dateien ohne Netzzugang neu erzeugen lassen — ein Lauf aus einer frischen Kopie liefert sie bitgenau identisch. Die Regeln stehen weiterhin in `docs/BRAND.md`.
