@@ -45,7 +45,7 @@ import {
   sendPurgeReminders,
   purgeDueArchives,
 } from "./billing-archive.js";
-import { normalizeLocale } from "./mail-i18n.js";
+import { mailBcp47, normalizeLocale } from "./mail-i18n.js";
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const STARTUP_DELAY_MS = 30_000;
@@ -463,7 +463,7 @@ async function checkExpiringGalleries() {
             // Datum in der Sprache des Empfaengers rendern, nicht fest de-DE:
             // sonst traegt eine englische Mail ein deutsches Datum.
             expiresAtLabel: g.expiresAt.toLocaleDateString(
-              ownerLocale === "de" ? "de-DE" : "en-GB"
+              mailBcp47(ownerLocale)
             ),
             galleryUrl: `${config.PUBLIC_URL}/studio/${g.id}`,
           }),

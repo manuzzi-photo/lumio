@@ -27,9 +27,26 @@ import { config } from "../config.js";
 import { prisma } from "../db.js";
 import { logger } from "../logger.js";
 
-export type MailLocale = "de" | "en";
+export type MailLocale = "de" | "en" | "it";
 
-const SUPPORTED: readonly MailLocale[] = ["de", "en"] as const;
+const SUPPORTED: readonly MailLocale[] = ["de", "en", "it"] as const;
+
+/**
+ * BCP 47 tags for date/number/currency formatting per mail locale.
+ *
+ * Kept as a Record for the same reason as Phrase below: a locale added to
+ * MailLocale without a tag here fails to compile instead of silently
+ * formatting dates in the wrong language.
+ */
+const BCP47: Record<MailLocale, string> = {
+  de: "de-DE",
+  en: "en-GB",
+  it: "it-IT",
+};
+
+export function mailBcp47(locale: MailLocale): string {
+  return BCP47[locale];
+}
 
 /** Akzeptiert auch "de-DE" o.ae. und faellt sonst auf den Default zurueck. */
 export function normalizeLocale(value: string | null | undefined): MailLocale {
@@ -117,7 +134,7 @@ export function phrase(
  * Lesen nicht suchen muss.
  */
 export const common = {
-  signature: { de: "— Lumio", en: "— Lumio" },
-  openGallery: { de: "Galerie öffnen", en: "Open gallery" },
-  viewGallery: { de: "Galerie ansehen", en: "View gallery" },
+  signature: { de: "— Lumio", en: "— Lumio", it: "— Lumio" },
+  openGallery: { de: "Galerie öffnen", en: "Open gallery", it: "Apri galleria" },
+  viewGallery: { de: "Galerie ansehen", en: "View gallery", it: "Visualizza galleria" },
 } satisfies Record<string, Phrase>;

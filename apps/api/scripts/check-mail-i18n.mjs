@@ -54,10 +54,10 @@ const INLINE_ALLOWED_SITES = [
  * BCP 47 tags, and the templates pick between them based on the recipient.
  */
 const LOCALE_ALLOWED = [
-  // Any "<something> === "de" ? "de-DE" : "en-GB"" is the intended shape —
-  // the variable name varies (l, locale, ownerLocale, digestLocale …), so
-  // match the pattern rather than a fixed list of names.
-  /\w+ === "de" \? "de-DE" : "en-GB"/,
+  // mailBcp47(<locale>) resolves the recipient's locale to its BCP 47 tag —
+  // the intended shape. The variable name varies (l, locale, ownerLocale,
+  // digestLocale …), so match the call rather than a fixed list of names.
+  /mailBcp47\(/,
   /de: "de-DE"/,
   /^\s*\*/, // comment lines
 ];

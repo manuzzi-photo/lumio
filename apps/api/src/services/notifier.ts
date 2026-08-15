@@ -24,6 +24,7 @@ import { getPlan, effectiveStorageBytes } from "./plans.js";
 import type { MailBranding } from "./mail-layout.js";
 import {
   instanceMailLocale,
+  mailBcp47,
   normalizeLocale,
   tenantMailLocale,
   userMailLocale,
@@ -509,7 +510,7 @@ export async function sendSuperAdminDigest(): Promise<void> {
 
     const digestLocale = instanceMailLocale();
     const dateLabel = new Date().toLocaleDateString(
-      digestLocale === "de" ? "de-DE" : "en-GB",
+      mailBcp47(digestLocale),
       {
         year: "numeric",
         month: "2-digit",
