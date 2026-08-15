@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.64.2] - 2026-08-14
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.*
+
+
 ### Fixed
 
 - Weitere Texte, die die API mitliefert, waren in jeder Sprache deutsch: die Beschreibungen der Tarife unter Abrechnung, die Feature-Flags in der Tenant-Verwaltung und die Beschreibungen der Print-Anbieter — letztere sowohl im Studio als auch in der Administrationsoberfläche. Alle sind jetzt auf Deutsch, Englisch und Italienisch verfügbar.
