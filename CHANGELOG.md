@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Die einzelnen Schalter unter Einstellungen → Benachrichtigungen waren immer deutsch beschriftet, auch bei englischer oder italienischer Oberfläche — die Überschriften darüber waren übersetzt, die sieben Einträge darunter nicht.
+
+**🇬🇧 English**
+
+- The individual toggles under Settings → Notifications were always labelled in German, even with an English or Italian interface — the headings above them were translated, the seven entries below were not.
+
 ## [0.64.0] - 2026-08-14
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.

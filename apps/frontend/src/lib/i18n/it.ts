@@ -884,6 +884,24 @@ export const it: Dict = {
       "La lingua che Lumio usa quando scrive ai tuoi clienti — inviti alle gallerie, avvisi di scadenza. I tuoi clienti non hanno un account, quindi non possiamo conoscere la loro lingua e seguiamo la tua.",
     mailLocaleDefault: "Predefinita dell'istanza",
     mailLocaleSaved: "Salvato",
+      notifEventGalleryCommentLabel: "Nuovo commento",
+    notifEventGalleryCommentDesc: "Un cliente ha lasciato un commento in una galleria.",
+    notifEventSelectionFinishedLabel: "Selezione completata",
+    notifEventSelectionFinishedDesc: "Un cliente ha completato la selezione delle foto.",
+    notifEventPrintOrderLabel: "Nuovo ordine di stampa",
+    notifEventPrintOrderDesc: "Un cliente ha effettuato un ordine di stampa.",
+    notifEventUploadReceivedLabel: "Caricamenti ricevuti",
+    notifEventUploadReceivedDesc:
+      "Un cliente ha caricato file tramite un link di caricamento (in blocco).",
+    notifEventTeamMemberJoinedLabel: "Membro del team aggiunto",
+    notifEventTeamMemberJoinedDesc:
+      "Un membro del team invitato ha configurato il proprio account.",
+    notifEventGalleryExpiringLabel: "Galleria in scadenza",
+    notifEventGalleryExpiringDesc:
+      "Una galleria raggiunge la data di scadenza nei prossimi 7 giorni.",
+    notifEventStorageWarningLabel: "Spazio quasi esaurito",
+    notifEventStorageWarningDesc:
+      "Lo spazio utilizzato si avvicina al limite del tuo piano (dal 90%).",
   },
 
   annotation: {

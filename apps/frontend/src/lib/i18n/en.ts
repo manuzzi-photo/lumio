@@ -884,6 +884,22 @@ export const en: Dict = {
       "The language Lumio uses when writing to your customers — gallery invitations, expiry notices. Your customers have no account, so we cannot know their language and follow yours instead.",
     mailLocaleDefault: "Instance default",
     mailLocaleSaved: "Saved",
+      notifEventGalleryCommentLabel: "New comment",
+    notifEventGalleryCommentDesc: "A customer left a comment in a gallery.",
+    notifEventSelectionFinishedLabel: "Selection finished",
+    notifEventSelectionFinishedDesc: "A customer finished selecting their photos.",
+    notifEventPrintOrderLabel: "New print order",
+    notifEventPrintOrderDesc: "A customer placed a print order.",
+    notifEventUploadReceivedLabel: "Uploads received",
+    notifEventUploadReceivedDesc:
+      "A customer uploaded files through an upload link (batched).",
+    notifEventTeamMemberJoinedLabel: "Team member joined",
+    notifEventTeamMemberJoinedDesc: "An invited team member has set up their account.",
+    notifEventGalleryExpiringLabel: "Gallery expiring soon",
+    notifEventGalleryExpiringDesc: "A gallery reaches its expiry date within the next 7 days.",
+    notifEventStorageWarningLabel: "Storage almost full",
+    notifEventStorageWarningDesc:
+      "Your used storage is approaching your plan's limit (from 90%).",
   },
 
   annotation: {

@@ -889,6 +889,25 @@ export const de: Dict = {
       "In dieser Sprache schreibt Lumio deine Kunden an — Galerie-Einladungen, Ablauf-Hinweise. Deine Kunden haben kein Konto, wir kennen ihre Sprache also nicht und folgen deiner Angabe.",
     mailLocaleDefault: "Vorgabe der Instanz",
     mailLocaleSaved: "Gespeichert",
+      notifEventGalleryCommentLabel: "Neuer Kommentar",
+    notifEventGalleryCommentDesc:
+      "Ein Kunde hat einen Kommentar in einer Galerie hinterlassen.",
+    notifEventSelectionFinishedLabel: "Auswahl abgeschlossen",
+    notifEventSelectionFinishedDesc: "Ein Kunde hat seine Bildauswahl abgeschlossen.",
+    notifEventPrintOrderLabel: "Neue Print-Bestellung",
+    notifEventPrintOrderDesc: "Ein Kunde hat eine Print-Bestellung aufgegeben.",
+    notifEventUploadReceivedLabel: "Uploads eingegangen",
+    notifEventUploadReceivedDesc:
+      "Ein Kunde hat über einen Upload-Link Dateien hochgeladen (gebündelt).",
+    notifEventTeamMemberJoinedLabel: "Team-Mitglied beigetreten",
+    notifEventTeamMemberJoinedDesc:
+      "Ein eingeladenes Team-Mitglied hat sein Konto eingerichtet.",
+    notifEventGalleryExpiringLabel: "Galerie läuft bald ab",
+    notifEventGalleryExpiringDesc:
+      "Eine Galerie erreicht in den nächsten 7 Tagen ihr Ablaufdatum.",
+    notifEventStorageWarningLabel: "Speicher fast voll",
+    notifEventStorageWarningDesc:
+      "Dein belegter Speicher nähert sich dem Limit deines Tarifs (ab 90 %).",
   },
 
   annotation: {

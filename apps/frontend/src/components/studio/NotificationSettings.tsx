@@ -15,8 +15,29 @@ interface NotificationEvent {
  * Enthält auch den Marketing-E-Mail-Toggle (Trial-Reminder, Winback).
  * Lädt und speichert eigenständig; speichert direkt beim Umschalten.
  */
+/**
+ * Event-Key der API ("gallery_comment") auf unsere Dictionary-Namen
+ * ("notifEventGalleryComment") abbilden.
+ */
+function eventKeyToKey(eventKey: string): string {
+  const camel = eventKey
+    .split("_")
+    .map((part, i) => (i === 0 ? part : part[0].toUpperCase() + part.slice(1)))
+    .join("");
+  return "notifEvent" + camel[0].toUpperCase() + camel.slice(1);
+}
+
 export function NotificationSettings({ canEdit }: { canEdit: boolean }) {
   const t = useT();
+  /**
+   * t() gibt bei fehlendem Key den Key selbst zurueck. Fuer den Fallback auf
+   * die API-Beschriftung brauchen wir stattdessen null, sonst stuende bei
+   * einem der API bekannten, uns unbekannten Ereignis der Key im UI.
+   */
+  const tOrNull = (key: string): string | null => {
+    const value = t(key);
+    return value === key ? null : value;
+  };
   const [events, setEvents] = useState<NotificationEvent[]>([]);
   const [prefs, setPrefs] = useState<Record<string, boolean>>({});
   // null = kein Billing aktiviert / keine Subscription → Toggle nicht zeigen
@@ -93,15 +114,23 @@ export function NotificationSettings({ canEdit }: { canEdit: boolean }) {
           <div className="divide-y divide-line-subtle">
             {events.map((e) => {
               const on = prefs[e.key] ?? true;
+              // Die API liefert Label und Beschreibung auf Deutsch mit. Wir
+              // uebersetzen sie hier ueber den Event-Key und fallen auf die
+              // API-Werte zurueck, falls die API ein Ereignis kennt, das
+              // dieses Frontend noch nicht hat — dann steht dort deutscher
+              // Text statt eines rohen Key-Namens.
+              const label = tOrNull(`settings.${eventKeyToKey(e.key)}Label`) ?? e.label;
+              const description =
+                tOrNull(`settings.${eventKeyToKey(e.key)}Desc`) ?? e.description;
               return (
                 <div
                   key={e.key}
                   className="flex items-start justify-between gap-4 py-3 first:pt-0"
                 >
                   <div className="min-w-0">
-                    <div className="font-medium text-ink-primary">{e.label}</div>
+                    <div className="font-medium text-ink-primary">{label}</div>
                     <div className="text-ui-sm text-ink-tertiary">
-                      {e.description}
+                      {description}
                     </div>
                   </div>
                   <button

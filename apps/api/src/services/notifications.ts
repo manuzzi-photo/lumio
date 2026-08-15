@@ -8,7 +8,14 @@
  * Neue Benachrichtigung hinzufügen:
  *   1. Hier einen Eintrag in STUDIO_NOTIFICATION_EVENTS ergänzen.
  *   2. An der Auslöse-Stelle `studioNotifyEnabled(tenantId, "<key>")` prüfen.
- *   3. i18n-Label/Beschreibung im Frontend ergänzen (super/studio settings).
+ *   3. Im Frontend zwei Keys je Sprache anlegen: aus "gallery_comment" wird
+ *      settings.notifEventGalleryCommentLabel und ...Desc (en/de/it).
+ *
+ * label/description hier sind NUR der Fallback, falls das Frontend einen
+ * Key noch nicht kennt — dann steht deutscher Text statt eines rohen
+ * Key-Namens im UI. Die tatsächlich angezeigten Texte kommen aus dem
+ * Frontend-Dictionary, sonst blieben die Schalter in jeder Sprache
+ * deutsch beschriftet.
  */
 import { prisma } from "../db.js";
 import { logger } from "../logger.js";
