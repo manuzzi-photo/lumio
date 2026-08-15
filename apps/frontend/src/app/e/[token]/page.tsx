@@ -22,7 +22,7 @@ import { useParams } from "next/navigation";
 
 import { api } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
-import { useErrorText } from "@/lib/error-i18n";
+import { useErrorText, useWorkerErrorText} from "@/lib/error-i18n";
 
 interface PublicExportItem {
   id: string;
@@ -205,6 +205,7 @@ function ItemRow({
   item: PublicExportItem;
   token: string;
 }) {
+  const codeText = useWorkerErrorText();
   const t = useT();
   const downloadHref = api.getPublicExportItemDownloadUrl(token, item.id);
   return (
@@ -217,7 +218,11 @@ function ItemRow({
           {item.status === "ready" && item.fileCount !== null
             ? t("exportPage.itemReady", { n: item.fileCount, size: formatBytes(item.sizeBytes ?? 0) })
             : item.status === "failed"
-            ? t("exportPage.itemError", { msg: item.errorMessage ?? t("exportPage.unknown") })
+            ? t("exportPage.itemError", {
+                msg: item.errorMessage
+                  ? codeText(item.errorMessage)
+                  : t("exportPage.unknown"),
+              })
             : t(STATUS_LABEL[item.status])}
         </div>
       </div>

@@ -38,6 +38,7 @@ from datetime import datetime
 from typing import Any
 
 import structlog
+import error_codes
 from botocore.exceptions import ClientError
 
 from app import app
@@ -90,8 +91,12 @@ def build_export_zip(
             "file_count": result["file_count"],
         }
     except Exception as err:
+        # Wie bei build_zip: Klartext ins Log, Code in die DB.
         log.exception("export_zip.failed", item_id=export_item_id)
-        _set_item_failed(export_item_id, str(err))
+        _set_item_failed(
+            export_item_id,
+            error_codes.classify(err, error_codes.EXPORT_BUILD_FAILED),
+        )
         _maybe_finalize_export(export_item_id)
         # Kein retry für Export-Builds: wenn etwas wirklich kaputt ist
         # (z.B. Galerie weg, S3 nicht erreichbar), bringt der zweite
@@ -474,12 +479,14 @@ def _set_item_ready(item_id: str, *,
         )
 
 
-def _set_item_failed(item_id: str, message: str) -> None:
+def _set_item_failed(item_id: str, code: str) -> None:
+    """`code` ist ein stabiler Fehler-Code, KEIN Klartext. Siehe
+    error_codes.py."""
     with get_conn() as conn:
         conn.execute(
             'UPDATE tenant_export_items SET status = %s, '
             '"errorMessage" = %s, "updatedAt" = NOW() WHERE id = %s',
-            ("failed", message[:500], item_id),
+            ("failed", code[:100], item_id),
         )
 
 

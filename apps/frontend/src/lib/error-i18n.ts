@@ -59,3 +59,31 @@ export function useErrorText(): ErrorTextResolver {
     return fallback ?? t("common.error");
   };
 }
+
+/**
+ * Fehler-Codes, die aus dem Worker in der Datenbank stehen
+ * (zip_downloads.errorMessage und Verwandte).
+ *
+ * Getrennt von useErrorText(), weil die Quelle eine andere ist: hier kommt
+ * kein ApiError, sondern ein String aus einem DB-Feld.
+ *
+ * Der Unterschied im Rueckfall ist Absicht. Bei einem API-Fehler ist die
+ * Meldung von uns formuliert und darf notfalls durchgereicht werden. Hier
+ * kann der Wert noch eine rohe Python-Exception aus der Zeit vor v0.65.x
+ * sein — die enthaelt womoeglich Bucket-Namen oder Serverpfade und geht
+ * einen Galerie-Gast nichts an. Deshalb gewinnt bei unbekanntem Wert der
+ * generische Text, nicht der Wert selbst.
+ */
+export function useWorkerErrorText(): (code: string) => string {
+  const t = useT();
+  return (code) => {
+    // Codes sind snake_case ohne Leerzeichen. Alles andere ist Alt-Text.
+    if (/^[a-z][a-z0-9_]*$/.test(code)) {
+      const key = `apiError.${camel(code)}`;
+      const translated = t(key);
+      if (translated !== key) return translated;
+    }
+    return t("apiError.zipBuildFailed");
+  };
+}
+

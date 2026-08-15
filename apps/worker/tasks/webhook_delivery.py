@@ -221,6 +221,14 @@ def _deliver_http(
     url: str, secret: str, payload: dict[str, Any]
 ) -> tuple[bool, int | None, str | None]:
     """Macht den eigentlichen POST. Returnt (ok, http_status, error_message).
+
+    Anders als bei build_zip/export_zip bleibt error_message hier bewusst
+    Klartext statt eines uebersetzten Codes: die Meldung beschreibt den
+    FREMDEN Endpunkt ("HTTP 500: Internal Server Error", "URLError: timed
+    out") und ist genau die Diagnose, die der Studio-Betreiber zum Debuggen
+    seines eigenen Webhooks braucht. Sie leakt nichts ueber unsere
+    Infrastruktur und wird auch nur ihm angezeigt, nie einem Galerie-Gast.
+
     Klassifikation:
       ok=True:    2xx erhalten
       ok=False mit http_status 4xx (ohne 408/429): final dead

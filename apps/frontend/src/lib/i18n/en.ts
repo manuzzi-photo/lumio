@@ -112,6 +112,16 @@ export const en: Dict = {
       "This tenant has an active or open subscription. Immediate deletion is only for non-paying tenants.",
     userNotFound: "User not found, or not active.",
     wrongCurrentPassword: "Your current password is not correct.",
+      zipNoFiles:
+      "There were no files to package. The selection may have been emptied in the meantime.",
+    storageUnavailable:
+      "The file storage could not be reached. Please try again in a few minutes.",
+    workerDiskFull:
+      "The server ran out of space while building the archive. The operator has been notified via the log.",
+    zipBuildFailed:
+      "The download could not be prepared. Please try again; if it keeps failing, contact the studio.",
+    exportBuildFailed:
+      "This gallery archive could not be created. The other galleries are unaffected.",
   },
 
   nav: {

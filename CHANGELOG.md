@@ -29,6 +29,19 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Security
+
+- Wenn die Erstellung eines ZIP-Downloads fehlschlug, bekam der Galerie-Besucher die technische Fehlermeldung des Servers zu sehen — je nach Ursache mit Namen von Speicher-Endpunkten oder Serverpfaden darin. Jetzt erscheint eine verständliche Meldung in der eingestellten Sprache; die technischen Details stehen nur noch im Server-Log.
+
+### Fixed
+
+- Fehlermeldungen aus der Hintergrund-Verarbeitung (ZIP-Downloads, Datenexporte) waren technisches Englisch und nicht übersetzbar. Sie sind jetzt in allen drei Sprachen verfügbar und sagen, ob man selbst etwas tun kann.
+
+**🇬🇧 English**
+
+- When building a ZIP download failed, the gallery visitor was shown the server's technical error message — depending on the cause, including storage endpoint names or server paths. They now see a comprehensible message in the selected language; the technical detail stays in the server log.
+- Error messages from background processing (ZIP downloads, data exports) were technical English and could not be translated. They are now available in all three languages and say whether there is anything you can do.
+
 ## [0.65.0] - 2026-08-14
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.

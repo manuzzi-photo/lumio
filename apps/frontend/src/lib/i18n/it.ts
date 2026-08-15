@@ -114,6 +114,16 @@ export const it: Dict = {
       "Questo tenant ha un abbonamento attivo o aperto. L'eliminazione immediata è riservata ai tenant non paganti.",
     userNotFound: "Utente non trovato o non attivo.",
     wrongCurrentPassword: "La password attuale non è corretta.",
+      zipNoFiles:
+      "Non c'erano file da comprimere. Forse la selezione è stata svuotata nel frattempo.",
+    storageUnavailable:
+      "Non è stato possibile raggiungere l'archivio file. Riprova tra qualche minuto.",
+    workerDiskFull:
+      "Il server ha esaurito lo spazio durante la creazione dell'archivio. L'operatore è stato informato tramite il log.",
+    zipBuildFailed:
+      "Non è stato possibile preparare il download. Riprova; se continua a non funzionare, contatta lo studio.",
+    exportBuildFailed:
+      "Non è stato possibile creare questo archivio della galleria. Le altre gallerie non sono interessate.",
   },
 
   nav: {

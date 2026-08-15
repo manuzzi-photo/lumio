@@ -38,6 +38,7 @@ from __future__ import annotations
 import os
 import re
 import tempfile
+import error_codes
 import zipfile
 from datetime import datetime
 
@@ -116,8 +117,13 @@ def build_zip(
         )
         return {"zip_id": zip_download_id, "status": "ready", **result}
     except Exception as err:
+        # Details ins Log, Code in die DB: errorMessage wird bis zum
+        # Galerie-Besucher durchgereicht. Siehe error_codes.py.
         log.exception("build_zip.failed", zip_id=zip_download_id)
-        _set_failed(zip_download_id, str(err))
+        _set_failed(
+            zip_download_id,
+            error_codes.classify(err, error_codes.ZIP_BUILD_FAILED),
+        )
         raise self.retry(exc=err)
 
 
@@ -642,11 +648,13 @@ def _set_ready_multipart(zip_id: str, parts: list[dict]) -> None:
         )
 
 
-def _set_failed(zip_id: str, message: str) -> None:
+def _set_failed(zip_id: str, code: str) -> None:
+    """`code` ist ein stabiler Fehler-Code, KEIN Klartext — er wird im
+    Frontend uebersetzt angezeigt. Siehe error_codes.py."""
     with get_conn() as conn:
         conn.execute(
             'UPDATE zip_downloads '
             'SET status = %s, "errorMessage" = %s, "updatedAt" = NOW() '
             'WHERE id = %s',
-            ("failed", message[:500], zip_id),
+            ("failed", code[:100], zip_id),
         )

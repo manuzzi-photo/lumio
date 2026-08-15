@@ -114,6 +114,16 @@ export const de: Dict = {
       "Tenant hat eine aktive/offene Subscription. Sofort-Löschen ist nur für nicht-zahlende Tenants.",
     userNotFound: "User nicht gefunden oder nicht aktiv.",
     wrongCurrentPassword: "Aktuelles Passwort ist nicht korrekt.",
+      zipNoFiles:
+      "Es gab keine Dateien zum Verpacken. Möglicherweise wurde die Auswahl zwischenzeitlich geleert.",
+    storageUnavailable:
+      "Der Dateispeicher war nicht erreichbar. Bitte versuche es in ein paar Minuten erneut.",
+    workerDiskFull:
+      "Auf dem Server war kein Platz mehr, um das Archiv zu erstellen. Der Betreiber wird über das Log informiert.",
+    zipBuildFailed:
+      "Der Download konnte nicht vorbereitet werden. Bitte versuche es erneut; wenn es weiter fehlschlägt, wende dich an das Studio.",
+    exportBuildFailed:
+      "Dieses Galerie-Archiv konnte nicht erstellt werden. Die übrigen Galerien sind davon nicht betroffen.",
   },
 
   nav: {

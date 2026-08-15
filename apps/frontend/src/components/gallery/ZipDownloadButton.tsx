@@ -23,7 +23,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type ZipStatus } from "@/lib/api";
 import { useT } from "@/lib/i18n";
-import { useErrorText } from "@/lib/error-i18n";
+import { useErrorText, useWorkerErrorText} from "@/lib/error-i18n";
 
 type Kind = "all" | "selection" | "picked";
 type Variant = "original" | "web";
@@ -63,6 +63,7 @@ export function ZipDownloadButton({
   disabled = false,
   emphasis = "ghost",
 }: Props) {
+  const codeText = useWorkerErrorText();
   const errText = useErrorText();
   const t = useT();
   const [zipId, setZipId] = useState<string | null>(null);
@@ -116,7 +117,11 @@ export function ZipDownloadButton({
         const res = await api.getZipStatus(slug, zipId);
         if (cancelled) return;
         setStatus(res.status);
-        if (res.errorMessage) setError(res.errorMessage);
+        // errorMessage ist seit v0.65.x ein Fehler-Code aus dem Worker,
+        // kein Klartext. Aeltere Datensaetze koennen noch eine rohe
+        // Exception enthalten — dann gewinnt der generische Text, damit
+        // ein Galerie-Gast keine Server-Interna zu sehen bekommt.
+        if (res.errorMessage) setError(codeText(res.errorMessage));
         setParts(
           res.parts && (res.partCount ?? 0) >= 2
             ? res.parts.map((p) => ({
