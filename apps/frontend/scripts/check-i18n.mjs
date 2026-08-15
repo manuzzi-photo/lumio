@@ -139,6 +139,75 @@ report(
   ([file, tags]) => `${file}  ${[...tags].join(", ")}`
 );
 
+// --- 4. catalogue strings the API supplies ---------------------------------
+// Some display text is defined in the API (plan descriptions, feature flags,
+// print providers, notification toggles) and rendered as-is. Nothing above
+// can see those: there is no t() call in the frontend to dangle. Without this
+// check they stay German in every language, which is exactly how the
+// notification toggles shipped.
+const API_SRC = join(ROOT, "..", "api", "src");
+const CATALOGUES = [
+  {
+    file: join(API_SRC, "services", "plans.ts"),
+    // PLANS is keyed by slug: `trial: {`
+    pattern: /^\s{2}(\w+): \{$/gm,
+    kind: "Plan",
+    suffixes: ["Desc"],
+  },
+  {
+    file: join(API_SRC, "services", "feature-flags.ts"),
+    pattern: /key: "(\w+)"/g,
+    kind: "Flag",
+    suffixes: ["Name", "Desc"],
+  },
+  {
+    file: join(API_SRC, "services", "notifications.ts"),
+    pattern: /key: "(\w+)"/g,
+    kind: "NotifEvent",
+    suffixes: ["Label", "Desc"],
+  },
+  {
+    file: join(API_SRC, "services", "print", "providers.ts"),
+    // Top-level provider definitions sit at two-space indent.
+    pattern: /^\s{2}key: "(\w+)",\n\s{2}label:/gm,
+    kind: "Provider",
+    suffixes: ["Tagline"],
+  },
+];
+
+const pascal = (k) =>
+  k
+    .split(/[_-]/)
+    .filter(Boolean)
+    .map((p) => p[0].toUpperCase() + p.slice(1))
+    .join("");
+
+const missingCatalogue = [];
+for (const cat of CATALOGUES) {
+  let source;
+  try {
+    source = readFileSync(cat.file, "utf8");
+  } catch {
+    // API not checked out next to the frontend — skip rather than fail.
+    continue;
+  }
+  for (const m of source.matchAll(cat.pattern)) {
+    const apiKey = m[1];
+    for (const suffix of cat.suffixes) {
+      const prefix = cat.kind === "NotifEvent" ? "notifEvent" : `catalog${cat.kind}`;
+      const key = `settings.${prefix}${pascal(apiKey)}${suffix}`;
+      if (!enKeys.has(key)) {
+        missingCatalogue.push(`${key}  (from ${cat.kind} "${apiKey}")`);
+      }
+    }
+  }
+}
+
+report(
+  "API catalogue entries with no dictionary key (will render German in every language)",
+  missingCatalogue
+);
+
 if (failures === 0) {
   console.log(
     `i18n check passed — ${enKeys.size} keys in all three dictionaries, ` +

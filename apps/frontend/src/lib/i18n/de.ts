@@ -908,6 +908,48 @@ export const de: Dict = {
     notifEventStorageWarningLabel: "Speicher fast voll",
     notifEventStorageWarningDesc:
       "Dein belegter Speicher nähert sich dem Limit deines Tarifs (ab 90 %).",
+      catalogPlanTrialDesc: "14 Tage Vollzugriff zum Testen",
+    catalogPlanStartDesc: "Für den Einstieg und gelegentliche Shootings",
+    catalogPlanSoloDesc: "Für Hobby- und Nebenberufs-Fotografen",
+    catalogPlanStudioDesc: "Für hauptberufliche Fotografen",
+    catalogPlanProDesc: "Für Studios mit Mitarbeitern und mehreren Marken",
+    catalogFlagPrintShopName: "Print-Shop",
+    catalogFlagPrintShopDesc:
+      "Endkunden können aus Galerien direkt Prints bestellen (DE-Labs Integration).",
+    catalogFlagLightroomPluginName: "Lightroom-Plugin",
+    catalogFlagLightroomPluginDesc:
+      "Direkter Upload aus Adobe Lightroom Classic via API-Token. Plugin separat verteilt.",
+    catalogFlagAdvancedAnalyticsName: "Erweiterte Analytics",
+    catalogFlagAdvancedAnalyticsDesc:
+      "Heatmaps der Bildauswahl, Conversion-Tracking, Endkunden-Engagement-Stats.",
+    catalogFlagAiTaggingName: "KI-Auto-Tagging",
+    catalogFlagAiTaggingDesc:
+      "Automatische Tag-Vergabe per CLIP/ImageBind. Nutzt GPU-Worker.",
+    catalogFlagVideoStreaming4kName: "4K-Video-Streaming",
+    catalogFlagVideoStreaming4kDesc:
+      "HLS-Renditions bis 2160p statt nur 1080p. Erhöht Storage- und Bandwidth-Bedarf.",
+    catalogProviderManualSelfPrintLabel: "Selbst drucken",
+    catalogProviderManualSelfPrintTagline:
+      "Du druckst selbst (eigener Drucker oder lokales Lab). Wir liefern nur Bestellung und Dateien.",
+    catalogProviderProdigiTagline:
+      "Self-Service-Print-Netz mit Fine-Art-Fokus und EU-Produktion.",
+    catalogProviderGelatoTagline:
+      "Globales Print-Netz mit sehr dichter EU-Produktion (u.a. Deutschland) — kurze Lieferwege. Kostenloser Account, API-Key über das API-Portal.",
+    catalogProviderWhitewallTagline:
+      "Premium-Print-Lab mit eigener Manufaktur in Köln. ProAPI für Partner.",
+    catalogProviderSaalDigitalTagline:
+      "Premium-Lab für Photobooks und Prints. API-Zugang nur für Partner.",
+    catalogProviderCeweProTagline:
+      "Breitestes Produktportfolio inkl. Photobooks und Albumdrucke.",
+    catalogProviderProfilabTagline: "Editorial- und Galerie-Quality Prints aus Deutschland.",
+    catalogProviderMyposterTagline:
+      "Schneller Versand, breites Produktportfolio. API verfügbar.",
+    catalogProviderPixumTagline: "Eher Consumer-orientiert, gute Foto-Drucke und Wandbilder.",
+    catalogProviderPosterloungeTagline: "Poster- und Wallart-Spezialist mit großer Druckpalette.",
+    catalogProviderAlbelliTagline: "Photobook-Spezialist mit europäischer Präsenz (NL/DE/UK).",
+    catalogProviderLalalabTagline: "Mobile-first Foto-Drucke. Belgisch/französisch.",
+    catalogProviderMpixTagline: "US-Pro-Lab. Falls Lumio mal in den US-Markt expandiert.",
+    catalogProviderBonusprintTagline: "UK-Foto-Drucke und Photobooks.",
   },
 
   annotation: {

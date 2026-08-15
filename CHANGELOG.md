@@ -29,6 +29,16 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Weitere Texte, die die API mitliefert, waren in jeder Sprache deutsch: die Beschreibungen der Tarife unter Abrechnung, die Feature-Flags in der Tenant-Verwaltung und die Beschreibungen der Print-Anbieter — letztere sowohl im Studio als auch in der Administrationsoberfläche. Alle sind jetzt auf Deutsch, Englisch und Italienisch verfügbar.
+- Eine Prüfung im Build meldet ab jetzt, wenn ein neuer Eintrag in einem dieser Kataloge angelegt wird, ohne die Übersetzungen zu ergänzen.
+
+**🇬🇧 English**
+
+- More text supplied by the API was German in every language: the plan descriptions under billing, the feature flags in tenant management, and the print provider descriptions — the latter in both the studio and the administration interface. All are now available in German, English and Italian.
+- A build check now reports when a new entry is added to one of these catalogues without the accompanying translations.
+
 ## [0.64.1] - 2026-08-14
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen sind Frontend und API, also nur der Hauptserver.

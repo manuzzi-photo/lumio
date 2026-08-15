@@ -11,6 +11,7 @@ import { SuperShell } from "@/components/super/SuperShell";
 import { InviteOwnerDialog } from "@/components/super/InviteOwnerDialog";
 import { useFormat, useT} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
+import { useCatalogText } from "@/lib/catalog-i18n";
 
 export default function SuperTenantDetailPage() {
   return (
@@ -2357,6 +2358,7 @@ function FlagRow({
   busy: boolean;
   onToggle: () => void;
 }) {
+  const ct = useCatalogText();
   const fmt = useFormat();
   const badgeColor = (() => {
     switch (flag.badge) {
@@ -2388,7 +2390,9 @@ function FlagRow({
               {flag.key}
             </span>
           </div>
-          <div className="text-xs text-ink-secondary">{flag.description}</div>
+          <div className="text-xs text-ink-secondary">
+            {ct("Flag", flag.key, "Desc", flag.description)}
+          </div>
           {flag.hasOverride && (
             <div className="text-xs text-ink-tertiary mt-1">
               Override durch {flag.overrideSetBy}

@@ -20,6 +20,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Button, Input } from "@/components/ui";
 import { useT } from "@/lib/i18n";
+import { useCatalogText } from "@/lib/catalog-i18n";
 
 type Available = Awaited<
   ReturnType<typeof api.listAvailablePrintProviders>
@@ -29,6 +30,7 @@ type Mine = Awaited<
 >["providers"][number];
 
 export default function PrintProvidersPage() {
+  const ct = useCatalogText();
   const t = useT();
   const [available, setAvailable] = useState<Available[] | null>(null);
   const [mine, setMine] = useState<Mine[] | null>(null);
@@ -238,7 +240,7 @@ export default function PrintProvidersPage() {
                     </span>
                   </div>
                   <div className="text-xs text-ink-secondary mb-1">
-                    {p.tagline}
+                    {ct("Provider", p.key, "Tagline", p.tagline)}
                   </div>
                   {p.websiteUrl && (
                     <div className="text-xs text-ink-tertiary">
@@ -349,6 +351,7 @@ function CredentialsDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const ct = useCatalogText();
   const t = useT();
   const [values, setValues] = useState<Record<string, string>>({});
   const [displayName, setDisplayName] = useState("");
@@ -392,7 +395,7 @@ function CredentialsDialog({
           {t("providers.connectTitle", { name: provider.label })}
         </h3>
         <p className="text-xs text-ink-tertiary mb-4">
-          {provider.tagline}
+          {ct("Provider", provider.key, "Tagline", provider.tagline)}
         </p>
 
         {provider.stage === "planned" && (

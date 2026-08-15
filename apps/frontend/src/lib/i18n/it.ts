@@ -902,6 +902,52 @@ export const it: Dict = {
     notifEventStorageWarningLabel: "Spazio quasi esaurito",
     notifEventStorageWarningDesc:
       "Lo spazio utilizzato si avvicina al limite del tuo piano (dal 90%).",
+      catalogPlanTrialDesc: "Accesso completo per 14 giorni di prova",
+    catalogPlanStartDesc: "Per iniziare e per servizi occasionali",
+    catalogPlanSoloDesc: "Per fotografi amatoriali e part-time",
+    catalogPlanStudioDesc: "Per fotografi professionisti a tempo pieno",
+    catalogPlanProDesc: "Per studi con collaboratori e più marchi",
+    catalogFlagPrintShopName: "Negozio di stampe",
+    catalogFlagPrintShopDesc:
+      "I clienti possono ordinare stampe direttamente da una galleria (integrazione laboratori DE).",
+    catalogFlagLightroomPluginName: "Plugin Lightroom",
+    catalogFlagLightroomPluginDesc:
+      "Caricamento diretto da Adobe Lightroom Classic tramite token API. Il plugin viene distribuito separatamente.",
+    catalogFlagAdvancedAnalyticsName: "Analisi avanzate",
+    catalogFlagAdvancedAnalyticsDesc:
+      "Mappe di calore della selezione, monitoraggio delle conversioni, statistiche di coinvolgimento dei clienti.",
+    catalogFlagAiTaggingName: "Tag automatici con IA",
+    catalogFlagAiTaggingDesc:
+      "Assegnazione automatica dei tag tramite CLIP/ImageBind. Richiede un worker GPU.",
+    catalogFlagVideoStreaming4kName: "Streaming video 4K",
+    catalogFlagVideoStreaming4kDesc:
+      "Rendition HLS fino a 2160p anziché solo 1080p. Aumenta il fabbisogno di spazio e banda.",
+    catalogProviderManualSelfPrintLabel: "Stampa in proprio",
+    catalogProviderManualSelfPrintTagline:
+      "Stampi tu stesso (con la tua stampante o un laboratorio locale). Noi forniamo solo l'ordine e i file.",
+    catalogProviderProdigiTagline:
+      "Rete di stampa self-service con focus fine art e produzione UE.",
+    catalogProviderGelatoTagline:
+      "Rete di stampa globale con produzione UE molto capillare (anche in Germania) — spedizioni brevi. Account gratuito, chiave API dal portale API.",
+    catalogProviderWhitewallTagline:
+      "Laboratorio di stampa premium con manifattura propria a Colonia. ProAPI per partner.",
+    catalogProviderSaalDigitalTagline:
+      "Laboratorio premium per fotolibri e stampe. Accesso API riservato ai partner.",
+    catalogProviderCeweProTagline:
+      "Gamma di prodotti più ampia, inclusi fotolibri e stampe per album.",
+    catalogProviderProfilabTagline:
+      "Stampe di qualità editoriale e da galleria, dalla Germania.",
+    catalogProviderMyposterTagline:
+      "Spedizione rapida, ampia gamma di prodotti. API disponibile.",
+    catalogProviderPixumTagline:
+      "Più orientato al consumatore, buone stampe fotografiche e quadri.",
+    catalogProviderPosterloungeTagline:
+      "Specialista di poster e wall art con un'ampia gamma di stampe.",
+    catalogProviderAlbelliTagline: "Specialista di fotolibri con presenza europea (NL/DE/UK).",
+    catalogProviderLalalabTagline: "Stampe fotografiche mobile-first. Belga/francese.",
+    catalogProviderMpixTagline:
+      "Laboratorio professionale USA. Nel caso Lumio si espanda nel mercato statunitense.",
+    catalogProviderBonusprintTagline: "Stampe fotografiche e fotolibri dal Regno Unito.",
   },
 
   annotation: {

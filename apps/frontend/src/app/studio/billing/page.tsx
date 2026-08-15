@@ -12,6 +12,7 @@ import {
 import { PageHeader } from "@/components/studio/PageHeader";
 import { useT, useFormat} from "@/lib/i18n";
 import { Button, Card } from "@/components/ui";
+import { useCatalogText } from "@/lib/catalog-i18n";
 
 /**
  * Plan & Speicher — Studio-Seite zum aktuellen Plan, Verbrauch und
@@ -22,6 +23,7 @@ import { Button, Card } from "@/components/ui";
  * kommt in Sprint 2).
  */
 export default function BillingPage() {
+  const ct = useCatalogText();
   const fmt = useFormat();
   const t = useT();
   const [usage, setUsage] = useState<BillingUsage | null>(null);
@@ -262,7 +264,7 @@ export default function BillingPage() {
               {usage.plan.name}
             </div>
             <div className="text-ui-sm text-ink-secondary mt-1">
-              {usage.plan.description}
+              {ct("Plan", usage.plan.slug ?? "", "Desc", usage.plan.description)}
             </div>
             <StatusBadge status={usage.subscriptionStatus} />
           </div>

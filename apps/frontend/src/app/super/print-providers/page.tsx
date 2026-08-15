@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useT } from "@/lib/i18n";
+import { useCatalogText } from "@/lib/catalog-i18n";
 
 type Response = Awaited<ReturnType<typeof api.superListPrintProviders>>;
 type Provider = Response["providers"][number];
@@ -102,6 +103,7 @@ function ProviderRow({
   busy: boolean;
   onToggle: () => void;
 }) {
+  const ct = useCatalogText();
   const t = useT();
   const isSelfPrint = p.stage === "self_print";
   const stageBadge = (() => {
@@ -133,7 +135,9 @@ function ProviderRow({
             </span>
             <span className="text-xs text-ink-tertiary">· {p.market}</span>
           </div>
-          <div className="text-xs text-ink-secondary mb-1">{p.tagline}</div>
+          <div className="text-xs text-ink-secondary mb-1">
+            {ct("Provider", p.key, "Tagline", p.tagline)}
+          </div>
           <div className="text-xs text-ink-tertiary">
             Kategorien:{" "}
             {p.categories.length > 0

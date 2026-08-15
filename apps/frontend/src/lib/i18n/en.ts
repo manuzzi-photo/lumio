@@ -900,6 +900,46 @@ export const en: Dict = {
     notifEventStorageWarningLabel: "Storage almost full",
     notifEventStorageWarningDesc:
       "Your used storage is approaching your plan's limit (from 90%).",
+      catalogPlanTrialDesc: "Full access for 14 days to try things out",
+    catalogPlanStartDesc: "For getting started and occasional shoots",
+    catalogPlanSoloDesc: "For hobbyist and part-time photographers",
+    catalogPlanStudioDesc: "For full-time photographers",
+    catalogPlanProDesc: "For studios with staff and several brands",
+    catalogFlagPrintShopName: "Print shop",
+    catalogFlagPrintShopDesc:
+      "Customers can order prints straight from a gallery (German lab integration).",
+    catalogFlagLightroomPluginName: "Lightroom plugin",
+    catalogFlagLightroomPluginDesc:
+      "Upload straight from Adobe Lightroom Classic via API token. The plugin is distributed separately.",
+    catalogFlagAdvancedAnalyticsName: "Advanced analytics",
+    catalogFlagAdvancedAnalyticsDesc:
+      "Selection heatmaps, conversion tracking, customer engagement stats.",
+    catalogFlagAiTaggingName: "AI auto-tagging",
+    catalogFlagAiTaggingDesc: "Automatic tagging via CLIP/ImageBind. Uses a GPU worker.",
+    catalogFlagVideoStreaming4kName: "4K video streaming",
+    catalogFlagVideoStreaming4kDesc:
+      "HLS renditions up to 2160p instead of 1080p only. Increases storage and bandwidth needs.",
+    catalogProviderManualSelfPrintLabel: "Print it yourself",
+    catalogProviderManualSelfPrintTagline:
+      "You print yourself (your own printer or a local lab). We only deliver the order and the files.",
+    catalogProviderProdigiTagline:
+      "Self-service print network with a fine-art focus and EU production.",
+    catalogProviderGelatoTagline:
+      "Global print network with dense EU production (Germany among others) — short delivery routes. Free account, API key via the API portal.",
+    catalogProviderWhitewallTagline:
+      "Premium print lab with its own facility in Cologne. ProAPI for partners.",
+    catalogProviderSaalDigitalTagline:
+      "Premium lab for photo books and prints. API access for partners only.",
+    catalogProviderCeweProTagline:
+      "Widest product range including photo books and album printing.",
+    catalogProviderProfilabTagline: "Editorial and gallery quality prints from Germany.",
+    catalogProviderMyposterTagline: "Fast shipping, broad product range. API available.",
+    catalogProviderPixumTagline: "More consumer-oriented, good photo prints and wall art.",
+    catalogProviderPosterloungeTagline: "Poster and wall-art specialist with a large print range.",
+    catalogProviderAlbelliTagline: "Photo book specialist with a European presence (NL/DE/UK).",
+    catalogProviderLalalabTagline: "Mobile-first photo prints. Belgian/French.",
+    catalogProviderMpixTagline: "US pro lab. In case Lumio ever expands into the US market.",
+    catalogProviderBonusprintTagline: "UK photo prints and photo books.",
   },
 
   annotation: {
