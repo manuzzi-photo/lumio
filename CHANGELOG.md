@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Added
+
+- **Die Oberfläche gibt es jetzt auf Italienisch.** Vollständig übersetzt, im Sprachwähler unter „Italiano" auswählbar — Studio, Kundengalerien und die Administrationsoberfläche. Beigesteuert von [@manuzzi](https://github.com/manuzzi). Datum, Zahlen und Preise folgen ebenfalls dem italienischen Format. Die E-Mails sind davon noch nicht erfasst, sie kommen weiterhin auf Deutsch oder Englisch.
+
+**🇬🇧 English**
+
+- **The interface is now available in Italian.** Fully translated and selectable as "Italiano" in the language picker — studio, customer galleries and the administration interface. Contributed by [@manuzzi](https://github.com/manuzzi). Dates, numbers and prices follow Italian formatting too. Email is not covered yet and still arrives in German or English.
+
 ## [0.63.0] - 2026-08-14
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist die API, also nur der Hauptserver.
