@@ -19,6 +19,7 @@ import {
   applyStudioAccent,
   applyStudioTheme,
 } from "@/lib/studio-appearance";
+import { useErrorText } from "@/lib/error-i18n";
 
 // Logos: gängige Web-Bildformate inkl. Vektor (SVG). Der Worker
 // konvertiert Bitmaps zu WebP, SVG bleibt unverändert.
@@ -328,6 +329,7 @@ function MailLayoutControls({
 
 
 export default function AppearancePage() {
+  const errText = useErrorText();
   const t = useT();
   const [appearance, setAppearance] = useState<Appearance | null>(null);
   const [loading, setLoading] = useState(true);
@@ -370,7 +372,7 @@ export default function AppearancePage() {
         setLoginOverlay(appearance.loginOverlayColor);
         setLoginOverlayBlur(appearance.loginOverlayBlur ?? 0);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Konnte nicht laden");
+        setError(errText(e, "Konnte nicht laden"));
       } finally {
         setLoading(false);
       }
@@ -443,7 +445,7 @@ export default function AppearancePage() {
         setAppearance(current);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload fehlgeschlagen");
+      setError(errText(e, "Upload fehlgeschlagen"));
     } finally {
       setUploadingKind(null);
     }
@@ -456,7 +458,7 @@ export default function AppearancePage() {
       const { appearance } = await api.deleteAppearanceAsset(kind);
       setAppearance(appearance);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Konnte nicht entfernen");
+      setError(errText(e, "Konnte nicht entfernen"));
     } finally {
       setUploadingKind(null);
     }
@@ -490,7 +492,7 @@ export default function AppearancePage() {
       applyStudioAccent(appearance.studioAccentColor);
       applyStudioTheme(appearance.studioTheme);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Speichern fehlgeschlagen");
+      setError(errText(e, "Speichern fehlgeschlagen"));
     } finally {
       setSaving(false);
     }

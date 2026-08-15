@@ -18,6 +18,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useFormat, useT} from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type StorageResponse = Awaited<ReturnType<typeof api.superTenantsStorage>>;
 
@@ -30,6 +31,7 @@ export default function SuperStoragePage() {
 }
 
 function StorageContent() {
+  const errText = useErrorText();
   const t = useT();
   const fmt = useFormat();
   const [data, setData] = useState<StorageResponse | null>(null);
@@ -40,7 +42,7 @@ function StorageContent() {
       .superTenantsStorage()
       .then(setData)
       .catch((err) =>
-        setError(err instanceof Error ? err.message : "Fehler beim Laden")
+        setError(errText(err, "Fehler beim Laden"))
       );
   }, []);
 

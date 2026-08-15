@@ -12,6 +12,7 @@ import { InviteOwnerDialog } from "@/components/super/InviteOwnerDialog";
 import { useFormat, useT} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
 import { useCatalogText } from "@/lib/catalog-i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function SuperTenantDetailPage() {
   return (
@@ -22,6 +23,7 @@ export default function SuperTenantDetailPage() {
 }
 
 function TenantDetail() {
+  const errText = useErrorText();
   const t = useT();
   const fmt = useFormat();
   const router = useRouter();
@@ -119,9 +121,7 @@ function TenantDetail() {
       router.push("/super/tenants");
     } catch (err) {
       const msg =
-        err instanceof Error
-          ? err.message
-          : t("super.tdDeleteError");
+        errText(err, t("super.tdDeleteError"));
       setDeleteDialog({ ...deleteDialog, pending: false, error: msg });
     }
   }
@@ -153,7 +153,7 @@ function TenantDetail() {
       // Erfolg → zurück zur Tenant-Liste
       router.push("/super/tenants");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("super.tdDeleteErrorShort");
+      const msg = errText(err, t("super.tdDeleteErrorShort"));
       setDeleteDialog({
         ...deleteDialog,
         pending: false,
@@ -171,7 +171,7 @@ function TenantDetail() {
       setExportResult(res);
       setExportConfirm(false);
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : "Fehler");
+      setExportError(errText(err, "Fehler"));
     } finally {
       setExportPending(false);
     }
@@ -195,7 +195,7 @@ function TenantDetail() {
       setScheduleDialog(false);
       await load();
     } catch (err) {
-      setScheduleError(err instanceof Error ? err.message : "Fehler");
+      setScheduleError(errText(err, "Fehler"));
     } finally {
       setSchedulePending(false);
     }
@@ -209,7 +209,7 @@ function TenantDetail() {
       await api.superCancelScheduledArchive(tenant.id);
       await load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Fehler");
+      alert(errText(err, "Fehler"));
     } finally {
       setActionBusy(false);
     }
@@ -999,6 +999,7 @@ function EditMetaForm({
   onSaved: () => Promise<void> | void;
   onCancel: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [slug, setSlug] = useState(tenant.slug);
   const [name, setName] = useState(tenant.name);
@@ -1035,7 +1036,7 @@ function EditMetaForm({
       });
       await onSaved();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Fehler";
+      const msg = errText(err, "Fehler");
       setError(
         msg.includes("slug_taken")
           ? "Dieser Slug ist schon vergeben."
@@ -1152,6 +1153,7 @@ function BillingBlock({
   tenantId: string;
   onChanged: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const fmt = useFormat();
   const plan = subscription.plan;
@@ -1189,7 +1191,7 @@ function BillingBlock({
       await api.superDeleteSubscription(tenantId);
       onChanged();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Fehler beim Entfernen");
+      alert(errText(err, "Fehler beim Entfernen"));
     } finally {
       setRemoving(false);
     }
@@ -1534,6 +1536,7 @@ function AssignPlanDialog({
   onClose: () => void;
   onAssigned: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const initialPlan = ASSIGNABLE_PLANS.some((p) => p.slug === currentPlanSlug)
     ? (currentPlanSlug as "start" | "solo" | "studio" | "pro")
@@ -1564,7 +1567,7 @@ function AssignPlanDialog({
       });
       onAssigned();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     } finally {
       setSubmitting(false);
     }
@@ -1692,6 +1695,7 @@ function ExtendTrialDialog({
   onClose: () => void;
   onExtended: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const fmt = useFormat();
   const [days, setDays] = useState(7);
@@ -1718,7 +1722,7 @@ function ExtendTrialDialog({
       );
       onExtended();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     } finally {
       setSubmitting(false);
     }
@@ -1868,6 +1872,7 @@ function daysUntil(iso: string): string {
 // Edits — eine Note ist ein Zeitpunkts-Snapshot ("hat heute angerufen").
 // Wenn der User nachjustieren will, schreibt er eine neue Note.
 function NotesSection({ tenantId }: { tenantId: string }) {
+  const errText = useErrorText();
   const t = useT();
   const fmt = useFormat();
   type Note = Awaited<
@@ -1899,7 +1904,7 @@ function NotesSection({ tenantId }: { tenantId: string }) {
       setNotes((curr) => [res.note, ...(curr ?? [])]);
       setBody("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     } finally {
       setSubmitting(false);
     }
@@ -1921,7 +1926,7 @@ function NotesSection({ tenantId }: { tenantId: string }) {
       setNotes((curr) => (curr ?? []).filter((n) => n.id !== noteId));
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : t("super.tdDeleteErrorShort")
+        errText(err, t("super.tdDeleteErrorShort"))
       );
     }
   }
@@ -2015,6 +2020,7 @@ function PasswordResetButton({
   tenantId: string;
   userId: string;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [state, setState] = useState<
     | { kind: "idle" }
@@ -2044,7 +2050,7 @@ function PasswordResetButton({
     } catch (err) {
       setState({
         kind: "error",
-        message: err instanceof Error ? err.message : "Fehler",
+        message: errText(err, "Fehler"),
       });
     }
   }
@@ -2173,6 +2179,7 @@ function ImpersonateDialog({
   studioName: string;
   onClose: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -2195,7 +2202,7 @@ function ImpersonateDialog({
       window.open(res.redirectUrl, "_blank", "noopener");
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     } finally {
       setSubmitting(false);
     }
@@ -2274,6 +2281,7 @@ function ImpersonateDialog({
 // Wenn Toggle wieder auf Default zurueck-gestellt wird, loescht das
 // Backend den Override automatisch (Sauberkeit).
 function FeatureFlagsSection({ tenantId }: { tenantId: string }) {
+  const errText = useErrorText();
   const t = useT();
   type Flag = Awaited<
     ReturnType<typeof api.superGetTenantFeatureFlags>
@@ -2288,7 +2296,7 @@ function FeatureFlagsSection({ tenantId }: { tenantId: string }) {
       const r = await api.superGetTenantFeatureFlags(tenantId);
       setFlags(r.flags);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     }
   }
   useEffect(() => {
@@ -2307,7 +2315,7 @@ function FeatureFlagsSection({ tenantId }: { tenantId: string }) {
       );
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     } finally {
       setBusyKey(null);
     }

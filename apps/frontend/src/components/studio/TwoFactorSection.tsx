@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, type ApiUser } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type State =
   | { kind: "loading" }
@@ -13,6 +14,7 @@ type State =
   | { kind: "disable" };
 
 export function TwoFactorSection() {
+  const errText = useErrorText();
   const t = useT();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [code, setCode] = useState("");
@@ -55,7 +57,7 @@ export function TwoFactorSection() {
       });
       setCode("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "error");
+      setError(errText(err, "error"));
     } finally {
       setPending(false);
     }
@@ -69,7 +71,7 @@ export function TwoFactorSection() {
       setState({ kind: "backupCodes", codes: res.backupCodes });
       setCode("");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "error";
+      const msg = errText(err, "error");
       setError(
         msg.includes("invalid_token")
           ? t("login.error.invalidTotp")
@@ -88,7 +90,7 @@ export function TwoFactorSection() {
       setCode("");
       await refreshFromMe();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "error";
+      const msg = errText(err, "error");
       setError(
         msg.includes("invalid_token")
           ? t("login.error.invalidTotp")

@@ -29,6 +29,16 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fehlermeldungen aus dem Server erschienen immer auf Deutsch — etwa „Aktuelles Passwort ist nicht korrekt." oder „Du kannst dich nicht selbst löschen.". Betroffen waren rund 160 Stellen quer durch Studio, Kundengalerien und Administrationsoberfläche. Sie erscheinen jetzt in der eingestellten Sprache.
+- Eine Prüfung im Build meldet ab jetzt, wenn eine neue Fehlermeldung ohne Übersetzung ergänzt wird.
+
+**🇬🇧 English**
+
+- Error messages from the server always appeared in German — for example "Your current password is not correct." or "You cannot delete yourself." This affected around 160 places across the studio, customer galleries and the administration interface. They now appear in the selected language.
+- A build check now reports when a new error message is added without a translation.
+
 ## [0.64.2] - 2026-08-14
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.

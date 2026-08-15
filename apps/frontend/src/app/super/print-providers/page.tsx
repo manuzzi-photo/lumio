@@ -19,6 +19,7 @@ import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useT } from "@/lib/i18n";
 import { useCatalogText } from "@/lib/catalog-i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Response = Awaited<ReturnType<typeof api.superListPrintProviders>>;
 type Provider = Response["providers"][number];
@@ -32,6 +33,7 @@ export default function SuperPrintProvidersPage() {
 }
 
 function Content() {
+  const errText = useErrorText();
   const t = useT();
   const [data, setData] = useState<Response | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -42,7 +44,7 @@ function Content() {
       const r = await api.superListPrintProviders();
       setData(r);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     }
   }
 
@@ -57,7 +59,7 @@ function Content() {
       await api.superTogglePrintProvider(p.key, !p.enabled);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     } finally {
       setBusyKey(null);
     }

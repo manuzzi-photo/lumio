@@ -19,8 +19,10 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button, Input } from "@/components/ui";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function ForgotPasswordPage() {
+  const errText = useErrorText();
   const t = useT();
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -38,9 +40,7 @@ export default function ForgotPasswordPage() {
       // Rate-Limit-Fehler oder Netzfehler — wir zeigen die Meldung,
       // aber kein Submit-Sperrung; vielleicht nach 60s erneut probieren.
       setError(
-        err instanceof Error
-          ? err.message
-          : t("forgotPassword.error")
+        errText(err, t("forgotPassword.error"))
       );
     } finally {
       setPending(false);

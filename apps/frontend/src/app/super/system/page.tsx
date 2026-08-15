@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useFormat, useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type SystemResponse = Awaited<ReturnType<typeof api.superSystemStatus>>;
 
@@ -31,6 +32,7 @@ export default function SuperSystemPage() {
 }
 
 function SystemContent() {
+  const errText = useErrorText();
   const t = useT();
   const [data, setData] = useState<SystemResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +45,7 @@ function SystemContent() {
         if (!cancelled) setData(r);
       } catch (err) {
         if (!cancelled)
-          setError(err instanceof Error ? err.message : "Fehler");
+          setError(errText(err, "Fehler"));
       }
     }
     void load();

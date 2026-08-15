@@ -208,6 +208,53 @@ report(
   missingCatalogue
 );
 
+// --- 5. API error codes ----------------------------------------------------
+// Error responses carry a stable code plus a German message, and the frontend
+// translates by code (lib/error-i18n.ts). A code with no key falls back to
+// that German message — readable, but German in every language.
+const missingErrorCodes = [];
+try {
+  const apiFiles = [];
+  const walkApi = (dir) => {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) walkApi(full);
+      else if (/\.ts$/.test(entry) && !/\.test\.ts$/.test(entry))
+        apiFiles.push(full);
+    }
+  };
+  walkApi(API_SRC);
+  const seen = new Set();
+  for (const file of apiFiles) {
+    const text = readFileSync(file, "utf8");
+    for (const m of text.matchAll(
+      /\.send\(\s*\{[^}]{0,400}?error:\s*["'](\w+)["'][^}]{0,400}?message:\s*["']([^"']{4,})["']/gs
+    )) {
+      const [, code, message] = m;
+      // Only codes that actually ship a German sentence need a translation.
+      if (!/[äöüßÄÖÜ]|\b(nicht|kein|keine|Bitte|wurde|ist|hat|Du|dich)\b/.test(message))
+        continue;
+      if (seen.has(code)) continue;
+      seen.add(code);
+      const camelCode = code
+        .split(/[_-]/)
+        .filter(Boolean)
+        .map((p, i) => (i === 0 ? p : p[0].toUpperCase() + p.slice(1)))
+        .join("");
+      if (!enKeys.has(`apiError.${camelCode}`)) {
+        missingErrorCodes.push(`apiError.${camelCode}  (error code "${code}")`);
+      }
+    }
+  }
+} catch {
+  // API not available next to the frontend — skip.
+}
+
+report(
+  "API error codes with a German message and no dictionary key",
+  missingErrorCodes
+);
+
 if (failures === 0) {
   console.log(
     `i18n check passed — ${enKeys.size} keys in all three dictionaries, ` +

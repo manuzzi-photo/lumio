@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function SuperDashboardPage() {
   return (
@@ -120,6 +121,7 @@ function PendingDeletionRow({
   tenant: StatsResponse["pendingDeletions"][number];
   onChange: () => void;
 }) {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [confirming, setConfirming] = useState(false);
@@ -161,7 +163,7 @@ function PendingDeletionRow({
       await api.superCancelSelfDeletion(tenant.id);
       onChange();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setWorking(false);
     }

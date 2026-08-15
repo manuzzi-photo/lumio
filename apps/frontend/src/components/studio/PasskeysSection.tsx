@@ -8,6 +8,7 @@ import {
 import { api, type WebauthnCredential } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
+import { useErrorText } from "@/lib/error-i18n";
 
 /**
  * Studio-Settings-Sektion zum Verwalten von Passkeys.
@@ -24,6 +25,7 @@ import type { Formatters } from "@/lib/i18n/format";
  * konfiguriert hat, kann auch ohne TOTP-App ein 2FA-Login machen.
  */
 export function PasskeysSection() {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [credentials, setCredentials] = useState<WebauthnCredential[]>([]);
@@ -82,9 +84,7 @@ export function PasskeysSection() {
       } else {
         console.error("addPasskey failed:", err);
         setError(
-          err instanceof Error
-            ? err.message
-            : t("passkeys.addError")
+          errText(err, t("passkeys.addError"))
         );
       }
     } finally {

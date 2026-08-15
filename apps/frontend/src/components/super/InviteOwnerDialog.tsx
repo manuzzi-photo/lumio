@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface Props {
   tenantId: string;
@@ -22,6 +23,7 @@ export function InviteOwnerDialog({
   onClose,
   onInvited,
 }: Props) {
+  const errText = useErrorText();
   const t = useT();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -43,7 +45,7 @@ export function InviteOwnerDialog({
       });
       setResult({ setupUrl: r.setup.url, mailSent: r.setup.mailSent });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("common.error");
+      const msg = errText(err, t("common.error"));
       setError(
         msg.includes("email_taken")
           ? t("super.invEmailTaken")

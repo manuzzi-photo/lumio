@@ -8,8 +8,10 @@ import { PageHeader } from "@/components/studio/PageHeader";
 import { MarkdownField } from "@/components/studio/MarkdownField";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function BrandingEditorPage() {
+  const errText = useErrorText();
   const t = useT();
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -56,7 +58,7 @@ export default function BrandingEditorPage() {
         router.replace("/login");
         return;
       }
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setLoading(false);
     }
@@ -81,7 +83,7 @@ export default function BrandingEditorPage() {
       });
       setBranding(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setSaving(false);
     }
@@ -129,7 +131,7 @@ export default function BrandingEditorPage() {
       });
       setBranding(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setUploadingKind(null);
     }

@@ -53,6 +53,67 @@ export const en: Dict = {
     breadcrumb: "Breadcrumb",
   },
 
+
+  apiError: {
+    billingDisabled: "Self-service sign-up is not available.",
+    cannotDelete:
+      "Broadcasts that are sending or already sent cannot be deleted.",
+    cannotSelfDelete: "You cannot delete yourself.",
+    cannotSelfDisable: "You cannot deactivate yourself.",
+    captchaFailed:
+      "CAPTCHA check failed. Please reload the page and try again.",
+    customerMismatch: "This session does not belong to this tenant.",
+    emailTaken: "That email address is already in use in this studio.",
+    inUse:
+      "There are orders using this variant. Deactivate it instead.",
+    invalidChallenge: "Please sign in again.",
+    invalidOrExpired: "The link is invalid or has expired.",
+    invalidToken: "That code is not correct.",
+    lastOwner:
+      "This is the tenant's last active owner and cannot be demoted or deactivated.",
+    mailSendFailed:
+      "The confirmation email could not be sent. Please try again.",
+    noArchiveTimestamp:
+      "The tenant is archived but has no archivedAt timestamp (predates the migration).",
+    noDeletedOriginals:
+      "No restorable deleted originals found (possibly outside the 30-day window).",
+    noGalleries: "This tenant has no galleries to export.",
+    noRecipients:
+      "No recipients given. Add addresses to the access first, or enter them here.",
+    noStripeCustomer: "No Stripe link yet. Please subscribe to a plan.",
+    noSubscription: "This tenant has no subscription that could be removed.",
+    noValidFiles: "No valid files in the selection.",
+    notASmartSection:
+      "This section has no auto tag — syncing only works for smart sections.",
+    notActive: "Only active tenants can be pre-archived.",
+    notInvited: "Resending only works for users with status “invited”.",
+    notPendingDeletion: "This tenant is not in the grace period.",
+    notScheduled: "No archiving is scheduled.",
+    onlinePaymentUnavailable: "Online payment is currently unavailable.",
+    ownerOnly: "Only the owner can change the studio name.",
+    passwordWrong: "That password is not correct.",
+    pendingDeletion:
+      "This studio is scheduled for deletion. Changes are blocked.",
+    planNotConfigured: "That plan is unavailable. Please try again later.",
+    providerNotActive: "You have not enabled this provider.",
+    readOnly:
+      "This account is in read-only mode. Subscribe to a plan to make changes again.",
+    sameEmail: "The new address is the same as your current one.",
+    selfPrintImmutable: "Self-print cannot be disabled — it is always available.",
+    sessionMissingMetadata: "This session is not linked to a Lumio tenant.",
+    slugMismatch:
+      "The slug confirmation does not match. Please enter the exact tenant slug.",
+    slugTaken: "That studio name is already taken.",
+    stripeManaged:
+      "This tenant has a Stripe subscription. Change the plan through Stripe.",
+    studioNameMismatch: "The studio name you entered does not match.",
+    tenantInactive: "Invitations are only possible for active tenants.",
+    tenantIsPaying:
+      "This tenant has an active or open subscription. Immediate deletion is only for non-paying tenants.",
+    userNotFound: "User not found, or not active.",
+    wrongCurrentPassword: "Your current password is not correct.",
+  },
+
   nav: {
     studio: "Studio",
     analytics: "Analytics",

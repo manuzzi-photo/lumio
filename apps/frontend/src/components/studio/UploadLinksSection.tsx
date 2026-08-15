@@ -16,6 +16,7 @@ import { api, type UploadLink } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface Props {
   galleryId: string;
@@ -208,6 +209,7 @@ function CreateLinkDialog({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [label, setLabel] = useState("");
   const [password, setPassword] = useState("");
@@ -250,7 +252,7 @@ function CreateLinkDialog({
       });
       onCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error");
+      setError(errText(err, "Error"));
     } finally {
       setBusy(false);
     }

@@ -16,6 +16,7 @@ import { useT } from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button, Input, Textarea, Select } from "@/components/ui";
 import { TagChip } from "@/components/studio/TagPicker";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function StudioPage() {
   const router = useRouter();
@@ -849,6 +850,7 @@ function GalleryCard({
   onTogglePin: () => void;
   onChanged: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -888,7 +890,7 @@ function GalleryCard({
       await api.updateGallery(g.id, { status });
       onChanged();
     } catch (err) {
-      alert(err instanceof Error ? err.message : t("common.error"));
+      alert(errText(err, t("common.error")));
     } finally {
       setBusy(false);
     }
@@ -1164,6 +1166,7 @@ function CreateGalleryDialog({
   onClose: () => void;
   onCreated: (g: Gallery) => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [templates, setTemplates] = useState<GalleryTemplate[]>([]);
   const [templateId, setTemplateId] = useState<string>("");
@@ -1213,7 +1216,7 @@ function CreateGalleryDialog({
       });
       onCreated(gallery);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed");
+      setError(errText(err, "Failed"));
     } finally {
       setPending(false);
     }

@@ -12,6 +12,7 @@ import { GalleryView } from "@/components/gallery/GalleryView";
 import { UnlockForm } from "@/components/gallery/UnlockForm";
 import { GalleryShell } from "@/components/gallery/GalleryShell";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 // Next.js 16 verlangt einen <Suspense>-Boundary um useSearchParams() —
 // sonst kann die Page nicht prerendert werden.
@@ -31,6 +32,7 @@ export default function PublicGalleryPage() {
 }
 
 function PublicGalleryInner() {
+  const errText = useErrorText();
   const params = useParams<{ slug: string }>();
   const search = useSearchParams();
   const slug = params.slug;
@@ -116,7 +118,7 @@ function PublicGalleryInner() {
             // gültigen Link → eigene Hinweis-Seite. Link mit eigenem
             // Passwort → Passwortformular. Sonst (ungültiges/fehlendes
             // Token bei öffentlicher Galerie) anonym weiter.
-            const msg = e instanceof Error ? e.message : "";
+            const msg = errText(e, "");
             if (msg.includes("link_expired")) {
               if (!cancelled) setAccessState("expired");
             } else if (msg.includes("access_required")) {
@@ -139,7 +141,7 @@ function PublicGalleryInner() {
           // offline (gesperrt, archiviert oder Loeschung beantragt).
           // Bewusst die gleiche neutrale Meldung wie bei not_found —
           // Besucher muessen nicht erfahren, warum das Studio weg ist.
-          const msg = err instanceof Error ? err.message : "";
+          const msg = errText(err, "");
           const neutral =
             msg.includes("not_found") ||
             msg.includes("tenant_unavailable") ||
@@ -147,9 +149,7 @@ function PublicGalleryInner() {
           setError(
             neutral
               ? t("gallery.notAvailableDesc")
-              : err instanceof Error
-              ? err.message
-              : t("gallery.loadError")
+              : errText(err, t("gallery.loadError"))
           );
         }
       } finally {

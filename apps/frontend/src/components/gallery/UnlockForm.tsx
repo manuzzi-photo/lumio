@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api, type PublicGalleryMeta } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export function UnlockForm({
   slug,
@@ -19,6 +20,7 @@ export function UnlockForm({
   requirePassword?: boolean;
   onUnlocked: () => Promise<void> | void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
@@ -37,7 +39,7 @@ export function UnlockForm({
       });
       await onUnlocked();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("gallery.requestFailed");
+      const msg = errText(err, t("gallery.requestFailed"));
       setError(
         msg.includes("invalid_password")
           ? t("gallery.passwordIncorrect")

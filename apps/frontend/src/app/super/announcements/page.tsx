@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useFormat, useT} from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Announcement = Awaited<
   ReturnType<typeof api.superListAnnouncements>
@@ -33,6 +34,7 @@ export default function SuperAnnouncementsPage() {
 }
 
 function AnnouncementsContent() {
+  const errText = useErrorText();
   const t = useT();
   const [rows, setRows] = useState<Announcement[] | null>(null);
   const [editing, setEditing] = useState<
@@ -50,7 +52,7 @@ function AnnouncementsContent() {
       const r = await api.superListAnnouncements();
       setRows(r.announcements);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     }
   }
 
@@ -71,7 +73,7 @@ function AnnouncementsContent() {
       await api.superDeleteAnnouncement(id);
       void load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     }
   }
 
@@ -231,6 +233,7 @@ function AnnouncementDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
@@ -267,7 +270,7 @@ function AnnouncementDialog({
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     } finally {
       setSubmitting(false);
     }

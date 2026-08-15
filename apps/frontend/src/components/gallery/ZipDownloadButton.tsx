@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type ZipStatus } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Kind = "all" | "selection" | "picked";
 type Variant = "original" | "web";
@@ -62,6 +63,7 @@ export function ZipDownloadButton({
   disabled = false,
   emphasis = "ghost",
 }: Props) {
+  const errText = useErrorText();
   const t = useT();
   const [zipId, setZipId] = useState<string | null>(null);
   const [status, setStatus] = useState<ZipStatus | null>(null);
@@ -87,7 +89,7 @@ export function ZipDownloadButton({
       setStatus(res.status);
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : t("gallery.requestFailed");
+        errText(err, t("gallery.requestFailed"));
       setError(
         msg.includes("no_selection") || msg.includes("no_valid_files")
           ? t("gallery.downloadEmpty")

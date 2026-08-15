@@ -18,6 +18,7 @@ import { api, type WebhookSummary, type WebhookDelivery } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function WebhooksPage() {
   const t = useT();
@@ -350,6 +351,7 @@ function EditWebhookForm({
   onSaved: () => Promise<void> | void;
   onCancel: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [label, setLabel] = useState(webhook.label);
   const [url, setUrl] = useState(webhook.url);
@@ -368,7 +370,7 @@ function EditWebhookForm({
       });
       await onSaved();
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("common.error"));
+      setError(errText(e, t("common.error")));
     } finally {
       setPending(false);
     }
@@ -410,6 +412,7 @@ function CreateWebhookDialog({
   onClose: () => void;
   onCreated: () => Promise<void> | void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
@@ -426,7 +429,7 @@ function CreateWebhookDialog({
       setCreatedSecret(res.secret);
       await onCreated();
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("common.error"));
+      setError(errText(e, t("common.error")));
     } finally {
       setPending(false);
     }

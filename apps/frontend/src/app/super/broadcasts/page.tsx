@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useFormat, useT} from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Response = Awaited<ReturnType<typeof api.superListBroadcasts>>;
 
@@ -25,6 +26,7 @@ export default function SuperBroadcastsPage() {
 }
 
 function BroadcastsContent() {
+  const errText = useErrorText();
   const t = useT();
   const router = useRouter();
   const [data, setData] = useState<Response | null>(null);
@@ -39,7 +41,7 @@ function BroadcastsContent() {
         if (!cancelled) setData(r);
       } catch (err) {
         if (!cancelled)
-          setError(err instanceof Error ? err.message : "Fehler");
+          setError(errText(err, "Fehler"));
       }
     }
     void load();

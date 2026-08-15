@@ -24,6 +24,7 @@ import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useFormat, useT} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
+import { useErrorText } from "@/lib/error-i18n";
 
 type MrrResponse = Awaited<ReturnType<typeof api.superMrr>>;
 
@@ -36,6 +37,7 @@ export default function SuperMrrPage() {
 }
 
 function MrrContent() {
+  const errText = useErrorText();
   const t = useT();
   const fmt = useFormat();
   const [data, setData] = useState<MrrResponse | null>(null);
@@ -46,7 +48,7 @@ function MrrContent() {
       .superMrr()
       .then(setData)
       .catch((err) =>
-        setError(err instanceof Error ? err.message : "Fehler beim Laden")
+        setError(errText(err, "Fehler beim Laden"))
       );
   }, []);
 

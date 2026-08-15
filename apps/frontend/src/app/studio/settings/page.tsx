@@ -11,6 +11,7 @@ import { MotionSection } from "@/components/studio/MotionSection";
 import { NotificationSettings } from "@/components/studio/NotificationSettings";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { useT, useLocale } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 /** Kleine Status-Zeile mit farbigem Punkt + Label + Detail-Text.
  *  Für Custom-Domain DNS- und TLS-Status. */
@@ -48,6 +49,7 @@ function StatusRow({
 }
 
 export default function StudioSettingsPage() {
+  const errText = useErrorText();
   const router = useRouter();
   const t = useT();
   const { locale, setLocale } = useLocale();
@@ -142,7 +144,7 @@ export default function StudioSettingsPage() {
         router.replace("/login");
         return;
       }
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setLoading(false);
     }
@@ -205,7 +207,7 @@ export default function StudioSettingsPage() {
       setDisplayNameSaved(true);
       setTimeout(() => setDisplayNameSaved(false), 2500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setDisplayNameSaving(false);
     }
@@ -231,9 +233,7 @@ export default function StudioSettingsPage() {
       setSlug(res.tenant.slug);
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : t("settings.slugChangeError")
+        errText(err, t("settings.slugChangeError"))
       );
       setSlugSaving(false);
     }
@@ -248,7 +248,7 @@ export default function StudioSettingsPage() {
       });
       setSettings(res.tenant);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setTextSaving(false);
     }
@@ -269,7 +269,7 @@ export default function StudioSettingsPage() {
         setCustomDomainStatus(null);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("common.error");
+      const msg = errText(err, t("common.error"));
       setError(
         msg.includes("domain_taken")
           ? t("settings.domainInUse")
@@ -311,7 +311,7 @@ export default function StudioSettingsPage() {
           : ""
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("common.error");
+      const msg = errText(err, t("common.error"));
       setError(
         msg.includes("exceeds_hard_cap")
           ? t("studio.uploadLimit.errorHardCap", {
@@ -341,7 +341,7 @@ export default function StudioSettingsPage() {
           : ""
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("common.error");
+      const msg = errText(err, t("common.error"));
       setError(
         msg.includes("exceeds_hard_cap")
           ? t("studio.zipPart.errorHardCap", {
@@ -373,7 +373,7 @@ export default function StudioSettingsPage() {
       });
       setSettings(res.tenant);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setKindsSaving(false);
     }
@@ -408,7 +408,7 @@ export default function StudioSettingsPage() {
       await api.completeWatermarkImageUpload(init.key);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setImageSaving(false);
     }

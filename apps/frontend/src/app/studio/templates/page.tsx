@@ -7,6 +7,7 @@ import { api, type GalleryTemplate } from "@/lib/api";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function TemplatesPage() {
   const t = useT();
@@ -150,6 +151,7 @@ function CreateTemplateDialog({
   onClose: () => void;
   onCreated: (t: GalleryTemplate) => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [name, setName] = useState("");
   const [pending, setPending] = useState(false);
@@ -163,7 +165,7 @@ function CreateTemplateDialog({
       const { template } = await api.createTemplate({ name });
       onCreated(template);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setPending(false);
     }

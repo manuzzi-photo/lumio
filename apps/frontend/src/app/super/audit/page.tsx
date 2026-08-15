@@ -26,6 +26,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useFormat, useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type AuditResponse = Awaited<ReturnType<typeof api.superAuditLog>>;
 type AuditRow = AuditResponse["events"][number];
@@ -39,6 +40,7 @@ export default function SuperAuditPage() {
 }
 
 function AuditContent() {
+  const errText = useErrorText();
   const t = useT();
   const [actorType, setActorType] = useState<
     "" | "user" | "access" | "system" | "super_admin"
@@ -92,7 +94,7 @@ function AuditContent() {
       setCursor(res.nextCursor);
       setHasMore(res.nextCursor !== null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler beim Laden");
+      setError(errText(err, "Fehler beim Laden"));
     } finally {
       setLoading(false);
     }

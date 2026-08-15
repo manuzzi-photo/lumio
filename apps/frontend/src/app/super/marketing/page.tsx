@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Config = Awaited<ReturnType<typeof api.superGetMarketingConfig>>;
 
@@ -23,6 +24,7 @@ export default function SuperMarketingPage() {
 }
 
 function MarketingContent() {
+  const errText = useErrorText();
   const t = useT();
   const [data, setData] = useState<Config | null>(null);
   const [saving, setSaving] = useState(false);
@@ -44,7 +46,7 @@ function MarketingContent() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setSaving(false);
     }

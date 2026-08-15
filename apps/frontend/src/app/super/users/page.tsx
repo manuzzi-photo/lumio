@@ -9,6 +9,7 @@ import {
 } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function SuperUsersPage() {
   return (
@@ -289,6 +290,7 @@ function EmailUserDialog({
   user: SuperUserListItem;
   onClose: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -307,7 +309,7 @@ function EmailUserDialog({
       });
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Senden fehlgeschlagen");
+      setError(errText(err, "Senden fehlgeschlagen"));
     } finally {
       setBusy(false);
     }
@@ -410,6 +412,7 @@ function AnnouncementUserDialog({
   user: SuperUserListItem;
   onClose: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -438,7 +441,7 @@ function AnnouncementUserDialog({
       });
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehlgeschlagen");
+      setError(errText(err, "Fehlgeschlagen"));
     } finally {
       setBusy(false);
     }
@@ -639,6 +642,7 @@ function EditUserDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [name, setName] = useState(user.name ?? "");
   const [role, setRole] = useState<"owner" | "admin" | "member">(
@@ -665,7 +669,7 @@ function EditUserDialog({
       });
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
+      setError(errText(err, "Fehler"));
     } finally {
       setBusy(false);
     }
@@ -678,7 +682,7 @@ function EditUserDialog({
       const r = await api.superResetUserPassword(user.id);
       setResetUrl(r.resetUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Reset fehlgeschlagen");
+      setError(errText(err, "Reset fehlgeschlagen"));
     } finally {
       setBusy(false);
     }
@@ -807,6 +811,7 @@ function CreateUserDialog({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [tenants, setTenants] = useState<SuperTenantSummary[]>([]);
   const [tenantId, setTenantId] = useState("");
@@ -846,7 +851,7 @@ function CreateUserDialog({
       });
       onCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Anlegen fehlgeschlagen");
+      setError(errText(err, "Anlegen fehlgeschlagen"));
     } finally {
       setBusy(false);
     }

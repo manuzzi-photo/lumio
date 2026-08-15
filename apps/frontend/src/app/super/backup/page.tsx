@@ -19,6 +19,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useFormat, useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type SystemResponse = Awaited<ReturnType<typeof api.superSystemStatus>>;
 type BackupStatus = SystemResponse["backup"][number];
@@ -37,6 +38,7 @@ export default function SuperBackupPage() {
 }
 
 function BackupContent() {
+  const errText = useErrorText();
   const t = useT();
   const [system, setSystem] = useState<SystemResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,7 @@ function BackupContent() {
         const r = await api.superSystemStatus();
         if (!cancelled) setSystem(r);
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Fehler");
+        if (!cancelled) setError(errText(err, "Fehler"));
       }
     }
     void load();
@@ -222,6 +224,7 @@ function TenantExportPanel({
   tenant: TenantList[number];
   onBack: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [exports, setExports] = useState<ExportList | null>(null);
   const [busy, setBusy] = useState(false);
@@ -248,7 +251,7 @@ function TenantExportPanel({
       );
       await loadExports();
     } catch (err) {
-      const m = err instanceof Error ? err.message : "Fehler";
+      const m = errText(err, "Fehler");
       setMsg(
         m.includes("no_galleries")
           ? "Dieser Tenant hat keine Galerien zum Exportieren."
@@ -269,7 +272,7 @@ function TenantExportPanel({
       );
       await loadExports();
     } catch (err) {
-      const m = err instanceof Error ? err.message : "Fehler";
+      const m = errText(err, "Fehler");
       setMsg(
         m.includes("no_deleted_originals")
           ? t("super.backupNoRestorable")

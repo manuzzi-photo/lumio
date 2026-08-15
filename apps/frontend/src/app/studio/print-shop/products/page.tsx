@@ -19,6 +19,7 @@ import type {
 } from "@/lib/api";
 import { Button, Input, Select, Textarea } from "@/components/ui";
 import type { Formatters } from "@/lib/i18n/format";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Product = Awaited<
   ReturnType<typeof api.listPrintProducts>
@@ -38,6 +39,7 @@ const CATEGORIES = [
 ] as const;
 
 export default function PrintProductsPage() {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [products, setProducts] = useState<Product[] | null>(null);
@@ -65,7 +67,7 @@ export default function PrintProductsPage() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     }
   }, []);
@@ -84,7 +86,7 @@ export default function PrintProductsPage() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     } finally {
       setBusy(false);
@@ -101,7 +103,7 @@ export default function PrintProductsPage() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     } finally {
       setBusy(false);
@@ -318,6 +320,7 @@ function ProductDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [name, setName] = useState(existing?.name ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
@@ -350,7 +353,7 @@ function ProductDialog({
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setSaving(false);
     }
@@ -429,6 +432,7 @@ function VariantDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [name, setName] = useState(existing?.name ?? "");
   const [widthMm, setWidthMm] = useState(String(existing?.widthMm ?? ""));
@@ -483,7 +487,7 @@ function VariantDialog({
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setSaving(false);
     }

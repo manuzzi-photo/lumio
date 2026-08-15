@@ -16,6 +16,7 @@ import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { Button, Input, Select } from "@/components/ui";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Config = Awaited<ReturnType<typeof api.getPrintShopConfig>>["config"];
 type Connect = Awaited<
@@ -38,6 +39,7 @@ export default function PrintShopSettingsPage() {
 }
 
 function SettingsInner() {
+  const errText = useErrorText();
   const t = useT();
   const params = useSearchParams();
   const [config, setConfig] = useState<Config | null>(null);
@@ -55,7 +57,7 @@ function SettingsInner() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     }
   }, []);
@@ -89,7 +91,7 @@ function SettingsInner() {
       } catch (err) {
         setMessage({
           kind: "danger",
-          text: err instanceof Error ? err.message : t("printSettings.syncFailed"),
+          text: errText(err, t("printSettings.syncFailed")),
         });
       }
     })();
@@ -105,7 +107,7 @@ function SettingsInner() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("printSettings.saveFailed"),
+        text: errText(err, t("printSettings.saveFailed")),
       });
     } finally {
       setSaving(false);
@@ -121,7 +123,7 @@ function SettingsInner() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("printSettings.onboardingError"),
+        text: errText(err, t("printSettings.onboardingError")),
       });
       setSaving(false);
     }
@@ -136,7 +138,7 @@ function SettingsInner() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     } finally {
       setSaving(false);
@@ -159,7 +161,7 @@ function SettingsInner() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     } finally {
       setSaving(false);

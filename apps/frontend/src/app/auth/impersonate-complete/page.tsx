@@ -17,6 +17,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 // useSearchParams() erzwingt eine Client-Side-Render-Boundary. Ohne diese
 // Direktive versucht Next.js die Page beim Production-Build statisch
@@ -49,6 +50,7 @@ function LoadingShell() {
 }
 
 function Inner() {
+  const errText = useErrorText();
   const t = useT();
   const params = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -100,9 +102,7 @@ function Inner() {
         window.location.replace("/studio");
       } catch (err) {
         setError(
-          err instanceof Error
-            ? err.message
-            : t("impersonate.errToken")
+          errText(err, t("impersonate.errToken"))
         );
       }
     })();

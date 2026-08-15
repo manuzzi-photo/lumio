@@ -35,6 +35,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface DupFile {
   id: string;
@@ -65,6 +66,7 @@ type Phase = "initial" | "scanning" | "loading" | "ready" | "error";
 const POLL_INTERVAL_MS = 2000;
 
 export function DuplicatesDialog({ galleryId, onClose, onDeleted }: Props) {
+  const errText = useErrorText();
   const t = useT();
   const [phase, setPhase] = useState<Phase>("initial");
   const [scanProgress, setScanProgress] = useState<{
@@ -113,7 +115,7 @@ export function DuplicatesDialog({ galleryId, onClose, onDeleted }: Props) {
       initDefaultSelection(res.groups);
       setPhase("ready");
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : t("dupes.errorLoad"));
+      setErrorMsg(errText(err, t("dupes.errorLoad")));
       setPhase("error");
     }
   }, [galleryId, initDefaultSelection]);
@@ -164,14 +166,14 @@ export function DuplicatesDialog({ galleryId, onClose, onDeleted }: Props) {
             pollTimer = setTimeout(poll, POLL_INTERVAL_MS);
           } catch (err) {
             if (cancelled) return;
-            setErrorMsg(err instanceof Error ? err.message : t("dupes.errorPoll"));
+            setErrorMsg(errText(err, t("dupes.errorPoll")));
             setPhase("error");
           }
         }
         pollTimer = setTimeout(poll, POLL_INTERVAL_MS);
       } catch (err) {
         if (cancelled) return;
-        setErrorMsg(err instanceof Error ? err.message : t("dupes.errorScanStart"));
+        setErrorMsg(errText(err, t("dupes.errorScanStart")));
         setPhase("error");
       }
     }
@@ -213,7 +215,7 @@ export function DuplicatesDialog({ galleryId, onClose, onDeleted }: Props) {
       onDeleted();
       onClose();
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : t("dupes.errorDelete"));
+      setErrorMsg(errText(err, t("dupes.errorDelete")));
       setDeleting(false);
     }
   }

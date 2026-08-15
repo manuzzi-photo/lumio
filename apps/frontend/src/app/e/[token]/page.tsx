@@ -22,6 +22,7 @@ import { useParams } from "next/navigation";
 
 import { api } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface PublicExportItem {
   id: string;
@@ -52,6 +53,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function PublicExportPage() {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const params = useParams<{ token: string }>();
@@ -69,7 +71,7 @@ export default function PublicExportPage() {
       setData(res);
       setError(null);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("common.error");
+      const msg = errText(err, t("common.error"));
       // Backend-Fehler: 404 = not_found, 410 = expired
       const code: "expired" | "not_found" | "generic" = msg.includes("expired")
         ? "expired"

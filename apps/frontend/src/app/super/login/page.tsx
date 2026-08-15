@@ -12,8 +12,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function SuperLoginPage() {
+  const errText = useErrorText();
   const t = useT();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -43,7 +45,7 @@ export default function SuperLoginPage() {
       router.replace("/super");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Login fehlgeschlagen"
+        errText(err, "Login fehlgeschlagen")
       );
     } finally {
       setBusy(false);

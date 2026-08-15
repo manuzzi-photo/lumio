@@ -28,6 +28,7 @@ import { api, type PublicFile } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import { CropFrame, defaultCropForAspect, type Crop } from "@/components/print-shop/CropFrame";
 import type { Formatters } from "@/lib/i18n/format";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Catalog = Awaited<ReturnType<typeof api.getGalleryPrintShopCatalog>>;
 type ProductRow = Catalog["products"][number];
@@ -50,6 +51,7 @@ export default function GalleryPrintShopPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const errText = useErrorText();
   const { slug } = use(params);
   const t = useT();
   const router = useRouter();
@@ -72,7 +74,7 @@ export default function GalleryPrintShopPage({
       } catch (err) {
         // 404 = Print-Shop nicht verfuegbar. 401 = Visitor-Cookie fehlt
         // -> Galerie zuerst freischalten.
-        const msg = err instanceof Error ? err.message : t("printShop.error");
+        const msg = errText(err, t("printShop.error"));
         if (msg.includes("401") || msg.toLowerCase().includes("unauth")) {
           router.replace(`/g/${slug}`);
           return;
@@ -504,6 +506,7 @@ function CartStep({
   onRequirePayment: () => void;
   onConfirmed: (orderNumber: string) => void;
 }) {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [shippingMethodId, setShippingMethodId] = useState<string>(
@@ -616,7 +619,7 @@ function CartStep({
         onConfirmed(r.orderNumber);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("printShop.error"));
+      setError(errText(err, t("printShop.error")));
     } finally {
       setBusy(false);
     }

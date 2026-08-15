@@ -19,6 +19,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type ZipStatus } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type TagRef = { id: string; name: string; color: string };
 type FileLike = { id: string; tags?: TagRef[] };
@@ -44,6 +45,7 @@ export function CustomerTagFilter({
   filteredCount,
   downloadEnabled,
 }: Props) {
+  const errText = useErrorText();
   const t = useT();
   const [showAll, setShowAll] = useState(false);
   const [zipJob, setZipJob] = useState<{
@@ -129,7 +131,7 @@ export function CustomerTagFilter({
         zipId: "",
         status: "failed",
         fileCount: null,
-        error: err instanceof Error ? err.message : t("common.error"),
+        error: errText(err, t("common.error")),
       });
     }
   }

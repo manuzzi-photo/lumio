@@ -12,6 +12,7 @@ import type { ShippingMethodCreateInput } from "@/lib/api";
 import { Button, Input } from "@/components/ui";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Method = Awaited<
   ReturnType<typeof api.listShippingMethods>
@@ -21,6 +22,7 @@ type ProviderMine = Awaited<
 >["providers"][number];
 
 export default function ShippingMethodsPage() {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [methods, setMethods] = useState<Method[] | null>(null);
@@ -42,7 +44,7 @@ export default function ShippingMethodsPage() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     }
   }, []);
@@ -61,7 +63,7 @@ export default function ShippingMethodsPage() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     } finally {
       setBusy(false);
@@ -184,6 +186,7 @@ function ShippingDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [name, setName] = useState(existing?.name ?? "DHL Standard");
   const [providerKey, setProviderKey] = useState(
@@ -238,7 +241,7 @@ function ShippingDialog({
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setSaving(false);
     }

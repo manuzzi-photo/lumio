@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Audience =
   | "all_paid_owners"
@@ -61,6 +62,7 @@ export default function NewBroadcastPage() {
 }
 
 function Editor() {
+  const errText = useErrorText();
   const t = useT();
   const router = useRouter();
   const [subject, setSubject] = useState("");
@@ -88,7 +90,7 @@ function Editor() {
         const r = await api.superPreviewBroadcast(bodyMarkdown);
         setPreviewHtml(r.html);
       } catch (err) {
-        setError(err instanceof Error ? err.message : t("broadcasts.previewError"));
+        setError(errText(err, t("broadcasts.previewError")));
       } finally {
         setPreviewLoading(false);
       }
@@ -132,7 +134,7 @@ function Editor() {
       });
       router.push(`/super/broadcasts/${r.broadcast.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
       setSubmitState("idle");
     }
   }

@@ -21,6 +21,7 @@ import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
+import { useErrorText } from "@/lib/error-i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,7 @@ type Group = {
 };
 
 export default function AutoTagsReviewPage() {
+  const errText = useErrorText();
   const t = useT();
   const params = useParams<{ id: string }>();
   const galleryId = params.id;
@@ -77,7 +79,7 @@ export default function AutoTagsReviewPage() {
       setSelected(sel);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     }
   }, [galleryId]);
 

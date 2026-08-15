@@ -28,6 +28,7 @@ import { useT, useFormat} from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 import { DangerZone } from "@/components/studio/DangerZone";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface AccountData {
   user: {
@@ -60,6 +61,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default function AccountPage() {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const router = useRouter();
@@ -77,7 +79,7 @@ export default function AccountPage() {
         router.replace("/login");
         return;
       }
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setLoading(false);
     }
@@ -185,6 +187,7 @@ function NameSection({
   currentName: string | null;
   onSaved: (newName: string) => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [name, setName] = useState(currentName ?? "");
   const [pending, setPending] = useState(false);
@@ -202,7 +205,7 @@ function NameSection({
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setPending(false);
     }
@@ -250,6 +253,7 @@ function EmailSection({
   pendingChange: AccountData["pendingEmailChange"];
   onChanged: () => Promise<void>;
 }) {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -273,7 +277,7 @@ function EmailSection({
       setOpen(false);
       await onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setPending(false);
     }
@@ -286,7 +290,7 @@ function EmailSection({
       setSubmitted(null);
       await onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     }
   }
 
@@ -385,6 +389,7 @@ function EmailSection({
 }
 
 function PasswordSection() {
+  const errText = useErrorText();
   const t = useT();
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState("");
@@ -417,7 +422,7 @@ function PasswordSection() {
       setConfirm("");
       setTimeout(() => setDone(false), 4000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setPending(false);
     }

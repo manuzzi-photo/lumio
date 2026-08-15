@@ -16,6 +16,7 @@ import { api, type TagSummary } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
+import { useErrorText } from "@/lib/error-i18n";
 
 const DEFAULT_COLORS = [
   "#94a3b8", // slate
@@ -208,6 +209,7 @@ function EditTagRow({
   onSaved: () => Promise<void> | void;
   onCancel: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [name, setName] = useState(tag.name);
   const [color, setColor] = useState(tag.color);
@@ -236,7 +238,7 @@ function EditTagRow({
       await api.updateTag(tag.id, { name, color, parentId });
       await onSaved();
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("common.error"));
+      setError(errText(e, t("common.error")));
     } finally {
       setBusy(false);
     }
@@ -294,6 +296,7 @@ function CreateTagInline({
   onCreated: () => Promise<void> | void;
   onCancel: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [name, setName] = useState("");
   const [color, setColor] = useState(DEFAULT_COLORS[0]);
@@ -308,7 +311,7 @@ function CreateTagInline({
       await api.createTag({ name, color, parentId });
       await onCreated();
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("common.error"));
+      setError(errText(e, t("common.error")));
     } finally {
       setBusy(false);
     }

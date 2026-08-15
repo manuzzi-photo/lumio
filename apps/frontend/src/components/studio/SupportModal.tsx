@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export function SupportModal({
   open,
@@ -25,6 +26,7 @@ export function SupportModal({
   onClose: () => void;
   userEmail: string | null;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [message, setMessage] = useState("");
   const [replyEmail, setReplyEmail] = useState("");
@@ -77,7 +79,7 @@ export function SupportModal({
       setReplyEmail("");
       setShowReply(false);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
+      const msg = errText(e, "");
       // support_unavailable / send_failed heissen beide: die Nachricht ist
       // NICHT rausgegangen. Das muss der Nutzer erfahren, sonst wartet er
       // auf eine Antwort, die nie kommt.

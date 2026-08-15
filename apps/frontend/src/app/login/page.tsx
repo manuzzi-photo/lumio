@@ -45,6 +45,7 @@ import remarkGfm from "remark-gfm";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { Button, Input, Logo } from "@/components/ui";
+import { useErrorText } from "@/lib/error-i18n";
 
 const MODE = process.env.NEXT_PUBLIC_DEPLOYMENT_MODE ?? "single";
 const DOMAIN_BASE = (process.env.NEXT_PUBLIC_DOMAIN_BASE ?? "").toLowerCase();
@@ -92,6 +93,7 @@ type LoginBranding = {
 };
 
 export default function LoginPage() {
+  const errText = useErrorText();
   const router = useRouter();
   const t = useT();
 
@@ -230,7 +232,7 @@ export default function LoginPage() {
         router.push("/studio");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("login.loginFailed"));
+      setError(errText(err, t("login.loginFailed")));
     } finally {
       setPending(false);
     }
@@ -257,7 +259,7 @@ export default function LoginPage() {
         router.push("/studio");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("login.loginFailed"));
+      setError(errText(err, t("login.loginFailed")));
     } finally {
       setPending(false);
     }
@@ -272,7 +274,7 @@ export default function LoginPage() {
       await api.loginTotp(stage.challenge, code);
       router.push("/studio");
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("login.verifyFailed"));
+      setError(errText(err, t("login.verifyFailed")));
     } finally {
       setPending(false);
     }
@@ -294,7 +296,7 @@ export default function LoginPage() {
       if (err instanceof Error && err.name === "NotAllowedError") {
         // User-Cancel ist kein Fehler
       } else {
-        setError(err instanceof Error ? err.message : t("login.passkeyFailed"));
+        setError(errText(err, t("login.passkeyFailed")));
       }
     } finally {
       setPending(false);

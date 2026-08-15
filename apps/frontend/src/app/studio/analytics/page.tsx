@@ -29,6 +29,7 @@ import { api } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import type { Formatters } from "@/lib/i18n/format";
+import { useErrorText } from "@/lib/error-i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,7 @@ const RANGE_PRESETS = [
 ];
 
 export default function AnalyticsPage() {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [data, setData] = useState<Overview | null>(null);
@@ -61,7 +63,7 @@ export default function AnalyticsPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : t("common.error"));
+          setError(errText(err, t("common.error")));
         }
       } finally {
         if (!cancelled) setLoading(false);

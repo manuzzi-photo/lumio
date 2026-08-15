@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/studio/PageHeader";
 import { useT, useFormat} from "@/lib/i18n";
 import { Button, Card } from "@/components/ui";
 import { useCatalogText } from "@/lib/catalog-i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 /**
  * Plan & Speicher — Studio-Seite zum aktuellen Plan, Verbrauch und
@@ -23,6 +24,7 @@ import { useCatalogText } from "@/lib/catalog-i18n";
  * kommt in Sprint 2).
  */
 export default function BillingPage() {
+  const errText = useErrorText();
   const ct = useCatalogText();
   const fmt = useFormat();
   const t = useT();
@@ -70,7 +72,7 @@ export default function BillingPage() {
         setInterval(s.billingInterval);
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : t("common.error"));
+      setErr(errText(e, t("common.error")));
     } finally {
       setLoading(false);
     }
@@ -93,7 +95,7 @@ export default function BillingPage() {
           window.location.reload();
         }
       } catch (e) {
-        setErr(e instanceof Error ? e.message : "Plan-Wechsel fehlgeschlagen");
+        setErr(errText(e, "Plan-Wechsel fehlgeschlagen"));
         setBusyAction(null);
       }
     },
@@ -108,7 +110,7 @@ export default function BillingPage() {
       );
       window.location.href = portalUrl;
     } catch (e) {
-      setErr(e instanceof Error ? e.message : t("billing.portalFailed"));
+      setErr(errText(e, t("billing.portalFailed")));
       setBusyAction(null);
     }
   }, []);
@@ -122,7 +124,7 @@ export default function BillingPage() {
       await api.endTrialNow();
       window.location.reload();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : t("billing.startNowFailed"));
+      setErr(errText(e, t("billing.startNowFailed")));
       setBusyAction(null);
       setShowEndTrial(false);
     }
@@ -239,7 +241,7 @@ export default function BillingPage() {
                   await api.reactivateSubscription();
                   await load();
                 } catch (e) {
-                  setErr(e instanceof Error ? e.message : String(e));
+                  setErr(errText(e, String(e)));
                 } finally {
                   setBusyAction(null);
                 }

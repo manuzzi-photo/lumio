@@ -8,6 +8,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Order = Awaited<
   ReturnType<typeof api.listPrintOrders>
@@ -25,6 +26,7 @@ const STATUS_FILTERS = [
 ];
 
 export default function PrintOrdersPage() {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -50,7 +52,7 @@ export default function PrintOrdersPage() {
         setCursor(r.nextCursor);
         setHasMore(r.nextCursor !== null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : t("common.error"));
+        setError(errText(err, t("common.error")));
       } finally {
         setLoading(false);
       }

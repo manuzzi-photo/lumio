@@ -55,6 +55,67 @@ export const de: Dict = {
     breadcrumb: "Breadcrumb",
   },
 
+
+  apiError: {
+    billingDisabled: "Self-Service-Sign-up nicht verfügbar.",
+    cannotDelete:
+      "Broadcasts im Versand oder bereits versendet können nicht gelöscht werden.",
+    cannotSelfDelete: "Du kannst dich nicht selbst löschen.",
+    cannotSelfDisable: "Du kannst dich nicht selbst deaktivieren.",
+    captchaFailed:
+      "CAPTCHA-Prüfung fehlgeschlagen. Bitte lade die Seite neu und versuche es erneut.",
+    customerMismatch: "Session gehört nicht zu diesem Tenant.",
+    emailTaken: "Diese E-Mail-Adresse ist im Studio bereits vergeben.",
+    inUse:
+      "Es gibt Bestellungen mit dieser Variante. Deaktiviere stattdessen.",
+    invalidChallenge: "Bitte erneut anmelden.",
+    invalidOrExpired: "Token ungültig oder abgelaufen.",
+    invalidToken: "Code nicht korrekt.",
+    lastOwner:
+      "Letzter aktiver Owner des Tenants — kann nicht degradiert/deaktiviert werden.",
+    mailSendFailed:
+      "Die Bestätigungsmail konnte nicht versendet werden. Versuche es bitte erneut.",
+    noArchiveTimestamp:
+      "Tenant ist archiviert, aber ohne archivedAt-Timestamp (vor Migration).",
+    noDeletedOriginals:
+      "Keine wiederherstellbaren gelöschten Originale gefunden (evtl. außerhalb des 30-Tage-Fensters).",
+    noGalleries: "Tenant hat keine Galerien zum Exportieren.",
+    noRecipients:
+      "Keine Empfänger angegeben. Lege erst Adressen am Access an oder gib sie hier ein.",
+    noStripeCustomer: "Noch keine Stripe-Verknüpfung. Bitte Plan abonnieren.",
+    noSubscription: "Tenant hat kein Abo, das entfernt werden könnte.",
+    noValidFiles: "Keine gültigen Files in der Auswahl.",
+    notASmartSection: "Section hat keinen auto-Tag — Sync nur für Smart-Sections.",
+    notActive: "Nur aktive Tenants können vor-archiviert werden.",
+    notInvited: "Resend ist nur für User im Status „invited“ möglich.",
+    notPendingDeletion: "Dieser Tenant ist nicht in der Karenzphase.",
+    notScheduled: "Es ist keine Archivierung geplant.",
+    onlinePaymentUnavailable: "Online-Bezahlung ist aktuell nicht verfügbar.",
+    ownerOnly: "Nur der Owner kann den Studio-Namen ändern.",
+    passwordWrong: "Passwort ist nicht korrekt.",
+    pendingDeletion:
+      "Dieses Studio wurde zur Löschung angemeldet. Schreibvorgänge sind gesperrt.",
+    planNotConfigured: "Plan nicht verfügbar. Bitte später erneut versuchen.",
+    providerNotActive: "Diesen Provider hast du nicht aktiviert.",
+    readOnly:
+      "Dieser Account ist im Read-only-Modus. Bitte abonniere einen Plan, um wieder Änderungen vorzunehmen.",
+    sameEmail: "Die neue Adresse ist identisch mit deiner aktuellen.",
+    selfPrintImmutable:
+      "Self-Print kann nicht deaktiviert werden — ist immer verfügbar.",
+    sessionMissingMetadata: "Session ist nicht mit einem Lumio-Tenant verknüpft.",
+    slugMismatch:
+      "Slug-Bestätigung stimmt nicht. Bitte den exakten Tenant-Slug eingeben.",
+    slugTaken: "Dieser Studio-Name ist bereits vergeben.",
+    stripeManaged:
+      "Tenant hat eine Stripe-Subscription. Plan-Wechsel bitte über Stripe.",
+    studioNameMismatch: "Der eingegebene Studio-Name stimmt nicht.",
+    tenantInactive: "Einladung nur für aktive Tenants möglich.",
+    tenantIsPaying:
+      "Tenant hat eine aktive/offene Subscription. Sofort-Löschen ist nur für nicht-zahlende Tenants.",
+    userNotFound: "User nicht gefunden oder nicht aktiv.",
+    wrongCurrentPassword: "Aktuelles Passwort ist nicht korrekt.",
+  },
+
   nav: {
     studio: "Studio",
     analytics: "Analytics",

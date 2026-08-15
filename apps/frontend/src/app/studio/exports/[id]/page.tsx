@@ -15,6 +15,7 @@ import { api } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface ExportItem {
   id: string;
@@ -40,6 +41,7 @@ interface ExportData {
 }
 
 export default function ExportDetailPage() {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const params = useParams<{ id: string }>();
@@ -56,7 +58,7 @@ export default function ExportDetailPage() {
       const res = await api.getExport(id);
       setData(res.export);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("exportDetail.errorLoad"));
+      setError(errText(err, t("exportDetail.errorLoad")));
     } finally {
       setLoading(false);
     }
@@ -85,7 +87,7 @@ export default function ExportDetailPage() {
       await api.deleteExport(id);
       router.push("/studio/exports");
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("exportDetail.errorDelete"));
+      setError(errText(err, t("exportDetail.errorDelete")));
       setDeleting(false);
       setConfirmDelete(false);
     }

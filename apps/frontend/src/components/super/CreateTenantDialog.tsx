@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useT } from "@/lib/i18n";
 import { api, type SuperTenantCreated } from "@/lib/api";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface Props {
   onClose: () => void;
@@ -16,6 +17,7 @@ interface Props {
  * Mail-Versand fehlschlägt.
  */
 export function CreateTenantDialog({ onClose, onCreated }: Props) {
+  const errText = useErrorText();
   const t = useT();
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
@@ -43,7 +45,7 @@ export function CreateTenantDialog({ onClose, onCreated }: Props) {
       });
       setResult(r);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("common.error");
+      const msg = errText(err, t("common.error"));
       setError(
         msg.includes("slug_taken")
           ? t("super.ctSlugTaken")

@@ -25,6 +25,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button, Input } from "@/components/ui";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type State =
   | { kind: "loading" }
@@ -53,6 +54,7 @@ export default function ResetPasswordPage() {
 }
 
 function ResetPasswordInner() {
+  const errText = useErrorText();
   const t = useT();
   const params = useSearchParams();
   const token = params.get("token") ?? "";
@@ -81,7 +83,7 @@ function ResetPasswordInner() {
         });
       } catch (err) {
         if (cancelled) return;
-        const msg = err instanceof Error ? err.message : t("resetPw.invalidToken");
+        const msg = errText(err, t("resetPw.invalidToken"));
         setState({ kind: "invalid", reason: msg });
       }
     })();
@@ -107,7 +109,7 @@ function ResetPasswordInner() {
       setState({ kind: "done" });
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : t("resetPw.failed")
+        errText(err, t("resetPw.failed"))
       );
     } finally {
       setPending(false);

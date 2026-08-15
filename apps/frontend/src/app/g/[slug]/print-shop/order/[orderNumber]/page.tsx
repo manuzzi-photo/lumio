@@ -8,6 +8,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Order = Awaited<ReturnType<typeof api.getGalleryPrintOrder>>;
 
@@ -16,6 +17,7 @@ export default function PrintOrderConfirmationPage({
 }: {
   params: Promise<{ slug: string; orderNumber: string }>;
 }) {
+  const errText = useErrorText();
   const fmt = useFormat();
   const { slug, orderNumber } = use(params);
   const t = useT();
@@ -28,7 +30,7 @@ export default function PrintOrderConfirmationPage({
         const r = await api.getGalleryPrintOrder(slug, orderNumber);
         setOrder(r);
       } catch (err) {
-        setError(err instanceof Error ? err.message : t("common.error"));
+        setError(errText(err, t("common.error")));
       }
     })();
   }, [slug, orderNumber]);

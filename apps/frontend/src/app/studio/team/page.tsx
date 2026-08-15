@@ -21,6 +21,7 @@ import { api } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface TeamUser {
   id: string;
@@ -40,6 +41,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default function TeamPage() {
+  const errText = useErrorText();
   const t = useT();
   const [users, setUsers] = useState<TeamUser[]>([]);
   const [me, setMe] = useState<{
@@ -68,7 +70,7 @@ export default function TeamPage() {
       setMe({ id: meRes.user.id, role: meRes.user.role });
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setLoading(false);
     }
@@ -138,7 +140,7 @@ export default function TeamPage() {
                   }
                   await load();
                 } catch (err) {
-                  setError(err instanceof Error ? err.message : t("common.error"));
+                  setError(errText(err, t("common.error")));
                 }
               }}
             />
@@ -325,6 +327,7 @@ function InviteDialog({
     fallback: { setupUrl: string; email: string } | null
   ) => Promise<void>;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -352,7 +355,7 @@ function InviteDialog({
         await onInvited(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setPending(false);
     }
@@ -443,6 +446,7 @@ function EditDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [name, setName] = useState(user.name ?? "");
   const [role, setRole] = useState(user.role);
@@ -484,7 +488,7 @@ function EditDialog({
       await api.updateTeamMember(user.id, patch);
       await onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setPending(false);
     }
@@ -581,6 +585,7 @@ function DeleteDialog({
   onClose: () => void;
   onDeleted: () => Promise<void>;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -594,7 +599,7 @@ function DeleteDialog({
       await api.deleteTeamMember(user.id);
       await onDeleted();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("team.deleteError");
+      const msg = errText(err, t("team.deleteError"));
       // Backend liefert bei owns_galleries eine konkrete Meldung —
       // wir lassen sie als-is durch, sie ist schon Owner-freundlich.
       if (msg.toLowerCase().includes("galerie")) {

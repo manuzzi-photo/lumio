@@ -22,6 +22,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type TagRef = { id: string; name: string; color: string };
 type FileLike = { id: string; tags?: TagRef[] };
@@ -50,6 +51,7 @@ export function GalleryFileTagFilter({
   filteredCount,
   onSelectFiltered,
 }: Props) {
+  const errText = useErrorText();
   const t = useT();
   // Aktivierungs-Status pro Galerie persistiert
   const [enabled, setEnabled] = useState<boolean | null>(null);
@@ -168,7 +170,7 @@ export function GalleryFileTagFilter({
         status: "failed",
         fileCount: null,
         url: null,
-        error: err instanceof Error ? err.message : t("common.error"),
+        error: errText(err, t("common.error")),
       });
     }
   }

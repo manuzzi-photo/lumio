@@ -11,8 +11,10 @@ import {
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function TemplateEditorPage() {
+  const errText = useErrorText();
   const t = useT();
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -64,7 +66,7 @@ export default function TemplateEditorPage() {
         router.replace("/login");
         return;
       }
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setLoading(false);
     }
@@ -95,7 +97,7 @@ export default function TemplateEditorPage() {
       });
       setTemplate(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setSaving(false);
     }

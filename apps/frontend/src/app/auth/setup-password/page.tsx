@@ -20,6 +20,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type CheckResult =
   | { state: "checking" }
@@ -54,6 +55,7 @@ export default function SetupPasswordPage() {
 }
 
 function SetupPasswordInner() {
+  const errText = useErrorText();
   const t = useT();
   const router = useRouter();
   const params = useSearchParams();
@@ -81,7 +83,7 @@ function SetupPasswordInner() {
           expiresAt: r.expiresAt,
         });
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "";
+        const msg = errText(err, "");
         setCheck({
           state: msg.includes("tenant_inactive")
             ? "tenant_inactive"
@@ -107,7 +109,7 @@ function SetupPasswordInner() {
       await api.setupPassword(token, password);
       router.replace("/studio");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("common.error");
+      const msg = errText(err, t("common.error"));
       setSubmitError(
         msg.includes("invalid_or_expired")
           ? t("setupPassword.linkExpired")

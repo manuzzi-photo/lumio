@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api, type GalleryAccess } from "@/lib/api";
 import { EmailChipsInput } from "@/components/studio/EmailChipsInput";
 import { useT, useFormat} from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export function SharePanel({
   galleryId,
@@ -717,6 +718,7 @@ function CreateAccessDialog({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [label, setLabel] = useState("");
   const [emails, setEmails] = useState<string[]>([]);
@@ -759,7 +761,7 @@ function CreateAccessDialog({
       });
       onCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setPending(false);
     }

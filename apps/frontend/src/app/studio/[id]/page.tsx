@@ -45,6 +45,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useErrorText } from "@/lib/error-i18n";
 
 // accept-Liste fürs Upload-<input>. Hintergrund: ohne accept gibt der
 // iOS/iPadOS-Foto-Picker bei einem ausgewählten VIDEO beim Bestätigen
@@ -80,6 +81,7 @@ function formatFileSize(bytes: number): string {
 }
 
 export default function GalleryDetailPage() {
+  const errText = useErrorText();
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -892,7 +894,7 @@ export default function GalleryDetailPage() {
         await load();
       } catch (err) {
         console.error(err);
-        setBulkError(err instanceof Error ? err.message : t("common.error"));
+        setBulkError(errText(err, t("common.error")));
       } finally {
         setBulkPending(false);
       }
@@ -2035,7 +2037,7 @@ export default function GalleryDetailPage() {
                     // Bleibt im Dialog stehen mit Inline-Fehler,
                     // User kann retryen oder abbrechen.
                     setBulkError(
-                      err instanceof Error ? err.message : t("common.error")
+                      errText(err, t("common.error"))
                     );
                   } finally {
                     setBulkPending(false);

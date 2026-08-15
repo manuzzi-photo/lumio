@@ -21,6 +21,7 @@ import { api } from "@/lib/api";
 import { Button, Input } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { useCatalogText } from "@/lib/catalog-i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 type Available = Awaited<
   ReturnType<typeof api.listAvailablePrintProviders>
@@ -30,6 +31,7 @@ type Mine = Awaited<
 >["providers"][number];
 
 export default function PrintProvidersPage() {
+  const errText = useErrorText();
   const ct = useCatalogText();
   const t = useT();
   const [available, setAvailable] = useState<Available[] | null>(null);
@@ -51,7 +53,7 @@ export default function PrintProvidersPage() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     }
   }, []);
@@ -76,7 +78,7 @@ export default function PrintProvidersPage() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     } finally {
       setBusy(false);
@@ -91,7 +93,7 @@ export default function PrintProvidersPage() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     } finally {
       setBusy(false);
@@ -114,7 +116,7 @@ export default function PrintProvidersPage() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     } finally {
       setBusy(false);
@@ -135,7 +137,7 @@ export default function PrintProvidersPage() {
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     } finally {
       setBusy(false);
@@ -351,6 +353,7 @@ function CredentialsDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const errText = useErrorText();
   const ct = useCatalogText();
   const t = useT();
   const [values, setValues] = useState<Record<string, string>>({});
@@ -378,7 +381,7 @@ function CredentialsDialog({
       });
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setSaving(false);
     }

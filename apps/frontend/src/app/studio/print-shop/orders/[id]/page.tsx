@@ -19,12 +19,14 @@ import { Button, Input, Textarea } from "@/components/ui";
 import { StatusBadge } from "../page";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function OrderDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const errText = useErrorText();
   const fmt = useFormat();
   const { id } = use(params);
   const t = useT();
@@ -43,7 +45,7 @@ export default function OrderDetailPage({
       setOrder(r.order);
       setNoteValue(r.order.studioNote ?? "");
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     }
   }, [id]);
 
@@ -75,7 +77,7 @@ export default function OrderDetailPage({
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     } finally {
       setBusy(false);
@@ -91,7 +93,7 @@ export default function OrderDetailPage({
     } catch (err) {
       setMessage({
         kind: "danger",
-        text: err instanceof Error ? err.message : t("common.error"),
+        text: errText(err, t("common.error")),
       });
     } finally {
       setBusy(false);

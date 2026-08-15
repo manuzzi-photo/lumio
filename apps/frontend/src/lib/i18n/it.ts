@@ -53,6 +53,69 @@ export const it: Dict = {
     breadcrumb: "Breadcrumb",
   },
 
+
+  apiError: {
+    billingDisabled: "La registrazione self-service non è disponibile.",
+    cannotDelete:
+      "I broadcast in invio o già inviati non possono essere eliminati.",
+    cannotSelfDelete: "Non puoi eliminare te stesso.",
+    cannotSelfDisable: "Non puoi disattivare te stesso.",
+    captchaFailed:
+      "Verifica CAPTCHA non riuscita. Ricarica la pagina e riprova.",
+    customerMismatch: "Questa sessione non appartiene a questo tenant.",
+    emailTaken: "Questo indirizzo email è già in uso in questo studio.",
+    inUse:
+      "Ci sono ordini che usano questa variante. Disattivala invece di eliminarla.",
+    invalidChallenge: "Accedi di nuovo.",
+    invalidOrExpired: "Il link non è valido o è scaduto.",
+    invalidToken: "Il codice non è corretto.",
+    lastOwner:
+      "È l'ultimo proprietario attivo del tenant: non può essere retrocesso o disattivato.",
+    mailSendFailed:
+      "Non è stato possibile inviare l'email di conferma. Riprova.",
+    noArchiveTimestamp:
+      "Il tenant è archiviato ma non ha un timestamp archivedAt (precedente alla migrazione).",
+    noDeletedOriginals:
+      "Nessun originale eliminato ripristinabile (forse fuori dalla finestra di 30 giorni).",
+    noGalleries: "Questo tenant non ha gallerie da esportare.",
+    noRecipients:
+      "Nessun destinatario indicato. Aggiungi prima gli indirizzi all'accesso oppure inseriscili qui.",
+    noStripeCustomer: "Nessun collegamento Stripe. Sottoscrivi prima un piano.",
+    noSubscription: "Questo tenant non ha un abbonamento da rimuovere.",
+    noValidFiles: "Nessun file valido nella selezione.",
+    notASmartSection:
+      "Questa sezione non ha un tag automatico: la sincronizzazione funziona solo per le sezioni smart.",
+    notActive: "Solo i tenant attivi possono essere pre-archiviati.",
+    notInvited:
+      "Il rinvio è possibile solo per utenti con stato “invitato”.",
+    notPendingDeletion: "Questo tenant non è nel periodo di tolleranza.",
+    notScheduled: "Nessuna archiviazione programmata.",
+    onlinePaymentUnavailable: "Il pagamento online non è attualmente disponibile.",
+    ownerOnly: "Solo il proprietario può modificare il nome dello studio.",
+    passwordWrong: "La password non è corretta.",
+    pendingDeletion:
+      "Questo studio è programmato per l'eliminazione. Le modifiche sono bloccate.",
+    planNotConfigured: "Piano non disponibile. Riprova più tardi.",
+    providerNotActive: "Non hai attivato questo fornitore.",
+    readOnly:
+      "Questo account è in sola lettura. Sottoscrivi un piano per poter apportare modifiche.",
+    sameEmail: "Il nuovo indirizzo è identico a quello attuale.",
+    selfPrintImmutable:
+      "La stampa in proprio non può essere disattivata: è sempre disponibile.",
+    sessionMissingMetadata: "Questa sessione non è collegata a un tenant Lumio.",
+    slugMismatch:
+      "La conferma dello slug non corrisponde. Inserisci lo slug esatto del tenant.",
+    slugTaken: "Questo nome dello studio è già in uso.",
+    stripeManaged:
+      "Questo tenant ha un abbonamento Stripe. Cambia piano tramite Stripe.",
+    studioNameMismatch: "Il nome dello studio inserito non corrisponde.",
+    tenantInactive: "Gli inviti sono possibili solo per tenant attivi.",
+    tenantIsPaying:
+      "Questo tenant ha un abbonamento attivo o aperto. L'eliminazione immediata è riservata ai tenant non paganti.",
+    userNotFound: "Utente non trovato o non attivo.",
+    wrongCurrentPassword: "La password attuale non è corretta.",
+  },
+
   nav: {
     studio: "Studio",
     analytics: "Statistiche",

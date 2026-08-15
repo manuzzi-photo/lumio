@@ -7,6 +7,7 @@ import { api, type ProofingSummary, type GalleryFile } from "@/lib/api";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { ProofingFileDetail } from "@/components/studio/ProofingFileDetail";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export function ProofingPanel({
   galleryId,
@@ -15,6 +16,7 @@ export function ProofingPanel({
   galleryId: string;
   embedded?: boolean;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const router = useRouter();
   const id = galleryId;
@@ -62,7 +64,7 @@ export function ProofingPanel({
           router.replace("/login");
           return;
         }
-        setError(err instanceof Error ? err.message : t("common.error"));
+        setError(errText(err, t("common.error")));
       } finally {
         setLoading(false);
       }

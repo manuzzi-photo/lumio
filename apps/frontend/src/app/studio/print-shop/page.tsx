@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface Status {
   printShopEnabled: boolean;
@@ -27,6 +28,7 @@ interface Status {
 }
 
 export default function PrintShopOverviewPage() {
+  const errText = useErrorText();
   const t = useT();
   const [status, setStatus] = useState<Status | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export default function PrintShopOverviewPage() {
           hasShipping: shipping.methods.some((m) => m.enabled),
         });
       } catch (err) {
-        setError(err instanceof Error ? err.message : t("common.error"));
+        setError(errText(err, t("common.error")));
       }
     })();
   }, []);

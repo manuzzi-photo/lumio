@@ -17,6 +17,7 @@ import { api, type UploadInit, ApiError } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useSlowConnection } from "@/lib/useSlowConnection";
 import { SlowConnectionToggle } from "@/components/upload/SlowConnectionToggle";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface Meta {
   label: string;
@@ -43,6 +44,7 @@ interface FileProgress {
 }
 
 export default function UploadPage() {
+  const errText = useErrorText();
   const t = useT();
   const params = useParams();
   const token = String(params.token ?? "");
@@ -64,7 +66,7 @@ export default function UploadPage() {
       if (err instanceof ApiError && err.status === 404) {
         setError(t("upload.notFound"));
       } else {
-        setError(err instanceof Error ? err.message : "Error");
+        setError(errText(err, "Error"));
       }
     }
   }, [token, t]);
@@ -86,7 +88,7 @@ export default function UploadPage() {
       if (err instanceof ApiError && err.status === 401) {
         setError(t("upload.wrongPassword"));
       } else {
-        setError(err instanceof Error ? err.message : "Error");
+        setError(errText(err, "Error"));
       }
     } finally {
       setUnlocking(false);
@@ -170,7 +172,7 @@ export default function UploadPage() {
             // könnten noch erfolgreich sein. Wir setzen den Fehler
             // aber als globalen initErr, sodass der finally-Block
             // unten ein 402/Plan-Limit z.B. korrekt verarbeiten kann.
-            const msg = err instanceof Error ? err.message : String(err);
+            const msg = errText(err, String(err));
             setUploads((prev) => {
               const next = { ...prev };
               for (const f of chunk) {
@@ -227,7 +229,7 @@ export default function UploadPage() {
             [w.key]: {
               ...prev[w.key],
               status: "failed",
-              error: err instanceof Error ? err.message : String(err),
+              error: errText(err, String(err)),
             },
           }));
         }

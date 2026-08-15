@@ -20,6 +20,7 @@ import Link from "next/link";
 import { api, type GalleryStats } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
+import { useErrorText } from "@/lib/error-i18n";
 
 export function StatsPanel({
   galleryId,
@@ -28,6 +29,7 @@ export function StatsPanel({
   galleryId: string;
   embedded?: boolean;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [stats, setStats] = useState<GalleryStats | null>(null);
   const [galleryTitle, setGalleryTitle] = useState<string>("");
@@ -49,7 +51,7 @@ export function StatsPanel({
         setGalleryTitle(galleryRes.gallery.title);
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : t("studio.statsError"));
+        setError(errText(err, t("studio.statsError")));
       } finally {
         if (!cancelled) setLoading(false);
       }

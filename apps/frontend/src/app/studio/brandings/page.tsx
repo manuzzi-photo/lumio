@@ -7,6 +7,7 @@ import { api, type BrandingDetail, type BillingUsage } from "@/lib/api";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export default function BrandingsPage() {
   const t = useT();
@@ -188,6 +189,7 @@ function CreateBrandingDialog({
   onClose: () => void;
   onCreated: (b: BrandingDetail) => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [name, setName] = useState("");
   const [pending, setPending] = useState(false);
@@ -201,7 +203,7 @@ function CreateBrandingDialog({
       const { branding } = await api.createBranding({ name });
       onCreated(branding);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("common.error"));
+      setError(errText(err, t("common.error")));
     } finally {
       setPending(false);
     }

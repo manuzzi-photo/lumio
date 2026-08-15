@@ -26,8 +26,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 export function AutoTagsToolbar({ galleryId }: { galleryId: string }) {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [available, setAvailable] = useState<boolean | null>(null);
@@ -117,7 +119,7 @@ export function AutoTagsToolbar({ galleryId }: { galleryId: string }) {
       setTimeout(() => void refreshStats(), 5000);
     } catch (err) {
       setMessage(
-        t("autoTags.errorPrefix") + (err instanceof Error ? err.message : t("autoTags.unknown"))
+        t("autoTags.errorPrefix") + (errText(err, t("autoTags.unknown")))
       );
     } finally {
       setBusy(null);
@@ -137,7 +139,7 @@ export function AutoTagsToolbar({ galleryId }: { galleryId: string }) {
       await refreshStats();
     } catch (err) {
       setMessage(
-        t("autoTags.errorPrefix") + (err instanceof Error ? err.message : t("autoTags.unknown"))
+        t("autoTags.errorPrefix") + (errText(err, t("autoTags.unknown")))
       );
     } finally {
       setBusy(null);

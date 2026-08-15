@@ -24,6 +24,7 @@ import { api, type Gallery } from "@/lib/api";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 import { useT, useFormat} from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface ExportListItem {
   id: string;
@@ -48,6 +49,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function ExportsPage() {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [exports, setExports] = useState<ExportListItem[]>([]);
@@ -67,7 +69,7 @@ export default function ExportsPage() {
       setExports(exportRes.exports);
       setGalleries(galleryRes.galleries);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("exportDetail.errorLoad"));
+      setError(errText(err, t("exportDetail.errorLoad")));
     } finally {
       setLoading(false);
     }
@@ -100,7 +102,7 @@ export default function ExportsPage() {
       setSelectedGalleryId("");
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("exportsList.errorStart"));
+      setError(errText(err, t("exportsList.errorStart")));
     } finally {
       setCreating(null);
     }
@@ -113,7 +115,7 @@ export default function ExportsPage() {
       await api.createTenantExport();
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("exportsList.errorStart"));
+      setError(errText(err, t("exportsList.errorStart")));
     } finally {
       setCreating(null);
     }

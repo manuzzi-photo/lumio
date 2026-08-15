@@ -28,6 +28,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui";
 import { useT, useFormat} from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
 
 interface DeletionStatus {
   isPendingDeletion: boolean;
@@ -80,6 +81,7 @@ export function DangerZone({
   userRole: "owner" | "admin" | "member";
   onMutated?: () => void;
 }) {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [showModal, setShowModal] = useState(false);
@@ -115,7 +117,7 @@ export function DangerZone({
         await reload();
         onMutated?.();
       } catch (err) {
-        alert(err instanceof Error ? err.message : t("common.error"));
+        alert(errText(err, t("common.error")));
       } finally {
         setCancelling(false);
       }
@@ -238,6 +240,7 @@ function DeletionModal({
   onClose: () => void;
   onDone: () => void;
 }) {
+  const errText = useErrorText();
   const t = useT();
   const [password, setPassword] = useState("");
   const [confirmName, setConfirmName] = useState("");
@@ -269,7 +272,7 @@ function DeletionModal({
       });
       onDone();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("common.error");
+      const msg = errText(err, t("common.error"));
       // Backend-Fehler in lesbare Strings uebersetzen
       if (msg.includes("password_wrong")) {
         setError(t("dangerZone.wrongPassword"));
@@ -364,6 +367,7 @@ export function PendingDeletionBanner({
   status: DeletionStatus | null;
   onCancelled?: () => void;
 }) {
+  const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
   const [pending, setPending] = useState(false);
@@ -382,7 +386,7 @@ export function PendingDeletionBanner({
       await api.cancelStudioDeletion();
       onCancelled?.();
     } catch (err) {
-      alert(err instanceof Error ? err.message : t("dangerZone.errorCancel"));
+      alert(errText(err, t("dangerZone.errorCancel")));
     } finally {
       setPending(false);
     }
