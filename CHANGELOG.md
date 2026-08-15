@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.66.0] - 2026-08-14
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. **Achtung:** Diese Version ändert auch den Worker. Wer Worker-Nodes betreibt, muss dort ebenfalls aktualisieren — zuerst den Hauptserver, danach die Nodes.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. **Note:** this version also changes the worker. If you run worker nodes, update them too — the main server first, then the nodes.*
+
+
 ### Security
 
 - Wenn die Erstellung eines ZIP-Downloads fehlschlug, bekam der Galerie-Besucher die technische Fehlermeldung des Servers zu sehen — je nach Ursache mit Namen von Speicher-Endpunkten oder Serverpfaden darin. Jetzt erscheint eine verständliche Meldung in der eingestellten Sprache; die technischen Details stehen nur noch im Server-Log.
