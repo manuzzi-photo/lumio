@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.64.0] - 2026-08-14
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.*
+
+
 ### Added
 
 - **Die Oberfläche gibt es jetzt auf Italienisch.** Vollständig übersetzt, im Sprachwähler unter „Italiano" auswählbar — Studio, Kundengalerien und die Administrationsoberfläche. Beigesteuert von [@manuzzi](https://github.com/manuzzi). Datum, Zahlen und Preise folgen ebenfalls dem italienischen Format. Die E-Mails sind davon noch nicht erfasst, sie kommen weiterhin auf Deutsch oder Englisch.
