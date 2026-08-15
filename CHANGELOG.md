@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.65.0] - 2026-08-14
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.*
+
+
 ### Fixed
 
 - Fehlermeldungen aus dem Server erschienen immer auf Deutsch — etwa „Aktuelles Passwort ist nicht korrekt." oder „Du kannst dich nicht selbst löschen.". Betroffen waren rund 160 Stellen quer durch Studio, Kundengalerien und Administrationsoberfläche. Sie erscheinen jetzt in der eingestellten Sprache.
