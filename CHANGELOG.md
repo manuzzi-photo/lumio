@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.64.1] - 2026-08-14
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen sind Frontend und API, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server.*
+
+
 ### Fixed
 
 - Die einzelnen Schalter unter Einstellungen → Benachrichtigungen waren immer deutsch beschriftet, auch bei englischer oder italienischer Oberfläche — die Überschriften darüber waren übersetzt, die sieben Einträge darunter nicht.
