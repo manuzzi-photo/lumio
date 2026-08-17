@@ -29,6 +29,25 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.66.1] - 2026-08-17
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.*
+
+
+### Fixed
+
+- In der Kundengalerie war das Menü hinter „Herunterladen" nicht lesbar: die Kapitel-Leiste lag darüber und verdeckte die Einträge. Menü und Kapitel-Leiste liegen jetzt sauber übereinander, das Menü ist vollständig sichtbar.
+- Beim Scrollen schoben sich Werkzeug- und Kapitel-Leiste übereinander, statt untereinander zu bleiben. Beide bilden jetzt einen gemeinsamen Kopfbereich.
+- Ein Klick auf ein Kapitel scrollte das Ziel manchmal zu weit nach oben — der Kapitel-Titel verschwand dann unter den Leisten. Der Abstand richtet sich jetzt nach der tatsächlichen Höhe des Kopfbereichs, auch wenn die Werkzeug-Leiste auf schmalen Bildschirmen umbricht.
+
+**🇬🇧 English**
+
+- In the customer gallery, the menu behind "Download" was unreadable: the chapter bar sat on top of it and hid the entries. Menu and chapter bar are now layered correctly and the menu is fully visible.
+- When scrolling, the toolbar and the chapter bar slid on top of each other instead of staying stacked. Both now form a single header area.
+- Clicking a chapter sometimes scrolled the target too far up, hiding the chapter title behind the bars. The offset now follows the actual header height, including when the toolbar wraps on narrow screens.
+
 ## [0.66.0] - 2026-08-14
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. **Achtung:** Diese Version ändert auch den Worker. Wer Worker-Nodes betreibt, muss dort ebenfalls aktualisieren — zuerst den Hauptserver, danach die Nodes.

@@ -97,6 +97,10 @@ export function GalleryView({
   onFinalize,
 }: Props) {
   const t = useT();
+  // Der gemeinsame Sticky-Header (Toolbar + Sections-Navi). Die Navi
+  // misst darüber ihre echte Höhe für das Scroll-Offset der
+  // Section-Anker.
+  const stickyHeaderRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState<FilterMode>("all");
   // Kundenseitige Ansichts-Sortierung. Rein clientseitig & ephemer —
   // ändert NICHTS am gespeicherten sortIndex. "gallery" = die manuelle
@@ -293,14 +297,19 @@ export function GalleryView({
         </div>
       </GalleryHero>
 
-      {/* Sticky-Toolbar — verbleibt am oberen Rand beim Scrollen.
-          Backdrop-blur sorgt für saubere Trennung über den Bildern.
-          Background-Color und Border-Farbe kommen aus den --brand-*
-          CSS-Variablen die GalleryShell setzt — bei hellem Branding
-          wird der Streifen eine helle Eintönung statt einem grauen
-          "0.45 Schwarz auf Weiß"-Streifen. */}
+      {/* Sticky-Header — Toolbar UND Sections-Navi liegen in EINEM
+          sticky Container. Wichtig, nicht kosmetisch: waren beide für
+          sich `sticky top-0`, öffneten sie zwei gleichrangige
+          Stacking-Contexts. Das Download-Dropdown (z-30) konnte seinen
+          eigenen Container dann nicht verlassen und landete hinter der
+          Kapitel-Leiste — der Kunde sah ein leeres Menü. Zusätzlich
+          klebten beide Leisten beim Scrollen auf top-0 und lagen
+          übereinander. Ein gemeinsamer Container löst beides: die
+          Leisten stapeln vertikal, und das Dropdown liegt über allem
+          was danach kommt. */}
+      <div className="sticky top-0 z-30" ref={stickyHeaderRef}>
       <div
-        className="sticky top-0 z-20 backdrop-blur-md"
+        className="backdrop-blur-md"
         style={{
           backgroundColor: "var(--brand-toolbar-bg)",
           borderTop: "1px solid var(--brand-border)",
@@ -515,19 +524,23 @@ export function GalleryView({
         </div>
       </div>
 
-      {/* Sticky Sections-Navi — nur wenn die Galerie Sections hat
-          UND der User nicht gefiltert hat (Section-Anker mit aktivem
+      {/* Sections-Navi — nur wenn die Galerie Sections hat UND der
+          User nicht gefiltert hat (Section-Anker mit aktivem
           Like/Color-Filter wäre verwirrend). Wir zählen die Sections
           mit Files; eine leere Section wird nicht in die Navi
           aufgenommen. Plus optional ein "Übersicht"-Anker für den
-          Default-Bucket wenn der existiert. */}
+          Default-Bucket wenn der existiert. Das Sticky-Verhalten
+          kommt vom umgebenden Header-Container, nicht von der Navi
+          selbst. */}
       {meta.sections.length > 0 && filter === "all" && (
         <SectionsNav
           sections={meta.sections}
           files={filtered}
           hasDefaultBucket={filtered.some((f) => f.sectionId === null)}
+          stickyHeaderRef={stickyHeaderRef}
         />
       )}
+      </div>
 
       {/* Customer-Tag-Filter — sichtbar wenn Galerie customerTagFilter-
           Enabled aktiv hat und mind. ein File getaggt ist. Self-hiding
@@ -951,17 +964,21 @@ function FilesGrid({
   );
 }
 
-/** Sticky-Bar mit Section-Titeln als Anker-Links. Versteckt sich
- *  wenn nur eine Section + kein Default-Bucket existieren (Navi wäre
- *  redundant). */
+/** Bar mit Section-Titeln als Anker-Links. Versteckt sich wenn nur
+ *  eine Section + kein Default-Bucket existieren (Navi wäre
+ *  redundant). Klebt nicht selbst — sie sitzt im gemeinsamen
+ *  Sticky-Header-Container der GalleryView. */
 function SectionsNav({
   sections,
   files,
   hasDefaultBucket,
+  stickyHeaderRef,
 }: {
   sections: PublicSection[];
   files: PublicFile[];
   hasDefaultBucket: boolean;
+  /** Der sticky Header — dessen echte Höhe ist das Scroll-Offset. */
+  stickyHeaderRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const t = useT();
   // Nur Sections mit mindestens einem File im aktuellen filtered-Set
@@ -976,19 +993,21 @@ function SectionsNav({
   if (visible.length === 0) return null;
 
   // Smooth-Scroll-Handler. Statt nativer Anker-Sprünge nutzen wir
-  // scrollIntoView mit smooth-Behavior und einem kleinen Offset für
-  // den Sticky-Header.
+  // window.scrollTo mit smooth-Behavior. Das Offset ist die gemessene
+  // Höhe des Sticky-Headers (Toolbar + diese Navi) — ein fester Wert
+  // lag daneben, sobald die Toolbar auf schmalen Viewports umbricht,
+  // und das Ziel verschwand unter den Leisten.
   const onJump = (id: string) => (e: React.MouseEvent) => {
     e.preventDefault();
     const target = document.getElementById(id);
     if (!target) return;
-    const offset = 80; // ungefähr der Platz für den Sticky-Header
+    const offset = (stickyHeaderRef.current?.offsetHeight ?? 80) + 12;
     const top = target.getBoundingClientRect().top + window.scrollY - offset;
     window.scrollTo({ top, behavior: "smooth" });
   };
 
   return (
-    <nav className="sticky top-0 z-20 backdrop-blur bg-[color:rgb(0_0_0/0.15)] border-b border-white/10">
+    <nav className="backdrop-blur bg-[color:rgb(0_0_0/0.15)] border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-2 flex items-center gap-1 overflow-x-auto">
         {hasDefaultBucket && (
           <a
