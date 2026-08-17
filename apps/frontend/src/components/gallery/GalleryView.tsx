@@ -308,8 +308,15 @@ export function GalleryView({
           Leisten stapeln vertikal, und das Dropdown liegt über allem
           was danach kommt. */}
       <div className="sticky top-0 z-30" ref={stickyHeaderRef}>
+      {/* `relative z-[2]` ist Pflicht, nicht Deko: `backdrop-blur`
+          erzeugt selbst einen Stacking-Context. Ohne eigene Position +
+          z-index bliebe dieser Streifen ein *unpositionierter* Kontext
+          — das Download-Dropdown (z-30) käme aus ihm nicht heraus, und
+          die ebenfalls blur-tragende Kapitel-Leiste würde als späteres
+          Geschwister darüber gemalt. Genau der Bug. Die Navi bekommt
+          z-[1], damit die Reihenfolge explizit und nicht zufällig ist. */}
       <div
-        className="backdrop-blur-md"
+        className="relative z-[2] backdrop-blur-md"
         style={{
           backgroundColor: "var(--brand-toolbar-bg)",
           borderTop: "1px solid var(--brand-border)",
@@ -1007,7 +1014,7 @@ function SectionsNav({
   };
 
   return (
-    <nav className="backdrop-blur bg-[color:rgb(0_0_0/0.15)] border-b border-white/10">
+    <nav className="relative z-[1] backdrop-blur bg-[color:rgb(0_0_0/0.15)] border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-2 flex items-center gap-1 overflow-x-auto">
         {hasDefaultBucket && (
           <a

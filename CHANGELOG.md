@@ -29,6 +29,21 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.66.2] - 2026-08-17
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.*
+
+
+### Fixed
+
+- Das Menü hinter „Herunterladen" in der Kundengalerie war weiterhin von der Kapitel-Leiste verdeckt — der Fix in 0.66.1 hat nur einen Teil der Ursache erwischt. Beide Leisten bekommen jetzt eine ausdrückliche Ebene, das Menü liegt vollständig sichtbar und anklickbar darüber. Wer 0.66.1 installiert hat, sollte direkt auf 0.66.2 gehen.
+
+**🇬🇧 English**
+
+- The menu behind "Download" in the customer gallery was still covered by the chapter bar — the 0.66.1 fix only addressed part of the cause. Both bars now get an explicit layer, and the menu sits fully visible and clickable on top. If you installed 0.66.1, go straight to 0.66.2.
+
 ## [0.66.1] - 2026-08-17
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
