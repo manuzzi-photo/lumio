@@ -1,4 +1,4 @@
-[English](SCALING.md) · **Deutsch**
+[English](SCALING.md) · **Deutsch** · [Italiano](SCALING.it.md)
 
 # Horizontale Skalierung — zusätzliche Worker-Nodes
 

@@ -1,4 +1,4 @@
-[English](SELFHOSTING.md) · **Deutsch**
+[English](SELFHOSTING.md) · **Deutsch** · [Italiano](SELFHOSTING.it.md)
 
 # Production Self-Hosting
 

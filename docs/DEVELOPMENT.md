@@ -1,4 +1,4 @@
-**English** · [Deutsch](DEVELOPMENT.de.md)
+**English** · [Deutsch](DEVELOPMENT.de.md) · [Italiano](DEVELOPMENT.it.md)
 
 # Lumio — Development Guide
 

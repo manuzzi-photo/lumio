@@ -1,4 +1,4 @@
-**English** · [Deutsch](KONZEPT.de.md)
+**English** · [Deutsch](KONZEPT.de.md) · [Italiano](KONZEPT.it.md)
 
 # Lumio — Concept & Architecture
 

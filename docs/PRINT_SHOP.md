@@ -1,4 +1,4 @@
-**English** · [Deutsch](PRINT_SHOP.de.md)
+**English** · [Deutsch](PRINT_SHOP.de.md) · [Italiano](PRINT_SHOP.it.md)
 
 # Print shop — providers & adapters
 

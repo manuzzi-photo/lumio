@@ -1,4 +1,4 @@
-[English](TROUBLESHOOTING.md) · **Deutsch**
+[English](TROUBLESHOOTING.md) · **Deutsch** · [Italiano](TROUBLESHOOTING.it.md)
 
 # Troubleshooting
 

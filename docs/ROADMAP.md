@@ -1,4 +1,4 @@
-**English** · [Deutsch](ROADMAP.de.md)
+**English** · [Deutsch](ROADMAP.de.md) · [Italiano](ROADMAP.it.md)
 
 # Lumio — Roadmap
 

@@ -1,4 +1,4 @@
-**English** · [Deutsch](REQUIREMENTS.de.md)
+**English** · [Deutsch](REQUIREMENTS.de.md) · [Italiano](REQUIREMENTS.it.md)
 
 # Requirements / System Requirements
 

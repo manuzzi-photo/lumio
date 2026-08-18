@@ -1,3 +1,5 @@
+**Deutsch** · [Italiano](README.it.md)
+
 # Lumio Lightroom Classic Plugin
 
 Bidirektionale Brücke zwischen Lightroom Classic und Lumio:

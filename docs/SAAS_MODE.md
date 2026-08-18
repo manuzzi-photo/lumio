@@ -1,4 +1,4 @@
-**English** · [Deutsch](SAAS_MODE.de.md)
+**English** · [Deutsch](SAAS_MODE.de.md) · [Italiano](SAAS_MODE.it.md)
 
 # SaaS mode
 

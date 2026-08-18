@@ -1,4 +1,4 @@
-[English](OPERATIONS.md) · **Deutsch**
+[English](OPERATIONS.md) · **Deutsch** · [Italiano](OPERATIONS.it.md)
 
 # Lumio — Operations Cookbook
 
