@@ -121,9 +121,20 @@ HAVE_SS=0;   have_cmd ss   && HAVE_SS=1
 HAVE_NC=0;   have_cmd nc   && HAVE_NC=1
 
 if [ "$HAVE_LSOF" -eq 0 ] && [ "$HAVE_SS" -eq 0 ] && [ "$HAVE_NC" -eq 0 ]; then
-  echo "ATTENZIONE: nessuno strumento tra lsof/ss/nc trovato — impossibile" >&2
-  echo "verificare realmente le porte. Installa 'lsof' (macOS: già presente" >&2
-  echo "di norma; Linux: apt/dnf install lsof) e rilancia lo script." >&2
+  echo "ATTENZIONE: nessuno strumento tra lsof/ss/nc trovato. Il controllo si" >&2
+  echo "affida solo a 'docker ps' + un connect-test via /dev/tcp: robusto per" >&2
+  echo "TCP, ma per UDP senza ss/lsof una porta occupata NON verrà rilevata." >&2
+  echo "Installa 'lsof' o 'iproute2' (ss) per una verifica UDP affidabile." >&2
+fi
+
+IS_ROOT=0
+[ "$(id -u 2>/dev/null || echo 1)" -eq 0 ] && IS_ROOT=1
+if [ "$IS_ROOT" -eq 0 ]; then
+  echo "Nota: eseguito senza privilegi elevati. 'lsof' spesso non vede i socket" >&2
+  echo "aperti da processi di altri utenti (es. root, dockerd) e potrebbe dare" >&2
+  echo "un falso 'libera'. Il controllo qui sotto compensa con 'docker ps' e un" >&2
+  echo "connect-test diretto, ma per la massima affidabilità: sudo $0" >&2
+  echo "" >&2
 fi
 
 is_valid_port() {
@@ -133,43 +144,54 @@ is_valid_port() {
   [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
 }
 
-tcp_port_in_use() {
+# Connect-test TCP puro bash, senza dipendenze esterne. Non può dare falsi
+# positivi (se si connette, qualcosa è davvero in ascolto); l'unico limite è
+# il falso negativo su porte filtrate — irrilevante qui, si testa 127.0.0.1.
+devtcp_port_open() {
   port="$1"
-  if [ "$HAVE_LSOF" -eq 1 ]; then
-    lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1
-    return $?
-  fi
+  (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null
+}
+
+# Controlla lo stato del socket a livello host per un dato protocollo,
+# provando TUTTI gli strumenti disponibili (non ci si ferma al primo: 'lsof'
+# da utente non-root può mancare socket di altri utenti mentre 'ss' li vede
+# comunque, e viceversa in ambienti diversi).
+host_socket_busy() {
+  port="$1"; proto="$2"
   if [ "$HAVE_SS" -eq 1 ]; then
-    [ -n "$(ss -H -ltn "sport = :$port" 2>/dev/null)" ]
-    return $?
+    if [ "$proto" = "tcp" ]; then
+      [ -n "$(ss -H -ltn "sport = :$port" 2>/dev/null)" ] && return 0
+    else
+      [ -n "$(ss -H -lun "sport = :$port" 2>/dev/null)" ] && return 0
+    fi
   fi
-  if [ "$HAVE_NC" -eq 1 ]; then
-    nc -z -w1 127.0.0.1 "$port" >/dev/null 2>&1
-    return $?
+  if [ "$HAVE_LSOF" -eq 1 ]; then
+    if [ "$proto" = "tcp" ]; then
+      lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1 && return 0
+    else
+      lsof -nP -iUDP:"$port" >/dev/null 2>&1 && return 0
+    fi
   fi
+  if [ "$proto" = "tcp" ]; then
+    devtcp_port_open "$port" && return 0
+    if [ "$HAVE_NC" -eq 1 ]; then
+      nc -z -w1 127.0.0.1 "$port" >/dev/null 2>&1 && return 0
+    fi
+  fi
+  # UDP senza ss/lsof: non affidabilmente verificabile (nc -zu su
+  # connectionless dà troppi falsi risultati) — si assume libera.
   return 1
 }
 
-udp_port_in_use() {
-  port="$1"
-  if [ "$HAVE_LSOF" -eq 1 ]; then
-    lsof -nP -iUDP:"$port" >/dev/null 2>&1
-    return $?
-  fi
-  if [ "$HAVE_SS" -eq 1 ]; then
-    [ -n "$(ss -H -lun "sport = :$port" 2>/dev/null)" ]
-    return $?
-  fi
-  # UDP non affidabilmente verificabile con nc (protocollo connectionless):
-  # meglio non dare un falso "libera".
-  return 1
-}
-
+# Match esatto host-porta + protocollo nell'output di 'docker ps' (formato
+# "0.0.0.0:9000->9000/tcp"). Indipendente da lsof/ss e dai loro problemi di
+# permessi: è la stessa fonte che userà 'docker compose up' per decidere se
+# la porta è già allocata.
 docker_owner_of_port() {
-  port="$1"
+  port="$1"; proto="$2"
   [ "$DOCKER_OK" -eq 1 ] || return 1
-  printf '%s\n' "$DOCKER_PS_SNAPSHOT" | awk -F'\t' -v p=":${port}->" '
-    index($2, p) { print $1; found=1 }
+  printf '%s\n' "$DOCKER_PS_SNAPSHOT" | awk -F'\t' -v pat=":${port}->[0-9]+/${proto}" '
+    $2 ~ pat { print $1; found=1 }
     END { exit !found }
   '
 }
@@ -181,19 +203,16 @@ process_owner_of_port() {
 }
 
 # Riempie CONFLICT_REASON (stringa vuota = porta libera su tutti i protocolli
-# richiesti). I container lumio_* propri non contano come conflitto.
+# richiesti). I container lumio_* propri non contano come conflitto. Il
+# controllo Docker è sempre eseguito per primo ed è indipendente dal risultato
+# del controllo socket: coglie anche i casi (Docker con userland-proxy
+# disabilitato, o lsof senza privilegi) in cui il socket non è visibile
+# sull'host pur essendo la porta già allocata a un altro container.
 describe_conflict() {
   port="$1"; protos="$2"
   CONFLICT_REASON=""
   for proto in $protos; do
-    if [ "$proto" = "tcp" ]; then
-      tcp_port_in_use "$port" && busy=1 || busy=0
-    else
-      udp_port_in_use "$port" && busy=1 || busy=0
-    fi
-    [ "$busy" -eq 1 ] || continue
-
-    dockname="$(docker_owner_of_port "$port" 2>/dev/null || true)"
+    dockname="$(docker_owner_of_port "$port" "$proto" 2>/dev/null || true)"
     case "$dockname" in
       lumio_*)
         continue
@@ -201,10 +220,15 @@ describe_conflict() {
     esac
 
     if [ -n "$dockname" ]; then
-      owner="container Docker '${dockname}'"
-    else
-      owner="$(process_owner_of_port "$port" "$proto" 2>/dev/null || true)"
-      [ -z "$owner" ] && owner="processo non identificato"
+      CONFLICT_REASON="${CONFLICT_REASON}${CONFLICT_REASON:+; }${proto}/${port}: container Docker '${dockname}'"
+      continue
+    fi
+
+    host_socket_busy "$port" "$proto" || continue
+    owner="$(process_owner_of_port "$port" "$proto" 2>/dev/null || true)"
+    if [ -z "$owner" ]; then
+      owner="processo non identificato"
+      [ "$IS_ROOT" -eq 0 ] && owner="${owner} (rilancia con sudo per il dettaglio)"
     fi
     CONFLICT_REASON="${CONFLICT_REASON}${CONFLICT_REASON:+; }${proto}/${port}: ${owner}"
   done
