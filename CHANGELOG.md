@@ -29,6 +29,22 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Das Lightroom-Plugin ließ sich nicht laden — Lightroom meldete „Could not create info sections for plug-in", und keiner der Menüpunkte erschien. Beigesteuert von [@canja006](https://github.com/canja006).
+- Der Import der Kundenauswahl zurück in den Katalog fand bei RAW-Beständen praktisch nichts: die Auswahl wurde gegen Dateinamen mit Endung verglichen, hochgeladen wird aber immer als `.jpg`. Bei einem Katalog aus NEF- und DNG-Dateien blieben damit über 95 % der Bilder unauffindbar. Jetzt wird zusätzlich ohne Endung verglichen, und bei mehreren gleichnamigen Rohdateien wird bewusst keine geändert statt alle.
+- Das Schreiben der Bewertungen und Farb-Labels in den Katalog schlug still fehl und meldete trotzdem Erfolg — „57 Fotos aktualisiert", geschrieben wurde nichts.
+- Nach dem Hochladen markierte Lightroom die Fotos nicht als veröffentlicht, sodass beim nächsten Publish alles erneut hochgeladen wurde.
+- Fehlgeschlagene Uploads werden jetzt als solche gemeldet, statt unbemerkt zu bleiben.
+
+**🇬🇧 English**
+
+- The Lightroom plug-in would not load — Lightroom reported "Could not create info sections for plug-in" and none of its menu items appeared. Contributed by [@canja006](https://github.com/canja006).
+- Importing the client selection back into the catalog found almost nothing for RAW libraries: the selection was matched against filenames including the extension, while uploads are always named `.jpg`. On a catalog of NEF and DNG files, over 95% of photos could never be found. Matching now also compares without the extension, and where several raw files share a name, none is modified rather than all of them.
+- Writing ratings and colour labels into the catalog failed silently while still reporting success — "57 photos updated", with nothing written.
+- After uploading, Lightroom did not mark photos as published, so the next publish re-uploaded everything.
+- Failed uploads are now reported as failures instead of passing unnoticed.
+
 ## [0.66.3] - 2026-08-19
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen sind Frontend und API, also nur der Hauptserver.
