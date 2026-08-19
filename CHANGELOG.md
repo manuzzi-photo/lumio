@@ -29,6 +29,10 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Added
+
+- Die Dokumentation gibt es jetzt auch auf Italienisch — README, CONTRIBUTING und alle 19 Dateien unter `docs/`, dazu die vier Plugin- und Werkzeug-READMEs, die es bisher nur auf Deutsch gab. Beigesteuert von [@manuzzi](https://github.com/manuzzi).
+
 ### Fixed
 
 - Bei italienischer Oberfläche wurde die Sprachwahl nicht gespeichert: der Server kannte nur Deutsch und Englisch und lehnte „Italiano" ab, während die Oberfläche umschaltete. Benachrichtigungen kamen deshalb weiter in der Vorgabe-Sprache der Instanz. Danke an @canja006 für den Bericht.
@@ -37,6 +41,7 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 **🇬🇧 English**
 
+- The documentation is now available in Italian too — README, CONTRIBUTING and all 19 files under `docs/`, plus the four plugin and tooling READMEs that previously existed only in German. Contributed by [@manuzzi](https://github.com/manuzzi).
 - With an Italian interface the language choice was not saved: the server only knew German and English and rejected "Italiano" while the interface switched anyway. Notifications therefore kept arriving in the instance default language. Thanks to @canja006 for the report.
 - Dates and numbers in email fell back to British English for every language other than German. This affected Italian as soon as anyone selected it.
 - Translators were promised that `tsc --noEmit` reports missing keys in a locale file. It did not. Now it does.
