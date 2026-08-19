@@ -3,7 +3,7 @@
 
     Zwei Richtungen:
       1. Selection-Import: Kunden-Picks aus Lumio in den LR-Katalog
-         (Bibliothek → Zusatzmoduloptionen → "Lumio-Auswahl importieren…")
+         (Bibliothek → Zusatzmoduloptionen → "Import Lumio selection…")
       2. Publish-Service: Bilder aus LR in Lumio-Galerien hochladen
          (Bibliothek → Veroeffentlichungsdienste → "Lumio")
 
@@ -16,7 +16,7 @@
          "lumio.lrplugin", falls .lrdevplugin in Finder als Bundle hindert)
       2. In Lightroom: Datei → Zusatzmodul-Manager → Hinzufügen
       3. In den Plugin-Optionen Host + Token eingeben
-      4a. Selection-Import: Bibliothek → Zusatzmoduloptionen → "Lumio-Auswahl importieren…"
+      4a. Selection-Import: Bibliothek → Zusatzmoduloptionen → "Import Lumio selection…"
       4b. Publish:          Bibliothek → Veroeffentlichungsdienste → "Lumio einrichten…"
 
     Author: Lumio
@@ -37,7 +37,7 @@ return {
     -- Menü-Eintrag in Bibliothek → Zusatzmoduloptionen
     LrLibraryMenuItems = {
         {
-            title = "Lumio-Auswahl importieren…",
+            title = "Import Lumio selection…",
             file  = "ImportSelectionDialog.lua",
         },
     },

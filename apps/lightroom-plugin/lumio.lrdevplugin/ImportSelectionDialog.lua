@@ -25,10 +25,10 @@ LrTasks.startAsyncTask(function()
     LrFunctionContext.callWithContext("ImportSelectionDialog", function(context)
 
         -- Galerien laden, mit User-friendly Error
-        local ok, galleries = pcall(LumioApi.listGalleries)
+        local ok, galleries = LrTasks.pcall(LumioApi.listGalleries)
         if not ok then
             LrDialogs.message(
-                "Lumio: Verbindung fehlgeschlagen",
+                "Lumio: connection failed",
                 tostring(galleries):gsub("^.-: ", ""),
                 "critical"
             )
@@ -37,8 +37,8 @@ LrTasks.startAsyncTask(function()
         if #galleries == 0 then
             LrDialogs.message(
                 "Lumio",
-                "Keine Galerien gefunden. Lege im Studio eine an oder prüfe, " ..
-                "dass der Token zum richtigen User gehört."
+                "No galleries found. Create one in the studio, or check " ..
+                "that the token belongs to the right user."
             )
             return
         end
@@ -71,7 +71,7 @@ LrTasks.startAsyncTask(function()
 
             f:row {
                 f:static_text {
-                    title = "Galerie:",
+                    title = "Gallery:",
                     width = 100,
                 },
                 f:popup_menu {
@@ -84,46 +84,46 @@ LrTasks.startAsyncTask(function()
             f:separator { fill_horizontal = 1 },
 
             f:static_text {
-                title = "Was importieren?",
+                title = "What to import?",
                 font = "<system/bold>",
             },
             f:checkbox {
-                title = "Picks als Lightroom-Flag setzen",
+                title = "Set picks as Lightroom flags",
                 value = LrView.bind("applyPick"),
             },
             f:checkbox {
-                title = "Likes als 1-Stern-Bewertung (zusätzlich zu Picks)",
+                title = "Likes as 1-star rating (in addition to picks)",
                 value = LrView.bind("applyLikes"),
             },
             f:checkbox {
-                title = "Bewertungen (1–5 Sterne) übernehmen",
+                title = "Apply ratings (1–5 stars)",
                 value = LrView.bind("applyRating"),
             },
             f:checkbox {
-                title = "Color-Labels übernehmen",
+                title = "Apply colour labels",
                 value = LrView.bind("applyColor"),
             },
 
             f:separator { fill_horizontal = 1 },
 
             f:static_text {
-                title = "Suche nach Dateinamen:",
+                title = "Match by filename:",
                 font = "<system/bold>",
             },
             f:radio_button {
-                title    = "Im aktuellen Katalog",
+                title    = "In the whole catalog",
                 value    = LrView.bind("matchScope"),
                 checked_value = "library",
             },
             f:radio_button {
-                title    = "Nur in der aktiven Sammlung",
+                title    = "Only in the active collection",
                 value    = LrView.bind("matchScope"),
                 checked_value = "collection",
             },
 
             f:static_text {
-                title = "Hinweis: Lumio matcht am Original-Dateinamen. Wenn du Dateien " ..
-                        "umbenannt hast, finden wir sie nicht.",
+                title = "Note: Lumio matches on the original filename. If you have renamed " ..
+                        "the files, they cannot be found.",
                 width_in_chars = 70,
                 height_in_lines = 2,
                 size = "small",
@@ -131,7 +131,7 @@ LrTasks.startAsyncTask(function()
         }
 
         local result = LrDialogs.presentModalDialog {
-            title = "Lumio-Auswahl importieren",
+            title = "Import Lumio selection",
             contents = contents,
             resizable = false,
         }

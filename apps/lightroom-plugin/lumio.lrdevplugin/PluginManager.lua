@@ -26,10 +26,10 @@ local function testConnection(propertyTable)
         prefs.token = propertyTable.token
 
         LrTasks.startAsyncTask(function()
-            propertyTable.testStatus = "Teste…"
-            local ok, result = pcall(LumioApi.testConnection)
+            propertyTable.testStatus = "Testing…"
+            local ok, result = LrTasks.pcall(LumioApi.testConnection)
             if ok and result and result.ok then
-                propertyTable.testStatus = "✓ Verbunden (API v" ..
+                propertyTable.testStatus = "✓ Connected (API v" ..
                     (result.apiVersion or "?") .. ")"
                 log:info("connection test ok")
             else
@@ -45,7 +45,13 @@ return {
     sectionsForTopOfDialog = function(viewFactory, _propertyTable)
         local f = viewFactory
 
-        local bindable = LrBinding.makePropertyTable(_propertyTable.context)
+        -- The original line was
+        --   local bindable = LrBinding.makePropertyTable(_propertyTable.context)
+        -- but LR does not expose a .context field -> "LrBinding.makePropertyTable:
+        -- missing functionContext" -> "Could not create info sections for
+        -- plug-in" -> the whole plug-in was flagged broken and no menu items
+        -- registered. LR already hands over a bindable table.
+        local bindable = _propertyTable
         bindable.host       = prefs.host or "https://studio.lumio-cloud.de"
         bindable.token      = prefs.token or ""
         bindable.testStatus = ""
@@ -56,7 +62,7 @@ return {
 
         return {
             {
-                title = "Lumio Verbindung",
+                title = "Lumio Connection",
                 bind_to_object = bindable,
 
                 f:row {
@@ -85,7 +91,7 @@ return {
                 f:row {
                     f:static_text { title = "", width = 80 },
                     f:push_button {
-                        title = "Verbindung testen",
+                        title = "Test connection",
                         action = function() testConnection(bindable) end,
                     },
                     f:static_text {
@@ -96,7 +102,7 @@ return {
                 f:row {
                     f:static_text { title = "", width = 80 },
                     f:static_text {
-                        title = "Token erzeugen in: Studio → Einstellungen → API-Tokens",
+                        title = "Create a token in: Studio → Settings → API tokens",
                         size = "small",
                     },
                 },
