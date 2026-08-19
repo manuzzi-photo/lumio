@@ -27,9 +27,41 @@ import { config } from "../config.js";
 import { prisma } from "../db.js";
 import { logger } from "../logger.js";
 
-export type MailLocale = "de" | "en";
+/**
+ * Einzige Quelle der Wahrheit fuer die unterstuetzten Mail-Sprachen.
+ *
+ * Bitte NICHT anderswo als Literal-Liste wiederholen. Genau das ist einmal
+ * passiert: die Zod-Schemata in routes/settings.ts trugen ihr eigenes
+ * z.enum(["de","en"]), und als "it" im Frontend dazukam, lehnte die API die
+ * Sprachwahl mit 400 ab — waehrend die Oberflaeche umschaltete. Das Schema
+ * leitet sich jetzt hieraus ab und kann nicht mehr auseinanderlaufen.
+ *
+ * Eine Sprache hier zu ergaenzen genuegt NICHT: der Phrase-Typ ist
+ * Record<MailLocale, string>, also schlaegt der Compiler bei jedem noch
+ * nicht uebersetzten Template zu. Das ist Absicht — eine halb uebersetzte
+ * Mail ist schlimmer als eine, die ehrlich in der Default-Sprache kommt.
+ */
+export const MAIL_LOCALES = ["de", "en"] as const;
 
-const SUPPORTED: readonly MailLocale[] = ["de", "en"] as const;
+export type MailLocale = (typeof MAIL_LOCALES)[number];
+
+const SUPPORTED: readonly MailLocale[] = MAIL_LOCALES;
+
+/**
+ * BCP-47-Tag zu einer Mail-Sprache — fuer toLocaleDateString und Intl.
+ *
+ * Ersetzt das Muster `l === "de" ? "de-DE" : "en-GB"`, das an zwoelf Stellen
+ * stand. Das war nicht nur Wiederholung: alles ausser Deutsch fiel dort auf
+ * britisches Englisch, was fuer jede dritte Sprache stillschweigend falsch
+ * ist. Eine Sprache hier zu ergaenzen wirkt sofort ueberall.
+ */
+export function localeTag(locale: MailLocale): string {
+  const TAGS: Record<MailLocale, string> = {
+    de: "de-DE",
+    en: "en-GB",
+  };
+  return TAGS[locale];
+}
 
 /** Akzeptiert auch "de-DE" o.ae. und faellt sonst auf den Default zurueck. */
 export function normalizeLocale(value: string | null | undefined): MailLocale {

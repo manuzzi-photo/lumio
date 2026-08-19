@@ -29,6 +29,18 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Bei italienischer Oberfläche wurde die Sprachwahl nicht gespeichert: der Server kannte nur Deutsch und Englisch und lehnte „Italiano" ab, während die Oberfläche umschaltete. Benachrichtigungen kamen deshalb weiter in der Vorgabe-Sprache der Instanz. Danke an @canja006 für den Bericht.
+- Datum und Zahlen in E-Mails fielen für jede Sprache außer Deutsch auf britisches Englisch zurück. Betraf Italienisch, sobald eine Person es eingestellt hatte.
+- Übersetzern wurde zugesagt, `tsc --noEmit` melde fehlende Keys in einer Sprachdatei — das tat es nicht. Jetzt tut es das.
+
+**🇬🇧 English**
+
+- With an Italian interface the language choice was not saved: the server only knew German and English and rejected "Italiano" while the interface switched anyway. Notifications therefore kept arriving in the instance default language. Thanks to @canja006 for the report.
+- Dates and numbers in email fell back to British English for every language other than German. This affected Italian as soon as anyone selected it.
+- Translators were promised that `tsc --noEmit` reports missing keys in a locale file. It did not. Now it does.
+
 ## [0.66.2] - 2026-08-17
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.

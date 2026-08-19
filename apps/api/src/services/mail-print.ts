@@ -21,6 +21,7 @@ import {
   phrase,
   type MailLocale,
   type Phrase,
+  localeTag,
 } from "./mail-i18n.js";
 
 /** Kontaktadresse fuer Print-Mails: Studio-Support > Instanz-Support.
@@ -62,7 +63,7 @@ function formatPrice(
   currency = "EUR",
   locale: MailLocale = "de"
 ): string {
-  return (cents / 100).toLocaleString(locale === "de" ? "de-DE" : "en-GB", {
+  return (cents / 100).toLocaleString(localeTag(locale), {
     style: "currency",
     currency,
   });

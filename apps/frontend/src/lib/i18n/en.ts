@@ -1,6 +1,9 @@
-import type { Dict } from "./dict";
-
-export const en: Dict = {
+// Bewusst OHNE Typ-Annotation: en.ts ist die Referenz-Struktur, und
+// `LocaleDict = typeof en` in dict.ts leitet sich daraus ab. Eine Annotation
+// als `Dict` (Index-Signatur) wuerde die konkrete Form wegwerfen — dann
+// akzeptiert LocaleDict jede Teilmenge, und genau das war der Fehler, den
+// canja006 in Issue #12 gemeldet hat.
+export const en = {
   support: {
     navLabel: "Support",
     title: "Contact support",

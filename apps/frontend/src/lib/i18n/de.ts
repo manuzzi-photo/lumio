@@ -1,6 +1,6 @@
-import type { Dict } from "./dict";
+import type { LocaleDict } from "./dict";
 
-export const de: Dict = {
+export const de: LocaleDict = {
   support: {
     navLabel: "Support",
     title: "Support kontaktieren",
