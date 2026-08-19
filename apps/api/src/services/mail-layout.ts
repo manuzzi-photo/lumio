@@ -38,6 +38,12 @@
  */
 
 import { config } from "../config.js";
+import {
+  instanceMailLocale,
+  phrase,
+  type MailLocale,
+  type Phrase,
+} from "./mail-i18n.js";
 
 const LUMIO_BRAND_COLOR = "#FF4D2E"; // Vermillion, wie die Bildmarke
 
@@ -86,6 +92,18 @@ export interface MailBranding {
   headerStyle?: "line" | "banner" | null;
 }
 
+/**
+ * The one line of layout chrome not supplied by the caller. It follows the
+ * recipient's language like the rest of the mail, so it is a Phrase and the
+ * type demands a translation per locale. {link} wraps the product name.
+ */
+const layoutPhrases = {
+  sentVia: {
+    de: "Verschickt von {link}",
+    en: "Sent via {link}",
+  },
+} satisfies Record<string, Phrase>;
+
 export interface RenderMailOpts {
   /** Inhalt des Mail-Body als HTML-Fragmente (z.B. aus mailParagraph()) */
   bodyHtml: string;
@@ -94,6 +112,8 @@ export interface RenderMailOpts {
   /** Optional: Praeheader-Text — wird in Inbox-Preview unter dem Subject
    *  angezeigt. Wirkt subtil aber sehr stark auf Open-Rates. */
   preheader?: string;
+  /** Recipient language; defaults to the instance locale. */
+  locale?: MailLocale;
 }
 
 /**
@@ -107,6 +127,13 @@ export function renderMailLayout(opts: RenderMailOpts): string {
   const logoUrl = opts.branding?.logoUrl;
   const footerNote = opts.branding?.footerNote;
   const preheader = opts.preheader ?? "";
+  const locale = opts.locale ?? instanceMailLocale();
+  const lumioLink =
+    `<a href="https://github.com/markusthiel/lumio" ` +
+    `style="color:${LUMIO_MUTED_COLOR};text-decoration:underline;">Lumio</a>`;
+  const sentViaHtml = phrase(layoutPhrases.sentVia, locale, {
+    link: lumioLink,
+  });
 
   // Zwei Achsen mit Fallback-Kette auf den (deprecated) logoAlign.
   const logoPosition: "left" | "right" | "center" | "footer" =
@@ -193,7 +220,7 @@ ${escapeHtml(preheader)}
             ${footerLogoHtml}
             ${footerHtml}
             <p style="margin:0;color:${LUMIO_MUTED_COLOR};font-size:12px;line-height:1.5;">
-              Verschickt von <a href="https://lumio-cloud.de" style="color:${LUMIO_MUTED_COLOR};text-decoration:underline;">Lumio</a> — Foto-Galerien für Profis, gehostet in Deutschland.
+              ${sentViaHtml}
             </p>
           </td>
         </tr>
