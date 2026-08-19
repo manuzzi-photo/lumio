@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.67.0] - 2026-08-19
+
+Pull genügt für Server und Studio — hier ändert sich nichts. **Wer das Lightroom-Plugin nutzt, muss es neu installieren:** die Änderungen liegen ausschließlich im Plugin, das in Lightroom selbst installiert ist und nicht mit dem Server aktualisiert wird. Ordner `apps/lightroom-plugin/lumio.lrdevplugin` erneut in Lightroom laden.
+
+*A pull is enough for the server and the studio — nothing changes there. **Anyone using the Lightroom plug-in has to reinstall it:** the changes are entirely inside the plug-in, which lives in Lightroom and is not updated along with the server. Re-add the `apps/lightroom-plugin/lumio.lrdevplugin` folder in Lightroom.*
+
+
 ### Fixed
 
 - Das Lightroom-Plugin ließ sich nicht laden — Lightroom meldete „Could not create info sections for plug-in", und keiner der Menüpunkte erschien. Beigesteuert von [@canja006](https://github.com/canja006).
