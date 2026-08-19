@@ -29,6 +29,7 @@
 import { useEffect, useState } from "react";
 import { api, type StudioSection, type TagSummary } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { usePrompt } from "@/components/ui/dialogs";
 
 interface Props {
   galleryId: string;
@@ -47,6 +48,7 @@ interface Props {
 }
 
 export function SectionsEditor({ galleryId, files, onChanged }: Props) {
+  const ask = usePrompt();
   const t = useT();
   const [sections, setSections] = useState<StudioSection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +81,7 @@ export function SectionsEditor({ galleryId, files, onChanged }: Props) {
     if (busy) return;
     setBusy(true);
     try {
-      const title = window.prompt(t("studio.sectionNewPrompt"))?.trim();
+      const title = (await ask({ message: t("studio.sectionNewPrompt") }))?.trim();
       if (!title) return;
       await api.createSection(galleryId, { title });
       await reload();

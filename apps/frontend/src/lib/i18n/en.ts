@@ -54,6 +54,7 @@ export const en = {
     privacy: "Privacy",
     preview: "Preview",
     breadcrumb: "Breadcrumb",
+      confirm: "Confirm",
   },
 
 
@@ -2298,6 +2299,8 @@ export const en = {
       heading: "Passkeys",
     unsupported:
       "This browser does not support WebAuthn or passkey sign-in. It should work on a current version of Chrome, Safari or Firefox.",
+      labelPrompt:
+      "Label for this passkey (for example “MacBook” or “YubiKey #1”)",
   },
 
   bulkSel: {

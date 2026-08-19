@@ -29,6 +29,16 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Vier Stellen, an denen eine Eingabe verlangt wurde, funktionierten in manchen Browsern gar nicht — darunter Brave auf dem iPad: eine neue Section anlegen, einen Passkey benennen, eine Bestellung mit Grund stornieren und der Link zum manuellen Kopieren, wenn die Zwischenablage nicht verfügbar ist. Der Browser blendete das Eingabefenster wortlos aus, die Aktion brach ab, und der Knopf wirkte kaputt. Diese Dialoge werden jetzt von Lumio selbst gezeichnet.
+- Die Beschriftung beim Benennen eines Passkeys war fest auf Deutsch.
+
+**🇬🇧 English**
+
+- Four places that ask for input did not work at all in some browsers, Brave on iPad among them: creating a section, naming a passkey, cancelling an order with a reason, and the manual-copy link shown when the clipboard is unavailable. The browser suppressed the input window without a word, the action aborted, and the button appeared broken. These dialogs are now drawn by Lumio itself.
+- The prompt for naming a passkey was hardcoded in German.
+
 ## [0.67.1] - 2026-08-19
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.

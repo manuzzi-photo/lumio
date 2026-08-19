@@ -53,6 +53,7 @@ export const de: LocaleDict = {
     privacy: "Datenschutz",
     preview: "Vorschau",
     breadcrumb: "Breadcrumb",
+      confirm: "Bestätigen",
   },
 
 
@@ -2309,6 +2310,8 @@ export const de: LocaleDict = {
       heading: "Passkeys",
     unsupported:
       "Dieser Browser unterstützt keine WebAuthn-/Passkey-Anmeldung. Auf einem aktuellen Chrome, Safari oder Firefox sollte es funktionieren.",
+      labelPrompt:
+      "Bezeichnung für diesen Passkey (z.B. „MacBook“ oder „YubiKey #1“)",
   },
 
   bulkSel: {

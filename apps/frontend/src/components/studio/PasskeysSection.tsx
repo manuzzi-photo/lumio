@@ -9,6 +9,7 @@ import { api, type WebauthnCredential } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
 import { useErrorText } from "@/lib/error-i18n";
+import { usePrompt } from "@/components/ui/dialogs";
 
 /**
  * Studio-Settings-Sektion zum Verwalten von Passkeys.
@@ -25,6 +26,7 @@ import { useErrorText } from "@/lib/error-i18n";
  * konfiguriert hat, kann auch ohne TOTP-App ein 2FA-Login machen.
  */
 export function PasskeysSection() {
+  const ask = usePrompt();
   const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
@@ -55,9 +57,7 @@ export function PasskeysSection() {
 
   async function addPasskey() {
     setError(null);
-    const label = window.prompt(
-      'Bezeichnung für diesen Passkey (z.B. "MacBook" oder "YubiKey #1"):'
-    );
+    const label = await ask({ message: t("passkeys.labelPrompt") });
     if (!label || !label.trim()) return;
 
     setAdding(true);

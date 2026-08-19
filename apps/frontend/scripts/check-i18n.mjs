@@ -345,6 +345,60 @@ for (const file of files) {
 
 report("German text in JSX or template literals", germanText);
 
+// --- 7. blocking browser dialogs -------------------------------------------
+// window.confirm/alert/prompt are silently suppressed in some browsers —
+// Brave on iOS among them. The dialog never appears, confirm() returns false,
+// and the action aborts as though the user had cancelled. The button simply
+// looks broken, with no error anywhere.
+//
+// useConfirm() / usePrompt() from components/ui/dialogs render a real modal
+// instead. This check is listed here rather than in its own script because
+// it shares the file walk, and because the practical trigger is the same:
+// someone adds a quick dialog and does not know it fails on a tablet.
+const blockingDialogs = [];
+for (const file of files) {
+  const rel = relative(ROOT, file);
+  if (rel === "src/components/ui/dialogs.tsx") continue; // documents them
+  const text = readFileSync(file, "utf8");
+  text.split("\n").forEach((line, i) => {
+    const code = line.trim();
+    if (code.startsWith("//") || code.startsWith("*")) return;
+    if (/\b(?:window\.)?(confirm|alert|prompt)\s*\(/.test(line)) {
+      // Method calls on other objects are fine (foo.alert(), .prompt = …).
+      if (/\.\s*(confirm|alert|prompt)\s*\(/.test(line) && !/window\./.test(line))
+        return;
+      const which = line.match(/\b(confirm|alert|prompt)\s*\(/)[1];
+      blockingDialogs.push(
+        `${rel}:${i + 1}  ${which}() — use ${
+          which === "prompt" ? "usePrompt()" : "useConfirm()"
+        }`
+      );
+    }
+  });
+}
+
+// Bewusst eine WARNUNG, kein Fehler: die Umstellung laeuft in Etappen, und
+// ein rotes Gate bei 36 bekannten Stellen wuerde sofort ignoriert. Sobald
+// die Zahl 0 erreicht, wird daraus ein report() wie die uebrigen Checks —
+// dann faengt er den naechsten neu hinzugefuegten Dialog sofort.
+const DIALOG_BUDGET = 36;
+if (blockingDialogs.length > 0) {
+  console.warn(
+    `\nBlocking browser dialogs — silently suppressed in some browsers ` +
+      `(${blockingDialogs.length}, migrating in stages):`
+  );
+  for (const item of blockingDialogs.slice(0, 5)) console.warn(`  ${item}`);
+  if (blockingDialogs.length > 5) {
+    console.warn(`  … and ${blockingDialogs.length - 5} more`);
+  }
+}
+if (blockingDialogs.length > DIALOG_BUDGET) {
+  report(
+    `Blocking browser dialogs above the agreed budget of ${DIALOG_BUDGET}`,
+    blockingDialogs.slice(DIALOG_BUDGET)
+  );
+}
+
 if (failures === 0) {
   console.log(
     `i18n check passed — ${enKeys.size} keys in all three dictionaries, ` +

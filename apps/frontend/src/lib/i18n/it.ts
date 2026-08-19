@@ -51,6 +51,7 @@ export const it: LocaleDict = {
     privacy: "Privacy",
     preview: "Anteprima",
     breadcrumb: "Breadcrumb",
+      confirm: "Conferma",
   },
 
 
@@ -2305,6 +2306,8 @@ export const it: LocaleDict = {
     heading: "Passkey",
     unsupported:
       "Questo browser non supporta l'accesso tramite WebAuthn o passkey. Dovrebbe funzionare su una versione recente di Chrome, Safari o Firefox.",
+      labelPrompt:
+      "Etichetta per questa passkey (ad esempio “MacBook” o “YubiKey #1”)",
   },
 
   bulkSel: {
