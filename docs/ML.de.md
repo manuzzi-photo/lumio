@@ -1,4 +1,4 @@
-[English](ML.md) · **Deutsch**
+[English](ML.md) · **Deutsch** · [Italiano](ML.it.md)
 
 # KI-Auto-Tagging (CLIP)
 

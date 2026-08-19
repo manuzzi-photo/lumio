@@ -1,4 +1,4 @@
-[English](BRAND.md) · **Deutsch**
+[English](BRAND.md) · **Deutsch** · [Italiano](BRAND.it.md)
 
 # Lumio — Marke
 

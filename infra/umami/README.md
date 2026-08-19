@@ -1,3 +1,5 @@
+**Deutsch** · [Italiano](README.it.md)
+
 # Umami — Web-Analytics für die Marketing-Sites
 
 Cookieloses, self-hosted Analytics für `lumio-cloud.de` und `lumio-app.de`.

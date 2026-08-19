@@ -1,4 +1,4 @@
-**English** · [Deutsch](SELFHOSTING-SYNOLOGY.de.md)
+**English** · [Deutsch](SELFHOSTING-SYNOLOGY.de.md) · [Italiano](SELFHOSTING-SYNOLOGY.it.md)
 
 # Running Lumio on a Synology NAS
 

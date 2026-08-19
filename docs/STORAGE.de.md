@@ -1,4 +1,4 @@
-[English](STORAGE.md) · **Deutsch**
+[English](STORAGE.md) · **Deutsch** · [Italiano](STORAGE.it.md)
 
 # Storage
 

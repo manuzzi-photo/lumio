@@ -1,4 +1,4 @@
-**English** · [Deutsch](WILDCARD.de.md)
+**English** · [Deutsch](WILDCARD.de.md) · [Italiano](WILDCARD.it.md)
 
 # Wildcard certificates for tenant subdomains
 

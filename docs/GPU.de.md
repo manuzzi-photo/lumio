@@ -1,4 +1,4 @@
-[English](GPU.md) · **Deutsch**
+[English](GPU.md) · **Deutsch** · [Italiano](GPU.it.md)
 
 # GPU-Beschleunigung (NVIDIA NVENC)
 

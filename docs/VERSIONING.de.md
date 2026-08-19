@@ -1,4 +1,4 @@
-[English](VERSIONING.md) · **Deutsch**
+[English](VERSIONING.md) · **Deutsch** · [Italiano](VERSIONING.it.md)
 
 # Versionierung
 

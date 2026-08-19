@@ -1,4 +1,4 @@
-**English** · [Deutsch](CONTRIBUTING.de.md)
+**English** · [Deutsch](CONTRIBUTING.de.md) · [Italiano](CONTRIBUTING.it.md)
 
 # Contributing to Lumio
 
