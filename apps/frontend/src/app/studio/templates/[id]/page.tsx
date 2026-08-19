@@ -186,7 +186,7 @@ export default function TemplateEditorPage() {
               className="w-full rounded-md border border-line-subtle px-3 py-2 text-sm bg-surface-raised"
             >
               <option value="collaboration">
-                Collaboration (Auswahl, Likes, Kommentare)
+                {t("settings.collaborationLabel")}
               </option>
               <option value="presentation">
                 Presentation (nur anschauen)

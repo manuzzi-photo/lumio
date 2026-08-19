@@ -283,7 +283,7 @@ function SectionRow({
                   color: section.autoTag.color,
                   border: `1px solid ${section.autoTag.color}55`,
                 }}
-                title={`Smart-Section: befüllt sich aus Tag "${section.autoTag.name}"`}
+                title={t("settings.smartSectionFrom", { tag: section.autoTag.name })}
               >
                 <span
                   className="inline-block w-1.5 h-1.5 rounded-full"
@@ -496,7 +496,7 @@ function SectionEditForm({
           Section verschoben (und nicht-passende raus). */}
       <div className="pt-2 border-t border-line-subtle">
         <label className="block text-ui-xs text-ink-tertiary mb-1">
-          Smart-Section (aus Tag befüllen)
+          {t("settings.smartSectionOption")}
         </label>
         <div className="flex items-center gap-2">
           <select

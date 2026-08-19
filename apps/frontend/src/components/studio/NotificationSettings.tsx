@@ -145,8 +145,7 @@ export function NotificationSettings({ canEdit }: { canEdit: boolean }) {
         <div className="border-t border-line-subtle pt-5">
           <h3 className="font-semibold text-ink-primary">{t("settings.notifProduct")}</h3>
           <p className="text-ui-sm text-ink-tertiary mt-0.5 mb-4">
-            Gelegentliche Hinweise zu deinem Trial oder Abo (z.&nbsp;B.
-            Ablauf-Erinnerung). Kein Newsletter, keine Werbung Dritter.
+            {t("settings.productMailsHintFull")}
           </p>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">

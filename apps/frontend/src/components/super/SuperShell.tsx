@@ -235,7 +235,7 @@ export function SuperShell({ children }: { children: React.ReactNode }) {
             }}
             className="mt-3 text-ui-xs text-ink-tertiary hover:text-ink-secondary transition-colors duration-motion"
           >
-            Abmelden
+            {t("settings.signOut")}
           </button>
         </div>
       </aside>

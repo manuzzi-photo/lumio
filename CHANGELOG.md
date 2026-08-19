@@ -29,6 +29,16 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- 26 weitere Texte erschienen in jeder Sprache auf Deutsch — darunter „Abmelden" in der Administrationsoberfläche, „Angemeldet als …" im Studio, der Untertitel der Startseite, der Hinweis zur Team-Einladung und alle Rückfragen vor dem Suspendieren, Archivieren oder Umbenennen eines Studios. Gemeldet von [@canja006](https://github.com/canja006), zusammen mit dem Prüfverfahren, das sie gefunden hat.
+- Die Warnung beim Ändern eines Studio-Kürzels nannte fest `lumio-cloud.de`, auch auf einer selbst betriebenen Instanz. Sie nimmt jetzt die tatsächlich konfigurierte Domain.
+
+**🇬🇧 English**
+
+- 26 further strings appeared in German whatever language was selected — including "Sign out" in the administration interface, "Signed in as …" in the studio, the landing page subtitle, the team invitation hint, and every confirmation before suspending, archiving or renaming a studio. Reported by [@canja006](https://github.com/canja006), along with the scanning method that found them.
+- The warning shown when changing a studio slug named `lumio-cloud.de` verbatim, even on a self-hosted instance. It now uses the domain actually configured.
+
 ## [0.67.0] - 2026-08-19
 
 Pull genügt für Server und Studio — hier ändert sich nichts. **Wer das Lightroom-Plugin nutzt, muss es neu installieren:** die Änderungen liegen ausschließlich im Plugin, das in Lightroom selbst installiert ist und nicht mit dem Server aktualisiert wird. Ordner `apps/lightroom-plugin/lumio.lrdevplugin` erneut in Lightroom laden.

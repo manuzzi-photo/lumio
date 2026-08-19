@@ -260,7 +260,7 @@ export default function StudioPage() {
     <>
       <PageHeader
         title={t("studio.galleriesTitle")}
-        description={user.name ? `Angemeldet als ${user.name}` : user.email}
+        description={user.name ? t("settings.signedInAs", { name: user.name }) : user.email}
         actions={
           <Button variant="primary" size="md" onClick={() => setShowCreate(true)}>
             {t("studio.newGallery")}

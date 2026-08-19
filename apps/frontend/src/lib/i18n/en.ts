@@ -1014,6 +1014,25 @@ export const en = {
     catalogProviderLalalabTagline: "Mobile-first photo prints. Belgian/French.",
     catalogProviderMpixTagline: "US pro lab. In case Lumio ever expands into the US market.",
     catalogProviderBonusprintTagline: "UK photo prints and photo books.",
+      landingForPros: "for professionals.",
+    landingSubtitle: "Fast proofing, selection and delivery of your shoots.",
+    signOut: "Sign out",
+    signedInAs: "Signed in as {name}",
+    orSeparator: "or",
+    tagsAllRequired: "Tags (all selected must be present)",
+    inviteSetupHint:
+      "The invited user receives an email with a setup link (valid for 72 hours) and can then sign in with their own password.",
+    collaborationLabel: "Collaboration (selection, likes, comments)",
+    productMailsHintFull:
+      "Occasional notes about your trial or subscription (for example an expiry reminder). No newsletter, no third-party advertising.",
+    smartSectionOption: "Smart section (filled from a tag)",
+    smartSectionFrom: "Smart section: filled from tag “{tag}”",
+    impersonateAllLogged: "All actions are logged.",
+    exportStarted:
+      "Export started: {count} gallery/galleries. The ZIPs are built in the background.",
+    restoreStarted: "Restore started: {count} deleted gallery/galleries found. The ZIPs are built in the background.",
+    filesCount: "{count} files",
+    plansMissingInDb: "{count} plan(s) missing in the database",
   },
 
   annotation: {
@@ -2916,6 +2935,23 @@ export const en = {
     backupNoExports: "No exports for this tenant yet.",
     backupRestoreHint:
       "Provides deleted originals from the S3 versions of the last 30 days as a ZIP file.",
+      tdSuspendConfirm:
+      "Suspend tenant “{name}”? Login and the customer view will be blocked.",
+    tdArchiveConfirm:
+      "Archive tenant “{name}”?\n\n• Login and the customer view will be blocked\n• The Stripe subscription is cancelled immediately\n• A 30-day grace period starts — after that a hard delete is possible\n• Until then the tenant can download their data through a separate export flow",
+    tdWithdrawArchiveConfirm: "Withdraw the scheduled archiving for “{name}”?",
+    tdWithdrawArchiveNote:
+      "The tenant receives no automatic notification. If you want to inform them, write to them directly.",
+    tdGraceRunning: "Grace period running — hard delete possible in {days} days",
+    tdDeadlineReached: "Deadline reached — archiving is pending",
+    tdArchiveScheduledFor: "Archiving scheduled for {date} (in {days} days)",
+    tdSlugChangeConfirm: "Change the slug from “{old}” to “{new}”?",
+    tdSlugChangeWarning:
+      "This changes the subdomain URL (for example https://{slug}.{domain}) and every header-based API access for this tenant.",
+    tdSlugChangeBookmarks:
+      "Existing bookmarks under the old slug will NOT work any more.",
+    tdSlugChangeShareLinks:
+      "Gallery share links are not affected — they use the gallery slug, not the tenant slug.",
   },
 
   galleryShare: {

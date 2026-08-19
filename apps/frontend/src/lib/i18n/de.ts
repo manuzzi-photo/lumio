@@ -1021,6 +1021,27 @@ export const de: LocaleDict = {
     catalogProviderLalalabTagline: "Mobile-first Foto-Drucke. Belgisch/französisch.",
     catalogProviderMpixTagline: "US-Pro-Lab. Falls Lumio mal in den US-Markt expandiert.",
     catalogProviderBonusprintTagline: "UK-Foto-Drucke und Photobooks.",
+      landingForPros: "für Profis.",
+    landingSubtitle:
+      "Schnelles Proofing, Auswahl und Auslieferung von Shootings.",
+    signOut: "Abmelden",
+    signedInAs: "Angemeldet als {name}",
+    orSeparator: "oder",
+    tagsAllRequired: "Tags (alle gewählten müssen vorhanden sein)",
+    inviteSetupHint:
+      "Der eingeladene User erhält eine E-Mail mit einem Setup-Link (gültig 72 Stunden) und kann sich danach mit eigenem Passwort anmelden.",
+    collaborationLabel: "Collaboration (Auswahl, Likes, Kommentare)",
+    productMailsHintFull:
+      "Gelegentliche Hinweise zu deinem Trial oder Abo (z. B. Ablauf-Erinnerung). Kein Newsletter, keine Werbung Dritter.",
+    smartSectionOption: "Smart-Section (aus Tag befüllen)",
+    smartSectionFrom: "Smart-Section: befüllt sich aus Tag „{tag}“",
+    impersonateAllLogged: "Alle Aktionen werden protokolliert.",
+    exportStarted:
+      "Export gestartet: {count} Galerie(n). Die ZIPs werden im Hintergrund gebaut.",
+    restoreStarted:
+      "Wiederherstellung gestartet: {count} gelöschte Galerie(n) gefunden. Die ZIPs werden im Hintergrund gebaut.",
+    filesCount: "{count} Dateien",
+    plansMissingInDb: "{count} Plan(e) fehlen in der DB",
   },
 
   annotation: {
@@ -2925,6 +2946,23 @@ export const de: LocaleDict = {
     backupNoExports: "Noch keine Exporte für diesen Tenant.",
     backupRestoreHint:
       "Stellt gelöschte Originale aus den S3-Versionen der letzten 30 Tage als ZIP bereit.",
+      tdSuspendConfirm:
+      "Tenant „{name}“ suspendieren? Login + Customer-View werden blockiert.",
+    tdArchiveConfirm:
+      "Tenant „{name}“ archivieren?\n\n• Login + Customer-Sicht werden blockiert\n• Stripe-Subscription wird sofort gekündigt\n• 30-Tage-Karenzfrist läuft an — danach Hard-Delete möglich\n• Bis dahin kann der Tenant seine Daten über separaten Export-Flow herunterladen",
+    tdWithdrawArchiveConfirm: "Geplante Archivierung für „{name}“ zurückziehen?",
+    tdWithdrawArchiveNote:
+      "Der Tenant erhält keine automatische Benachrichtigung. Falls du ihn informieren willst, schreibe ihm direkt.",
+    tdGraceRunning: "Karenzfrist läuft — Hard-Delete in {days} Tagen möglich",
+    tdDeadlineReached: "Stichtag erreicht — Archivierung steht aus",
+    tdArchiveScheduledFor: "Archivierung geplant für {date} (in {days} Tagen)",
+    tdSlugChangeConfirm: "Slug ändern von „{old}“ auf „{new}“?",
+    tdSlugChangeWarning:
+      "Das ändert die Subdomain-URL (z. B. https://{slug}.{domain}) und alle Header-basierten API-Zugriffe für diesen Tenant.",
+    tdSlugChangeBookmarks:
+      "Bestehende Bookmarks unter dem alten Slug funktionieren NICHT mehr.",
+    tdSlugChangeShareLinks:
+      "Galerie-Share-Links sind nicht betroffen — die nutzen den Galerie-Slug, nicht den Tenant-Slug.",
   },
 
   galleryShare: {

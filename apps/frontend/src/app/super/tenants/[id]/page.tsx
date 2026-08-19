@@ -92,7 +92,7 @@ function TenantDetail() {
 
   async function suspend() {
     if (!tenant) return;
-    if (!confirm(`Tenant „${tenant.name}" suspendieren? Login + Customer-View werden blockiert.`)) return;
+    if (!confirm(t("super.tdSuspendConfirm", { name: tenant.name }))) return;
     setActionBusy(true);
     try {
       await api.superSuspendTenant(tenant.id);
@@ -130,7 +130,7 @@ function TenantDetail() {
     if (!tenant) return;
     if (
       !confirm(
-        `Tenant „${tenant.name}" archivieren?\n\n• Login + Customer-Sicht werden blockiert\n• Stripe-Subscription wird sofort gekündigt\n• 30-Tage-Karenzfrist läuft an — danach Hard-Delete möglich\n• Bis dahin kann der Tenant seine Daten über separaten Export-Flow herunterladen`
+        t("super.tdArchiveConfirm", { name: tenant.name })
       )
     )
       return;
@@ -203,7 +203,14 @@ function TenantDetail() {
 
   async function cancelSchedule() {
     if (!tenant) return;
-    if (!confirm(`Geplante Archivierung für "${tenant.name}" zurückziehen?\n\nDer Tenant erhält keine automatische Benachrichtigung. Falls du ihn informieren willst, schreibe ihm direkt.`)) return;
+    if (
+      !confirm(
+        t("super.tdWithdrawArchiveConfirm", { name: tenant.name }) +
+          "\n\n" +
+          t("super.tdWithdrawArchiveNote")
+      )
+    )
+      return;
     setActionBusy(true);
     try {
       await api.superCancelScheduledArchive(tenant.id);
@@ -353,7 +360,9 @@ function TenantDetail() {
             <div className="text-ui-sm text-ink-secondary min-w-0 flex-1">
               <span className="font-medium text-ink-primary">
                 {tenant.karenz.active
-                  ? `Karenzfrist läuft — Hard-Delete in ${tenant.karenz.remainingDays} Tag${tenant.karenz.remainingDays === 1 ? "" : "en"} möglich`
+                  ? t("super.tdGraceRunning", {
+                      days: tenant.karenz.remainingDays,
+                    })
                   : t("super.tdGraceExpired")}
               </span>
               <div className="text-ui-xs text-ink-tertiary mt-1">
@@ -891,8 +900,11 @@ function ScheduledArchiveBanner({
         <div className="text-ui-sm text-ink-secondary min-w-0 flex-1">
           <span className="font-medium text-ink-primary">
             {reached
-              ? `Stichtag erreicht — Archivierung steht aus`
-              : `Archivierung geplant für ${date.toLocaleDateString(fmt.bcp47)} (in ${daysLeft} Tag${daysLeft === 1 ? "" : "en"})`}
+              ? t("super.tdDeadlineReached")
+              : t("super.tdArchiveScheduledFor", {
+                  date: date.toLocaleDateString(fmt.bcp47),
+                  days: daysLeft,
+                })}
           </span>
           <div className="text-ui-xs text-ink-tertiary mt-1">
             {reached ? (
@@ -999,6 +1011,16 @@ function EditMetaForm({
   onSaved: () => Promise<void> | void;
   onCancel: () => void;
 }) {
+  // Die Warnung beim Slug-Wechsel nennt die Subdomain. Frueher stand dort
+  // fest "lumio-cloud.de" — auf einer selbst betriebenen Instanz falsch.
+  const [domainBase, setDomainBase] = useState<string | null>(null);
+  useEffect(() => {
+    api
+      .getTenantSettings()
+      .then((r) => setDomainBase(r.deployment.domainBase ?? null))
+      .catch(() => {});
+  }, []);
+
   const errText = useErrorText();
   const t = useT();
   const [slug, setSlug] = useState(tenant.slug);
@@ -1015,12 +1037,18 @@ function EditMetaForm({
     // wissen wir, dass er die Konsequenzen für Subdomains/URLs kennt.
     if (slugChanged) {
       const ok = confirm(
-        `Slug ändern von "${tenant.slug}" auf "${slug}"?\n\n` +
-          `Das ändert die Subdomain-URL (z.B. https://${slug}.lumio-cloud.de) ` +
-          `und alle Header-basierten API-Zugriffe für diesen Tenant. ` +
-          `Bestehende Bookmarks unter dem alten Slug funktionieren NICHT mehr.\n\n` +
-          `Galerie-Share-Links sind nicht betroffen — die nutzen den ` +
-          `Galerie-Slug, nicht den Tenant-Slug.`
+        t("super.tdSlugChangeConfirm", { old: tenant.slug, new: slug }) +
+          "\n\n" +
+          // Domain aus der Instanz, nicht hartkodiert: auf einer
+          // selbst betriebenen Instanz ist lumio-cloud.de einfach falsch.
+          t("super.tdSlugChangeWarning", {
+            slug,
+            domain: domainBase ?? "…",
+          }) +
+          " " +
+          t("super.tdSlugChangeBookmarks") +
+          "\n\n" +
+          t("super.tdSlugChangeShareLinks")
       );
       if (!ok) return;
     }
