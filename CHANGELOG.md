@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.66.3] - 2026-08-19
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen sind Frontend und API, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server.*
+
+
 ### Added
 
 - Die Dokumentation gibt es jetzt auch auf Italienisch — README, CONTRIBUTING und alle 19 Dateien unter `docs/`, dazu die vier Plugin- und Werkzeug-READMEs, die es bisher nur auf Deutsch gab. Beigesteuert von [@manuzzi](https://github.com/manuzzi).
