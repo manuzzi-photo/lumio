@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.67.1] - 2026-08-19
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.*
+
+
 ### Fixed
 
 - 26 weitere Texte erschienen in jeder Sprache auf Deutsch — darunter „Abmelden" in der Administrationsoberfläche, „Angemeldet als …" im Studio, der Untertitel der Startseite, der Hinweis zur Team-Einladung und alle Rückfragen vor dem Suspendieren, Archivieren oder Umbenennen eines Studios. Gemeldet von [@canja006](https://github.com/canja006), zusammen mit dem Prüfverfahren, das sie gefunden hat.
