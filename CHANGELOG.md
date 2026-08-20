@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.71.1] - 2026-08-20
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist die API, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The API is affected, so only the main server.*
+
+
 ### Fixed
 
 - E-Mails kamen im Rahmen weiterhin in der Vorgabesprache der Instanz, auch wenn der Inhalt übersetzt war: Fußzeile und die Sprachkennzeichnung der Mail folgten nicht der angeschriebenen Person. Eine englische Mail auf einer deutschen Instanz hatte also englischen Text in deutschem Rahmen — was auch Vorleseprogramme und Spamfilter falsch informierte. Gemeldet und behoben von [@manuzzi](https://github.com/manuzzi).
