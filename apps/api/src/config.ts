@@ -101,6 +101,23 @@ const envSchema = z.object({
   // ohne Eintrag bleibt alles auf Deutsch wie bisher.
   DEFAULT_MAIL_LOCALE: z.enum(["de", "en"]).default("de"),
 
+  /**
+   * Fusszeile der Mails: "Verschickt von Lumio".
+   *
+   * Leer gelassen greift der uebersetzte Standard, der der Sprache des
+   * Empfaengers folgt und auf das Repository verlinkt. Wer hier etwas
+   * eintraegt, ersetzt ihn woertlich — sinnvoll fuer eine gehostete Instanz,
+   * die dort ihren eigenen Satz und ihre eigene Adresse stehen haben will.
+   *
+   * Achtung, bewusster Kompromiss: eigener Text wird NICHT uebersetzt. Er
+   * erscheint so in jeder Mail, unabhaengig von der Sprache des Empfaengers.
+   * Auf einer Instanz mit mehreren Sprachen ist der Standard daher meist die
+   * bessere Wahl. {link} wird durch den verlinkten Produktnamen ersetzt.
+   */
+  MAIL_FOOTER_TEXT: z.string().optional(),
+  /** Ziel des Produktnamens in der Fusszeile. Default: das Repository. */
+  MAIL_FOOTER_URL: z.string().url().optional(),
+
   SMTP_SECURE: z
     .string()
     .default("false")
