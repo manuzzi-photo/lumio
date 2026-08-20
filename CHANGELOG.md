@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.69.0] - 2026-08-19
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.*
+
+
 ### Fixed
 
 - Fehlermeldungen, die bisher als Browser-Hinweisfenster erschienen, werden jetzt von Lumio als Einblendung gezeigt. In Browsern, die solche Fenster unterdrücken, erfuhr man vorher gar nicht, dass etwas schiefgegangen war — die Aktion schlug still fehl. Betraf unter anderem das Widerrufen von Galerie-Zugängen und das Verschicken von Einladungen.
