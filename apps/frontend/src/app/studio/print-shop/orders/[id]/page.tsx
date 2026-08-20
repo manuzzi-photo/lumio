@@ -20,12 +20,14 @@ import { StatusBadge } from "../page";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
 import { useErrorText } from "@/lib/error-i18n";
+import { usePrompt } from "@/components/ui/dialogs";
 
 export default function OrderDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const ask = usePrompt();
   const errText = useErrorText();
   const fmt = useFormat();
   const { id } = use(params);
@@ -192,15 +194,16 @@ export default function OrderDetailPage({
                     key={tr}
                     size="sm"
                     variant="secondary"
-                    onClick={() => {
+                    onClick={async () => {
                       const verb =
                         tr === "cancel"
                           ? t("orderDetail.verbCancel")
                           : t("orderDetail.verbRefund");
-                      const reason = window.prompt(
-                        t("orderDetail.reasonPrompt", { verb })
-                      );
-                      if (reason === null) return; // cancelled prompt
+                      const reason = await ask({
+                        message: t("orderDetail.reasonPrompt", { verb }),
+                        required: false,
+                      });
+                      if (reason === null) return; // dialog dismissed
                       void transition(tr, { reason });
                     }}
                     disabled={busy}

@@ -17,6 +17,7 @@ import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { Button, Input, Select } from "@/components/ui";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 type Config = Awaited<ReturnType<typeof api.getPrintShopConfig>>["config"];
 type Connect = Awaited<
@@ -39,6 +40,7 @@ export default function PrintShopSettingsPage() {
 }
 
 function SettingsInner() {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const t = useT();
   const params = useSearchParams();
@@ -147,9 +149,7 @@ function SettingsInner() {
 
   async function disconnect() {
     if (
-      !confirm(
-        "Stripe-Connect-Account wirklich trennen? Du kannst danach keine Online-Bestellungen mehr empfangen."
-      )
+      !(await confirm({ message: "Stripe-Connect-Account wirklich trennen? Du kannst danach keine Online-Bestellungen mehr empfangen." }))
     ) {
       return;
     }

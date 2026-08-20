@@ -81,7 +81,7 @@ function PlanCatalogView() {
             {missingCount > 0 && (
               <Badge
                 tone="warning"
-                label={`${missingCount} Plan(e) fehlen in der DB`}
+                label={t("settings.plansMissingInDb", { count: missingCount })}
               />
             )}
           </div>

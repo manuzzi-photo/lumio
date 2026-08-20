@@ -12,8 +12,10 @@ import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 export default function TemplateEditorPage() {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const t = useT();
   const router = useRouter();
@@ -105,9 +107,7 @@ export default function TemplateEditorPage() {
 
   async function remove() {
     if (
-      !confirm(
-        t("templates.deleteConfirm")
-      )
+      !(await confirm({ message: t("templates.deleteConfirm") }))
     )
       return;
     await api.deleteTemplate(id);
@@ -186,7 +186,7 @@ export default function TemplateEditorPage() {
               className="w-full rounded-md border border-line-subtle px-3 py-2 text-sm bg-surface-raised"
             >
               <option value="collaboration">
-                Collaboration (Auswahl, Likes, Kommentare)
+                {t("settings.collaborationLabel")}
               </option>
               <option value="presentation">
                 Presentation (nur anschauen)

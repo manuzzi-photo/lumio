@@ -20,6 +20,7 @@ import type {
 import { Button, Input, Select, Textarea } from "@/components/ui";
 import type { Formatters } from "@/lib/i18n/format";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 type Product = Awaited<
   ReturnType<typeof api.listPrintProducts>
@@ -39,6 +40,7 @@ const CATEGORIES = [
 ] as const;
 
 export default function PrintProductsPage() {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
@@ -77,7 +79,7 @@ export default function PrintProductsPage() {
   }, [load]);
 
   async function deleteProduct(p: Product) {
-    if (!confirm(t("printProducts.deleteProductConfirm", { name: p.name }))) return;
+    if (!(await confirm({ message: t("printProducts.deleteProductConfirm", { name: p.name }) }))) return;
     setBusy(true);
     try {
       await api.deletePrintProduct(p.id);
@@ -94,7 +96,7 @@ export default function PrintProductsPage() {
   }
 
   async function deleteVariant(v: Variant) {
-    if (!confirm(t("printProducts.deleteVariantConfirm", { name: v.name }))) return;
+    if (!(await confirm({ message: t("printProducts.deleteVariantConfirm", { name: v.name }) }))) return;
     setBusy(true);
     try {
       await api.deletePrintVariant(v.id);

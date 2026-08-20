@@ -576,7 +576,7 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-ui-xs">
                 <span className="bg-surface-raised px-2 text-ink-tertiary">
-                  oder
+                  {t("settings.orSeparator")}
                 </span>
               </div>
             </div>

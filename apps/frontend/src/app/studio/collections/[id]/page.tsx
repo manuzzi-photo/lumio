@@ -172,7 +172,7 @@ export default function CollectionEditPage() {
           {allTags.length > 0 && (
             <div>
               <label className="block text-ui-xs uppercase tracking-wide text-ink-tertiary mb-2">
-                Tags (alle gewählten müssen vorhanden sein)
+                {t("settings.tagsAllRequired")}
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {allTags.map((tag) => {

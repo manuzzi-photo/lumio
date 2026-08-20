@@ -19,6 +19,7 @@ import {
   phrase,
   type MailLocale,
   type Phrase,
+  localeTag,
 } from "./mail-i18n.js";
 
 let _transport: Transporter | null = null;
@@ -838,7 +839,7 @@ export function tmplGalleryInvite(opts: {
   // Datum in der Sprache des Empfaengers, nicht fest de-DE.
   const expiryText = opts.expiresAt
     ? phrase(galleryInvitePhrases.expiry, l, {
-        date: opts.expiresAt.toLocaleDateString(l === "de" ? "de-DE" : "en-GB", {
+        date: opts.expiresAt.toLocaleDateString(localeTag(l), {
           day: "2-digit",
           month: "long",
           year: "numeric",
@@ -949,7 +950,7 @@ export function tmplWelcome(opts: {
     ? phrase(P.greetingNamed, l, { name: opts.displayName })
     : phrase(P.greetingPlain, l);
   const trialEnd = opts.trialEndsAt.toLocaleDateString(
-    l === "de" ? "de-DE" : "en-GB",
+    localeTag(l),
     { day: "2-digit", month: "long", year: "numeric" }
   );
   const vars = {
@@ -1069,7 +1070,7 @@ export function tmplDeletionRequested(opts: {
     ? phrase(P.greetingNamed, l, { name: opts.displayName })
     : phrase(P.greetingPlain, l);
   const dateStr = opts.scheduledFor.toLocaleDateString(
-    l === "de" ? "de-DE" : "en-GB",
+    localeTag(l),
     { day: "2-digit", month: "long", year: "numeric" }
   );
   const vars = { studio: opts.studioName, date: dateStr };
@@ -1353,7 +1354,7 @@ export function tmplDeletionReminder(opts: {
     ? phrase(P.greetingNamed, l, { name: opts.displayName })
     : phrase(P.greetingPlain, l);
   const dateStr = opts.scheduledFor.toLocaleDateString(
-    l === "de" ? "de-DE" : "en-GB",
+    localeTag(l),
     { day: "2-digit", month: "long", year: "numeric" }
   );
   const vars = { studio: opts.studioName, date: dateStr };
@@ -1450,7 +1451,7 @@ export function tmplBillingArchived(opts: {
     ? phrase(P.greetingNamed, l, { name: opts.displayName })
     : phrase(P.greetingPlain, l);
   const dateStr = opts.purgeDate.toLocaleDateString(
-    l === "de" ? "de-DE" : "en-GB",
+    localeTag(l),
     { day: "2-digit", month: "long", year: "numeric" }
   );
   const vars = { studio: opts.studioName, date: dateStr };
@@ -1528,7 +1529,7 @@ export function tmplBillingPurgeReminder(opts: {
     ? phrase(P.greetingNamed, l, { name: opts.displayName })
     : phrase(P.greetingPlain, l);
   const dateStr = opts.purgeDate.toLocaleDateString(
-    l === "de" ? "de-DE" : "en-GB",
+    localeTag(l),
     { day: "2-digit", month: "long", year: "numeric" }
   );
   const vars = { studio: opts.studioName, date: dateStr };
@@ -1943,7 +1944,7 @@ export function tmplTrialReminder(opts: {
     ? phrase(P.greetingNamed, l, { name: opts.displayName })
     : phrase(P.greetingPlain, l);
   const trialEnd = opts.trialEndsAt.toLocaleDateString(
-    l === "de" ? "de-DE" : "en-GB",
+    localeTag(l),
     { day: "2-digit", month: "long", year: "numeric" }
   );
   const daysLeft = Math.max(
@@ -2040,7 +2041,7 @@ export function tmplTrialCancelled(opts: {
     ? phrase(P.greetingNamed, l, { name: opts.displayName })
     : phrase(P.greetingPlain, l);
   const trialEnd = opts.trialEndsAt.toLocaleDateString(
-    l === "de" ? "de-DE" : "en-GB",
+    localeTag(l),
     { day: "2-digit", month: "long", year: "numeric" }
   );
   const vars = { date: trialEnd };
@@ -2423,7 +2424,7 @@ export function tmplPreArchiveNotice(opts: {
   const P = preArchivePhrases;
   const isReminder = opts.daysLeft !== undefined;
   const dateStr = opts.scheduledFor.toLocaleDateString(
-    l === "de" ? "de-DE" : "en-GB",
+    localeTag(l),
     { year: "numeric", month: "long", day: "numeric" }
   );
   const vars = {

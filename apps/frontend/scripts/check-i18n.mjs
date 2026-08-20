@@ -255,6 +255,144 @@ report(
   missingErrorCodes
 );
 
+// --- 6. German text a quote-scan cannot see -------------------------------
+// Two categories my earlier scans missed entirely, both pointed out by
+// canja006 in issue #12 along with a working scanner:
+//
+//   1. JSX text nodes. <p>Angemeldet als</p> is not a string literal — the
+//      text sits between the tags, so grepping for quotes skips it.
+//   2. German without umlauts. A "contains ä/ö/ü/ß" heuristic misses
+//      nicht, oder, Galerie, Auswahl, Dateien, Abmelden.
+//
+// This errs toward recall: expect the occasional false positive (a German
+// word inside an English sentence). It is triage, not a gate on style — but
+// it is the check that would have caught the 26 strings still live at
+// v0.66.3 after I had twice declared the frontend done.
+const GERMAN_WORDS =
+  /\b(der|die|das|und|oder|nicht|kein|keine|wird|wurde|werden|sind|ist|dein|deine|deinen|sich|noch|schon|bitte|kann|kannst|muss|darf|Datei|Dateien|Galerie|Galerien|Bild|Bilder|Kunde|Kunden|Auswahl|Einstellung|Einstellungen|Speicher|Speichern|abbrechen|erstellen|zurueck|weiter|erfolgreich|verfuegbar|Anzahl|Angemeldet|Benachrichtigung|Vorschau|hochladen|herunterladen|loeschen|Verbindung|Freigabe|Anmelden|Abmelden)\b/;
+const UMLAUT = /[äöüßÄÖÜ]/;
+const looksGerman = (t) => GERMAN_WORDS.test(t) || UMLAUT.test(t);
+
+/** Blanks comments while keeping offsets, so their German is not flagged. */
+function blankComments(src) {
+  let out = "";
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i];
+    if (c === '"' || c === "'" || c === "`") {
+      const quote = c;
+      out += c;
+      i++;
+      while (i < src.length) {
+        if (src[i] === "\\") {
+          out += src.slice(i, i + 2);
+          i += 2;
+          continue;
+        }
+        out += src[i];
+        if (src[i] === quote) {
+          i++;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+    if (c === "/" && src[i + 1] === "/") {
+      const nl = src.indexOf("\n", i);
+      const end = nl < 0 ? src.length : nl;
+      out += " ".repeat(end - i);
+      i = end;
+      continue;
+    }
+    if (c === "/" && src[i + 1] === "*") {
+      const close = src.indexOf("*/", i);
+      const end = close < 0 ? src.length : close + 2;
+      out += src.slice(i, end).replace(/[^\n]/g, " ");
+      i = end;
+      continue;
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
+/**
+ * app/page.tsx is the tenant picker on the apex domain: a Server Component
+ * that awaits headers(), so useT() is unavailable there. Documented in the
+ * file itself; localising it needs the locale resolved server-side from the
+ * cookie, which is its own change.
+ */
+const GERMAN_TEXT_EXEMPT = new Set(["src/app/page.tsx"]);
+
+const germanText = [];
+for (const file of files) {
+  const rel = relative(ROOT, file);
+  if (GERMAN_TEXT_EXEMPT.has(rel)) continue;
+  const src = blankComments(readFileSync(file, "utf8"));
+  const lineAt = (idx) => src.slice(0, idx).split("\n").length;
+  for (const m of src.matchAll(/>\s*([^<>{}\n][^<>{}]*?)\s*</g)) {
+    const text = m[1].trim();
+    if (!/[A-Za-zÀ-ÿ]/.test(text) || !looksGerman(text)) continue;
+    germanText.push(`${rel}:${lineAt(m.index)}  ${text.slice(0, 60)}`);
+  }
+  for (const m of src.matchAll(/`([^`]*)`/g)) {
+    if (!looksGerman(m[1])) continue;
+    germanText.push(`${rel}:${lineAt(m.index)}  \`${m[1].slice(0, 55)}\``);
+  }
+}
+
+report("German text in JSX or template literals", germanText);
+
+// --- 7. blocking browser dialogs -------------------------------------------
+// window.confirm/alert/prompt are silently suppressed in some browsers —
+// Brave on iOS among them. The dialog never appears, confirm() returns false,
+// and the action aborts as though the user had cancelled. The button simply
+// looks broken, with no error anywhere.
+//
+// useConfirm() / usePrompt() from components/ui/dialogs render a real modal
+// instead. This check is listed here rather than in its own script because
+// it shares the file walk, and because the practical trigger is the same:
+// someone adds a quick dialog and does not know it fails on a tablet.
+const blockingDialogs = [];
+for (const file of files) {
+  const rel = relative(ROOT, file);
+  if (rel === "src/components/ui/dialogs.tsx") continue; // documents them
+  const text = readFileSync(file, "utf8");
+  text.split("\n").forEach((line, i) => {
+    const code = line.trim();
+    if (code.startsWith("//") || code.startsWith("*")) return;
+    if (/\b(?:window\.)?(confirm|alert|prompt)\s*\(/.test(line)) {
+      // Method calls on other objects are fine (foo.alert(), .prompt = …).
+      if (/\.\s*(confirm|alert|prompt)\s*\(/.test(line) && !/window\./.test(line))
+        return;
+      // Already migrated: `await confirm({ … })` / `await ask({ … })` are the
+      // hook versions, not the browser ones. Without this the check keeps
+      // reporting its own fixes and the count never moves.
+      if (/await\s+(confirm|ask|prompt)\s*\(\s*\{/.test(line)) return;
+      // Prose mentioning the API — the JSX-comment case, which does not
+      // start with // or * and would otherwise be reported forever.
+      if (/(?:statt|instead of|kein|no)\s+window\.\w+\(\)/.test(line)) return;
+      const which = line.match(/\b(confirm|alert|prompt)\s*\(/)[1];
+      blockingDialogs.push(
+        `${rel}:${i + 1}  ${which}() — use ${
+          which === "prompt" ? "usePrompt()" : "useConfirm()"
+        }`
+      );
+    }
+  });
+}
+
+// Die Umstellung ist abgeschlossen (0 verbleibend), also jetzt ein hartes
+// Gate: der naechste hinzugefuegte Browser-Dialog laesst den Build scheitern,
+// statt nur eine Warnung zu erzeugen, die man ueberliest.
+report(
+  "Blocking browser dialogs — silently suppressed in some browsers, " +
+    "use useConfirm()/usePrompt()/useNotify()",
+  blockingDialogs
+);
+
 if (failures === 0) {
   console.log(
     `i18n check passed — ${enKeys.size} keys in all three dictionaries, ` +

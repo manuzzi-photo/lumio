@@ -17,8 +17,10 @@ import { PageHeader } from "@/components/studio/PageHeader";
 import { Button, Input, Textarea, Select } from "@/components/ui";
 import { TagChip } from "@/components/studio/TagPicker";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm, useNotify} from "@/components/ui/dialogs";
 
 export default function StudioPage() {
+  const confirm = useConfirm();
   const router = useRouter();
   const t = useT();
   const [user, setUser] = useState<ApiUser | null>(null);
@@ -241,7 +243,8 @@ export default function StudioPage() {
   // Aktive Collection löschen (nur möglich wenn eine aktiv ist).
   async function deleteActiveCollection() {
     if (!activeCollection) return;
-    if (!confirm(t("studio.deleteCollectionConfirm"))) return;
+    if (!(await confirm({ message: t("studio.deleteCollectionConfirm") })))
+      return;
     await api.deleteCollection(activeCollection);
     setCollections((cs) => cs.filter((c) => c.id !== activeCollection));
     setActiveCollection(null);
@@ -260,7 +263,7 @@ export default function StudioPage() {
     <>
       <PageHeader
         title={t("studio.galleriesTitle")}
-        description={user.name ? `Angemeldet als ${user.name}` : user.email}
+        description={user.name ? t("settings.signedInAs", { name: user.name }) : user.email}
         actions={
           <Button variant="primary" size="md" onClick={() => setShowCreate(true)}>
             {t("studio.newGallery")}
@@ -850,6 +853,7 @@ function GalleryCard({
   onTogglePin: () => void;
   onChanged: () => void;
 }) {
+  const notify = useNotify();
   const errText = useErrorText();
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -890,7 +894,7 @@ function GalleryCard({
       await api.updateGallery(g.id, { status });
       onChanged();
     } catch (err) {
-      alert(errText(err, t("common.error")));
+      notify(errText(err, t("common.error")));
     } finally {
       setBusy(false);
     }

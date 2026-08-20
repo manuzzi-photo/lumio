@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { I18nProvider } from "@/lib/i18n";
+import { DialogProvider } from "@/components/ui/dialogs";
 import { MotionBoot } from "@/components/MotionBoot";
 
 // Inter via next/font.
@@ -40,7 +41,11 @@ export default function RootLayout({
     <html lang="en" className={inter.variable} data-motion="subtle">
       <body>
         <MotionBoot />
-        <I18nProvider>{children}</I18nProvider>
+        <I18nProvider>
+          {/* Stellt useConfirm()/usePrompt() bereit. Muss innerhalb des
+              I18nProviders liegen — die Dialoge uebersetzen ihre Knoepfe. */}
+          <DialogProvider>{children}</DialogProvider>
+        </I18nProvider>
       </body>
     </html>
   );

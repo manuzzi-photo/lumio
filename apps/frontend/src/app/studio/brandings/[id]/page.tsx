@@ -9,8 +9,10 @@ import { MarkdownField } from "@/components/studio/MarkdownField";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 export default function BrandingEditorPage() {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const t = useT();
   const router = useRouter();
@@ -96,9 +98,7 @@ export default function BrandingEditorPage() {
 
   async function remove() {
     if (
-      !confirm(
-        t("brandingEditor.confirmDelete")
-      )
+      !(await confirm({ message: t("brandingEditor.confirmDelete") }))
     )
       return;
     await api.deleteBranding(id);
@@ -145,7 +145,7 @@ export default function BrandingEditorPage() {
       logoLight: t("brandingEditor.remLogoLight"),
       favicon: t("brandingEditor.labelFavicon"),
     } as const;
-    if (!confirm(t("brandingEditor.confirmRemoveAsset", { label: labels[kind] }))) return;
+    if (!(await confirm({ message: t("brandingEditor.confirmRemoveAsset", { label: labels[kind] }) }))) return;
     const { branding: updated } = await api.deleteBrandingAsset(id, kind);
     setBranding(updated);
   }

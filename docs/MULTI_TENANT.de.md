@@ -1,4 +1,4 @@
-[English](MULTI_TENANT.md) · **Deutsch**
+[English](MULTI_TENANT.md) · **Deutsch** · [Italiano](MULTI_TENANT.it.md)
 
 # Multi-Tenant-Setup
 

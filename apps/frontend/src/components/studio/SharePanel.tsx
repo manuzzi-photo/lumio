@@ -5,6 +5,7 @@ import { api, type GalleryAccess } from "@/lib/api";
 import { EmailChipsInput } from "@/components/studio/EmailChipsInput";
 import { useT, useFormat} from "@/lib/i18n";
 import { useErrorText } from "@/lib/error-i18n";
+import { useNotify } from "@/components/ui/dialogs";
 
 export function SharePanel({
   galleryId,
@@ -17,6 +18,8 @@ export function SharePanel({
   initialPublicAccess?: boolean;
   initialHasPassword?: boolean;
 }) {
+  const errText = useErrorText();
+  const notify = useNotify();
   const fmt = useFormat();
   const t = useT();
   const [publicAccess, setPublicAccess] = useState(initialPublicAccess);
@@ -185,20 +188,16 @@ export function SharePanel({
         // die neuen Adressen zeigt
         if (payload.updateDefaults) void load();
       } else {
-        alert("Einladung konnte nicht verschickt werden.");
+        notify(t("share.inviteSendFailed"));
       }
     } catch (err) {
-      alert(
-        err instanceof Error
-          ? `${t("common.error")}: ${err.message}`
-          : t("share.inviteFailed")
-      );
+      notify(errText(err, t("share.inviteFailed")));
     } finally {
       setInvitingId(null);
     }
   }
 
-  /** Widerrufen mit Zwei-Klick-Confirm (kein confirm()-Dialog,
+  /** Widerrufen mit Zwei-Klick-Confirm (kein Browser-Dialog,
    *  weil viele Browser den unterdruecken). Erster Klick markiert
    *  den Eintrag, zweiter Klick fuehrt durch. Auto-Reset nach 4s. */
   async function onDeleteClick(id: string) {
@@ -214,11 +213,7 @@ export function SharePanel({
       await api.deleteAccess(galleryId, id);
       void load();
     } catch (err) {
-      alert(
-        err instanceof Error
-          ? `${t("share.revokeFailed")}: ${err.message}`
-          : t("share.revokeFailed")
-      );
+      notify(errText(err, t("share.revokeFailed")));
     }
   }
 

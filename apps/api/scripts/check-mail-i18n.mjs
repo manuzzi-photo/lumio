@@ -54,11 +54,12 @@ const INLINE_ALLOWED_SITES = [
  * BCP 47 tags, and the templates pick between them based on the recipient.
  */
 const LOCALE_ALLOWED = [
-  // Any "<something> === "de" ? "de-DE" : "en-GB"" is the intended shape —
-  // the variable name varies (l, locale, ownerLocale, digestLocale …), so
-  // match the pattern rather than a fixed list of names.
-  /\w+ === "de" \? "de-DE" : "en-GB"/,
+  // localeTag(<locale>) is the sanctioned way to get a BCP 47 tag.
+  /localeTag\(/,
+  // The BCP 47 map inside localeTag() — the one place that is allowed to
+  // name tags literally.
   /de: "de-DE"/,
+  /en: "en-GB"/,
   /^\s*\*/, // comment lines
 ];
 
@@ -152,6 +153,29 @@ for (const file of files) {
 report(
   "Hardcoded locale identifiers (thread the recipient's locale instead)",
   hardcodedLocale
+);
+
+// --- 4. the two-language ternary -------------------------------------------
+// `l === "de" ? "de-DE" : "en-GB"` looks locale-aware and is not: every
+// language that is not German silently formats as British English. This
+// check previously WHITELISTED that pattern, which is how it spread to
+// twelve call sites. Reported by canja006 in GitHub issue #12.
+const localeTernary = [];
+for (const file of files) {
+  const rel = relative(ROOT, file);
+  if (rel === "src/services/mail-i18n.ts") continue; // defines localeTag()
+  const text = readFileSync(file, "utf8");
+  text.split("\n").forEach((line, i) => {
+    if (line.trim().startsWith("*") || line.trim().startsWith("//")) return;
+    if (/=== "[a-z]{2}" \? "[a-z]{2}-[A-Z]{2}" : "[a-z]{2}-[A-Z]{2}"/.test(line)) {
+      localeTernary.push(`${rel}:${i + 1}  use localeTag() instead`);
+    }
+  });
+}
+
+report(
+  "Two-language locale ternary (breaks silently for a third language)",
+  localeTernary
 );
 report(
   "Mails built inline instead of through a tmpl* function (cannot be translated)",

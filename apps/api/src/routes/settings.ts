@@ -33,6 +33,7 @@ import {
   presignPut,
   deleteObject,
 } from "../services/storage.js";
+import { MAIL_LOCALES } from "../services/mail-i18n.js";
 
 const updateSettingsSchema = z.object({
   /** Oeffentlicher Anzeigename des Studios. Vom Owner/Admin
@@ -58,7 +59,7 @@ const updateSettingsSchema = z.object({
    *  Ablauf-Hinweis). Nicht die Sprache der Oberflaeche und nicht die der
    *  Mails ans Team — letztere haengt pro Person an User.locale.
    *  null = Instanz-Default (DEFAULT_MAIL_LOCALE). */
-  mailLocale: z.enum(["de", "en"]).nullable().optional(),
+  mailLocale: z.enum(MAIL_LOCALES).nullable().optional(),
   slug: z.string().max(40).optional(),
   watermarkText: z.string().max(200).nullable().optional(),
   customDomain: z
@@ -223,7 +224,7 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
   app.put("/settings/my-locale", async (req, reply) => {
     const s = req.requireAuth();
     const body = z
-      .object({ locale: z.enum(["de", "en"]).nullable() })
+      .object({ locale: z.enum(MAIL_LOCALES).nullable() })
       .parse(req.body);
     await prisma.user.update({
       where: { id: s.user.id },

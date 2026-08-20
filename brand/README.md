@@ -1,4 +1,4 @@
-**English** · [Deutsch](README.de.md)
+**English** · [Deutsch](README.de.md) · [Italiano](README.it.md)
 
 # brand/
 

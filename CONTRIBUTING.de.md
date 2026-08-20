@@ -1,4 +1,4 @@
-[English](CONTRIBUTING.md) · **Deutsch**
+[English](CONTRIBUTING.md) · **Deutsch** · [Italiano](CONTRIBUTING.it.md)
 
 # Contributing to Lumio
 
@@ -58,10 +58,17 @@ Das gilt für:
 Diese bleiben absichtlich deutsch-first:
 
 - **Transaktions-E-Mails der API.** Empfänger sind die *Endkunden* eines Studios,
-  nicht der Studio-Betreiber. Deren Sprache folgt dem Studio, nicht unserem
-  Default. Solange kein Locale pro Tenant existiert, bleiben die Templates in
-  `apps/api/src/services/mail*.ts` deutsch — eine Umstellung auf Englisch wäre
-  ein Rückschritt für jedes bestehende deutsche Studio.
+  nicht der Studio-Betreiber; deren Sprache folgt daher dem Studio und nicht
+  unserem Default. Das ist inzwischen umgesetzt: `mail-i18n.ts` löst
+  `Tenant.locale` für Kunden-Mails und `User.locale` für Team-Mails auf, und
+  jedes Template hat ein `de`/`en`-Paar. Absicht bleibt, dass
+  `DEFAULT_MAIL_LOCALE` auf `de` steht — eine Instanz, die nichts einstellt,
+  schreibt weiter deutsch.
+
+  Eine Sprache für die Mails zu ergänzen ist bewusst alles-oder-nichts:
+  `Phrase` ist `Record<MailLocale, string>`, der Compiler lehnt die neue
+  Sprache also ab, bis jedes Template übersetzt ist. Eine halb übersetzte Mail
+  ist schlechter als eine, die ehrlich in der Default-Sprache kommt.
 - **Der Auftragsverarbeitungsvertrag** (`apps/api/src/services/dpa.ts`). Er ist
   ein Vertrag nach Art. 28 DSGVO zwischen zwei deutschen Rechtspersonen; die
   deutsche Fassung ist die verbindliche. Eine englische Version kann später
@@ -96,11 +103,17 @@ Neue Sprache hinzufügen (Beispiel: Tschechisch, `cs`):
    ```
    (aktuell `components/gallery/GalleryShell.tsx` und
    `app/studio/settings/page.tsx`) — dort die neue Sprache ergänzen.
-5. **Prüfen**: `npx tsc --noEmit` in `apps/frontend` muss durchlaufen — das
-   Typsystem fängt fehlende oder überzählige Keys.
+5. **Prüfen**: `npx tsc --noEmit` in `apps/frontend` muss durchlaufen. Die
+   Sprachdateien sind als `LocaleDict` typisiert, abgeleitet aus `en.ts` — der
+   Compiler benennt jeden fehlenden oder falsch geschriebenen Key. Zusätzlich
+   `npm run check:i18n` laufen lassen: das prüft außerdem `t()`-Aufrufe ohne
+   Key dahinter, hartkodierte Locale-Bezeichner und Katalogtexte aus der API.
 
-Teilübersetzungen sind für einen ersten PR völlig okay — nicht übersetzte Keys
-fallen auf Englisch zurück. Bitte im PR erwähnen, welche Bereiche noch fehlen.
+Eine Teilübersetzung läuft damit nicht durch die Typprüfung, und das ist
+Absicht: eine Sprachdatei, die stillschweigend nur die Hälfte der Oberfläche
+abdeckt, ist von außen schwer zu erkennen. Wer eine Sprache in Etappen
+beitragen möchte, schreibt das ins Issue — dann finden wir einen Weg, der
+keine halb gefüllte Datei im Repo zurücklässt.
 
 Die Doku (`docs/*.md`) folgt einer eigenen Konvention: Englisch ist die
 kanonische `.md`, Deutsch liegt in `*.de.md`. Weitere Doku-Sprachen sind

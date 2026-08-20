@@ -13,6 +13,7 @@
  */
 import { useState } from "react";
 import { useT } from "@/lib/i18n";
+import { usePrompt } from "@/components/ui/dialogs";
 
 interface Props {
   title: string;
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function ShareButton({ title, url }: Props) {
+  const ask = usePrompt();
   const t = useT();
   const [copied, setCopied] = useState(false);
 
@@ -45,9 +47,16 @@ export function ShareButton({ title, url }: Props) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Wenn auch das nicht geht (z.B. Permission-Block), Nutzer
-      // weiterzeigen — der kann den URL aus der Adressleiste kopieren.
-      window.prompt(t("gallery.shareCopyManual"), shareUrl);
+      // Wenn auch das nicht geht (z.B. Permission-Block), den Link zum
+      // manuellen Kopieren anzeigen. Frueher via window.prompt — das wird
+      // in manchen Browsern unterdrueckt, also ausgerechnet dann nichts
+      // angezeigt, wenn das Kopieren ohnehin schon gescheitert war.
+      await ask({
+        message: t("gallery.shareCopyManual"),
+        defaultValue: shareUrl,
+        required: false,
+        confirmLabel: t("common.done"),
+      });
     }
   }
 

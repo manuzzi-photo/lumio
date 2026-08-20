@@ -1,4 +1,4 @@
-**English** · [Deutsch](ML.de.md)
+**English** · [Deutsch](ML.de.md) · [Italiano](ML.it.md)
 
 # AI auto-tagging (CLIP)
 

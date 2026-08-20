@@ -1,4 +1,4 @@
-**English** · [Deutsch](BACKUP.de.md)
+**English** · [Deutsch](BACKUP.de.md) · [Italiano](BACKUP.it.md)
 
 # Backup
 

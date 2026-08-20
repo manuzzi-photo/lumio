@@ -418,8 +418,8 @@ function ImpersonationBanner({
   return (
     <div className="bg-semantic-warning text-black px-4 py-2 text-sm flex items-center justify-center gap-3 flex-wrap">
       <span>
-        <strong>{t("impersonate.modeLabel")}</strong> {t("impersonate.modeBy")} <strong>{imp.bySuperAdminName ?? imp.bySuperAdminEmail}</strong>.
-        Alle Aktionen werden protokolliert.
+        <strong>{t("impersonate.modeLabel")}</strong> {t("impersonate.modeBy")} <strong>{imp.bySuperAdminName ?? imp.bySuperAdminEmail}</strong>.{" "}
+        {t("settings.impersonateAllLogged")}
       </span>
       <span className="text-xs opacity-80">
         ({remainingMin} min verbleibend)

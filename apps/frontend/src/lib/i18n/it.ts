@@ -1,6 +1,6 @@
-import type { Dict } from "./dict";
+import type { LocaleDict } from "./dict";
 
-export const it: Dict = {
+export const it: LocaleDict = {
   support: {
     navLabel: "Assistenza",
     title: "Contatta l'assistenza",
@@ -51,6 +51,7 @@ export const it: Dict = {
     privacy: "Privacy",
     preview: "Anteprima",
     breadcrumb: "Breadcrumb",
+      confirm: "Conferma",
   },
 
 
@@ -1021,6 +1022,25 @@ export const it: Dict = {
     catalogProviderMpixTagline:
       "Laboratorio professionale USA. Nel caso Lumio si espanda nel mercato statunitense.",
     catalogProviderBonusprintTagline: "Stampe fotografiche e fotolibri dal Regno Unito.",
+      landingForPros: "per professionisti.",
+    landingSubtitle: "Proofing, selezione e consegna rapidi dei tuoi servizi.",
+    signOut: "Esci",
+    signedInAs: "Accesso come {name}",
+    orSeparator: "oppure",
+    tagsAllRequired: "Tag (devono essere presenti tutti quelli selezionati)",
+    inviteSetupHint:
+      "L'utente invitato riceve un'email con un link di configurazione (valido 72 ore) e potrà poi accedere con la propria password.",
+    collaborationLabel: "Collaborazione (selezione, mi piace, commenti)",
+    productMailsHintFull:
+      "Comunicazioni occasionali sulla tua prova o sul tuo abbonamento (ad esempio un promemoria di scadenza). Nessuna newsletter, nessuna pubblicità di terzi.",
+    smartSectionOption: "Sezione smart (popolata da un tag)",
+    smartSectionFrom: "Sezione smart: popolata dal tag “{tag}”",
+    impersonateAllLogged: "Tutte le azioni vengono registrate.",
+    exportStarted:
+      "Esportazione avviata: {count} gallerie. Gli ZIP vengono creati in background.",
+    restoreStarted: "Ripristino avviato: trovate {count} gallerie eliminate. Gli ZIP vengono creati in background.",
+    filesCount: "{count} file",
+    plansMissingInDb: "{count} piano/i mancante/i nel database",
   },
 
   annotation: {
@@ -1230,6 +1250,7 @@ export const it: Dict = {
     messagePlaceholder2:
       "es. Cara Anna, caro Tim — le vostre foto di matrimonio sono pronte! Buona visione.",
     createAndInvite: "Crea e invita",
+      inviteSendFailed: "Non è stato possibile inviare l'invito.",
   },
 
   account: {
@@ -2286,6 +2307,8 @@ export const it: Dict = {
     heading: "Passkey",
     unsupported:
       "Questo browser non supporta l'accesso tramite WebAuthn o passkey. Dovrebbe funzionare su una versione recente di Chrome, Safari o Firefox.",
+      labelPrompt:
+      "Etichetta per questa passkey (ad esempio “MacBook” o “YubiKey #1”)",
   },
 
   bulkSel: {
@@ -2923,6 +2946,26 @@ export const it: Dict = {
     backupNoExports: "Nessuna esportazione ancora per questo tenant.",
     backupRestoreHint:
       "Fornisce gli originali eliminati dalle versioni S3 degli ultimi 30 giorni come file ZIP.",
+      tdSuspendConfirm:
+      "Sospendere il tenant “{name}”? L'accesso e la vista cliente verranno bloccati.",
+    tdArchiveConfirm:
+      "Archiviare il tenant “{name}”?\n\n• L'accesso e la vista cliente verranno bloccati\n• L'abbonamento Stripe viene annullato immediatamente\n• Inizia un periodo di tolleranza di 30 giorni, dopo il quale è possibile l'eliminazione definitiva\n• Fino ad allora il tenant può scaricare i propri dati tramite un flusso di esportazione separato",
+    tdWithdrawArchiveConfirm: "Ritirare l'archiviazione programmata per “{name}”?",
+    tdWithdrawArchiveNote:
+      "Il tenant non riceve alcuna notifica automatica. Se vuoi informarlo, scrivigli direttamente.",
+    tdGraceRunning:
+      "Periodo di tolleranza in corso — eliminazione definitiva possibile tra {days} giorni",
+    tdDeadlineReached: "Scadenza raggiunta — archiviazione in attesa",
+    tdArchiveScheduledFor:
+      "Archiviazione programmata per il {date} (tra {days} giorni)",
+    tdSlugChangeConfirm: "Cambiare lo slug da “{old}” a “{new}”?",
+    tdSlugChangeWarning:
+      "Questo modifica l'URL del sottodominio (ad esempio https://{slug}.{domain}) e tutti gli accessi API basati sull'header per questo tenant.",
+    tdSlugChangeBookmarks:
+      "I segnalibri esistenti con il vecchio slug NON funzioneranno più.",
+    tdSlugChangeShareLinks:
+      "I link di condivisione delle gallerie non sono interessati: usano lo slug della galleria, non quello del tenant.",
+      tdRemoveFailed: "Rimozione non riuscita",
   },
 
   galleryShare: {

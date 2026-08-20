@@ -1,3 +1,5 @@
+**Deutsch** · [Italiano](README.it.md)
+
 # Lumio Capture One Plugin
 
 Spiegelt die Kunden-Auswahl einer Lumio-Galerie in den aktuell

@@ -26,8 +26,7 @@ import {
   instanceMailLocale,
   normalizeLocale,
   tenantMailLocale,
-  userMailLocale,
-} from "./mail-i18n.js";
+  userMailLocale, localeTag} from "./mail-i18n.js";
 import { studioNotifyEnabled } from "./notifications.js";
 
 function studioUrl(galleryId: string): string {
@@ -509,7 +508,7 @@ export async function sendSuperAdminDigest(): Promise<void> {
 
     const digestLocale = instanceMailLocale();
     const dateLabel = new Date().toLocaleDateString(
-      digestLocale === "de" ? "de-DE" : "en-GB",
+      localeTag(digestLocale),
       {
         year: "numeric",
         month: "2-digit",

@@ -29,6 +29,106 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.69.0] - 2026-08-19
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.*
+
+
+### Fixed
+
+- Fehlermeldungen, die bisher als Browser-Hinweisfenster erschienen, werden jetzt von Lumio als Einblendung gezeigt. In Browsern, die solche Fenster unterdrücken, erfuhr man vorher gar nicht, dass etwas schiefgegangen war — die Aktion schlug still fehl. Betraf unter anderem das Widerrufen von Galerie-Zugängen und das Verschicken von Einladungen.
+- Zwei dieser Meldungen waren fest auf Deutsch.
+- Alle Rückfragen vor einer Aktion — Löschen, Widerrufen, Trennen, Archivieren — funktionieren jetzt auch in Browsern, die den eingebauten Bestätigungsdialog unterdrücken. Bisher passierte dort schlicht nichts: kein Dialog, keine Meldung, kein Vorgang. Betraf unter anderem Brave auf dem iPad und 27 Stellen quer durch Studio, Kundengalerien und Administrationsoberfläche.
+
+**🇬🇧 English**
+
+- Error messages that used to appear as browser alert boxes are now shown by Lumio as an inline notice. In browsers that suppress those boxes you previously had no way of knowing something had gone wrong — the action simply failed in silence. This affected revoking gallery access and sending invitations, among others.
+- Two of those messages were hardcoded in German.
+- Every confirmation before an action — deleting, revoking, disconnecting, archiving — now works in browsers that suppress the built-in confirm dialog. Previously nothing happened at all: no dialog, no message, no action. This affected Brave on iPad among others, across 27 places in the studio, customer galleries and administration interface.
+
+## [0.68.0] - 2026-08-19
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.*
+
+
+### Fixed
+
+- Vier Stellen, an denen eine Eingabe verlangt wurde, funktionierten in manchen Browsern gar nicht — darunter Brave auf dem iPad: eine neue Section anlegen, einen Passkey benennen, eine Bestellung mit Grund stornieren und der Link zum manuellen Kopieren, wenn die Zwischenablage nicht verfügbar ist. Der Browser blendete das Eingabefenster wortlos aus, die Aktion brach ab, und der Knopf wirkte kaputt. Diese Dialoge werden jetzt von Lumio selbst gezeichnet.
+- Die Beschriftung beim Benennen eines Passkeys war fest auf Deutsch.
+
+**🇬🇧 English**
+
+- Four places that ask for input did not work at all in some browsers, Brave on iPad among them: creating a section, naming a passkey, cancelling an order with a reason, and the manual-copy link shown when the clipboard is unavailable. The browser suppressed the input window without a word, the action aborted, and the button appeared broken. These dialogs are now drawn by Lumio itself.
+- The prompt for naming a passkey was hardcoded in German.
+
+## [0.67.1] - 2026-08-19
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.*
+
+
+### Fixed
+
+- 26 weitere Texte erschienen in jeder Sprache auf Deutsch — darunter „Abmelden" in der Administrationsoberfläche, „Angemeldet als …" im Studio, der Untertitel der Startseite, der Hinweis zur Team-Einladung und alle Rückfragen vor dem Suspendieren, Archivieren oder Umbenennen eines Studios. Gemeldet von [@canja006](https://github.com/canja006), zusammen mit dem Prüfverfahren, das sie gefunden hat.
+- Die Warnung beim Ändern eines Studio-Kürzels nannte fest `lumio-cloud.de`, auch auf einer selbst betriebenen Instanz. Sie nimmt jetzt die tatsächlich konfigurierte Domain.
+
+**🇬🇧 English**
+
+- 26 further strings appeared in German whatever language was selected — including "Sign out" in the administration interface, "Signed in as …" in the studio, the landing page subtitle, the team invitation hint, and every confirmation before suspending, archiving or renaming a studio. Reported by [@canja006](https://github.com/canja006), along with the scanning method that found them.
+- The warning shown when changing a studio slug named `lumio-cloud.de` verbatim, even on a self-hosted instance. It now uses the domain actually configured.
+
+## [0.67.0] - 2026-08-19
+
+Pull genügt für Server und Studio — hier ändert sich nichts. **Wer das Lightroom-Plugin nutzt, muss es neu installieren:** die Änderungen liegen ausschließlich im Plugin, das in Lightroom selbst installiert ist und nicht mit dem Server aktualisiert wird. Ordner `apps/lightroom-plugin/lumio.lrdevplugin` erneut in Lightroom laden.
+
+*A pull is enough for the server and the studio — nothing changes there. **Anyone using the Lightroom plug-in has to reinstall it:** the changes are entirely inside the plug-in, which lives in Lightroom and is not updated along with the server. Re-add the `apps/lightroom-plugin/lumio.lrdevplugin` folder in Lightroom.*
+
+
+### Fixed
+
+- Das Lightroom-Plugin ließ sich nicht laden — Lightroom meldete „Could not create info sections for plug-in", und keiner der Menüpunkte erschien. Beigesteuert von [@canja006](https://github.com/canja006).
+- Der Import der Kundenauswahl zurück in den Katalog fand bei RAW-Beständen praktisch nichts: die Auswahl wurde gegen Dateinamen mit Endung verglichen, hochgeladen wird aber immer als `.jpg`. Bei einem Katalog aus NEF- und DNG-Dateien blieben damit über 95 % der Bilder unauffindbar. Jetzt wird zusätzlich ohne Endung verglichen, und bei mehreren gleichnamigen Rohdateien wird bewusst keine geändert statt alle.
+- Das Schreiben der Bewertungen und Farb-Labels in den Katalog schlug still fehl und meldete trotzdem Erfolg — „57 Fotos aktualisiert", geschrieben wurde nichts.
+- Nach dem Hochladen markierte Lightroom die Fotos nicht als veröffentlicht, sodass beim nächsten Publish alles erneut hochgeladen wurde.
+- Fehlgeschlagene Uploads werden jetzt als solche gemeldet, statt unbemerkt zu bleiben.
+
+**🇬🇧 English**
+
+- The Lightroom plug-in would not load — Lightroom reported "Could not create info sections for plug-in" and none of its menu items appeared. Contributed by [@canja006](https://github.com/canja006).
+- Importing the client selection back into the catalog found almost nothing for RAW libraries: the selection was matched against filenames including the extension, while uploads are always named `.jpg`. On a catalog of NEF and DNG files, over 95% of photos could never be found. Matching now also compares without the extension, and where several raw files share a name, none is modified rather than all of them.
+- Writing ratings and colour labels into the catalog failed silently while still reporting success — "57 photos updated", with nothing written.
+- After uploading, Lightroom did not mark photos as published, so the next publish re-uploaded everything.
+- Failed uploads are now reported as failures instead of passing unnoticed.
+
+## [0.66.3] - 2026-08-19
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen sind Frontend und API, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server.*
+
+
+### Added
+
+- Die Dokumentation gibt es jetzt auch auf Italienisch — README, CONTRIBUTING und alle 19 Dateien unter `docs/`, dazu die vier Plugin- und Werkzeug-READMEs, die es bisher nur auf Deutsch gab. Beigesteuert von [@manuzzi](https://github.com/manuzzi).
+
+### Fixed
+
+- Bei italienischer Oberfläche wurde die Sprachwahl nicht gespeichert: der Server kannte nur Deutsch und Englisch und lehnte „Italiano" ab, während die Oberfläche umschaltete. Benachrichtigungen kamen deshalb weiter in der Vorgabe-Sprache der Instanz. Danke an @canja006 für den Bericht.
+- Datum und Zahlen in E-Mails fielen für jede Sprache außer Deutsch auf britisches Englisch zurück. Betraf Italienisch, sobald eine Person es eingestellt hatte.
+- Übersetzern wurde zugesagt, `tsc --noEmit` melde fehlende Keys in einer Sprachdatei — das tat es nicht. Jetzt tut es das.
+
+**🇬🇧 English**
+
+- The documentation is now available in Italian too — README, CONTRIBUTING and all 19 files under `docs/`, plus the four plugin and tooling READMEs that previously existed only in German. Contributed by [@manuzzi](https://github.com/manuzzi).
+- With an Italian interface the language choice was not saved: the server only knew German and English and rejected "Italiano" while the interface switched anyway. Notifications therefore kept arriving in the instance default language. Thanks to @canja006 for the report.
+- Dates and numbers in email fell back to British English for every language other than German. This affected Italian as soon as anyone selected it.
+- Translators were promised that `tsc --noEmit` reports missing keys in a locale file. It did not. Now it does.
+
 ## [0.66.2] - 2026-08-17
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.

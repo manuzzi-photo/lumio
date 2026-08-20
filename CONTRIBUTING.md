@@ -1,4 +1,4 @@
-**English** · [Deutsch](CONTRIBUTING.de.md)
+**English** · [Deutsch](CONTRIBUTING.de.md) · [Italiano](CONTRIBUTING.it.md)
 
 # Contributing to Lumio
 
@@ -57,10 +57,17 @@ This applies to:
 These stay German-first, on purpose:
 
 - **Transactional emails sent by the API.** Recipients are the *end customers*
-  of a studio, not the studio operator. Their language follows the studio, not
-  our default. Until a per-tenant locale exists, the templates in
-  `apps/api/src/services/mail*.ts` remain German — switching them to English
-  would be a regression for every existing German studio.
+  of a studio, not the studio operator, so their language follows the studio
+  rather than our default. That is now implemented: `mail-i18n.ts` resolves
+  `Tenant.locale` for customer mail and `User.locale` for team mail, and every
+  template carries a `de`/`en` pair. What stays deliberate is that
+  `DEFAULT_MAIL_LOCALE` defaults to `de`, so an instance that sets nothing
+  keeps writing German.
+
+  Adding a locale to mail is all-or-nothing by design: `Phrase` is
+  `Record<MailLocale, string>`, so the compiler rejects the new locale until
+  every template is translated. A half-translated mail is worse than one that
+  honestly arrives in the default language.
 - **The data processing agreement** (`apps/api/src/services/dpa.ts`). It is a
   contract under Art. 28 GDPR between two German legal entities; the German
   version is the legally binding one. An English version can be *added* later,
@@ -94,11 +101,16 @@ To add a new language (example: Czech, `cs`):
    ```
    (currently `components/gallery/GalleryShell.tsx` and
    `app/studio/settings/page.tsx`) and add your language there.
-5. **Verify**: `npx tsc --noEmit` in `apps/frontend` must pass — the type
-   system catches missing or extra keys.
+5. **Verify**: `npx tsc --noEmit` in `apps/frontend` must pass. Locale files
+   are typed as `LocaleDict`, derived from `en.ts`, so the compiler names any
+   missing or misspelled key. Also run `npm run check:i18n`, which additionally
+   checks `t()` calls with no key behind them, hardcoded locale identifiers,
+   and catalogue text the API supplies.
 
-Partial translations are fine for a first PR — untranslated keys fall back to
-English. Please mention in the PR which sections are still missing.
+A partial translation therefore does not type-check, which is deliberate: a
+locale file that silently covers half the interface is hard to spot from the
+outside. If you want to contribute a language in stages, say so in the issue
+and we will find a way that does not leave a half-filled file in the tree.
 
 The docs (`docs/*.md`) follow a separate convention: English is the canonical
 `.md`, German lives in `*.de.md`. Additional doc languages are welcome but

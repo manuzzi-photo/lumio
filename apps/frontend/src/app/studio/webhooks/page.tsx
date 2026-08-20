@@ -19,6 +19,7 @@ import { useT } from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 export default function WebhooksPage() {
   const t = useT();
@@ -173,6 +174,7 @@ function WebhookDetail({
   onClose: () => void;
   onChanged: () => Promise<void> | void;
 }) {
+  const confirm = useConfirm();
   const t = useT();
   const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
   const [testResult, setTestResult] = useState<{
@@ -211,7 +213,7 @@ function WebhookDetail({
   }
 
   async function remove() {
-    if (!confirm(t("studio.webhookConfirmDelete", { label: webhook.label }))) {
+    if (!(await confirm({ message: t("studio.webhookConfirmDelete", { label: webhook.label }) }))) {
       return;
     }
     await api.deleteWebhook(webhook.id);

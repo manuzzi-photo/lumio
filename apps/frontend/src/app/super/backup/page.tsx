@@ -247,7 +247,7 @@ function TenantExportPanel({
     try {
       const r = await api.superTriggerTenantExport(tenant.id);
       setMsg(
-        `Export gestartet: ${r.itemCount} Galerie(n). Die ZIPs werden im Hintergrund gebaut.`
+        t("settings.exportStarted", { count: r.itemCount })
       );
       await loadExports();
     } catch (err) {
@@ -268,7 +268,7 @@ function TenantExportPanel({
     try {
       const r = await api.superRecoverDeletedOriginals(tenant.id);
       setMsg(
-        `Wiederherstellung gestartet: ${r.itemCount} gelöschte Galerie(n) gefunden. Die ZIPs werden im Hintergrund gebaut.`
+        t("settings.restoreStarted", { count: r.itemCount })
       );
       await loadExports();
     } catch (err) {
@@ -424,7 +424,7 @@ function ExportRow({
                   {it.galleryName}
                   <span className="text-ink-tertiary">
                     {" "}
-                    {it.fileCount !== null && `· ${it.fileCount} Dateien `}
+                    {it.fileCount !== null && `· ${t("settings.filesCount", { count: it.fileCount })} `}
                     {it.sizeBytes !== null && `· ${formatBytes(it.sizeBytes)}`}
                   </span>
                 </span>

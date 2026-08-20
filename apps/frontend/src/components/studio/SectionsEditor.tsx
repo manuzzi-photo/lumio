@@ -29,6 +29,7 @@
 import { useEffect, useState } from "react";
 import { api, type StudioSection, type TagSummary } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { usePrompt, useConfirm} from "@/components/ui/dialogs";
 
 interface Props {
   galleryId: string;
@@ -47,6 +48,8 @@ interface Props {
 }
 
 export function SectionsEditor({ galleryId, files, onChanged }: Props) {
+  const confirm = useConfirm();
+  const ask = usePrompt();
   const t = useT();
   const [sections, setSections] = useState<StudioSection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +82,7 @@ export function SectionsEditor({ galleryId, files, onChanged }: Props) {
     if (busy) return;
     setBusy(true);
     try {
-      const title = window.prompt(t("studio.sectionNewPrompt"))?.trim();
+      const title = (await ask({ message: t("studio.sectionNewPrompt") }))?.trim();
       if (!title) return;
       await api.createSection(galleryId, { title });
       await reload();
@@ -91,9 +94,7 @@ export function SectionsEditor({ galleryId, files, onChanged }: Props) {
 
   async function handleDelete(s: StudioSection) {
     if (busy) return;
-    const ok = window.confirm(
-      t("studio.sectionDeleteConfirm", { title: s.title })
-    );
+    const ok = (await confirm({ message: t("studio.sectionDeleteConfirm", { title: s.title }) }));
     if (!ok) return;
     setBusy(true);
     try {
@@ -283,7 +284,7 @@ function SectionRow({
                   color: section.autoTag.color,
                   border: `1px solid ${section.autoTag.color}55`,
                 }}
-                title={`Smart-Section: befüllt sich aus Tag "${section.autoTag.name}"`}
+                title={t("settings.smartSectionFrom", { tag: section.autoTag.name })}
               >
                 <span
                   className="inline-block w-1.5 h-1.5 rounded-full"
@@ -496,7 +497,7 @@ function SectionEditForm({
           Section verschoben (und nicht-passende raus). */}
       <div className="pt-2 border-t border-line-subtle">
         <label className="block text-ui-xs text-ink-tertiary mb-1">
-          Smart-Section (aus Tag befüllen)
+          {t("settings.smartSectionOption")}
         </label>
         <div className="flex items-center gap-2">
           <select

@@ -1,4 +1,4 @@
-[English](README.md) · **Deutsch**
+[English](README.md) · **Deutsch** · [Italiano](README.it.md)
 
 <p align="center">
   <picture>

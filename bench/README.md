@@ -1,3 +1,5 @@
+**Deutsch** · [Italiano](README.it.md)
+
 # Frontend-Performance-Benchmark
 
 Reproduzierbarer Messlauf für die Ladeperformance einer Galerie-Seite.
