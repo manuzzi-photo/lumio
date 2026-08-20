@@ -128,3 +128,20 @@ Persönliche Angriffe, Diskriminierung oder Spam führen zum Ausschluss.
 ## Fragen?
 
 Issue eröffnen oder im Forgejo-Repo unter Discussions schreiben.
+
+### Release-Notes
+
+Der Changelog ist bewusst zweisprachig — er liegt im Repository und richtet
+sich an deutsche Self-Hoster genauso wie an alle anderen. **Die Release-Notes
+auf Forgejo und GitHub sind ausschließlich englisch**, weil ihr Publikum
+Beitragende und Self-Hoster international sind.
+
+`node scripts/release-notes.mjs <version>` zieht den englischen Teil eines
+Changelog-Abschnitts heraus. Fehlt der englische Teil, bricht der Script ab,
+statt auf Deutsch zurückzufallen.
+
+Jede `###`-Rubrik bekommt ihren eigenen `**🇬🇧 English**`-Block, nicht einen
+gemeinsamen am Ende. Bei einem einzelnen Block lassen sich die Einträge nicht
+mehr ihren Rubriken zuordnen; der Script lässt die Überschriften dann weg
+statt zu raten — einen Sicherheitsfix als „Fixed" zu beschriften wäre
+schlechter, als ihn gar nicht zu beschriften.
