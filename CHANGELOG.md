@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.70.0] - 2026-08-20
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist die API, also nur der Hauptserver. Wer die neue Fußzeile anpassen möchte, findet die beiden optionalen Einträge in `.env.example`.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The API is affected, so only the main server. If you want to customise the new footer, the two optional entries are documented in `.env.example`.*
+
+
 ### Added
 
 - Die Fußzeile der E-Mails lässt sich jetzt selbst festlegen: `MAIL_FOOTER_TEXT` und `MAIL_FOOTER_URL` in der `.env`. Ohne Eintrag steht dort „Verschickt von Lumio" in der Sprache der angeschriebenen Person, verlinkt aufs Projekt. Ein eigener Text wird wörtlich übernommen und dabei **nicht** übersetzt — bei mehreren Sprachen auf einer Instanz ist die Vorgabe daher meist die bessere Wahl.
