@@ -33,6 +33,11 @@ import { logger } from "../logger.js";
 import { config } from "../config.js";
 import { sendMail } from "./mail.js";
 import { renderMailLayout } from "./mail-layout.js";
+import {
+  normalizeLocale,
+  instanceMailLocale,
+  type MailLocale,
+} from "./mail-i18n.js";
 
 export type Audience =
   | "all_paid_owners"
@@ -52,10 +57,14 @@ export const AUDIENCE_LABELS: Record<Audience, string> = {
  *  = 5 Mails/Sekunde = 18000/Stunde. Mehr als genug fuer Lumio. */
 const SEND_INTERVAL_MS = 200;
 
-/** Markdown zu HTML konvertieren und ins Standard-Mail-Layout einbetten. */
+/** Markdown zu HTML konvertieren und ins Standard-Mail-Layout einbetten.
+ *  bodyMarkdown selbst bleibt unuebersetzt (vom Admin frei getippt, siehe
+ *  INLINE_ALLOWED in check-mail-i18n.mjs) — locale steuert nur Layout-
+ *  Footer und lang-Attribut. */
 export function renderBroadcastHtml(
   bodyMarkdown: string,
-  unsubscribeUrl: string
+  unsubscribeUrl: string,
+  locale: MailLocale
 ): string {
   // marked.parse ist synchron wenn kein async-Renderer registriert ist.
   // Wir nutzen die default options + ein paar Security-Settings.
@@ -74,6 +83,7 @@ export function renderBroadcastHtml(
   return renderMailLayout({
     bodyHtml: inner + footerHtml,
     preheader: extractPreheader(bodyMarkdown),
+    locale,
   });
 }
 
@@ -82,7 +92,10 @@ export function renderBroadcastHtml(
  * Wie renderBroadcastHtml, aber OHNE Abmelde-Footer — das ist kein Bulk-
  * Marketing, sondern eine persönliche/operative Nachricht.
  */
-export function renderAdminMessageHtml(bodyMarkdown: string): string {
+export function renderAdminMessageHtml(
+  bodyMarkdown: string,
+  locale: MailLocale
+): string {
   const inner = marked.parse(bodyMarkdown, {
     async: false,
     gfm: true,
@@ -91,6 +104,7 @@ export function renderAdminMessageHtml(bodyMarkdown: string): string {
   return renderMailLayout({
     bodyHtml: inner,
     preheader: extractPreheader(bodyMarkdown),
+    locale,
   });
 }
 
@@ -111,10 +125,14 @@ function escapeAttr(s: string): string {
 }
 
 /** Empfaenger fuer eine Audience zusammenstellen. */
-export async function listAudienceUsers(
-  audience: Audience
-): Promise<
-  Array<{ id: string; email: string; name: string | null; tenantId: string }>
+export async function listAudienceUsers(audience: Audience): Promise<
+  Array<{
+    id: string;
+    email: string;
+    name: string | null;
+    tenantId: string;
+    locale: string | null;
+  }>
 > {
   // Basis: aktive User in aktiven Tenants. Wir filtern OptOut WEG bevor
   // der Versand startet — Count-Anzeige im Frontend zeigt 'X gesendet,
@@ -128,7 +146,13 @@ export async function listAudienceUsers(
     case "all_owners":
       return prisma.user.findMany({
         where: { ...baseWhere, role: "owner" },
-        select: { id: true, email: true, name: true, tenantId: true },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          tenantId: true,
+          locale: true,
+        },
       });
     case "all_paid_owners":
       return prisma.user.findMany({
@@ -142,7 +166,13 @@ export async function listAudienceUsers(
             },
           },
         },
-        select: { id: true, email: true, name: true, tenantId: true },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          tenantId: true,
+          locale: true,
+        },
       });
     case "all_trial_owners":
       return prisma.user.findMany({
@@ -154,12 +184,24 @@ export async function listAudienceUsers(
             subscription: { status: "trialing" },
           },
         },
-        select: { id: true, email: true, name: true, tenantId: true },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          tenantId: true,
+          locale: true,
+        },
       });
     case "all_active_users":
       return prisma.user.findMany({
         where: baseWhere,
-        select: { id: true, email: true, name: true, tenantId: true },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          tenantId: true,
+          locale: true,
+        },
       });
   }
 }
@@ -235,7 +277,8 @@ export async function processBroadcast(broadcastId: string): Promise<void> {
       const token = await ensureOptOutToken(r.id);
       const html = renderBroadcastHtml(
         broadcast.bodyMarkdown,
-        unsubscribeUrl(token)
+        unsubscribeUrl(token),
+        normalizeLocale(r.locale)
       );
       const plainFooter = `\n\n—\nDu kannst diese Mails hier abbestellen:\n${unsubscribeUrl(token)}`;
 

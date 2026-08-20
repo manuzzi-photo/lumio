@@ -38,8 +38,16 @@
  */
 
 import { config } from "../config.js";
+import { phrase, type MailLocale, type Phrase } from "./mail-i18n.js";
 
 const LUMIO_BRAND_COLOR = "#FF4D2E"; // Vermillion, wie die Bildmarke
+
+// Ziel des "Verschickt von Lumio"-Links im Footer. Frueher lumio-cloud.de,
+// das gehostete Produkt — auf einer selbst betriebenen Instanz bewirbt das
+// den Betreiber der eigenen Instanz nicht sinnvoll (Issue #12). Das
+// Repository passt fuer Self-Hoster wie fuer die gehostete Variante gleich
+// gut.
+const LUMIO_REPO_URL = "https://github.com/markusthiel/lumio";
 
 // Die Bildmarke als PNG. SVG faellt aus: Gmail und Outlook rendern es
 // nicht. Die Dateien liegen im Frontend unter /public und sind damit
@@ -56,6 +64,15 @@ const LUMIO_TEXT_COLOR = "#1f2937"; // gray-800
 const LUMIO_MUTED_COLOR = "#6b7280"; // gray-500
 const LUMIO_BORDER_COLOR = "#e5e7eb"; // gray-200
 const LUMIO_BG_COLOR = "#f6f7f9";
+
+// Fixzeile im Footer jeder Mail. War frueher ein deutsches Literal, das
+// unabhaengig von der Empfaenger-Sprache erschien (Issue #12) — inklusive
+// der Behauptung "gehostet in Deutschland", die fuer eine selbst betriebene
+// Instanz schlicht falsch ist. Jetzt eine Phrase wie jeder andere Text.
+const footerBrandPhrase: Phrase = {
+  de: `Verschickt von <a href="${LUMIO_REPO_URL}" style="color:${LUMIO_MUTED_COLOR};text-decoration:underline;">Lumio</a> — Foto-Galerien für Profis.`,
+  en: `Sent by <a href="${LUMIO_REPO_URL}" style="color:${LUMIO_MUTED_COLOR};text-decoration:underline;">Lumio</a> — photo galleries for professionals.`,
+};
 
 const FONT_STACK =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
@@ -94,6 +111,10 @@ export interface RenderMailOpts {
   /** Optional: Praeheader-Text — wird in Inbox-Preview unter dem Subject
    *  angezeigt. Wirkt subtil aber sehr stark auf Open-Rates. */
   preheader?: string;
+  /** Sprache dieser Mail — steuert den Footer-Text und das lang-Attribut.
+   *  Bewusst Pflichtfeld statt Default: ein vergessenes Feld soll ein
+   *  Typfehler sein, kein still falsches Deutsch (Issue #12). */
+  locale: MailLocale;
 }
 
 /**
@@ -164,7 +185,7 @@ export function renderMailLayout(opts: RenderMailOpts): string {
     : "";
 
   return `<!doctype html>
-<html lang="de">
+<html lang="${opts.locale}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -193,7 +214,7 @@ ${escapeHtml(preheader)}
             ${footerLogoHtml}
             ${footerHtml}
             <p style="margin:0;color:${LUMIO_MUTED_COLOR};font-size:12px;line-height:1.5;">
-              Verschickt von <a href="https://lumio-cloud.de" style="color:${LUMIO_MUTED_COLOR};text-decoration:underline;">Lumio</a> — Foto-Galerien für Profis, gehostet in Deutschland.
+              ${phrase(footerBrandPhrase, opts.locale)}
             </p>
           </td>
         </tr>

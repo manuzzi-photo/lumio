@@ -1611,7 +1611,7 @@ export async function registerSuperTenantRoutes(app: FastifyInstance) {
         to: user.email,
         subject: body.subject,
         text: body.body,
-        html: renderAdminMessageHtml(body.body),
+        html: renderAdminMessageHtml(body.body, await userMailLocale(user.id)),
       });
 
       await logEvent({

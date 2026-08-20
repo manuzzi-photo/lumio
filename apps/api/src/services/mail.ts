@@ -291,6 +291,7 @@ export function tmplNewComment(opts: {
       `${phrase(common.viewGallery, l)}: ${opts.galleryUrl}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       branding: opts.branding,
       preheader: phrase(newCommentPhrases.preheader, l, vars),
       bodyHtml:
@@ -348,6 +349,7 @@ export function tmplSelectionFinished(opts: {
       `${phrase(common.viewGallery, l)}: ${opts.galleryUrl}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       branding: opts.branding,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
@@ -412,6 +414,7 @@ export function tmplZipReady(opts: {
       `${phrase(zipReadyPhrases.validity, l)}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       branding: opts.branding,
       preheader: phrase(zipReadyPhrases.preheader, l, vars),
       bodyHtml:
@@ -474,6 +477,7 @@ export function tmplStorageWarning(opts: {
       `${phrase(P.consequence, l)}\n\n` +
       `${opts.billingUrl}\n\n${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       branding: opts.branding,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
@@ -535,6 +539,7 @@ export function tmplOwnerSetup(opts: {
       `${phrase(P.validity, l, vars)}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.greeting, l, vars)) +
@@ -612,6 +617,7 @@ export function tmplPasswordReset(opts: {
       `${phrase(P.notYou, l)}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.greeting, l, vars)) +
@@ -686,6 +692,7 @@ export function tmplEmailChangeConfirm(opts: {
       `${phrase(P.notYou, l)}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.greeting, l, vars)) +
@@ -754,6 +761,7 @@ export function tmplEmailChangeNotice(opts: {
       `${phrase(P.ifNotYouText, l)}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.greeting, l, vars)) +
@@ -877,6 +885,7 @@ export function tmplGalleryInvite(opts: {
       `\n` +
       `${phrase(galleryInvitePhrases.sentVia, l)}`,
     html: renderMailLayout({
+      locale: l,
       branding: {
         ...(opts.branding ?? {}),
         brandName: opts.studioName,
@@ -972,6 +981,7 @@ export function tmplWelcome(opts: {
       (supportHint() ? `${supportHint()}\n\n` : "") +
       `${phrase(P.seeYouSoon, l)}\n${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.heading, l)) +
@@ -1089,6 +1099,7 @@ export function tmplDeletionRequested(opts: {
       `${urgentSupportHint(phrase(P.notRequested, l))}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.heading, l)) +
@@ -1168,6 +1179,7 @@ export function tmplDeletionCancelled(opts: {
       `${phrase(P.billingText, l)}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.heading, l)) +
@@ -1285,6 +1297,7 @@ export function tmplDeletionExecuted(opts: {
         : "") +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.heading, l)) +
@@ -1368,6 +1381,7 @@ export function tmplDeletionReminder(opts: {
       `${phrase(P.irreversible, l)}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.heading, l)) +
@@ -1467,6 +1481,7 @@ export function tmplBillingArchived(opts: {
       `${phrase(P.reactivateLine, l)}\n${opts.reactivateUrl}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.heading, l)) +
@@ -1543,6 +1558,7 @@ export function tmplBillingPurgeReminder(opts: {
       `${phrase(P.noRestoreText, l)}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.heading, l)) +
@@ -1599,6 +1615,7 @@ export function tmplSuperNewTenant(opts: {
       `\n\n${phrase(P.superAdmin, l)}: ${opts.superUrl}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.heading, l)) +
@@ -1695,6 +1712,7 @@ export function tmplSuperDigest(opts: {
     subject: phrase(P.subject, l, { date: opts.dateLabel, n: newCount }),
     text: textParts.join("\n"),
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, {
         n: newCount,
         gib: opts.totalStorageGib,
@@ -1750,6 +1768,7 @@ export function tmplTeamMemberJoined(opts: {
       `${phrase(P.button, l)}: ${opts.teamUrl}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       branding: opts.branding,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
@@ -1804,6 +1823,7 @@ export function tmplGalleryExpiring(opts: {
       `${phrase(common.openGallery, l)}: ${opts.galleryUrl}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       branding: opts.branding,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
@@ -1853,6 +1873,7 @@ export function tmplUploadReceived(opts: {
       `${phrase(common.openGallery, l)}: ${opts.galleryUrl}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       branding: opts.branding,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
@@ -1970,6 +1991,7 @@ export function tmplTrialReminder(opts: {
       `${phrase(common.signature, l)}\n\n` +
       `---\n${phrase(P.unsubText, l)} ${opts.unsubscribeUrl}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(greeting) +
@@ -2056,6 +2078,7 @@ export function tmplTrialCancelled(opts: {
       `${phrase(common.signature, l)}\n\n` +
       `---\n${phrase(P.unsubText, l)} ${opts.unsubscribeUrl}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(greeting) +
@@ -2151,6 +2174,7 @@ export function tmplWinback(opts: {
       `${phrase(common.signature, l)}\n\n` +
       `---\n${phrase(P.unsubText, l)} ${opts.unsubscribeUrl}`,
     html: renderMailLayout({
+      locale: l,
       preheader: isChurn
         ? phrase(P.preheaderChurn, l)
         : phrase(P.preheaderExpired, l),
@@ -2235,6 +2259,11 @@ export function tmplSupportRequest(
       facts.map((f) => `  ${f}`).join("\n") +
       `\n\nNachricht:\n${ctx.message}\n`,
     html: renderMailLayout({
+      // Interne Mail ans Lumio-Support-Team, kein Recipient mit eigener
+      // Sprachwahl — der Body oben ist durchgehend Deutsch und nicht Teil
+      // des Phrase-Systems. locale spiegelt das ehrlich statt eine
+      // Instance-Locale zu behaupten, die der Text nicht einloest.
+      locale: "de",
       preheader: `${who} — ${ctx.message.slice(0, 80)}`,
       bodyHtml:
         mailHeading(`Support-Anfrage`) +
@@ -2324,6 +2353,7 @@ export function tmplImpersonationNotice(opts: {
       `${phrase(P.notRequested, l)}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.heading, l)) +
@@ -2448,6 +2478,7 @@ export function tmplPreArchiveNotice(opts: {
         `${phrase(P.reminderQuestions, l)}\n\n` +
         `${phrase(common.signature, l)}`,
       html: renderMailLayout({
+        locale: l,
         preheader: phrase(P.reminderPreheader, l, vars),
         bodyHtml:
           mailHeading(phrase(P.reminderHeading, l)) +
@@ -2471,6 +2502,7 @@ export function tmplPreArchiveNotice(opts: {
       `${phrase(P.reminderAnnounce, l)}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.noticePreheader, l, vars),
       bodyHtml:
         mailHeading(phrase(P.noticeHeading, l)) +
@@ -2537,6 +2569,7 @@ export function tmplExportReady(opts: {
       `${phrase(P.questions, l)}\n\n` +
       `${phrase(common.signature, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l),
       bodyHtml:
         mailHeading(phrase(P.heading, l)) +
@@ -2567,6 +2600,7 @@ export function tmplSupportRequestConfirmation(opts: {
       `${opts.message}\n\n` +
       `${phrase(P.team, l)}`,
     html: renderMailLayout({
+      locale: l,
       preheader: phrase(P.preheader, l),
       bodyHtml:
         mailHeading(phrase(P.heading, l)) +
