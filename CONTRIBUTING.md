@@ -126,19 +126,25 @@ Personal attacks, discrimination or spam lead to exclusion.
 
 Open an issue or post under Discussions on the GitHub repo.
 
-### Release notes
+### Changelog and release notes
 
-The changelog is bilingual on purpose — it lives in the repository and serves
-German self-hosters as much as anyone else. **Release notes on Forgejo and
-GitHub are English only**, because their audience is contributors and
-self-hosters internationally.
+**Both are English only.** The changelog used to be German with an English
+half per entry, which does not scale: with three supported interface
+languages it would need three, with four it would need four, and half of them
+would drift out of date. English is the project language (see above), so the
+changelog follows it.
+
+History is left as written. 93 older sections are bilingual and 30 (v0.43.2
+to v0.55.1) are German only. They describe releases nobody installs any more;
+translating them now would be work without a reader, and machine translation
+would be worse than leaving them.
 
 `node scripts/release-notes.mjs <version>` extracts the English half of a
 changelog section. It refuses rather than falling back to German if the
 English part is missing.
 
-Give each `###` section its own `**🇬🇧 English**` block rather than one
-combined block at the end. With a single block the entries cannot be mapped
-back to their sections, and the script drops the headings rather than guess —
-labelling a security fix as "Fixed" would be worse than labelling it not at
-all.
+For an English-only section the script passes it through unchanged. For the
+older bilingual sections it extracts the English half; where those put one
+combined English block under several German sections, it drops the headings
+rather than guess — labelling a security fix as "Fixed" would be worse than
+labelling it not at all. A German-only section makes it exit non-zero.

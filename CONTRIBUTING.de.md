@@ -129,19 +129,26 @@ Persönliche Angriffe, Diskriminierung oder Spam führen zum Ausschluss.
 
 Issue eröffnen oder im Forgejo-Repo unter Discussions schreiben.
 
-### Release-Notes
+### Changelog und Release-Notes
 
-Der Changelog ist bewusst zweisprachig — er liegt im Repository und richtet
-sich an deutsche Self-Hoster genauso wie an alle anderen. **Die Release-Notes
-auf Forgejo und GitHub sind ausschließlich englisch**, weil ihr Publikum
-Beitragende und Self-Hoster international sind.
+**Beide sind ausschließlich englisch.** Der Changelog war früher deutsch mit
+einer englischen Hälfte je Eintrag. Das skaliert nicht: bei drei
+unterstützten Oberflächen-Sprachen bräuchte es drei, bei vier vier — und die
+Hälfte davon veraltet. Englisch ist die Projektsprache (siehe oben), der
+Changelog folgt ihr.
+
+Die Historie bleibt, wie sie geschrieben wurde. 93 ältere Abschnitte sind
+zweisprachig, 30 (v0.43.2 bis v0.55.1) rein deutsch. Sie beschreiben
+Versionen, die niemand mehr installiert; sie jetzt zu übersetzen wäre Arbeit
+ohne Leser, und maschinell übersetzt wäre schlechter als so.
 
 `node scripts/release-notes.mjs <version>` zieht den englischen Teil eines
 Changelog-Abschnitts heraus. Fehlt der englische Teil, bricht der Script ab,
 statt auf Deutsch zurückzufallen.
 
-Jede `###`-Rubrik bekommt ihren eigenen `**🇬🇧 English**`-Block, nicht einen
-gemeinsamen am Ende. Bei einem einzelnen Block lassen sich die Einträge nicht
-mehr ihren Rubriken zuordnen; der Script lässt die Überschriften dann weg
-statt zu raten — einen Sicherheitsfix als „Fixed" zu beschriften wäre
-schlechter, als ihn gar nicht zu beschriften.
+Einen einsprachig englischen Abschnitt reicht der Script unverändert durch.
+Bei den älteren zweisprachigen zieht er die englische Hälfte heraus; wo dort
+ein gemeinsamer englischer Block unter mehreren deutschen Rubriken steht,
+lässt er die Überschriften weg statt zu raten — einen Sicherheitsfix als
+„Fixed" zu beschriften wäre schlechter, als ihn gar nicht zu beschriften.
+Ein rein deutscher Abschnitt führt zum Abbruch.
