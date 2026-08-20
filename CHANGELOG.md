@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.71.0] - 2026-08-20
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen sind Frontend und API, also nur der Hauptserver. Die neue Einstellung findet sich im Super-Admin unter System.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server. The new setting is in the super admin area under System.*
+
+
 ### Added
 
 - Die Fußzeile der E-Mails lässt sich jetzt direkt in der Administrationsoberfläche einstellen, unter System. Wer die Instanz auf den eigenen Studionamen bringen will, braucht dafür keinen Zugriff mehr auf die `.env` und keine Kommandozeile. Ein Eintrag hier überstimmt `MAIL_FOOTER_TEXT` aus der Umgebung; bestehende Installationen behalten also ihre Einstellung, bis jemand hier etwas einträgt.
