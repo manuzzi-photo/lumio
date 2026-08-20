@@ -29,7 +29,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui";
 import { useT, useFormat} from "@/lib/i18n";
 import { useErrorText } from "@/lib/error-i18n";
-import { useConfirm } from "@/components/ui/dialogs";
+import { useConfirm, useNotify} from "@/components/ui/dialogs";
 
 interface DeletionStatus {
   isPendingDeletion: boolean;
@@ -82,6 +82,7 @@ export function DangerZone({
   userRole: "owner" | "admin" | "member";
   onMutated?: () => void;
 }) {
+  const notify = useNotify();
   const confirm = useConfirm();
   const errText = useErrorText();
   const fmt = useFormat();
@@ -119,7 +120,7 @@ export function DangerZone({
         await reload();
         onMutated?.();
       } catch (err) {
-        alert(errText(err, t("common.error")));
+        notify(errText(err, t("common.error")));
       } finally {
         setCancelling(false);
       }
@@ -369,6 +370,7 @@ export function PendingDeletionBanner({
   status: DeletionStatus | null;
   onCancelled?: () => void;
 }) {
+  const notify = useNotify();
   const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
@@ -388,7 +390,7 @@ export function PendingDeletionBanner({
       await api.cancelStudioDeletion();
       onCancelled?.();
     } catch (err) {
-      alert(errText(err, t("dangerZone.errorCancel")));
+      notify(errText(err, t("dangerZone.errorCancel")));
     } finally {
       setPending(false);
     }

@@ -13,7 +13,7 @@ import { useFormat, useT} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
 import { useCatalogText } from "@/lib/catalog-i18n";
 import { useErrorText } from "@/lib/error-i18n";
-import { useConfirm } from "@/components/ui/dialogs";
+import { useConfirm, useNotify} from "@/components/ui/dialogs";
 
 export default function SuperTenantDetailPage() {
   return (
@@ -24,6 +24,7 @@ export default function SuperTenantDetailPage() {
 }
 
 function TenantDetail() {
+  const notify = useNotify();
   const confirm = useConfirm();
   const errText = useErrorText();
   const t = useT();
@@ -214,7 +215,7 @@ function TenantDetail() {
       await api.superCancelScheduledArchive(tenant.id);
       await load();
     } catch (err) {
-      alert(errText(err, "Fehler"));
+      notify(errText(err, t("common.error")));
     } finally {
       setActionBusy(false);
     }
@@ -1178,6 +1179,7 @@ function BillingBlock({
   tenantId: string;
   onChanged: () => void;
 }) {
+  const notify = useNotify();
   const confirm = useConfirm();
   const errText = useErrorText();
   const t = useT();
@@ -1215,7 +1217,7 @@ function BillingBlock({
       await api.superDeleteSubscription(tenantId);
       onChanged();
     } catch (err) {
-      alert(errText(err, "Fehler beim Entfernen"));
+      notify(errText(err, t("super.tdRemoveFailed")));
     } finally {
       setRemoving(false);
     }

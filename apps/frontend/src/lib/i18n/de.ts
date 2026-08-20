@@ -1252,6 +1252,7 @@ export const de: LocaleDict = {
     messagePlaceholder2:
       "z.B. Liebe Anna, lieber Tim — eure Hochzeitsbilder sind da! Viel Freude beim Anschauen.",
     createAndInvite: "Erstellen & einladen",
+      inviteSendFailed: "Einladung konnte nicht verschickt werden.",
   },
 
   account: {
@@ -2966,6 +2967,7 @@ export const de: LocaleDict = {
       "Bestehende Bookmarks unter dem alten Slug funktionieren NICHT mehr.",
     tdSlugChangeShareLinks:
       "Galerie-Share-Links sind nicht betroffen — die nutzen den Galerie-Slug, nicht den Tenant-Slug.",
+      tdRemoveFailed: "Fehler beim Entfernen",
   },
 
   galleryShare: {

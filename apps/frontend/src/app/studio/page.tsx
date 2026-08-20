@@ -17,7 +17,7 @@ import { PageHeader } from "@/components/studio/PageHeader";
 import { Button, Input, Textarea, Select } from "@/components/ui";
 import { TagChip } from "@/components/studio/TagPicker";
 import { useErrorText } from "@/lib/error-i18n";
-import { useConfirm } from "@/components/ui/dialogs";
+import { useConfirm, useNotify} from "@/components/ui/dialogs";
 
 export default function StudioPage() {
   const confirm = useConfirm();
@@ -853,6 +853,7 @@ function GalleryCard({
   onTogglePin: () => void;
   onChanged: () => void;
 }) {
+  const notify = useNotify();
   const errText = useErrorText();
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -893,7 +894,7 @@ function GalleryCard({
       await api.updateGallery(g.id, { status });
       onChanged();
     } catch (err) {
-      alert(errText(err, t("common.error")));
+      notify(errText(err, t("common.error")));
     } finally {
       setBusy(false);
     }

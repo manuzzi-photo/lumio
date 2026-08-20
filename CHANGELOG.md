@@ -31,10 +31,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ### Fixed
 
+- Fehlermeldungen, die bisher als Browser-Hinweisfenster erschienen, werden jetzt von Lumio als Einblendung gezeigt. In Browsern, die solche Fenster unterdrücken, erfuhr man vorher gar nicht, dass etwas schiefgegangen war — die Aktion schlug still fehl. Betraf unter anderem das Widerrufen von Galerie-Zugängen und das Verschicken von Einladungen.
+- Zwei dieser Meldungen waren fest auf Deutsch.
 - Alle Rückfragen vor einer Aktion — Löschen, Widerrufen, Trennen, Archivieren — funktionieren jetzt auch in Browsern, die den eingebauten Bestätigungsdialog unterdrücken. Bisher passierte dort schlicht nichts: kein Dialog, keine Meldung, kein Vorgang. Betraf unter anderem Brave auf dem iPad und 27 Stellen quer durch Studio, Kundengalerien und Administrationsoberfläche.
 
 **🇬🇧 English**
 
+- Error messages that used to appear as browser alert boxes are now shown by Lumio as an inline notice. In browsers that suppress those boxes you previously had no way of knowing something had gone wrong — the action simply failed in silence. This affected revoking gallery access and sending invitations, among others.
+- Two of those messages were hardcoded in German.
 - Every confirmation before an action — deleting, revoking, disconnecting, archiving — now works in browsers that suppress the built-in confirm dialog. Previously nothing happened at all: no dialog, no message, no action. This affected Brave on iPad among others, across 27 places in the studio, customer galleries and administration interface.
 
 ## [0.68.0] - 2026-08-19

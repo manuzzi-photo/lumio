@@ -1243,6 +1243,7 @@ export const en = {
     messagePlaceholder2:
       "e.g. Dear Anna, dear Tim — your wedding photos are here! Enjoy looking through them.",
     createAndInvite: "Create & invite",
+      inviteSendFailed: "The invitation could not be sent.",
   },
 
   account: {
@@ -2955,6 +2956,7 @@ export const en = {
       "Existing bookmarks under the old slug will NOT work any more.",
     tdSlugChangeShareLinks:
       "Gallery share links are not affected — they use the gallery slug, not the tenant slug.",
+      tdRemoveFailed: "Removing failed",
   },
 
   galleryShare: {

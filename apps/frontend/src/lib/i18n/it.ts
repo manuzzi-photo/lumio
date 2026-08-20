@@ -1250,6 +1250,7 @@ export const it: LocaleDict = {
     messagePlaceholder2:
       "es. Cara Anna, caro Tim — le vostre foto di matrimonio sono pronte! Buona visione.",
     createAndInvite: "Crea e invita",
+      inviteSendFailed: "Non è stato possibile inviare l'invito.",
   },
 
   account: {
@@ -2964,6 +2965,7 @@ export const it: LocaleDict = {
       "I segnalibri esistenti con il vecchio slug NON funzioneranno più.",
     tdSlugChangeShareLinks:
       "I link di condivisione delle gallerie non sono interessati: usano lo slug della galleria, non quello del tenant.",
+      tdRemoveFailed: "Rimozione non riuscita",
   },
 
   galleryShare: {

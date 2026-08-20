@@ -371,6 +371,9 @@ for (const file of files) {
       // hook versions, not the browser ones. Without this the check keeps
       // reporting its own fixes and the count never moves.
       if (/await\s+(confirm|ask|prompt)\s*\(\s*\{/.test(line)) return;
+      // Prose mentioning the API — the JSX-comment case, which does not
+      // start with // or * and would otherwise be reported forever.
+      if (/(?:statt|instead of|kein|no)\s+window\.\w+\(\)/.test(line)) return;
       const which = line.match(/\b(confirm|alert|prompt)\s*\(/)[1];
       blockingDialogs.push(
         `${rel}:${i + 1}  ${which}() — use ${
@@ -381,27 +384,14 @@ for (const file of files) {
   });
 }
 
-// Bewusst eine WARNUNG, kein Fehler: die Umstellung laeuft in Etappen, und
-// ein rotes Gate bei 36 bekannten Stellen wuerde sofort ignoriert. Sobald
-// die Zahl 0 erreicht, wird daraus ein report() wie die uebrigen Checks —
-// dann faengt er den naechsten neu hinzugefuegten Dialog sofort.
-const DIALOG_BUDGET = 9;
-if (blockingDialogs.length > 0) {
-  console.warn(
-    `\nBlocking browser dialogs — silently suppressed in some browsers ` +
-      `(${blockingDialogs.length}, migrating in stages):`
-  );
-  for (const item of blockingDialogs.slice(0, 5)) console.warn(`  ${item}`);
-  if (blockingDialogs.length > 5) {
-    console.warn(`  … and ${blockingDialogs.length - 5} more`);
-  }
-}
-if (blockingDialogs.length > DIALOG_BUDGET) {
-  report(
-    `Blocking browser dialogs above the agreed budget of ${DIALOG_BUDGET}`,
-    blockingDialogs.slice(DIALOG_BUDGET)
-  );
-}
+// Die Umstellung ist abgeschlossen (0 verbleibend), also jetzt ein hartes
+// Gate: der naechste hinzugefuegte Browser-Dialog laesst den Build scheitern,
+// statt nur eine Warnung zu erzeugen, die man ueberliest.
+report(
+  "Blocking browser dialogs — silently suppressed in some browsers, " +
+    "use useConfirm()/usePrompt()/useNotify()",
+  blockingDialogs
+);
 
 if (failures === 0) {
   console.log(

@@ -56,6 +56,15 @@ interface DialogApi {
   confirm: (opts: ConfirmOptions) => Promise<boolean>;
   /** Liefert den eingegebenen Text, oder null bei Abbruch. */
   prompt: (opts: PromptOptions) => Promise<string | null>;
+  /**
+   * Kurze Mitteilung, Ersatz fuer window.alert().
+   *
+   * Bewusst KEIN Dialog: alert() wurde ausschliesslich in Fehlerpfaden
+   * benutzt ("Konnte nicht gespeichert werden"), und dafuer ist ein modales
+   * Fenster mit OK-Knopf zu schwer — es unterbricht, obwohl es nichts
+   * fragt. Eine Einblendung sagt dasselbe, ohne den Nutzer festzuhalten.
+   */
+  notify: (message: string, tone?: "error" | "info") => void;
 }
 
 const DialogContext = createContext<DialogApi | null>(null);
@@ -68,6 +77,9 @@ type State =
 export function DialogProvider({ children }: { children: React.ReactNode }) {
   const t = useT();
   const [state, setState] = useState<State>({ kind: "none" });
+  const [notice, setNotice] = useState<
+    { message: string; tone: "error" | "info"; id: number } | null
+  >(null);
   // Das Promise wird beim Oeffnen erzeugt und beim Klick aufgeloest.
   const resolveRef = useRef<((value: never) => void) | null>(null);
 
@@ -86,6 +98,16 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
           resolveRef.current = resolve as never;
           setState({ kind: "confirm", opts });
         }),
+      notify: (message, tone = "error") => {
+        const id = Date.now();
+        setNotice({ message, tone, id });
+        // Fehler laenger stehen lassen als Hinweise — man will sie lesen
+        // koennen, ohne sie zu jagen.
+        window.setTimeout(
+          () => setNotice((cur) => (cur?.id === id ? null : cur)),
+          tone === "error" ? 8000 : 4000
+        );
+      },
       prompt: (opts) =>
         new Promise<string | null>((resolve) => {
           resolveRef.current = resolve as never;
@@ -104,6 +126,33 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
   return (
     <DialogContext.Provider value={api}>
       {children}
+
+      {notice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] max-w-md w-[calc(100%-2rem)]"
+        >
+          <div
+            className={
+              "rounded-md px-4 py-3 text-ui-sm shadow-lg border flex items-start gap-3 " +
+              (notice.tone === "error"
+                ? "bg-semantic-danger/10 border-semantic-danger/30 text-semantic-danger"
+                : "bg-surface-raised border-line-subtle text-ink-secondary")
+            }
+          >
+            <span className="flex-1">{notice.message}</span>
+            <button
+              type="button"
+              onClick={() => setNotice(null)}
+              className="shrink-0 opacity-70 hover:opacity-100"
+              aria-label={t("common.close")}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
       {state.kind !== "none" && (
         <Modal
@@ -202,4 +251,8 @@ export function useConfirm() {
 
 export function usePrompt() {
   return useDialogs().prompt;
+}
+
+export function useNotify() {
+  return useDialogs().notify;
 }
