@@ -26,6 +26,7 @@ import {
   type Audience,
 } from "../services/broadcast.js";
 import { sendMail } from "../services/mail.js";
+import { instanceMailLocale } from "../services/mail-i18n.js";
 import { config } from "../config.js";
 
 const audienceSchema = z.enum([
@@ -143,7 +144,8 @@ export async function registerBroadcastRoutes(app: FastifyInstance) {
     // wird in processBroadcast() pro Empfaenger frisch gerendert.
     const archivalHtml = renderBroadcastHtml(
       body.bodyMarkdown,
-      "{{UNSUBSCRIBE_URL}}"
+      "{{UNSUBSCRIBE_URL}}",
+      instanceMailLocale()
     );
 
     const row = await prisma.broadcast.create({
@@ -197,7 +199,13 @@ export async function registerBroadcastRoutes(app: FastifyInstance) {
     req.requireSuperAdmin();
     const body = previewSchema.parse(req.body);
     const exampleUnsubUrl = `${config.PUBLIC_URL.replace(/\/+$/, "")}/broadcasts/unsubscribe?t=example`;
-    return { html: renderBroadcastHtml(body.bodyMarkdown, exampleUnsubUrl) };
+    return {
+      html: renderBroadcastHtml(
+        body.bodyMarkdown,
+        exampleUnsubUrl,
+        instanceMailLocale()
+      ),
+    };
   });
 
   // -------------------------------------------------------------------------
@@ -214,7 +222,11 @@ export async function registerBroadcastRoutes(app: FastifyInstance) {
     const body = testSendSchema.parse(req.body);
 
     const dummyUnsub = `${config.PUBLIC_URL.replace(/\/+$/, "")}/broadcasts/unsubscribe?t=test-only-no-effect`;
-    const html = renderBroadcastHtml(body.bodyMarkdown, dummyUnsub);
+    const html = renderBroadcastHtml(
+      body.bodyMarkdown,
+      dummyUnsub,
+      instanceMailLocale()
+    );
 
     await sendMail({
       to: sa.admin.email,

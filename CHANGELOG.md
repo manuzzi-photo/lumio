@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- E-Mails kamen im Rahmen weiterhin in der Vorgabesprache der Instanz, auch wenn der Inhalt übersetzt war: Fußzeile und die Sprachkennzeichnung der Mail folgten nicht der angeschriebenen Person. Eine englische Mail auf einer deutschen Instanz hatte also englischen Text in deutschem Rahmen — was auch Vorleseprogramme und Spamfilter falsch informierte. Gemeldet und behoben von [@manuzzi](https://github.com/manuzzi).
+
+**🇬🇧 English**
+
+- Emails still used the instance default language for their frame even when the content was translated: the footer and the mail's language attribute did not follow the recipient. An English mail on a German instance had English text in a German frame, which also misinformed screen readers and spam filters. Reported and fixed by [@manuzzi](https://github.com/manuzzi).
+
 ## [0.71.0] - 2026-08-20
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen sind Frontend und API, also nur der Hauptserver. Die neue Einstellung findet sich im Super-Admin unter System.

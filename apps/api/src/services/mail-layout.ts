@@ -44,7 +44,6 @@ import {
   KEY_MAIL_FOOTER_URL,
 } from "./instance-settings.js";
 import {
-  instanceMailLocale,
   interpolate,
   phrase,
   type MailLocale,
@@ -52,6 +51,13 @@ import {
 } from "./mail-i18n.js";
 
 const LUMIO_BRAND_COLOR = "#FF4D2E"; // Vermillion, wie die Bildmarke
+
+// Ziel des "Verschickt von Lumio"-Links im Footer. Frueher lumio-cloud.de,
+// das gehostete Produkt — auf einer selbst betriebenen Instanz bewirbt das
+// den Betreiber der eigenen Instanz nicht sinnvoll (Issue #12). Das
+// Repository passt fuer Self-Hoster wie fuer die gehostete Variante gleich
+// gut.
+const LUMIO_REPO_URL = "https://github.com/markusthiel/lumio";
 
 // Die Bildmarke als PNG. SVG faellt aus: Gmail und Outlook rendern es
 // nicht. Die Dateien liegen im Frontend unter /public und sind damit
@@ -118,8 +124,10 @@ export interface RenderMailOpts {
   /** Optional: Praeheader-Text — wird in Inbox-Preview unter dem Subject
    *  angezeigt. Wirkt subtil aber sehr stark auf Open-Rates. */
   preheader?: string;
-  /** Recipient language; defaults to the instance locale. */
-  locale?: MailLocale;
+  /** Sprache dieser Mail — steuert den Footer-Text und das lang-Attribut.
+   *  Bewusst Pflichtfeld statt Default: ein vergessenes Feld soll ein
+   *  Typfehler sein, kein still falsches Deutsch (Issue #12). */
+  locale: MailLocale;
 }
 
 /**
@@ -133,7 +141,7 @@ export function renderMailLayout(opts: RenderMailOpts): string {
   const logoUrl = opts.branding?.logoUrl;
   const footerNote = opts.branding?.footerNote;
   const preheader = opts.preheader ?? "";
-  const locale = opts.locale ?? instanceMailLocale();
+  const locale = opts.locale;
   // Eigener Text der Instanz schlaegt den uebersetzten Standard. Er wird
   // escaped: die Quelle ist zwar der Betreiber selbst, aber ein < im Text
   // soll die Mail nicht zerlegen.
@@ -210,7 +218,7 @@ export function renderMailLayout(opts: RenderMailOpts): string {
     : "";
 
   return `<!doctype html>
-<html lang="de">
+<html lang="${opts.locale}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">

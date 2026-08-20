@@ -251,6 +251,7 @@ ${phrase(P.regards, l)}
 ${studioName}`;
 
   const html = renderMailLayout({
+    locale: l,
     branding,
     bodyHtml: `
   <p>${escapeHtml(phrase(P.greeting, l, vars))}</p>
@@ -324,6 +325,7 @@ ${phrase(S.openOrder, l)}
 ${orderUrl}`;
 
   const html = renderMailLayout({
+    locale: l,
     branding,
     bodyHtml: `
   <p>${escapeHtml(phrase(S.intro, l))}</p>
@@ -392,6 +394,7 @@ ${studioName}
 ${printSupport(supportEmail) ? phrase(P.questions, l, { contact: printSupport(supportEmail)! }) : ""}`;
 
   const html = renderMailLayout({
+    locale: l,
     branding,
     bodyHtml: `
   <p>${escapeHtml(phrase(P.greeting, l, vars))}</p>
