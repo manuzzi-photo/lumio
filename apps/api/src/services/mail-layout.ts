@@ -39,6 +39,11 @@
 
 import { config } from "../config.js";
 import {
+  instanceSetting,
+  KEY_MAIL_FOOTER_TEXT,
+  KEY_MAIL_FOOTER_URL,
+} from "./instance-settings.js";
+import {
   instanceMailLocale,
   interpolate,
   phrase,
@@ -132,12 +137,21 @@ export function renderMailLayout(opts: RenderMailOpts): string {
   // Eigener Text der Instanz schlaegt den uebersetzten Standard. Er wird
   // escaped: die Quelle ist zwar der Betreiber selbst, aber ein < im Text
   // soll die Mail nicht zerlegen.
-  const footerUrl = config.MAIL_FOOTER_URL ?? "https://github.com/markusthiel/lumio";
+  // Reihenfolge: was im Super-Admin eingetragen wurde, schlaegt die
+  // Umgebung, und die schlaegt den uebersetzten Standard. So kann eine
+  // Instanz ohne .env-Zugriff gebrandet werden, ohne dass bestehende
+  // Deployments mit gesetzter Umgebungsvariable ihre Einstellung verlieren.
+  const footerText =
+    instanceSetting(KEY_MAIL_FOOTER_TEXT) ?? config.MAIL_FOOTER_TEXT;
+  const footerUrl =
+    instanceSetting(KEY_MAIL_FOOTER_URL) ??
+    config.MAIL_FOOTER_URL ??
+    "https://github.com/markusthiel/lumio";
   const lumioLink =
     `<a href="${escapeHtml(footerUrl)}" ` +
     `style="color:${LUMIO_MUTED_COLOR};text-decoration:underline;">Lumio</a>`;
-  const sentViaHtml = config.MAIL_FOOTER_TEXT
-    ? interpolate(escapeHtml(config.MAIL_FOOTER_TEXT), { link: lumioLink })
+  const sentViaHtml = footerText
+    ? interpolate(escapeHtml(footerText), { link: lumioLink })
     : phrase(layoutPhrases.sentVia, locale, { link: lumioLink });
 
   // Zwei Achsen mit Fallback-Kette auf den (deprecated) logoAlign.

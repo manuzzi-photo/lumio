@@ -54,6 +54,7 @@ export const de: LocaleDict = {
     preview: "Vorschau",
     breadcrumb: "Breadcrumb",
       confirm: "Bestätigen",
+      saved: "Gespeichert",
   },
 
 
@@ -2968,6 +2969,14 @@ export const de: LocaleDict = {
     tdSlugChangeShareLinks:
       "Galerie-Share-Links sind nicht betroffen — die nutzen den Galerie-Slug, nicht den Tenant-Slug.",
       tdRemoveFailed: "Fehler beim Entfernen",
+      mailFooterTitle: "Fußzeile der E-Mails",
+    mailFooterHint:
+      "Die letzte Zeile jeder E-Mail, die Lumio verschickt. Leer lassen für die Vorgabe, die der Sprache der angeschriebenen Person folgt und aufs Projekt verlinkt.",
+    mailFooterText: "Text",
+    mailFooterUrl: "Ziel des Links",
+    mailFooterPlaceholder: "Verschickt von Müller Fotografie · muellerfoto.de",
+    mailFooterNotTranslated:
+      "Ein eigener Text wird wörtlich übernommen und nicht übersetzt — er erscheint in jeder E-Mail, unabhängig von der Sprache der angeschriebenen Person. Schreibe {link} an die Stelle, an der der verlinkte Produktname stehen soll.",
   },
 
   galleryShare: {

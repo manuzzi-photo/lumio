@@ -69,6 +69,12 @@ import {
 } from "../services/system-health.js";
 import { logger } from "../logger.js";
 import { userMailLocale, normalizeLocale} from "../services/mail-i18n.js";
+import {
+  KEY_MAIL_FOOTER_TEXT,
+  KEY_MAIL_FOOTER_URL,
+  readMailFooterSettings,
+  setInstanceSetting,
+} from "../services/instance-settings.js";
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 
@@ -3735,6 +3741,53 @@ export async function registerSuperMarketingRoutes(app: FastifyInstance) {
   // PUT /super/tenants/:id/marketing-emails
   // Per-Tenant Override (Super-Admin kann für einzelne Tenants übersteuern)
   // -------------------------------------------------------------------------
+  /**
+   * Fusszeile der ausgehenden Mails.
+   *
+   * Existiert, damit eine Instanz gebrandet werden kann, ohne .env anzufassen
+   * — auf einem Server ohne Shell-Zugang war das sonst nicht moeglich.
+   * Ein hier gesetzter Wert ueberstimmt MAIL_FOOTER_TEXT/-URL; leeren lassen
+   * faellt auf die Umgebung und dann auf den uebersetzten Standard zurueck.
+   */
+  app.get("/super/mail-footer", async () => {
+    const current = await readMailFooterSettings();
+    return {
+      ...current,
+      // Damit die Oberflaeche zeigen kann, was ohne Eintrag greifen wuerde.
+      envText: config.MAIL_FOOTER_TEXT ?? null,
+      envUrl: config.MAIL_FOOTER_URL ?? null,
+    };
+  });
+
+  app.put("/super/mail-footer", async (req, reply) => {
+    const body = z
+      .object({
+        text: z.string().max(300).nullable(),
+        url: z.union([z.string().url(), z.literal(""), z.null()]),
+      })
+      .safeParse(req.body);
+    if (!body.success)
+      return reply.status(400).send({ error: "invalid_body" });
+
+    await setInstanceSetting(KEY_MAIL_FOOTER_TEXT, body.data.text);
+    await setInstanceSetting(KEY_MAIL_FOOTER_URL, body.data.url || null);
+
+    await logEvent({
+      tenantId: null,
+      actorType: "super_admin",
+      actorId: req.requireSuperAdmin().admin.id,
+      action: "super.mail_footer.update",
+      targetType: "system_config",
+      targetId: KEY_MAIL_FOOTER_TEXT,
+      payload: {
+        hasText: Boolean(body.data.text),
+        hasUrl: Boolean(body.data.url),
+      },
+    });
+
+    return readMailFooterSettings();
+  });
+
   app.put<{ Params: { id: string } }>(
     "/super/tenants/:id/marketing-emails",
     async (req, reply) => {

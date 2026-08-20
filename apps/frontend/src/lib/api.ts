@@ -3629,6 +3629,21 @@ export const api = {
     ),
 
   // Marketing-Config (Super-Admin)
+  /** Fusszeile der ausgehenden Mails (Instanz-weit). */
+  superGetMailFooter: () =>
+    request<{
+      text: string | null;
+      url: string | null;
+      envText: string | null;
+      envUrl: string | null;
+    }>(`/super/mail-footer`),
+
+  superSetMailFooter: (body: { text: string | null; url: string | null }) =>
+    request<{ text: string | null; url: string | null }>(
+      `/super/mail-footer`,
+      { method: "PUT", body: JSON.stringify(body) }
+    ),
+
   superGetMarketingConfig: () =>
     request<{
       globalEnabled: boolean;

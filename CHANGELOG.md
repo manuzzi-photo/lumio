@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Added
+
+- Die Fußzeile der E-Mails lässt sich jetzt direkt in der Administrationsoberfläche einstellen, unter System. Wer die Instanz auf den eigenen Studionamen bringen will, braucht dafür keinen Zugriff mehr auf die `.env` und keine Kommandozeile. Ein Eintrag hier überstimmt `MAIL_FOOTER_TEXT` aus der Umgebung; bestehende Installationen behalten also ihre Einstellung, bis jemand hier etwas einträgt.
+
+**🇬🇧 English**
+
+- The email footer can now be set directly in the administration interface, under System. Putting your own studio name on an instance no longer requires access to `.env` or a command line. An entry here overrides `MAIL_FOOTER_TEXT` from the environment, so existing installations keep their setting until someone changes it here.
+
 ## [0.70.0] - 2026-08-20
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist die API, also nur der Hauptserver. Wer die neue Fußzeile anpassen möchte, findet die beiden optionalen Einträge in `.env.example`.
