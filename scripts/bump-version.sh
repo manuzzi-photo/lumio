@@ -14,6 +14,7 @@
 #   - apps/api/package.json        ("version")
 #   - apps/frontend/package.json   ("version")
 #   - packages/shared/package.json ("version")
+#   - die drei zugehoerigen package-lock.json ("version" + packages[""])
 #
 set -euo pipefail
 
@@ -48,6 +49,36 @@ for pkg in apps/api/package.json apps/frontend/package.json packages/shared/pack
   echo "→ $pkg"
   # ersetzt nur das erste "version"-Feld (das Paket selbst, nicht Dependencies)
   sed -i -E "0,/(\"version\": \")[^\"]+(\")/s//\1${NEW_VERSION}\2/" "$pkg"
+
+  # Das zugehoerige Lockfile fuehrt die Version doppelt: einmal oben und
+  # einmal unter packages[""]. Bleibt es zurueck, meldet `npm ci` einen
+  # Versatz zwischen package.json und Lock — und im Repo steht eine Datei,
+  # die eine andere Version behauptet als das Paket daneben.
+  #
+  # Das lief lange auseinander, weil es von Hand nachgezogen wurde: die
+  # beiden App-Locks jedes Mal, packages/shared nie. Dessen Lock stand bei
+  # v0.69.0 noch auf 0.1.0.
+  lock="${pkg%package.json}package-lock.json"
+  if [[ -f "$lock" ]]; then
+    echo "→ $lock"
+    python3 - "$lock" "$NEW_VERSION" <<'PY'
+import json, sys
+
+path, version = sys.argv[1], sys.argv[2]
+with open(path, encoding="utf-8") as fh:
+    data = json.load(fh)
+
+data["version"] = version
+# Der Root-Eintrag in packages ist das Paket selbst.
+root = data.get("packages", {}).get("")
+if root is not None:
+    root["version"] = version
+
+with open(path, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, indent=2, ensure_ascii=False)
+    fh.write("\n")
+PY
+  fi
 done
 
 echo
@@ -66,6 +97,8 @@ read -r _
 
 git add VERSION apps/api/src/version.ts apps/worker/version.py \
         apps/api/package.json apps/frontend/package.json packages/shared/package.json \
+        apps/api/package-lock.json apps/frontend/package-lock.json \
+        packages/shared/package-lock.json \
         CHANGELOG.md
 git commit -m "chore(release): v${NEW_VERSION}"
 git tag -a "v${NEW_VERSION}" -m "Lumio v${NEW_VERSION}"
