@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.68.0] - 2026-08-19
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.*
+
+
 ### Fixed
 
 - Vier Stellen, an denen eine Eingabe verlangt wurde, funktionierten in manchen Browsern gar nicht — darunter Brave auf dem iPad: eine neue Section anlegen, einen Passkey benennen, eine Bestellung mit Grund stornieren und der Link zum manuellen Kopieren, wenn die Zwischenablage nicht verfügbar ist. Der Browser blendete das Eingabefenster wortlos aus, die Aktion brach ab, und der Knopf wirkte kaputt. Diese Dialoge werden jetzt von Lumio selbst gezeichnet.
