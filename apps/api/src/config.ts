@@ -114,9 +114,22 @@ const envSchema = z.object({
    * Auf einer Instanz mit mehreren Sprachen ist der Standard daher meist die
    * bessere Wahl. {link} wird durch den verlinkten Produktnamen ersetzt.
    */
-  MAIL_FOOTER_TEXT: z.string().optional(),
+  //
+  // Beide Felder behandeln den LEEREN String wie "nicht gesetzt". Das ist
+  // nicht kosmetisch: docker-compose schreibt `VAR=${VAR:-}`, und eine nicht
+  // gesetzte Variable kommt damit als "" in der Umgebung an, nicht als
+  // undefined. Ohne dieses Preprocessing scheiterte z.string().url() an ""
+  // und die API startete auf JEDER Instanz nicht mehr, die den Wert nicht
+  // ausdruecklich setzt.
+  MAIL_FOOTER_TEXT: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().optional()
+  ),
   /** Ziel des Produktnamens in der Fusszeile. Default: das Repository. */
-  MAIL_FOOTER_URL: z.string().url().optional(),
+  MAIL_FOOTER_URL: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().url().optional()
+  ),
 
   SMTP_SECURE: z
     .string()
