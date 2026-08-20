@@ -367,6 +367,10 @@ for (const file of files) {
       // Method calls on other objects are fine (foo.alert(), .prompt = …).
       if (/\.\s*(confirm|alert|prompt)\s*\(/.test(line) && !/window\./.test(line))
         return;
+      // Already migrated: `await confirm({ … })` / `await ask({ … })` are the
+      // hook versions, not the browser ones. Without this the check keeps
+      // reporting its own fixes and the count never moves.
+      if (/await\s+(confirm|ask|prompt)\s*\(\s*\{/.test(line)) return;
       const which = line.match(/\b(confirm|alert|prompt)\s*\(/)[1];
       blockingDialogs.push(
         `${rel}:${i + 1}  ${which}() — use ${
@@ -381,7 +385,7 @@ for (const file of files) {
 // ein rotes Gate bei 36 bekannten Stellen wuerde sofort ignoriert. Sobald
 // die Zahl 0 erreicht, wird daraus ein report() wie die uebrigen Checks —
 // dann faengt er den naechsten neu hinzugefuegten Dialog sofort.
-const DIALOG_BUDGET = 36;
+const DIALOG_BUDGET = 9;
 if (blockingDialogs.length > 0) {
   console.warn(
     `\nBlocking browser dialogs — silently suppressed in some browsers ` +

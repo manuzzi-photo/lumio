@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Alle Rückfragen vor einer Aktion — Löschen, Widerrufen, Trennen, Archivieren — funktionieren jetzt auch in Browsern, die den eingebauten Bestätigungsdialog unterdrücken. Bisher passierte dort schlicht nichts: kein Dialog, keine Meldung, kein Vorgang. Betraf unter anderem Brave auf dem iPad und 27 Stellen quer durch Studio, Kundengalerien und Administrationsoberfläche.
+
+**🇬🇧 English**
+
+- Every confirmation before an action — deleting, revoking, disconnecting, archiving — now works in browsers that suppress the built-in confirm dialog. Previously nothing happened at all: no dialog, no message, no action. This affected Brave on iPad among others, across 27 places in the studio, customer galleries and administration interface.
+
 ## [0.68.0] - 2026-08-19
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.

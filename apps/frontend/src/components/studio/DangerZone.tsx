@@ -29,6 +29,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui";
 import { useT, useFormat} from "@/lib/i18n";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 interface DeletionStatus {
   isPendingDeletion: boolean;
@@ -81,6 +82,7 @@ export function DangerZone({
   userRole: "owner" | "admin" | "member";
   onMutated?: () => void;
 }) {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
@@ -108,7 +110,7 @@ export function DangerZone({
 
     async function onCancelClick() {
       if (
-        !confirm(t("dangerZone.cancelDeletionConfirm"))
+        !(await confirm({ message: t("dangerZone.cancelDeletionConfirm") }))
       )
         return;
       setCancelling(true);

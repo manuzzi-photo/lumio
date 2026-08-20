@@ -46,6 +46,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 // accept-Liste fürs Upload-<input>. Hintergrund: ohne accept gibt der
 // iOS/iPadOS-Foto-Picker bei einem ausgewählten VIDEO beim Bestätigen
@@ -81,6 +82,7 @@ function formatFileSize(bytes: number): string {
 }
 
 export default function GalleryDetailPage() {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -365,9 +367,7 @@ export default function GalleryDetailPage() {
       .map((f) => f.id);
     if (pendingIds.length === 0) return;
     if (
-      !confirm(
-        t("studio.uploadLinks.confirmApproveAll", { count: pendingIds.length })
-      )
+      !(await confirm({ message: t("studio.uploadLinks.confirmApproveAll", { count: pendingIds.length }) }))
     ) {
       return;
     }

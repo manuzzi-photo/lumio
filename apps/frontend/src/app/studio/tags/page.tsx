@@ -17,6 +17,7 @@ import { useT } from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 const DEFAULT_COLORS = [
   "#94a3b8", // slate
@@ -158,10 +159,11 @@ function TagRow({
   onEdit: () => void;
   onDeleted: () => Promise<void> | void;
 }) {
+  const confirm = useConfirm();
   const t = useT();
   const [busy, setBusy] = useState(false);
   async function remove() {
-    if (!confirm(t("studio.tagConfirmDelete", { name: tag.name }))) return;
+    if (!(await confirm({ message: t("studio.tagConfirmDelete", { name: tag.name }) }))) return;
     setBusy(true);
     try {
       await api.deleteTag(tag.id);

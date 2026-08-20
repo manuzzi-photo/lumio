@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useT } from "@/lib/i18n";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 interface Props {
   galleryId: string;
@@ -97,6 +98,7 @@ function LinkRow({
   galleryId: string;
   onChanged: () => void | Promise<void>;
 }) {
+  const confirm = useConfirm();
   const t = useT();
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -126,7 +128,8 @@ function LinkRow({
   }
 
   async function remove() {
-    if (!confirm(t("studio.uploadLinks.confirmDelete"))) return;
+    if (!(await confirm({ message: t("studio.uploadLinks.confirmDelete") })))
+      return;
     setBusy(true);
     try {
       await api.deleteUploadLink(galleryId, link.id);

@@ -198,7 +198,7 @@ export function SharePanel({
     }
   }
 
-  /** Widerrufen mit Zwei-Klick-Confirm (kein confirm()-Dialog,
+  /** Widerrufen mit Zwei-Klick-Confirm (kein Browser-Dialog,
    *  weil viele Browser den unterdruecken). Erster Klick markiert
    *  den Eintrag, zweiter Klick fuehrt durch. Auto-Reset nach 4s. */
   async function onDeleteClick(id: string) {

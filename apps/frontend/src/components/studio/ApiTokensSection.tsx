@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api, type ApiTokenSummary } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
+import { useConfirm } from "@/components/ui/dialogs";
 
 /**
  * Studio-Settings-Sektion zum Verwalten von API-Tokens.
@@ -17,6 +18,7 @@ import type { Formatters } from "@/lib/i18n/format";
  * Token erzeugen.
  */
 export function ApiTokensSection() {
+  const confirm = useConfirm();
   const fmt = useFormat();
   const t = useT();
   const [tokens, setTokens] = useState<ApiTokenSummary[]>([]);
@@ -62,7 +64,7 @@ export function ApiTokensSection() {
   }
 
   async function revoke(id: string, name: string) {
-    if (!window.confirm(t("apiTokens.revokeConfirm", { name }))) return;
+    if (!(await confirm({ message: t("apiTokens.revokeConfirm", { name }) }))) return;
     try {
       await api.revokeApiToken(id);
       await load();

@@ -36,6 +36,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 interface DupFile {
   id: string;
@@ -66,6 +67,7 @@ type Phase = "initial" | "scanning" | "loading" | "ready" | "error";
 const POLL_INTERVAL_MS = 2000;
 
 export function DuplicatesDialog({ galleryId, onClose, onDeleted }: Props) {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const t = useT();
   const [phase, setPhase] = useState<Phase>("initial");
@@ -200,7 +202,7 @@ export function DuplicatesDialog({ galleryId, onClose, onDeleted }: Props) {
     if (selectedToDelete.size === 0) return;
     const ids = Array.from(selectedToDelete);
     const msg = t("printAdmin.dupDeleteConfirm", { n: ids.length });
-    if (!confirm(msg)) return;
+    if (!(await confirm({ message: msg }))) return;
     setDeleting(true);
     try {
       // bulk-action Endpoint hat Limit 500 Files pro Call → chunken

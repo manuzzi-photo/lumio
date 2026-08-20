@@ -17,8 +17,10 @@ import { PageHeader } from "@/components/studio/PageHeader";
 import { Button, Input, Textarea, Select } from "@/components/ui";
 import { TagChip } from "@/components/studio/TagPicker";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 export default function StudioPage() {
+  const confirm = useConfirm();
   const router = useRouter();
   const t = useT();
   const [user, setUser] = useState<ApiUser | null>(null);
@@ -241,7 +243,8 @@ export default function StudioPage() {
   // Aktive Collection löschen (nur möglich wenn eine aktiv ist).
   async function deleteActiveCollection() {
     if (!activeCollection) return;
-    if (!confirm(t("studio.deleteCollectionConfirm"))) return;
+    if (!(await confirm({ message: t("studio.deleteCollectionConfirm") })))
+      return;
     await api.deleteCollection(activeCollection);
     setCollections((cs) => cs.filter((c) => c.id !== activeCollection));
     setActiveCollection(null);

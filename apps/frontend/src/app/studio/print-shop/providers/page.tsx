@@ -22,6 +22,7 @@ import { Button, Input } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { useCatalogText } from "@/lib/catalog-i18n";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 type Available = Awaited<
   ReturnType<typeof api.listAvailablePrintProviders>
@@ -31,6 +32,7 @@ type Mine = Awaited<
 >["providers"][number];
 
 export default function PrintProvidersPage() {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const ct = useCatalogText();
   const t = useT();
@@ -102,9 +104,7 @@ export default function PrintProvidersPage() {
 
   async function remove(p: Mine) {
     if (
-      !confirm(
-        t("providers.confirmRemove", { name: p.providerLabel })
-      )
+      !(await confirm({ message: t("providers.confirmRemove", { name: p.providerLabel }) }))
     ) {
       return;
     }

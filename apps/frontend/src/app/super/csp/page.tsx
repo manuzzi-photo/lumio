@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, type CspViolationRow } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useT } from "@/lib/i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 export default function SuperCspPage() {
   return (
@@ -14,6 +15,7 @@ export default function SuperCspPage() {
 }
 
 function CspView() {
+  const confirm = useConfirm();
   const t = useT();
   const [rows, setRows] = useState<CspViolationRow[]>([]);
   const [distinct, setDistinct] = useState(0);
@@ -39,9 +41,7 @@ function CspView() {
 
   async function clearAll() {
     if (
-      !window.confirm(
-        t("super.cspClearConfirm")
-      )
+      !(await confirm({ message: t("super.cspClearConfirm") }))
     ) {
       return;
     }

@@ -12,6 +12,7 @@ import { NotificationSettings } from "@/components/studio/NotificationSettings";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { useT, useLocale } from "@/lib/i18n";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 /** Kleine Status-Zeile mit farbigem Punkt + Label + Detail-Text.
  *  Für Custom-Domain DNS- und TLS-Status. */
@@ -49,6 +50,7 @@ function StatusRow({
 }
 
 export default function StudioSettingsPage() {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const router = useRouter();
   const t = useT();
@@ -415,7 +417,7 @@ export default function StudioSettingsPage() {
   }
 
   async function removeImage() {
-    if (!confirm(t("settings.watermarkRemoveConfirm"))) return;
+    if (!(await confirm({ message: t("settings.watermarkRemoveConfirm") }))) return;
     setImageSaving(true);
     try {
       await api.deleteWatermarkImage();

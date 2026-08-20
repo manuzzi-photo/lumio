@@ -13,6 +13,7 @@ import { Button, Input } from "@/components/ui";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 type Method = Awaited<
   ReturnType<typeof api.listShippingMethods>
@@ -22,6 +23,7 @@ type ProviderMine = Awaited<
 >["providers"][number];
 
 export default function ShippingMethodsPage() {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
@@ -54,7 +56,8 @@ export default function ShippingMethodsPage() {
   }, [load]);
 
   async function remove(m: Method) {
-    if (!confirm(t("shipping.confirmDelete", { name: m.name }))) return;
+    if (!(await confirm({ message: t("shipping.confirmDelete", { name: m.name }) })))
+      return;
     setBusy(true);
     try {
       await api.deleteShippingMethod(m.id);

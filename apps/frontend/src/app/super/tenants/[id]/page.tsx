@@ -13,6 +13,7 @@ import { useFormat, useT} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
 import { useCatalogText } from "@/lib/catalog-i18n";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 export default function SuperTenantDetailPage() {
   return (
@@ -23,6 +24,7 @@ export default function SuperTenantDetailPage() {
 }
 
 function TenantDetail() {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const t = useT();
   const fmt = useFormat();
@@ -92,7 +94,7 @@ function TenantDetail() {
 
   async function suspend() {
     if (!tenant) return;
-    if (!confirm(t("super.tdSuspendConfirm", { name: tenant.name }))) return;
+    if (!(await confirm({ message: t("super.tdSuspendConfirm", { name: tenant.name }) }))) return;
     setActionBusy(true);
     try {
       await api.superSuspendTenant(tenant.id);
@@ -129,9 +131,7 @@ function TenantDetail() {
   async function archive() {
     if (!tenant) return;
     if (
-      !confirm(
-        t("super.tdArchiveConfirm", { name: tenant.name })
-      )
+      !(await confirm({ message: t("super.tdArchiveConfirm", { name: tenant.name }) }))
     )
       return;
     setActionBusy(true);
@@ -204,11 +204,9 @@ function TenantDetail() {
   async function cancelSchedule() {
     if (!tenant) return;
     if (
-      !confirm(
-        t("super.tdWithdrawArchiveConfirm", { name: tenant.name }) +
+      !(await confirm({ message: t("super.tdWithdrawArchiveConfirm", { name: tenant.name }) +
           "\n\n" +
-          t("super.tdWithdrawArchiveNote")
-      )
+          t("super.tdWithdrawArchiveNote") }))
     )
       return;
     setActionBusy(true);
@@ -1011,6 +1009,7 @@ function EditMetaForm({
   onSaved: () => Promise<void> | void;
   onCancel: () => void;
 }) {
+  const confirm = useConfirm();
   // Die Warnung beim Slug-Wechsel nennt die Subdomain. Frueher stand dort
   // fest "lumio-cloud.de" — auf einer selbst betriebenen Instanz falsch.
   const [domainBase, setDomainBase] = useState<string | null>(null);
@@ -1036,8 +1035,7 @@ function EditMetaForm({
     // Slug-Wechsel: explizite Bestätigung. Wenn der Operator OK drückt,
     // wissen wir, dass er die Konsequenzen für Subdomains/URLs kennt.
     if (slugChanged) {
-      const ok = confirm(
-        t("super.tdSlugChangeConfirm", { old: tenant.slug, new: slug }) +
+      const ok = (await confirm({ message: t("super.tdSlugChangeConfirm", { old: tenant.slug, new: slug }) +
           "\n\n" +
           // Domain aus der Instanz, nicht hartkodiert: auf einer
           // selbst betriebenen Instanz ist lumio-cloud.de einfach falsch.
@@ -1048,8 +1046,7 @@ function EditMetaForm({
           " " +
           t("super.tdSlugChangeBookmarks") +
           "\n\n" +
-          t("super.tdSlugChangeShareLinks")
-      );
+          t("super.tdSlugChangeShareLinks") }));
       if (!ok) return;
     }
 
@@ -1181,6 +1178,7 @@ function BillingBlock({
   tenantId: string;
   onChanged: () => void;
 }) {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const t = useT();
   const fmt = useFormat();
@@ -1209,9 +1207,7 @@ function BillingBlock({
 
   async function removeSubscription() {
     if (
-      !confirm(
-        t("super.tdRemoveSubscriptionConfirm")
-      )
+      !(await confirm({ message: t("super.tdRemoveSubscriptionConfirm") }))
     )
       return;
     setRemoving(true);

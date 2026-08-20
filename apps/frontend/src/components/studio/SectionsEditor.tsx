@@ -29,7 +29,7 @@
 import { useEffect, useState } from "react";
 import { api, type StudioSection, type TagSummary } from "@/lib/api";
 import { useT } from "@/lib/i18n";
-import { usePrompt } from "@/components/ui/dialogs";
+import { usePrompt, useConfirm} from "@/components/ui/dialogs";
 
 interface Props {
   galleryId: string;
@@ -48,6 +48,7 @@ interface Props {
 }
 
 export function SectionsEditor({ galleryId, files, onChanged }: Props) {
+  const confirm = useConfirm();
   const ask = usePrompt();
   const t = useT();
   const [sections, setSections] = useState<StudioSection[]>([]);
@@ -93,9 +94,7 @@ export function SectionsEditor({ galleryId, files, onChanged }: Props) {
 
   async function handleDelete(s: StudioSection) {
     if (busy) return;
-    const ok = window.confirm(
-      t("studio.sectionDeleteConfirm", { title: s.title })
-    );
+    const ok = (await confirm({ message: t("studio.sectionDeleteConfirm", { title: s.title }) }));
     if (!ok) return;
     setBusy(true);
     try {

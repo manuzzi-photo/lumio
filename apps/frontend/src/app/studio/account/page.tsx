@@ -29,6 +29,7 @@ import { PageHeader } from "@/components/studio/PageHeader";
 import { Button } from "@/components/ui";
 import { DangerZone } from "@/components/studio/DangerZone";
 import { useErrorText } from "@/lib/error-i18n";
+import { useConfirm } from "@/components/ui/dialogs";
 
 interface AccountData {
   user: {
@@ -253,6 +254,7 @@ function EmailSection({
   pendingChange: AccountData["pendingEmailChange"];
   onChanged: () => Promise<void>;
 }) {
+  const confirm = useConfirm();
   const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
@@ -284,7 +286,7 @@ function EmailSection({
   }
 
   async function cancel() {
-    if (!confirm(t("account.cancelEmailChangeConfirm"))) return;
+    if (!(await confirm({ message: t("account.cancelEmailChangeConfirm") }))) return;
     try {
       await api.cancelAccountEmailChange();
       setSubmitted(null);

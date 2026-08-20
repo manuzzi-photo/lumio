@@ -9,7 +9,7 @@ import { api, type WebauthnCredential } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
 import { useErrorText } from "@/lib/error-i18n";
-import { usePrompt } from "@/components/ui/dialogs";
+import { usePrompt, useConfirm} from "@/components/ui/dialogs";
 
 /**
  * Studio-Settings-Sektion zum Verwalten von Passkeys.
@@ -26,6 +26,7 @@ import { usePrompt } from "@/components/ui/dialogs";
  * konfiguriert hat, kann auch ohne TOTP-App ein 2FA-Login machen.
  */
 export function PasskeysSection() {
+  const confirm = useConfirm();
   const ask = usePrompt();
   const errText = useErrorText();
   const fmt = useFormat();
@@ -94,7 +95,7 @@ export function PasskeysSection() {
 
   async function removePasskey(id: string, label: string) {
     if (
-      !window.confirm(`Passkey "${label}" wirklich entfernen?`)
+      !(await confirm({ message: `Passkey "${label}" wirklich entfernen?` }))
     )
       return;
     try {
