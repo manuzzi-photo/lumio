@@ -29,6 +29,11 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.73.2] - 2026-08-21
+
+A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server.
+
+
 ### Fixed
 
 - The download menu in a gallery ran off the left edge of the screen on a phone, cutting off the first entry. The menu now works out which way it can open from where the button actually is, which matters because the toolbar wraps: how many actions are visible decides whether the button ends up mid-row or at the start of the next one. The gallery tile menu in the studio had the same arrangement and is fixed too.
