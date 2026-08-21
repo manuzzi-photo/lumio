@@ -1,8 +1,9 @@
 import { en } from "./en";
 import { de } from "./de";
 import { it } from "./it";
+import { fi } from "./fi";
 
-export type Locale = "en" | "de" | "it";
+export type Locale = "en" | "de" | "it" | "fi";
 
 // Recursive Dict-Type. Bewusst auf String-Werte beschränkt — wir verschachteln
 // per Sektion, nicht über JSON-Strukturen.
@@ -31,4 +32,5 @@ export const dictionaries: Record<Locale, LocaleDict> = {
   en,
   de,
   it,
+  fi,
 };

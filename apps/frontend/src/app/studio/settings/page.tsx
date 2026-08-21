@@ -571,7 +571,7 @@ export default function StudioSettingsPage() {
           <select
             value={locale}
             onChange={(e) => {
-              const next = e.target.value as "en" | "de" | "it";
+              const next = e.target.value as "en" | "de" | "it" | "fi";
               setLocale(next);
               // Write-through fuer den Mailversand. Die Oberflaeche haengt
               // weiterhin am Cookie — dieser Wert entscheidet nur, in
@@ -586,6 +586,7 @@ export default function StudioSettingsPage() {
             <option value="en">English</option>
             <option value="de">Deutsch</option>
             <option value="it">Italiano</option>
+            <option value="fi">Suomi</option>
           </select>
         </section>
 
