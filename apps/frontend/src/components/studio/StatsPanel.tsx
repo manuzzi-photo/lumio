@@ -21,6 +21,7 @@ import { api, type GalleryStats } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { useErrorText } from "@/lib/error-i18n";
+import { useCatalogText } from "@/lib/catalog-i18n";
 
 export function StatsPanel({
   galleryId,
@@ -381,6 +382,8 @@ function buildLastNDays(n: number): string[] {
  * machen.
  */
 function FunnelSection({ galleryId }: { galleryId: string }) {
+  const t = useT();
+  const ct = useCatalogText();
   const fmt = useFormat();
   const [funnel, setFunnel] = useState<
     | {
@@ -414,7 +417,7 @@ function FunnelSection({ galleryId }: { galleryId: string }) {
   return (
     <section className="px-6 sm:px-8 lg:px-12 py-4 border-t border-line-subtle">
       <h2 className="text-ui-sm uppercase tracking-[0.12em] text-ink-tertiary mb-3">
-        Engagement-Funnel (30 Tage)
+        {t("settings.statsFunnelTitle")}
       </h2>
       <ol className="space-y-2 max-w-2xl">
         {funnel.steps.map((s, i) => {
@@ -428,7 +431,10 @@ function FunnelSection({ galleryId }: { galleryId: string }) {
           return (
             <li key={s.key} className="text-sm">
               <div className="flex justify-between items-center mb-1">
-                <span>{s.label}</span>
+                {/* Die API liefert das Label auf Deutsch mit. Uebersetzt
+                    wird ueber den stabilen key; kennt die API einen Schritt,
+                    den dieses Frontend noch nicht hat, gewinnt ihr Text. */}
+                <span>{ct("Funnel", s.key, "Label", s.label)}</span>
                 <span className="tabular-nums text-ink-secondary">
                   {s.count.toLocaleString(fmt.bcp47)}
                   {conv && (

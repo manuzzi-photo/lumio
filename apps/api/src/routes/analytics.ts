@@ -340,6 +340,11 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 
       return {
         range: { days, since: since.toISOString() },
+        // label ist nur der FALLBACK, falls das Frontend einen Schritt noch
+        // nicht kennt. Angezeigt wird die Uebersetzung zu key (Dictionary-
+        // Sektion settings.catalogFunnel*Label). Neuen Schritt ergaenzen
+        // heisst: hier eintragen UND vier Keys im Frontend anlegen — die
+        // i18n-Pruefung meldet fehlende.
         steps: [
           { key: "visitors", label: "Besucher", count: visitors },
           {

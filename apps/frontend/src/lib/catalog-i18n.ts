@@ -31,7 +31,12 @@ function pascal(key: string): string {
     .join("");
 }
 
-export type CatalogKind = "Plan" | "Flag" | "Provider" | "NotifEvent";
+export type CatalogKind =
+  | "Plan"
+  | "Flag"
+  | "Provider"
+  | "NotifEvent"
+  | "Funnel";
 
 /**
  * Baut den Dictionary-Key. `suffix` unterscheidet mehrere Texte am selben

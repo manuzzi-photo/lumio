@@ -1045,6 +1045,11 @@ export const it: LocaleDict = {
       languageWord: "Lingua",
     languageHint:
       "Lingua dell'interfaccia dello studio. Usata anche per le email che ti inviamo.",
+      statsFunnelTitle: "Funnel di coinvolgimento (30 giorni)",
+    catalogFunnelVisitorsLabel: "Visitatori",
+    catalogFunnelEngagedLabel: "Coinvolti (mi piace/selezione/commento)",
+    catalogFunnelFinalizedLabel: "Selezione completata",
+    catalogFunnelConvertedLabel: "Ordine effettuato",
   },
 
   annotation: {

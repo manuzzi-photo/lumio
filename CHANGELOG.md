@@ -29,6 +29,11 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- The engagement funnel under gallery statistics stayed German whatever language was selected — the heading and all four step labels. The steps come from the API, which is the third time a set of API-supplied labels has shipped untranslated.
+- The dictionary check now also scans the API for the *shape* of an untranslated catalogue — a stable key next to a German label — rather than only checking the handful of files someone remembered to list. That is what would have caught this one, and it also turned up the print provider configuration fields.
+
 ## [0.73.1] - 2026-08-21
 
 A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.

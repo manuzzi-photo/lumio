@@ -1038,6 +1038,11 @@ export const en = {
       languageWord: "Language",
     languageHint:
       "Studio interface language. Also used for emails we send you.",
+      statsFunnelTitle: "Engagement funnel (30 days)",
+    catalogFunnelVisitorsLabel: "Visitors",
+    catalogFunnelEngagedLabel: "Engaged (like/pick/comment)",
+    catalogFunnelFinalizedLabel: "Selection finalised",
+    catalogFunnelConvertedLabel: "Order placed",
   },
 
   annotation: {

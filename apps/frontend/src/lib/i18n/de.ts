@@ -1047,6 +1047,11 @@ export const de: LocaleDict = {
       languageWord: "Sprache",
     languageHint:
       "Sprache der Studio-Oberfläche. Wird auch für E-Mails an dich verwendet.",
+      statsFunnelTitle: "Engagement-Funnel (30 Tage)",
+    catalogFunnelVisitorsLabel: "Besucher",
+    catalogFunnelEngagedLabel: "Engagiert (Like/Pick/Kommentar)",
+    catalogFunnelFinalizedLabel: "Auswahl finalisiert",
+    catalogFunnelConvertedLabel: "Bestellung aufgegeben",
   },
 
   annotation: {

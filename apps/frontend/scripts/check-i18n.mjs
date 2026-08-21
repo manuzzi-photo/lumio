@@ -187,6 +187,12 @@ const CATALOGUES = [
     suffixes: ["Label", "Desc"],
   },
   {
+    file: join(API_SRC, "routes", "analytics.ts"),
+    pattern: /key:\s*"(\w+)",\s*\n?\s*label:/g,
+    kind: "Funnel",
+    suffixes: ["Label"],
+  },
+  {
     file: join(API_SRC, "services", "print", "providers.ts"),
     // Top-level provider definitions sit at two-space indent.
     pattern: /^\s{2}key: "(\w+)",\n\s{2}label:/gm,
@@ -226,6 +232,48 @@ for (const cat of CATALOGUES) {
 report(
   "API catalogue entries with no dictionary key (will render German in every language)",
   missingCatalogue
+);
+
+// --- 4b. catalogues the list above does not know about ---------------------
+// The list is a list of files, so it only covers catalogues someone thought
+// to add. Three times now a new one has shipped German because it was not in
+// it — the notification toggles, the funnel steps, the provider config
+// fields. This scans the API for the SHAPE instead: an object carrying a
+// stable key next to a German label. It reports the location rather than the
+// missing key, because it cannot know which prefix the frontend would use.
+const knownCatalogueFiles = new Set(CATALOGUES.map((c) => c.file));
+const GERMAN_LABEL =
+  /[äöüÄÖÜß]|\b(Ein|Eine|Neue|Neuer|Neues|Der|Die|Das|hat|wird|Besucher|Auswahl|Bestellung|Galerie|Währung)\b/;
+const unknownCatalogues = [];
+try {
+  const walkApi = (dir, out = []) => {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) walkApi(full, out);
+      else if (/\.ts$/.test(entry) && !/\.test\.ts$/.test(entry)) out.push(full);
+    }
+    return out;
+  };
+  for (const file of walkApi(API_SRC)) {
+    if (knownCatalogueFiles.has(file)) continue;
+    const text = readFileSync(file, "utf8");
+    for (const m of text.matchAll(
+      /key:\s*"(\w+)",\s*\n?\s*(?:label|name|description):\s*"([^"]{3,})"/g
+    )) {
+      if (!GERMAN_LABEL.test(m[2])) continue;
+      const line = text.slice(0, m.index).split("\n").length;
+      unknownCatalogues.push(
+        `${relative(ROOT, file)}:${line}  key "${m[1]}" carries a German label`
+      );
+    }
+  }
+} catch {
+  // API not checked out beside the frontend.
+}
+
+report(
+  "German labels in an API catalogue the check does not cover yet",
+  unknownCatalogues
 );
 
 // --- 5. API error codes ----------------------------------------------------

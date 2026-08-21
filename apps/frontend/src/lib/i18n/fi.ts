@@ -1038,6 +1038,11 @@ export const fi = {
       languageWord: "Kieli",
     languageHint:
       "Studion käyttöliittymän kieli. Käytetään myös sinulle lähetettävissä sähköposteissa.",
+      statsFunnelTitle: "Sitoutumissuppilo (30 päivää)",
+    catalogFunnelVisitorsLabel: "Kävijät",
+    catalogFunnelEngagedLabel: "Sitoutuneet (tykkäys/valinta/kommentti)",
+    catalogFunnelFinalizedLabel: "Valinta viimeistelty",
+    catalogFunnelConvertedLabel: "Tilaus tehty",
   },
 
   annotation: {
