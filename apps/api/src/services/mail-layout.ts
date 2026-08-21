@@ -113,6 +113,7 @@ const layoutPhrases = {
   sentVia: {
     de: "Verschickt von {link}",
     en: "Sent via {link}",
+    it: "Inviato tramite {link}",
   },
 } satisfies Record<string, Phrase>;
 
