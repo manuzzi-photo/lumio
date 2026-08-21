@@ -114,6 +114,7 @@ const layoutPhrases = {
     de: "Verschickt von {link}",
     en: "Sent via {link}",
     it: "Inviato tramite {link}",
+    fi: "Lähetetty palvelulla {link}",
   },
 } satisfies Record<string, Phrase>;
 

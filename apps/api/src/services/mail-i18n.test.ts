@@ -86,6 +86,7 @@ describe("phrase / interpolate", () => {
     de: "Hallo {name}, {count} Bilder",
     en: "Hello {name}, {count} photos",
     it: "Ciao {name}, {count} foto",
+      fi: "Hei {name}, {count} kuvaa",
   };
 
   it("returns the text for the requested locale", () => {
@@ -134,6 +135,7 @@ describe("mail footer configuration", () => {
       de: "Verschickt von {link}",
       en: "Sent via {link}",
       it: "Inviato tramite {link}",
+      fi: "Lähetetty palvelulla {link}",
     };
     for (const l of LOCALES) {
       const out = phrase(sentVia, l, { link: "L" });
