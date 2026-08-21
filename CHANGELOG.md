@@ -29,6 +29,11 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.73.0] - 2026-08-21
+
+A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server.
+
+
 ### Added
 
 - **Finnish is now available**, for the interface and for email alike. All 2567 interface strings and 340 mail phrases translated, with dates, numbers and currency following Finnish convention. Contributed by [@canja006](https://github.com/canja006).
