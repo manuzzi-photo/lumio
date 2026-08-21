@@ -1020,8 +1020,14 @@ function GalleryCard({
                 Breite, der Knopf sitzt also immer an derselben Stelle seiner
                 Kachel. In der Galerie-Leiste bricht die Knopfreihe um, und
                 wo der Knopf landet haengt davon ab, wie viele Aktionen
-                sichtbar sind — deshalb wird dort gemessen. */}
-            <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 z-50 w-44 max-w-[calc(100vw-2rem)] rounded-md border border-line-subtle bg-surface-overlay shadow-lg py-1 text-ui-sm">
+                sichtbar sind — deshalb wird dort gemessen.
+
+                Kein vw in der max-width: vw schliesst die Scrollleiste ein,
+                ragt das Menue hinaus waechst die Seite, vw aendert sich, das
+                Menue aendert seine Breite. Beim Drehen eines Telefons, wenn
+                die Breite ohnehin laufend neu berechnet wird, schaukelt sich
+                das zu sichtbarem Flackern auf. */}
+            <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 z-50 w-44 max-w-[min(11rem,calc(100%+9rem))] rounded-md border border-line-subtle bg-surface-overlay shadow-lg py-1 text-ui-sm">
               <button
                 type="button"
                 onClick={(e) => {

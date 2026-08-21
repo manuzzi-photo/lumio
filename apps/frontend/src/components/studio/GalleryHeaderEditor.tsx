@@ -560,8 +560,13 @@ function HeroFromGalleryDropdown({
       >
         {t("studio.heroFromGallery")}
       </button>
+      {/* Deckel in rem statt vw. vw schliesst die Scrollleiste ein: ragt das
+          Panel hinaus, waechst die Seite, vw aendert sich, das Panel aendert
+          seine Breite — auf einem drehenden Telefon schaukelt sich das zu
+          Flackern auf. 18rem passt auf jedes Telefon, das wir unterstuetzen
+          (ab 320px Breite), ohne von der Fensterbreite abzuhaengen. */}
       {open && (
-        <div className="absolute z-10 mt-1 left-0 w-80 max-w-[calc(100vw-3rem)] max-h-80 overflow-y-auto rounded-md border border-line-strong bg-surface-raised shadow-elev-3 p-2 grid grid-cols-3 gap-1.5">
+        <div className="absolute z-10 mt-1 left-0 w-80 max-w-[18rem] max-h-80 overflow-y-auto rounded-md border border-line-strong bg-surface-raised shadow-elev-3 p-2 grid grid-cols-3 gap-1.5">
           {files
             .filter((f) => f.thumbUrl)
             .map((f) => (

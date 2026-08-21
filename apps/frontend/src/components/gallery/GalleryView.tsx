@@ -796,6 +796,8 @@ function DownloadMenu({
   const [open, setOpen] = useState(false);
   // true = Menue klappt nach rechts auf (linke Kanten buendig).
   const [alignLeft, setAlignLeft] = useState(true);
+  // In Pixeln, aus der Messung — bewusst keine vw-Einheit, siehe unten.
+  const [maxWidth, setMaxWidth] = useState<number | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -817,27 +819,59 @@ function DownloadMenu({
   }, [open]);
 
   /**
-   * Ausrichtung beim Oeffnen messen, nicht an der Bildschirmbreite raten.
+   * Ausrichtung aus der tatsaechlichen Position des Knopfes bestimmen.
    *
    * Der Knopf steht in einer umbrechenden Leiste: je nachdem wie viele
-   * Aktionen sichtbar sind (Auswahl-Modus, Print-Shop, Tags …), rutscht er
-   * in die zweite Zeile und damit an den linken Rand — oder eben nicht. Ein
-   * Breakpoint wie sm: trifft deshalb mal zu und mal nicht; nur die
-   * tatsaechliche Position des Knopfes sagt, wohin das Menue aufklappen darf.
+   * Aktionen sichtbar sind (Auswahl-Modus, Print-Shop, Tags …), rutscht er in
+   * die zweite Zeile und damit an den linken Rand — oder eben nicht. Ein
+   * Breakpoint wie sm: trifft deshalb mal zu und mal nicht.
+   *
+   * Neu gemessen wird auch bei resize und orientationchange. Ohne das blieb
+   * die beim Oeffnen ermittelte Ausrichtung stehen: wer das Menue im
+   * Hochformat oeffnete und dann drehte, bekam sie fuer das alte Layout.
+   *
+   * maxWidth kommt aus derselben Messung statt aus max-w-[calc(100vw-…)].
+   * vw-Einheiten schliessen die Scrollleiste ein: ragt das Menue rechts
+   * hinaus, waechst die Seite, 100vw aendert sich, das Menue aendert seine
+   * Breite — und beim Drehen, wenn iOS die Breite ohnehin laufend neu
+   * berechnet, schaukelt sich das zu sichtbarem Flackern auf.
    */
   useEffect(() => {
-    if (!open || !ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const menuWidth = Math.max(MENU_MIN_WIDTH, rect.width);
-    const margin = 8;
-    const fitsRightwards = rect.left + menuWidth + margin <= window.innerWidth;
-    const fitsLeftwards = rect.right - menuWidth >= margin;
-    // Passt es in keine Richtung — sehr schmaler Schirm, Knopf in der Mitte —
-    // gewinnt linksbuendig: dann ragt es rechts hinaus statt links. Rechts
-    // ist der Verlust harmloser, weil der Text dort ausläuft statt am
-    // Zeilenanfang abgeschnitten zu werden, und die max-w-Regel unten
-    // begrenzt die Breite zusaetzlich.
-    setAlignLeft(fitsRightwards || !fitsLeftwards);
+    if (!open) return;
+
+    const measure = () => {
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      // documentElement.clientWidth statt innerWidth: ohne Scrollleiste,
+      // also genau die Breite, die zum Zeichnen zur Verfuegung steht.
+      const viewport = document.documentElement.clientWidth;
+      const menuWidth = Math.max(MENU_MIN_WIDTH, rect.width);
+      const margin = 8;
+      const fitsRightwards = rect.left + menuWidth + margin <= viewport;
+      const fitsLeftwards = rect.right - menuWidth >= margin;
+      // Passt es in keine Richtung — schmaler Schirm, Knopf in der Mitte —
+      // gewinnt linksbuendig: dann laeuft der Text rechts aus, statt am
+      // Zeilenanfang abgeschnitten zu werden.
+      const nextAlignLeft = fitsRightwards || !fitsLeftwards;
+      const nextMaxWidth = Math.max(
+        MENU_MIN_WIDTH,
+        Math.round(viewport - 2 * margin)
+      );
+
+      // Nur setzen, wenn sich etwas aendert. Sonst rendert jedes resize-Event
+      // neu, und waehrend der Drehanimation feuert das fortlaufend.
+      setAlignLeft((prev) => (prev === nextAlignLeft ? prev : nextAlignLeft));
+      setMaxWidth((prev) => (prev === nextMaxWidth ? prev : nextMaxWidth));
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("orientationchange", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("orientationchange", measure);
+    };
   }, [open]);
 
   return (
@@ -898,6 +932,7 @@ function DownloadMenu({
         style={{
           borderColor: "var(--brand-border)",
           backgroundColor: "var(--brand-surface-solid)",
+          ...(maxWidth !== null ? { maxWidth } : {}),
         }}
         // Auf schmalen Bildschirmen linksbuendig zum Knopf, ab sm rechts-
         // buendig wie bisher. Der Knopf steht am linken Rand der Leiste; mit
@@ -909,7 +944,7 @@ function DownloadMenu({
         // max-w-[calc(100vw-2rem)] deckelt zusaetzlich: auch linksbuendig
         // wuerde ein breites Menue sonst rechts hinauslaufen, wenn der Knopf
         // nicht ganz am Rand sitzt.
-        className={`absolute mt-1 z-30 min-w-[15rem] max-w-[calc(100vw-1rem)] rounded-md border p-1.5 shadow-xl flex-col gap-1.5 ${
+        className={`absolute mt-1 z-30 min-w-[15rem] rounded-md border p-1.5 shadow-xl flex-col gap-1.5 ${
           alignLeft ? "left-0" : "right-0"
         } ${open ? "flex" : "hidden"}`}
       >
