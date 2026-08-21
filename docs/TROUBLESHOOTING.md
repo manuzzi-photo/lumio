@@ -63,7 +63,7 @@ docker compose logs <service-name> --tail=100
 Common causes:
 
 - **`POSTGRES_PASSWORD` not set** → the Postgres container exits with "POSTGRES_PASSWORD not specified". Check the `.env` file.
-- **Port 80 or 443 in use** → another web server is already running. Find it with `ss -tlnp | grep -E ':80|:443'` and stop it, or change `CADDY_HTTP_PORT`/`CADDY_HTTPS_PORT` in `.env`.
+- **Port 80 or 443 in use** → another web server is already running. Find it with `ss -tlnp | grep -E ':80|:443'` and stop it, or change `CADDY_HTTP_PORT`/`CADDY_HTTPS_PORT` in `.env`. Running `./scripts/lumio-check-ports.sh` before `docker compose up -d` catches this ahead of time — see [docs/PORT-CHECK.md](PORT-CHECK.md).
 - **Disk full** → check `df -h`. Docker images + logs quickly eat several GB.
 
 ### Domain unreachable (Connection Refused / Timeout)
