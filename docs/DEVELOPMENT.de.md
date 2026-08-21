@@ -24,6 +24,14 @@ cp .env.example .env
 - `S3_ACCESS_KEY`, `S3_SECRET_KEY` — MinIO-Credentials
 - `JWT_SECRET`, `SESSION_SECRET` — `openssl rand -base64 32`
 
+Läuft auf dem Host bereits anderes, vor dem ersten Start auf Port-Konflikte prüfen:
+
+```bash
+./scripts/lumio-check-ports.sh
+```
+
+Details siehe [docs/PORT-CHECK.de.md](PORT-CHECK.de.md).
+
 ## Komplett in Docker
 
 ```bash

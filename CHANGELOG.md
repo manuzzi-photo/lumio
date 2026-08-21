@@ -29,6 +29,10 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Added
+
+- `scripts/lumio-check-ports.sh` checks Lumio's ten TCP/UDP ports against the host before `docker compose up`, and offers to write an alternative into `.env` where a port has a dedicated variable. Without it a port conflict shows up as a container that quietly refuses to bind rather than as an error you can act on. Documented in `docs/PORT-CHECK.md`. Contributed by [@manuzzi](https://github.com/manuzzi).
+
 ## [0.72.0] - 2026-08-21
 
 A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server.

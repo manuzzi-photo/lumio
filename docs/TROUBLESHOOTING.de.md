@@ -64,7 +64,7 @@ docker compose logs <service-name> --tail=100
 Häufige Ursachen:
 
 - **`POSTGRES_PASSWORD` nicht gesetzt** → Postgres-Container exited mit "POSTGRES_PASSWORD not specified". `.env`-Datei prüfen.
-- **Port 80 oder 443 belegt** → ein anderer Webserver läuft schon. Mit `ss -tlnp | grep -E ':80|:443'` finden und stoppen oder die `CADDY_HTTP_PORT`/`CADDY_HTTPS_PORT` in `.env` ändern.
+- **Port 80 oder 443 belegt** → ein anderer Webserver läuft schon. Mit `ss -tlnp | grep -E ':80|:443'` finden und stoppen oder die `CADDY_HTTP_PORT`/`CADDY_HTTPS_PORT` in `.env` ändern. `./scripts/lumio-check-ports.sh` vor `docker compose up -d` fängt das schon vorher ab — siehe [docs/PORT-CHECK.de.md](PORT-CHECK.de.md).
 - **Disk voll** → `df -h` prüfen. Docker-Images + Logs fressen schnell mehrere GB.
 
 ### Domain ist nicht erreichbar (Connection Refused / Timeout)
