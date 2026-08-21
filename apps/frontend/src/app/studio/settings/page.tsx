@@ -606,7 +606,7 @@ export default function StudioSettingsPage() {
               value={settings.locale ?? ""}
               onChange={async (e) => {
                 const raw = e.target.value;
-                const next = raw === "" ? null : (raw as "en" | "de" | "it");
+                const next = raw === "" ? null : (raw as "en" | "de" | "it" | "fi");
                 // Optimistisch setzen, damit das Feld nicht zurueckspringt.
                 setSettings({ ...settings, locale: next });
                 try {
@@ -626,6 +626,7 @@ export default function StudioSettingsPage() {
               <option value="de">Deutsch</option>
               <option value="en">English</option>
               <option value="it">Italiano</option>
+              <option value="fi">Suomi</option>
             </select>
           </section>
         )}
