@@ -31,6 +31,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ### Added
 
+- **Finnish is now available**, for the interface and for email alike. All 2567 interface strings and 340 mail phrases translated, with dates, numbers and currency following Finnish convention. Contributed by [@canja006](https://github.com/canja006).
+
+### Fixed
+
+- The dictionary check was only comparing German and Italian against English by name, so a newly added language could have shipped incomplete without anything noticing. It now takes the list of languages from the code, so the next one is covered automatically.
+
+### Added
+
 - `scripts/lumio-check-ports.sh` checks Lumio's ten TCP/UDP ports against the host before `docker compose up`, and offers to write an alternative into `.env` where a port has a dedicated variable. Without it a port conflict shows up as a container that quietly refuses to bind rather than as an error you can act on. Documented in `docs/PORT-CHECK.md`. Contributed by [@manuzzi](https://github.com/manuzzi).
 
 ## [0.72.0] - 2026-08-21
