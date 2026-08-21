@@ -1052,6 +1052,12 @@ export const de: LocaleDict = {
     catalogFunnelEngagedLabel: "Engagiert (Like/Pick/Kommentar)",
     catalogFunnelFinalizedLabel: "Auswahl finalisiert",
     catalogFunnelConvertedLabel: "Bestellung aufgegeben",
+      catalogFieldSandboxLabel: "Sandbox-Modus",
+    catalogFieldCurrencyLabel: "Währung",
+    catalogFieldCurrencyHelp:
+      "ISO-Währungscode für Bestellungen, z.B. EUR (Standard) oder USD.",
+    catalogFieldSandboxHelp:
+      "'true' eintragen für gefahrloses Testen (keine echten Drucke/Kosten). Für den Live-Betrieb leer lassen oder 'false' und den Live-API-Key verwenden.",
   },
 
   annotation: {

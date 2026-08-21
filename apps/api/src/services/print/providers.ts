@@ -38,6 +38,12 @@ export interface CredentialField {
   label: string;
   kind: CredentialFieldKind;
   /** Erklaerung im UI ("Den Key findest du im WhiteWall-Dashboard unter ...") */
+  /**
+   * label und helpText sind nur der FALLBACK. Angezeigt wird die
+   * Uebersetzung zum Feld-key (Dictionary: settings.catalogField*Label /
+   * *Help). Technische Eigennamen — API-Key, Client-ID, Pro-Account-ID —
+   * haben bewusst keinen Key und bleiben dadurch in jeder Sprache stehen.
+   */
   helpText?: string;
   required: boolean;
 }

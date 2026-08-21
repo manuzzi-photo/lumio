@@ -29,6 +29,10 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- The print provider configuration fields showed German labels and help texts whatever language was selected — the currency field and the sandbox switch, along with their explanations. Technical names such as "API-Key" and "Client-ID" deliberately stay as they are.
+
 ## [0.73.2] - 2026-08-21
 
 A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server.

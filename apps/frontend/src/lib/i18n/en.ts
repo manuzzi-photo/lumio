@@ -1043,6 +1043,11 @@ export const en = {
     catalogFunnelEngagedLabel: "Engaged (like/pick/comment)",
     catalogFunnelFinalizedLabel: "Selection finalised",
     catalogFunnelConvertedLabel: "Order placed",
+      catalogFieldSandboxLabel: "Sandbox mode",
+    catalogFieldCurrencyLabel: "Currency",
+    catalogFieldCurrencyHelp: "ISO currency code for orders, e.g. EUR (default) or USD.",
+    catalogFieldSandboxHelp:
+      "Enter 'true' for risk-free testing (no real prints, no cost). For live use leave empty or set 'false' and use the live API key.",
   },
 
   annotation: {

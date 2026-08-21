@@ -421,7 +421,11 @@ function CredentialsDialog({
           {provider.credentialFields.map((f) => (
             <label key={f.key} className="block">
               <span className="block text-xs text-ink-tertiary mb-1">
-                {f.label} {f.required && <span className="text-semantic-danger">*</span>}
+                {/* Uebersetzt ueber den Feld-key; die API liefert deutsche
+                    Werte als Fallback. Technische Eigennamen wie "API-Key"
+                    haben bewusst keinen Key und bleiben dadurch stehen. */}
+                {ct("Field", f.key, "Label", f.label)}{" "}
+                {f.required && <span className="text-semantic-danger">*</span>}
               </span>
               <Input
                 type={f.kind === "password" ? "password" : "text"}
@@ -434,7 +438,7 @@ function CredentialsDialog({
               />
               {f.helpText && (
                 <span className="block text-xs text-ink-tertiary mt-0.5">
-                  {f.helpText}
+                  {ct("Field", f.key, "Help", f.helpText)}
                 </span>
               )}
             </label>

@@ -36,7 +36,8 @@ export type CatalogKind =
   | "Flag"
   | "Provider"
   | "NotifEvent"
-  | "Funnel";
+  | "Funnel"
+  | "Field";
 
 /**
  * Baut den Dictionary-Key. `suffix` unterscheidet mehrere Texte am selben

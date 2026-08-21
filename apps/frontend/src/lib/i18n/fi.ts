@@ -1043,6 +1043,12 @@ export const fi = {
     catalogFunnelEngagedLabel: "Sitoutuneet (tykkäys/valinta/kommentti)",
     catalogFunnelFinalizedLabel: "Valinta viimeistelty",
     catalogFunnelConvertedLabel: "Tilaus tehty",
+      catalogFieldSandboxLabel: "Hiekkalaatikkotila",
+    catalogFieldCurrencyLabel: "Valuutta",
+    catalogFieldCurrencyHelp:
+      "Tilausten ISO-valuuttakoodi, esimerkiksi EUR (oletus) tai USD.",
+    catalogFieldSandboxHelp:
+      "Kirjoita 'true' riskittömään testaukseen (ei oikeita tulosteita eikä kuluja). Tuotantokäytössä jätä tyhjäksi tai aseta 'false' ja käytä live-API-avainta.",
   },
 
   annotation: {

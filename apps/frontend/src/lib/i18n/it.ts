@@ -1050,6 +1050,12 @@ export const it: LocaleDict = {
     catalogFunnelEngagedLabel: "Coinvolti (mi piace/selezione/commento)",
     catalogFunnelFinalizedLabel: "Selezione completata",
     catalogFunnelConvertedLabel: "Ordine effettuato",
+      catalogFieldSandboxLabel: "Modalità sandbox",
+    catalogFieldCurrencyLabel: "Valuta",
+    catalogFieldCurrencyHelp:
+      "Codice valuta ISO per gli ordini, ad esempio EUR (predefinito) o USD.",
+    catalogFieldSandboxHelp:
+      "Inserisci 'true' per test senza rischi (nessuna stampa reale, nessun costo). Per l'uso live lascia vuoto oppure imposta 'false' e usa la chiave API live.",
   },
 
   annotation: {
