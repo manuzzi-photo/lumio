@@ -866,7 +866,17 @@ function DownloadMenu({
           borderColor: "var(--brand-border)",
           backgroundColor: "var(--brand-surface-solid)",
         }}
-        className={`absolute right-0 mt-1 z-30 min-w-[15rem] rounded-md border p-1.5 shadow-xl flex-col gap-1.5 ${
+        // Auf schmalen Bildschirmen linksbuendig zum Knopf, ab sm rechts-
+        // buendig wie bisher. Der Knopf steht am linken Rand der Leiste; mit
+        // right-0 waechst ein 15rem breites Menue nach links aus dem Bild.
+        // Sprachunabhaengig, faellt aber je nach Beschriftung unterschiedlich
+        // stark auf — "Lataa" ist kuerzer als "Download", der Knopf endet
+        // weiter links, das Menue ragt entsprechend weiter hinaus.
+        //
+        // max-w-[calc(100vw-2rem)] deckelt zusaetzlich: auch linksbuendig
+        // wuerde ein breites Menue sonst rechts hinauslaufen, wenn der Knopf
+        // nicht ganz am Rand sitzt.
+        className={`absolute left-0 sm:left-auto sm:right-0 mt-1 z-30 min-w-[15rem] max-w-[calc(100vw-2rem)] rounded-md border p-1.5 shadow-xl flex-col gap-1.5 ${
           open ? "flex" : "hidden"
         }`}
       >

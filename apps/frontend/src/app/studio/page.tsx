@@ -1011,7 +1011,11 @@ function GalleryCard({
                 setMenuOpen(false);
               }}
             />
-            <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-md border border-line-subtle bg-surface-overlay shadow-lg py-1 text-ui-sm">
+            {/* Gleiche Falle wie beim Download-Menue in der Galerie: der Knopf
+                ist 28px breit, das Menue 11rem. Mit right-0 waechst es nach
+                links — bei der linken Kachelspalte auf einem schmalen Schirm
+                ueber den Rand hinaus. */}
+            <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 z-50 w-44 max-w-[calc(100vw-2rem)] rounded-md border border-line-subtle bg-surface-overlay shadow-lg py-1 text-ui-sm">
               <button
                 type="button"
                 onClick={(e) => {
