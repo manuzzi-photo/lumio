@@ -779,6 +779,13 @@ function PlayMiniIcon() {
  *  durchgereicht — die Download-Logik bleibt in ZipDownloadButton.
  *  Schließt bei Klick außerhalb, bei Escape und nach Klick auf einen
  *  Eintrag (Klick blubbert hoch auf den Panel-Handler). */
+/**
+ * Mindestbreite des Menues in Pixeln — muss zu min-w-[15rem] in der Klasse
+ * unten passen. Wird zum Messen gebraucht, bevor das Menue sichtbar ist:
+ * ein verstecktes Element hat keine brauchbare Breite.
+ */
+const MENU_MIN_WIDTH = 240; // 15rem bei 16px Basis
+
 function DownloadMenu({
   label,
   children,
@@ -787,6 +794,8 @@ function DownloadMenu({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  // true = Menue klappt nach rechts auf (linke Kanten buendig).
+  const [alignLeft, setAlignLeft] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -805,6 +814,30 @@ function DownloadMenu({
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
     };
+  }, [open]);
+
+  /**
+   * Ausrichtung beim Oeffnen messen, nicht an der Bildschirmbreite raten.
+   *
+   * Der Knopf steht in einer umbrechenden Leiste: je nachdem wie viele
+   * Aktionen sichtbar sind (Auswahl-Modus, Print-Shop, Tags …), rutscht er
+   * in die zweite Zeile und damit an den linken Rand — oder eben nicht. Ein
+   * Breakpoint wie sm: trifft deshalb mal zu und mal nicht; nur die
+   * tatsaechliche Position des Knopfes sagt, wohin das Menue aufklappen darf.
+   */
+  useEffect(() => {
+    if (!open || !ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const menuWidth = Math.max(MENU_MIN_WIDTH, rect.width);
+    const margin = 8;
+    const fitsRightwards = rect.left + menuWidth + margin <= window.innerWidth;
+    const fitsLeftwards = rect.right - menuWidth >= margin;
+    // Passt es in keine Richtung — sehr schmaler Schirm, Knopf in der Mitte —
+    // gewinnt linksbuendig: dann ragt es rechts hinaus statt links. Rechts
+    // ist der Verlust harmloser, weil der Text dort ausläuft statt am
+    // Zeilenanfang abgeschnitten zu werden, und die max-w-Regel unten
+    // begrenzt die Breite zusaetzlich.
+    setAlignLeft(fitsRightwards || !fitsLeftwards);
   }, [open]);
 
   return (
@@ -876,9 +909,9 @@ function DownloadMenu({
         // max-w-[calc(100vw-2rem)] deckelt zusaetzlich: auch linksbuendig
         // wuerde ein breites Menue sonst rechts hinauslaufen, wenn der Knopf
         // nicht ganz am Rand sitzt.
-        className={`absolute left-0 sm:left-auto sm:right-0 mt-1 z-30 min-w-[15rem] max-w-[calc(100vw-2rem)] rounded-md border p-1.5 shadow-xl flex-col gap-1.5 ${
-          open ? "flex" : "hidden"
-        }`}
+        className={`absolute mt-1 z-30 min-w-[15rem] max-w-[calc(100vw-1rem)] rounded-md border p-1.5 shadow-xl flex-col gap-1.5 ${
+          alignLeft ? "left-0" : "right-0"
+        } ${open ? "flex" : "hidden"}`}
       >
         {children}
       </div>

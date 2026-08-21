@@ -1013,8 +1013,14 @@ function GalleryCard({
             />
             {/* Gleiche Falle wie beim Download-Menue in der Galerie: der Knopf
                 ist 28px breit, das Menue 11rem. Mit right-0 waechst es nach
-                links — bei der linken Kachelspalte auf einem schmalen Schirm
-                ueber den Rand hinaus. */}
+                links und ragt bei der linken Kachelspalte ueber den Rand.
+
+                Hier genuegt allerdings ein Breakpoint, anders als dort: die
+                Kacheln stehen in einem Raster mit fester Spaltenzahl je
+                Breite, der Knopf sitzt also immer an derselben Stelle seiner
+                Kachel. In der Galerie-Leiste bricht die Knopfreihe um, und
+                wo der Knopf landet haengt davon ab, wie viele Aktionen
+                sichtbar sind — deshalb wird dort gemessen. */}
             <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 z-50 w-44 max-w-[calc(100vw-2rem)] rounded-md border border-line-subtle bg-surface-overlay shadow-lg py-1 text-ui-sm">
               <button
                 type="button"

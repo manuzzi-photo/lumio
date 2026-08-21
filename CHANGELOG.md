@@ -31,7 +31,7 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ### Fixed
 
-- The download menu in a gallery ran off the left edge of the screen on a phone, cutting off the first entry. It was aligned to the right of a button that sits at the left of the toolbar, so the menu grew leftwards past the edge. Same fix applied to the gallery tile menu in the studio, which had the same arrangement.
+- The download menu in a gallery ran off the left edge of the screen on a phone, cutting off the first entry. The menu now works out which way it can open from where the button actually is, which matters because the toolbar wraps: how many actions are visible decides whether the button ends up mid-row or at the start of the next one. The gallery tile menu in the studio had the same arrangement and is fixed too.
 - The engagement funnel under gallery statistics stayed German whatever language was selected — the heading and all four step labels. The steps come from the API, which is the third time a set of API-supplied labels has shipped untranslated.
 - The dictionary check now also scans the API for the *shape* of an untranslated catalogue — a stable key next to a German label — rather than only checking the handful of files someone remembered to list. That is what would have caught this one, and it also turned up the print provider configuration fields.
 
