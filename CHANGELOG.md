@@ -29,6 +29,11 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.73.4] - 2026-08-21
+
+A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.
+
+
 ### Fixed
 
 - Opening the download menu in a gallery on a phone and then turning the device made the page flicker rapidly. The menu was capped using the window width, but a menu that overhangs makes the page wider, which changes the window width, which resizes the menu — during the rotation animation, when the browser recalculates continuously, that loop became visible. The menu also kept the alignment it had worked out before the turn, so it could end up on the wrong side. It now re-measures when the device is turned, and its width no longer depends on anything it can itself affect.
