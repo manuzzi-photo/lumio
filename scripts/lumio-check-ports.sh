@@ -242,6 +242,9 @@ set_env_var() {
   file="$1"; key="$2"; value="$3"
   touch "$file"
   if grep -q "^${key}=" "$file" 2>/dev/null; then
+    # mktemp defaults to mode 600, and mv preserves that — so a rewritten
+    # .env silently tightens from a looser mode (e.g. 644) to 600. Deliberate
+    # (the file holds secrets), not an oversight.
     tmp="$(mktemp "${file}.XXXXXX")"
     awk -v k="$key" -v v="$value" -F= '$1==k{$0=k"="v} {print}' "$file" > "$tmp"
     mv "$tmp" "$file"
@@ -305,7 +308,9 @@ while [ "$i" -lt "$n" ]; do
     status="reassigned"
   fi
 
-  echo "✓ $desc → port $candidate ($status)"
+  symbol="✓"
+  [ "$status" = "manual" ] || [ "$status" = "conflict_ignored" ] && symbol="⚠"
+  echo "$symbol $desc → port $candidate ($status)"
   echo ""
 
   RESULT_VAR+=("$var")

@@ -62,6 +62,12 @@ already running, not something to reassign around.
   in `docker-compose.yml` itself. The script never edits a git-tracked file
   automatically, so instead it prints the exact line to change and where.
 
+Writing to `.env` goes through a temp file (`mktemp` + `mv`), which as a side
+effect tightens the file's permissions to `600` if they were looser — e.g. a
+world-readable `644` becomes owner-only. Deliberate, since `.env` holds the
+database password and other secrets, but silent, so worth knowing if
+something outside the repo expects a specific mode on that file.
+
 At the end it prints a summary table and, if it wrote anything, tells you
 how many `.env` variables changed.
 

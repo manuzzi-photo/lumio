@@ -39,6 +39,8 @@ Lumios eigene Container (Name `lumio_*`), die ihren Standardport bereits belegen
 - **Ports mit eigener `.env`-Variable** (die sechs oben): Das Skript fragt interaktiv nach einem alternativen Port und schreibt ihn direkt in die `.env`. Enter prüft denselben Port erneut (praktisch, wenn man den blockierenden Prozess gerade gestoppt hat), `s` behält den Default trotzdem und macht weiter.
 - **Ports ohne Variable** (Postgres, Redis, acme-dns): Diese sind fest in `docker-compose.yml` verankert. Das Skript ändert nie automatisch eine Git-getrackte Datei, sondern zeigt stattdessen die genaue Zeile, die zu ändern ist.
 
+Das Schreiben in die `.env` läuft über eine temporäre Datei (`mktemp` + `mv`), was als Nebeneffekt die Dateiberechtigungen auf `600` verschärft, falls sie lockerer waren — ein weltweit lesbares `644` wird z. B. zu owner-only. Das ist beabsichtigt, da die `.env` das Datenbank-Passwort und weitere Secrets enthält, passiert aber still — gut zu wissen, falls etwas außerhalb des Repos einen bestimmten Modus für diese Datei erwartet.
+
 Am Ende zeigt es eine Zusammenfassungstabelle und, falls etwas geschrieben wurde, wie viele `.env`-Variablen sich geändert haben.
 
 ## Nicht-interaktive Nutzung
