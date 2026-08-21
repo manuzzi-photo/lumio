@@ -99,7 +99,10 @@ const envSchema = z.object({
   // Cookie des jeweiligen Browsers und wird hiervon nicht beeinflusst.
   // Optional mit Default, also kein Breaking Change fuer Self-Hoster:
   // ohne Eintrag bleibt alles auf Deutsch wie bisher.
-  DEFAULT_MAIL_LOCALE: z.enum(["de", "en"]).default("de"),
+  // Literal-Liste statt Import aus mail-i18n.ts (das wuerde config.ts
+  // <-> mail-i18n.ts zirkulaer machen, mail-i18n.ts importiert config
+  // bereits) — MUSS mit MAIL_LOCALES dort synchron gehalten werden.
+  DEFAULT_MAIL_LOCALE: z.enum(["de", "en", "it"]).default("de"),
 
   /**
    * Fusszeile der Mails: "Verschickt von Lumio".

@@ -60,7 +60,7 @@ These stay German-first, on purpose:
   of a studio, not the studio operator, so their language follows the studio
   rather than our default. That is now implemented: `mail-i18n.ts` resolves
   `Tenant.locale` for customer mail and `User.locale` for team mail, and every
-  template carries a `de`/`en` pair. What stays deliberate is that
+  template carries a `de`/`en`/`it` set. What stays deliberate is that
   `DEFAULT_MAIL_LOCALE` defaults to `de`, so an instance that sets nothing
   keeps writing German.
 

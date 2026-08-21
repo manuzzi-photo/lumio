@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { MAIL_LOCALES } from "./mail-i18n.js";
 
 /**
  * Prueft die gerenderte Fusszeile, nicht nur die Helfer darunter. Der Fehler,
@@ -28,11 +29,14 @@ describe("mail footer rendering", () => {
       "Verschickt von"
     );
     expect(render({ bodyHtml: "<p>x</p>", locale: "en" })).toContain("Sent via");
+    expect(render({ bodyHtml: "<p>x</p>", locale: "it" })).toContain(
+      "Inviato tramite"
+    );
   });
 
   it("no longer claims German hosting", async () => {
     const render = await load();
-    for (const locale of ["de", "en"] as const) {
+    for (const locale of MAIL_LOCALES) {
       const html = render({ bodyHtml: "<p>x</p>", locale });
       expect(html).not.toContain("gehostet in Deutschland");
       expect(html).not.toContain("lumio-cloud.de");

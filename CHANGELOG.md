@@ -29,6 +29,15 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Added
+
+- **Emails are now available in Italian.** All 338 mail phrases translated, so an Italian studio gets an Italian interface *and* Italian mail — the gap that remained after the interface translation landed. Contributed by [@manuzzi](https://github.com/manuzzi).
+- Italian can now be selected as the mail language, both for your own notifications and for the mail your customers receive.
+
+### Fixed
+
+- Two lines in the print shop mails were German whatever language was selected — a heading and a closing line that never went through the translation layer at all. Found while translating around them.
+
 ## [0.71.1] - 2026-08-20
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist die API, also nur der Hauptserver.

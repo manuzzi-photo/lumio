@@ -15,13 +15,16 @@ import {
   normalizeLocale,
   phrase,
   interpolate,
+  MAIL_LOCALES,
   type MailLocale,
   type Phrase,
 } from "./mail-i18n.js";
 
-// Kept in sync with MailLocale by the compiler: adding a locale to the type
-// without adding it here makes this array fail to satisfy MailLocale[].
-const LOCALES: MailLocale[] = ["de", "en"];
+// MAIL_LOCALES itself, not a re-typed literal. A manually kept-in-sync array
+// only "fails to satisfy MailLocale[]" in a comment, never in the compiler:
+// a plain MailLocale[] happily accepts any subset of the union, which is how
+// this stayed at two locales silently after "it" was added to the type.
+const LOCALES: readonly MailLocale[] = MAIL_LOCALES;
 
 const LONG_DATE = {
   day: "2-digit",
@@ -82,6 +85,7 @@ describe("phrase / interpolate", () => {
   const p: Phrase = {
     de: "Hallo {name}, {count} Bilder",
     en: "Hello {name}, {count} photos",
+    it: "Ciao {name}, {count} foto",
   };
 
   it("returns the text for the requested locale", () => {
@@ -126,7 +130,11 @@ describe("mail footer configuration", () => {
   });
 
   it("translates the default footer per locale", () => {
-    const sentVia: Phrase = { de: "Verschickt von {link}", en: "Sent via {link}" };
+    const sentVia: Phrase = {
+      de: "Verschickt von {link}",
+      en: "Sent via {link}",
+      it: "Inviato tramite {link}",
+    };
     for (const l of LOCALES) {
       const out = phrase(sentVia, l, { link: "L" });
       expect(out).toContain("L");
