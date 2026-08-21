@@ -55,6 +55,7 @@ export const en = {
     preview: "Preview",
     breadcrumb: "Breadcrumb",
       confirm: "Confirm",
+      saved: "Saved",
   },
 
 
@@ -2957,6 +2958,14 @@ export const en = {
     tdSlugChangeShareLinks:
       "Gallery share links are not affected — they use the gallery slug, not the tenant slug.",
       tdRemoveFailed: "Removing failed",
+      mailFooterTitle: "Email footer",
+    mailFooterHint:
+      "The last line of every email Lumio sends. Leave empty for the default, which follows the recipient's language and links to the project.",
+    mailFooterText: "Text",
+    mailFooterUrl: "Link target",
+    mailFooterPlaceholder: "Sent by Müller Photography · muellerphoto.com",
+    mailFooterNotTranslated:
+      "Your own text is used exactly as written and is not translated — it appears in every email regardless of the recipient's language. Write {link} where the linked product name should go.",
   },
 
   galleryShare: {

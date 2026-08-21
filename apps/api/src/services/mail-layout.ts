@@ -38,8 +38,26 @@
  */
 
 import { config } from "../config.js";
+import {
+  instanceSetting,
+  KEY_MAIL_FOOTER_TEXT,
+  KEY_MAIL_FOOTER_URL,
+} from "./instance-settings.js";
+import {
+  interpolate,
+  phrase,
+  type MailLocale,
+  type Phrase,
+} from "./mail-i18n.js";
 
 const LUMIO_BRAND_COLOR = "#FF4D2E"; // Vermillion, wie die Bildmarke
+
+// Ziel des "Verschickt von Lumio"-Links im Footer. Frueher lumio-cloud.de,
+// das gehostete Produkt — auf einer selbst betriebenen Instanz bewirbt das
+// den Betreiber der eigenen Instanz nicht sinnvoll (Issue #12). Das
+// Repository passt fuer Self-Hoster wie fuer die gehostete Variante gleich
+// gut.
+const LUMIO_REPO_URL = "https://github.com/markusthiel/lumio";
 
 // Die Bildmarke als PNG. SVG faellt aus: Gmail und Outlook rendern es
 // nicht. Die Dateien liegen im Frontend unter /public und sind damit
@@ -86,6 +104,19 @@ export interface MailBranding {
   headerStyle?: "line" | "banner" | null;
 }
 
+/**
+ * The one line of layout chrome not supplied by the caller. It follows the
+ * recipient's language like the rest of the mail, so it is a Phrase and the
+ * type demands a translation per locale. {link} wraps the product name.
+ */
+const layoutPhrases = {
+  sentVia: {
+    de: "Verschickt von {link}",
+    en: "Sent via {link}",
+    it: "Inviato tramite {link}",
+  },
+} satisfies Record<string, Phrase>;
+
 export interface RenderMailOpts {
   /** Inhalt des Mail-Body als HTML-Fragmente (z.B. aus mailParagraph()) */
   bodyHtml: string;
@@ -94,6 +125,10 @@ export interface RenderMailOpts {
   /** Optional: Praeheader-Text — wird in Inbox-Preview unter dem Subject
    *  angezeigt. Wirkt subtil aber sehr stark auf Open-Rates. */
   preheader?: string;
+  /** Sprache dieser Mail — steuert den Footer-Text und das lang-Attribut.
+   *  Bewusst Pflichtfeld statt Default: ein vergessenes Feld soll ein
+   *  Typfehler sein, kein still falsches Deutsch (Issue #12). */
+  locale: MailLocale;
 }
 
 /**
@@ -107,6 +142,26 @@ export function renderMailLayout(opts: RenderMailOpts): string {
   const logoUrl = opts.branding?.logoUrl;
   const footerNote = opts.branding?.footerNote;
   const preheader = opts.preheader ?? "";
+  const locale = opts.locale;
+  // Eigener Text der Instanz schlaegt den uebersetzten Standard. Er wird
+  // escaped: die Quelle ist zwar der Betreiber selbst, aber ein < im Text
+  // soll die Mail nicht zerlegen.
+  // Reihenfolge: was im Super-Admin eingetragen wurde, schlaegt die
+  // Umgebung, und die schlaegt den uebersetzten Standard. So kann eine
+  // Instanz ohne .env-Zugriff gebrandet werden, ohne dass bestehende
+  // Deployments mit gesetzter Umgebungsvariable ihre Einstellung verlieren.
+  const footerText =
+    instanceSetting(KEY_MAIL_FOOTER_TEXT) ?? config.MAIL_FOOTER_TEXT;
+  const footerUrl =
+    instanceSetting(KEY_MAIL_FOOTER_URL) ??
+    config.MAIL_FOOTER_URL ??
+    "https://github.com/markusthiel/lumio";
+  const lumioLink =
+    `<a href="${escapeHtml(footerUrl)}" ` +
+    `style="color:${LUMIO_MUTED_COLOR};text-decoration:underline;">Lumio</a>`;
+  const sentViaHtml = footerText
+    ? interpolate(escapeHtml(footerText), { link: lumioLink })
+    : phrase(layoutPhrases.sentVia, locale, { link: lumioLink });
 
   // Zwei Achsen mit Fallback-Kette auf den (deprecated) logoAlign.
   const logoPosition: "left" | "right" | "center" | "footer" =
@@ -164,7 +219,7 @@ export function renderMailLayout(opts: RenderMailOpts): string {
     : "";
 
   return `<!doctype html>
-<html lang="de">
+<html lang="${opts.locale}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -193,7 +248,7 @@ ${escapeHtml(preheader)}
             ${footerLogoHtml}
             ${footerHtml}
             <p style="margin:0;color:${LUMIO_MUTED_COLOR};font-size:12px;line-height:1.5;">
-              Verschickt von <a href="https://lumio-cloud.de" style="color:${LUMIO_MUTED_COLOR};text-decoration:underline;">Lumio</a> — Foto-Galerien für Profis, gehostet in Deutschland.
+              ${sentViaHtml}
             </p>
           </td>
         </tr>

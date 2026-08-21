@@ -20,6 +20,7 @@ import { api } from "@/lib/api";
 import { SuperShell } from "@/components/super/SuperShell";
 import { useFormat, useT } from "@/lib/i18n";
 import { useErrorText } from "@/lib/error-i18n";
+import { useNotify } from "@/components/ui/dialogs";
 
 type SystemResponse = Awaited<ReturnType<typeof api.superSystemStatus>>;
 
@@ -74,6 +75,7 @@ function SystemContent() {
       ) : (
         <div className="space-y-6">
           <SystemHealthCard health={data.health} />
+          <MailFooterCard />
           <UpdateCheckCard update={data.update} />
           {data.backup.map((b) => (
             <BackupStatusCard key={b.key} backup={b} />
@@ -448,4 +450,121 @@ function formatAge(hours: number): string {
   }
   if (hours < 48) return `${Math.floor(hours)} Std.`;
   return `${Math.floor(hours / 24)} Tagen`;
+}
+
+/**
+ * Fusszeile der ausgehenden Mails.
+ *
+ * Sitzt hier statt in .env, damit eine Instanz auch ohne Shell-Zugang
+ * gebrandet werden kann. Ein Eintrag ueberstimmt die Umgebungsvariable;
+ * leer lassen faellt auf sie und dann auf den uebersetzten Standard zurueck.
+ */
+function MailFooterCard() {
+  const t = useT();
+  const errText = useErrorText();
+  const notify = useNotify();
+  const [text, setText] = useState("");
+  const [url, setUrl] = useState("");
+  const [env, setEnv] = useState<{ text: string | null; url: string | null }>({
+    text: null,
+    url: null,
+  });
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    api
+      .superGetMailFooter()
+      .then((r) => {
+        setText(r.text ?? "");
+        setUrl(r.url ?? "");
+        setEnv({ text: r.envText, url: r.envUrl });
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, []);
+
+  async function save() {
+    setBusy(true);
+    setSaved(false);
+    try {
+      const r = await api.superSetMailFooter({
+        text: text.trim() || null,
+        url: url.trim() || null,
+      });
+      setText(r.text ?? "");
+      setUrl(r.url ?? "");
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      notify(errText(err, t("common.error")));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="rounded-lg border border-line-subtle bg-surface-raised p-4">
+      <h2 className="text-ui font-medium text-ink-primary mb-1">
+        {t("super.mailFooterTitle")}
+      </h2>
+      <p className="text-ui-sm text-ink-tertiary mb-4">
+        {t("super.mailFooterHint")}
+      </p>
+
+      {!loaded ? (
+        <div className="text-ui-sm text-ink-tertiary">{t("common.loading")}</div>
+      ) : (
+        <div className="space-y-3">
+          <label className="block">
+            <span className="block text-ui-xs text-ink-tertiary mb-1">
+              {t("super.mailFooterText")}
+            </span>
+            <input
+              type="text"
+              value={text}
+              maxLength={300}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={env.text ?? t("super.mailFooterPlaceholder")}
+              className="w-full rounded-md border border-line-subtle bg-surface-base px-3 py-2 text-ui text-ink-primary focus:border-accent focus:outline-none"
+            />
+          </label>
+
+          <label className="block">
+            <span className="block text-ui-xs text-ink-tertiary mb-1">
+              {t("super.mailFooterUrl")}
+            </span>
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder={env.url ?? "https://example.com"}
+              className="w-full rounded-md border border-line-subtle bg-surface-base px-3 py-2 text-ui text-ink-primary focus:border-accent focus:outline-none"
+            />
+          </label>
+
+          <p className="text-ui-xs text-ink-tertiary">
+            {t("super.mailFooterNotTranslated")}
+          </p>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={save}
+              disabled={busy}
+              className="px-3 py-1.5 rounded-md bg-accent text-paper text-ui-sm font-medium disabled:opacity-40"
+            >
+              {busy ? t("common.saving") : t("common.save")}
+            </button>
+            {saved && (
+              <span className="text-ui-sm text-semantic-success">
+                {t("common.saved")}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
 }

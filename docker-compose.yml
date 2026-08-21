@@ -162,6 +162,8 @@ services:
       # gesetzt ist. Nur Mails — die Oberflaeche folgt weiterhin dem
       # Browser. Ohne Wert: de.
       - DEFAULT_MAIL_LOCALE=${DEFAULT_MAIL_LOCALE:-de}
+      - MAIL_FOOTER_TEXT=${MAIL_FOOTER_TEXT:-}
+      - MAIL_FOOTER_URL=${MAIL_FOOTER_URL:-}
       - MAX_FILE_SIZE_MIB=${MAX_FILE_SIZE_MIB:-2048}
       - BILLING_ENABLED=${BILLING_ENABLED:-false}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}

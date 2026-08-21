@@ -1949,8 +1949,8 @@ export const api = {
 
   /** Persoenliche Mail-Sprache. Best-effort: Fehler duerfen die
    *  Sprachumstellung der Oberflaeche nicht blockieren. */
-  updateMyMailLocale: (locale: "de" | "en" | null) =>
-    request<{ locale: "de" | "en" | null }>("/settings/my-locale", {
+  updateMyMailLocale: (locale: "de" | "en" | "it" | null) =>
+    request<{ locale: "de" | "en" | "it" | null }>("/settings/my-locale", {
       method: "PUT",
       body: JSON.stringify({ locale }),
     }),
@@ -2015,7 +2015,7 @@ export const api = {
   updateTenantSettings: (patch: {
     displayName?: string | null;
     /** Sprache der Mails an die Kunden. Null = Instanz-Default. */
-    mailLocale?: "de" | "en" | null;
+    mailLocale?: "de" | "en" | "it" | null;
     slug?: string;
     watermarkText?: string | null;
     customDomain?: string | null;
@@ -3629,6 +3629,21 @@ export const api = {
     ),
 
   // Marketing-Config (Super-Admin)
+  /** Fusszeile der ausgehenden Mails (Instanz-weit). */
+  superGetMailFooter: () =>
+    request<{
+      text: string | null;
+      url: string | null;
+      envText: string | null;
+      envUrl: string | null;
+    }>(`/super/mail-footer`),
+
+  superSetMailFooter: (body: { text: string | null; url: string | null }) =>
+    request<{ text: string | null; url: string | null }>(
+      `/super/mail-footer`,
+      { method: "PUT", body: JSON.stringify(body) }
+    ),
+
   superGetMarketingConfig: () =>
     request<{
       globalEnabled: boolean;
@@ -4122,7 +4137,7 @@ export interface TenantSettings {
    *  fallen alle Caller auf 'name' zurueck. */
   displayName: string | null;
   /** Sprache der Mails an die Kunden dieses Studios. Null = Instanz-Default. */
-  locale: "de" | "en" | null;
+  locale: "de" | "en" | "it" | null;
   watermarkText: string | null;
   watermarkImageKey: string | null;
   customDomain?: string | null;

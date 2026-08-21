@@ -99,7 +99,40 @@ const envSchema = z.object({
   // Cookie des jeweiligen Browsers und wird hiervon nicht beeinflusst.
   // Optional mit Default, also kein Breaking Change fuer Self-Hoster:
   // ohne Eintrag bleibt alles auf Deutsch wie bisher.
-  DEFAULT_MAIL_LOCALE: z.enum(["de", "en"]).default("de"),
+  // Literal-Liste statt Import aus mail-i18n.ts (das wuerde config.ts
+  // <-> mail-i18n.ts zirkulaer machen, mail-i18n.ts importiert config
+  // bereits) — MUSS mit MAIL_LOCALES dort synchron gehalten werden.
+  DEFAULT_MAIL_LOCALE: z.enum(["de", "en", "it"]).default("de"),
+
+  /**
+   * Fusszeile der Mails: "Verschickt von Lumio".
+   *
+   * Leer gelassen greift der uebersetzte Standard, der der Sprache des
+   * Empfaengers folgt und auf das Repository verlinkt. Wer hier etwas
+   * eintraegt, ersetzt ihn woertlich — sinnvoll fuer eine gehostete Instanz,
+   * die dort ihren eigenen Satz und ihre eigene Adresse stehen haben will.
+   *
+   * Achtung, bewusster Kompromiss: eigener Text wird NICHT uebersetzt. Er
+   * erscheint so in jeder Mail, unabhaengig von der Sprache des Empfaengers.
+   * Auf einer Instanz mit mehreren Sprachen ist der Standard daher meist die
+   * bessere Wahl. {link} wird durch den verlinkten Produktnamen ersetzt.
+   */
+  //
+  // Beide Felder behandeln den LEEREN String wie "nicht gesetzt". Das ist
+  // nicht kosmetisch: docker-compose schreibt `VAR=${VAR:-}`, und eine nicht
+  // gesetzte Variable kommt damit als "" in der Umgebung an, nicht als
+  // undefined. Ohne dieses Preprocessing scheiterte z.string().url() an ""
+  // und die API startete auf JEDER Instanz nicht mehr, die den Wert nicht
+  // ausdruecklich setzt.
+  MAIL_FOOTER_TEXT: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().optional()
+  ),
+  /** Ziel des Produktnamens in der Fusszeile. Default: das Repository. */
+  MAIL_FOOTER_URL: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().url().optional()
+  ),
 
   SMTP_SECURE: z
     .string()

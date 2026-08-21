@@ -60,7 +60,7 @@ These stay German-first, on purpose:
   of a studio, not the studio operator, so their language follows the studio
   rather than our default. That is now implemented: `mail-i18n.ts` resolves
   `Tenant.locale` for customer mail and `User.locale` for team mail, and every
-  template carries a `de`/`en` pair. What stays deliberate is that
+  template carries a `de`/`en`/`it` set. What stays deliberate is that
   `DEFAULT_MAIL_LOCALE` defaults to `de`, so an instance that sets nothing
   keeps writing German.
 
@@ -125,3 +125,26 @@ Personal attacks, discrimination or spam lead to exclusion.
 ## Questions?
 
 Open an issue or post under Discussions on the GitHub repo.
+
+### Changelog and release notes
+
+**Both are English only.** The changelog used to be German with an English
+half per entry, which does not scale: with three supported interface
+languages it would need three, with four it would need four, and half of them
+would drift out of date. English is the project language (see above), so the
+changelog follows it.
+
+History is left as written. 93 older sections are bilingual and 30 (v0.43.2
+to v0.55.1) are German only. They describe releases nobody installs any more;
+translating them now would be work without a reader, and machine translation
+would be worse than leaving them.
+
+`node scripts/release-notes.mjs <version>` extracts the English half of a
+changelog section. It refuses rather than falling back to German if the
+English part is missing.
+
+For an English-only section the script passes it through unchanged. For the
+older bilingual sections it extracts the English half; where those put one
+combined English block under several German sections, it drops the headings
+rather than guess — labelling a security fix as "Fixed" would be worse than
+labelling it not at all. A German-only section makes it exit non-zero.

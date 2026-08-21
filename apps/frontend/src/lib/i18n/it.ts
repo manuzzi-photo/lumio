@@ -52,6 +52,7 @@ export const it: LocaleDict = {
     preview: "Anteprima",
     breadcrumb: "Breadcrumb",
       confirm: "Conferma",
+      saved: "Salvato",
   },
 
 
@@ -2966,6 +2967,14 @@ export const it: LocaleDict = {
     tdSlugChangeShareLinks:
       "I link di condivisione delle gallerie non sono interessati: usano lo slug della galleria, non quello del tenant.",
       tdRemoveFailed: "Rimozione non riuscita",
+      mailFooterTitle: "Piè di pagina delle email",
+    mailFooterHint:
+      "L'ultima riga di ogni email inviata da Lumio. Lascia vuoto per l'impostazione predefinita, che segue la lingua del destinatario e rimanda al progetto.",
+    mailFooterText: "Testo",
+    mailFooterUrl: "Destinazione del link",
+    mailFooterPlaceholder: "Inviato da Fotografia Müller · muellerfoto.it",
+    mailFooterNotTranslated:
+      "Il testo personalizzato viene usato esattamente come scritto e non viene tradotto: appare in ogni email indipendentemente dalla lingua del destinatario. Scrivi {link} dove deve comparire il nome del prodotto con il collegamento.",
   },
 
   galleryShare: {

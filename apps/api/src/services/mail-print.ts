@@ -144,44 +144,79 @@ const printGuestPhrases = {
   confirmSubject: {
     de: "Deine Bestellung {order} bei {studio}",
     en: "Your order {order} with {studio}",
+    it: "Il tuo ordine {order} presso {studio}",
   },
-  greeting: { de: "Hallo {name},", en: "Hello {name}," },
+  greeting: {
+    de: "Hallo {name},",
+    en: "Hello {name},",
+    it: "Ciao {name},",
+  },
   thanks: {
     de: "vielen Dank für deine Bestellung bei {studio}.",
     en: "thank you for your order with {studio}.",
+    it: "grazie per il tuo ordine presso {studio}.",
   },
-  orderNumber: { de: "Bestellnummer", en: "Order number" },
-  items: { de: "Artikel", en: "Items" },
-  subtotal: { de: "Zwischensumme", en: "Subtotal" },
-  shipping: { de: "Versand", en: "Shipping" },
-  tax: { de: "MwSt", en: "VAT" },
-  total: { de: "Gesamtsumme", en: "Total" },
-  deliveryAddress: { de: "Lieferadresse", en: "Delivery address" },
+  orderNumber: {
+    de: "Bestellnummer",
+    en: "Order number",
+    it: "Numero d'ordine",
+  },
+  items: { de: "Artikel", en: "Items", it: "Articoli" },
+  subtotal: { de: "Zwischensumme", en: "Subtotal", it: "Subtotale" },
+  shipping: { de: "Versand", en: "Shipping", it: "Spedizione" },
+  tax: { de: "MwSt", en: "VAT", it: "IVA" },
+  total: { de: "Gesamtsumme", en: "Total", it: "Totale" },
+  deliveryAddress: {
+    de: "Lieferadresse",
+    en: "Delivery address",
+    it: "Indirizzo di consegna",
+  },
   offlineInvoice: {
     de: "Du bekommst von {studio} in Kürze eine Rechnung. Sobald die Zahlung eingeht, wird deine Bestellung produziert und verschickt.",
     en: "{studio} will send you an invoice shortly. Once payment arrives, your order goes into production and ships.",
+    it: "Riceverai a breve una fattura da {studio}. Non appena arriva il pagamento, il tuo ordine va in produzione e viene spedito.",
   },
   inProduction: {
     de: "Wir bereiten deine Bestellung jetzt zur Produktion vor. Du bekommst eine weitere Mail sobald sie versendet wird.",
     en: "We are preparing your order for production now. You will get another email once it ships.",
+    it: "Stiamo preparando il tuo ordine per la produzione. Riceverai un'altra email non appena verrà spedito.",
   },
-  questions: { de: "Bei Fragen: {contact}", en: "Questions? {contact}" },
-  questionsLabel: { de: "Bei Fragen:", en: "Questions?" },
+  questions: {
+    de: "Bei Fragen: {contact}",
+    en: "Questions? {contact}",
+    it: "Domande? {contact}",
+  },
+  questionsLabel: {
+    de: "Bei Fragen:",
+    en: "Questions?",
+    it: "Domande?",
+  },
   shippedSubject: {
     de: "Deine Bestellung {order} ist auf dem Weg",
     en: "Your order {order} is on its way",
+    it: "Il tuo ordine {order} è in arrivo",
   },
   shippedBody: {
     de: "deine Bestellung {order} ist auf dem Weg zu dir.",
     en: "your order {order} is on its way to you.",
+    it: "il tuo ordine {order} è in arrivo.",
   },
-  tracking: { de: "Sendungsverfolgung:", en: "Tracking:" },
-  trackPackage: { de: "Paket verfolgen", en: "Track package" },
+  tracking: {
+    de: "Sendungsverfolgung:",
+    en: "Tracking:",
+    it: "Tracciamento:",
+  },
+  trackPackage: {
+    de: "Paket verfolgen",
+    en: "Track package",
+    it: "Traccia il pacco",
+  },
   noTracking: {
     de: "Wir haben leider noch keine Tracking-Nummer, deine Bestellung wurde aber verschickt.",
     en: "We do not have a tracking number yet, but your order has shipped.",
+    it: "Non abbiamo ancora un numero di tracciamento, ma il tuo ordine è stato spedito.",
   },
-  regards: { de: "Viele Grüße,", en: "Kind regards," },
+  regards: { de: "Viele Grüße,", en: "Kind regards,", it: "Cordiali saluti," },
 } satisfies Record<string, Phrase>;
 
 /** Empfaenger: das Studio -> persoenliche Sprache des Owners. */
@@ -189,18 +224,52 @@ const printStudioPhrases = {
   subject: {
     de: "Neue Print-Bestellung: {order}",
     en: "New print order: {order}",
+    it: "Nuovo ordine di stampa: {order}",
   },
-  intro: { de: "Neue Bestellung im Print-Shop:", en: "New order in the print shop:" },
-  orderNumber: { de: "Bestellnummer", en: "Order number" },
-  customer: { de: "Kunde", en: "Customer" },
-  paymentMode: { de: "Bezahlmodus", en: "Payment" },
-  payOnline: { de: "Online (Stripe)", en: "Online (Stripe)" },
-  payOffline: { de: "Offline-Rechnung", en: "Offline invoice" },
-  total: { de: "Gesamtsumme", en: "Total" },
-  items: { de: "Artikel", en: "Items" },
-  deliveryAddress: { de: "Lieferadresse", en: "Delivery address" },
-  customerNote: { de: "Hinweis vom Kunden:", en: "Note from the customer:" },
-  openOrder: { de: "Zur Bestellung im Studio:", en: "Open the order in the studio:" },
+  intro: {
+    de: "Neue Bestellung im Print-Shop:",
+    en: "New order in the print shop:",
+    it: "Nuovo ordine nel print shop:",
+  },
+  orderNumber: {
+    de: "Bestellnummer",
+    en: "Order number",
+    it: "Numero d'ordine",
+  },
+  customer: { de: "Kunde", en: "Customer", it: "Cliente" },
+  paymentMode: { de: "Bezahlmodus", en: "Payment", it: "Pagamento" },
+  payOnline: {
+    de: "Online (Stripe)",
+    en: "Online (Stripe)",
+    it: "Online (Stripe)",
+  },
+  payOffline: {
+    de: "Offline-Rechnung",
+    en: "Offline invoice",
+    it: "Fattura offline",
+  },
+  total: { de: "Gesamtsumme", en: "Total", it: "Totale" },
+  items: { de: "Artikel", en: "Items", it: "Articoli" },
+  deliveryAddress: {
+    de: "Lieferadresse",
+    en: "Delivery address",
+    it: "Indirizzo di consegna",
+  },
+  customerNote: {
+    de: "Hinweis vom Kunden:",
+    en: "Note from the customer:",
+    it: "Nota del cliente:",
+  },
+  openOrder: {
+    de: "Zur Bestellung im Studio:",
+    en: "Open the order in the studio:",
+    it: "Apri l'ordine nello studio:",
+  },
+  openOrderButton: {
+    de: "Bestellung öffnen",
+    en: "Open order",
+    it: "Apri l'ordine",
+  },
 } satisfies Record<string, Phrase>;
 
 export function tmplPrintOrderConfirmGuest(opts: {
@@ -251,6 +320,7 @@ ${phrase(P.regards, l)}
 ${studioName}`;
 
   const html = renderMailLayout({
+    locale: l,
     branding,
     bodyHtml: `
   <p>${escapeHtml(phrase(P.greeting, l, vars))}</p>
@@ -324,6 +394,7 @@ ${phrase(S.openOrder, l)}
 ${orderUrl}`;
 
   const html = renderMailLayout({
+    locale: l,
     branding,
     bodyHtml: `
   <p>${escapeHtml(phrase(S.intro, l))}</p>
@@ -339,9 +410,9 @@ ${orderUrl}`;
   </table>
   <h3 style="margin-top:20px;">${escapeHtml(phrase(S.deliveryAddress, l))}</h3>
   <pre style="font-family:inherit;white-space:pre-wrap;margin:0;color:#444;">${escapeHtml(formatAddress(order.shippingAddress))}</pre>
-  ${order.guestNote ? `<h3 style="margin-top:20px;">Hinweis vom Kunden</h3><blockquote style="border-left:3px solid #ddd;padding-left:12px;margin:0;color:#444;">${escapeHtml(order.guestNote)}</blockquote>` : ""}
+  ${order.guestNote ? `<h3 style="margin-top:20px;">${escapeHtml(phrase(S.customerNote, l))}</h3><blockquote style="border-left:3px solid #ddd;padding-left:12px;margin:0;color:#444;">${escapeHtml(order.guestNote)}</blockquote>` : ""}
   <p style="margin-top:24px;">
-    ${mailButton(orderUrl, "Bestellung öffnen", branding?.accentColor)}
+    ${mailButton(orderUrl, phrase(S.openOrderButton, l), branding?.accentColor)}
   </p>
 `,
   });
@@ -392,6 +463,7 @@ ${studioName}
 ${printSupport(supportEmail) ? phrase(P.questions, l, { contact: printSupport(supportEmail)! }) : ""}`;
 
   const html = renderMailLayout({
+    locale: l,
     branding,
     bodyHtml: `
   <p>${escapeHtml(phrase(P.greeting, l, vars))}</p>

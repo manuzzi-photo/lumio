@@ -61,6 +61,7 @@ import superAdminPlugin from "./plugins/super-admin.js";
 import { startPeriodicSweeper } from "./services/sweeper.js";
 import { registerRequestContext } from "./lib/request-context.js";
 import { startPrintOrderMailSweeper } from "./services/print-mail-sweeper.js";
+import { refreshInstanceSettings } from "./services/instance-settings.js";
 
 async function buildServer() {
   const app = Fastify({
@@ -263,6 +264,10 @@ async function start() {
   // 3. Server hochfahren
   const app = await buildServer();
   try {
+    // Fusszeilen-Einstellung einmal in den Cache holen. renderMailLayout()
+    // liest sie synchron, siehe services/instance-settings.ts.
+    await refreshInstanceSettings();
+
     await app.listen({
       port: Number(process.env.PORT ?? 3001),
       host: "0.0.0.0",

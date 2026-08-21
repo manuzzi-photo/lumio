@@ -29,6 +29,58 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.71.1] - 2026-08-20
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist die API, also nur der Hauptserver.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The API is affected, so only the main server.*
+
+
+### Fixed
+
+- E-Mails kamen im Rahmen weiterhin in der Vorgabesprache der Instanz, auch wenn der Inhalt übersetzt war: Fußzeile und die Sprachkennzeichnung der Mail folgten nicht der angeschriebenen Person. Eine englische Mail auf einer deutschen Instanz hatte also englischen Text in deutschem Rahmen — was auch Vorleseprogramme und Spamfilter falsch informierte. Gemeldet und behoben von [@manuzzi](https://github.com/manuzzi).
+
+**🇬🇧 English**
+
+- Emails still used the instance default language for their frame even when the content was translated: the footer and the mail's language attribute did not follow the recipient. An English mail on a German instance had English text in a German frame, which also misinformed screen readers and spam filters. Reported and fixed by [@manuzzi](https://github.com/manuzzi).
+
+## [0.71.0] - 2026-08-20
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen sind Frontend und API, also nur der Hauptserver. Die neue Einstellung findet sich im Super-Admin unter System.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server. The new setting is in the super admin area under System.*
+
+
+### Added
+
+- Die Fußzeile der E-Mails lässt sich jetzt direkt in der Administrationsoberfläche einstellen, unter System. Wer die Instanz auf den eigenen Studionamen bringen will, braucht dafür keinen Zugriff mehr auf die `.env` und keine Kommandozeile. Ein Eintrag hier überstimmt `MAIL_FOOTER_TEXT` aus der Umgebung; bestehende Installationen behalten also ihre Einstellung, bis jemand hier etwas einträgt.
+
+**🇬🇧 English**
+
+- The email footer can now be set directly in the administration interface, under System. Putting your own studio name on an instance no longer requires access to `.env` or a command line. An entry here overrides `MAIL_FOOTER_TEXT` from the environment, so existing installations keep their setting until someone changes it here.
+
+## [0.70.0] - 2026-08-20
+
+Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist die API, also nur der Hauptserver. Wer die neue Fußzeile anpassen möchte, findet die beiden optionalen Einträge in `.env.example`.
+
+*A pull is enough — no changes to `.env`, the compose command or the database. The API is affected, so only the main server. If you want to customise the new footer, the two optional entries are documented in `.env.example`.*
+
+
+### Added
+
+- Die Fußzeile der E-Mails lässt sich jetzt selbst festlegen: `MAIL_FOOTER_TEXT` und `MAIL_FOOTER_URL` in der `.env`. Ohne Eintrag steht dort „Verschickt von Lumio" in der Sprache der angeschriebenen Person, verlinkt aufs Projekt. Ein eigener Text wird wörtlich übernommen und dabei **nicht** übersetzt — bei mehreren Sprachen auf einer Instanz ist die Vorgabe daher meist die bessere Wahl.
+- Erste Tests für die Sprach-Helfer der Mails (16 Stück). Sie halten fest, dass jede Sprache ihr eigenes Datums- und Währungsformat bekommt — genau der Fehler, der vorher unbemerkt blieb. Beigesteuert von [@canja006](https://github.com/canja006).
+
+### Fixed
+
+- Die Fußzeile jeder E-Mail war fest auf Deutsch und behauptete „gehostet in Deutschland" — auf einer selbst betriebenen Instanz schlicht falsch. Sie folgt jetzt der Sprache der angeschriebenen Person. Gemeldet und behoben von [@canja006](https://github.com/canja006).
+
+**🇬🇧 English**
+
+- The email footer is now configurable: `MAIL_FOOTER_TEXT` and `MAIL_FOOTER_URL` in `.env`. Left unset, it reads "Sent via Lumio" in the recipient's language and links to the project. A custom text is used verbatim and is **not** translated — on an instance serving several languages the default is usually the better choice.
+- First tests for the mail locale helpers (16 of them), asserting that each language gets its own date and currency format — precisely the bug that previously went unnoticed. Contributed by [@canja006](https://github.com/canja006).
+- The footer of every email was hardcoded in German and claimed the service is "hosted in Germany", which is simply untrue on a self-hosted instance. It now follows the recipient's language. Reported and fixed by [@canja006](https://github.com/canja006).
+
 ## [0.69.0] - 2026-08-19
 
 Pull genügt — keine Änderungen an `.env`, am Compose-Befehl oder an der Datenbank. Betroffen ist das Frontend, also nur der Hauptserver.
