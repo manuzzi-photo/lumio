@@ -1035,6 +1035,9 @@ export const en = {
     restoreStarted: "Restore started: {count} deleted gallery/galleries found. The ZIPs are built in the background.",
     filesCount: "{count} files",
     plansMissingInDb: "{count} plan(s) missing in the database",
+      languageWord: "Language",
+    languageHint:
+      "Studio interface language. Also used for emails we send you.",
   },
 
   annotation: {

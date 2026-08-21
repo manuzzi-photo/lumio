@@ -29,6 +29,11 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- The language setting was labelled "Language / Sprache" whatever language you were using, and its explanation was English only. German was there because there were once two languages; with four it just meant a Finnish studio was shown German. The heading now reads English plus your own language — "Language / Kieli" — and the explanation appears in both. The option names stay untranslated ("Suomi", not "Finnish"), which is the convention and the thing that actually helps someone who landed in a language they cannot read.
+- The dictionary check was comparing German and Italian against English by name, so Finnish was not being checked at all and an incomplete file would have passed in silence. The list of languages now comes from the code.
+
 ## [0.73.0] - 2026-08-21
 
 A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server.

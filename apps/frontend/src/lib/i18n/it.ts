@@ -1042,6 +1042,9 @@ export const it: LocaleDict = {
     restoreStarted: "Ripristino avviato: trovate {count} gallerie eliminate. Gli ZIP vengono creati in background.",
     filesCount: "{count} file",
     plansMissingInDb: "{count} piano/i mancante/i nel database",
+      languageWord: "Lingua",
+    languageHint:
+      "Lingua dell'interfaccia dello studio. Usata anche per le email che ti inviamo.",
   },
 
   annotation: {

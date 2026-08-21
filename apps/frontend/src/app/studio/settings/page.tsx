@@ -557,16 +557,34 @@ export default function StudioSettingsPage() {
           )}
 
         {/* Locale.
-            The heading, the hint and the option labels are deliberately NOT
-            translated. Someone who landed on the wrong language has to be able
-            to find this control, and language names are conventionally written
-            in their own language ("Deutsch", not "German"). Leave as is. */}
+            Ueberschrift und Hinweis stehen ENGLISCH plus in der aktuell
+            gewaehlten Sprache. Wer versehentlich in einer Sprache landet, die
+            er nicht liest, soll diesen Schalter trotzdem finden — Englisch
+            ist dafuer der gemeinsame Nenner.
+
+            Frueher stand hier fest "Language / Sprache". Das war fuer zwei
+            Sprachen gedacht und wurde mit der vierten falsch: einem Finnen
+            hilft Deutsch nicht, und der Hinweistext darunter war rein
+            englisch. Jetzt richtet sich die zweite Haelfte nach der Auswahl.
+
+            Die OPTIONSNAMEN bleiben unuebersetzt ("Suomi", nicht "Finnisch").
+            Das ist die Konvention und der eigentliche Anker: dort steht jede
+            Sprache in sich selbst. */}
         <section className="rounded-md border border-line-subtle bg-surface-raised p-5 flex items-center justify-between">
           <div>
-            <h2 className="text-ui-md font-medium text-ink-primary">Language / Sprache</h2>
+            <h2 className="text-ui-md font-medium text-ink-primary">
+              {locale === "en"
+                ? "Language"
+                : `Language / ${t("settings.languageWord")}`}
+            </h2>
             <p className="text-xs text-ink-tertiary mt-0.5">
               Studio interface language. Also used for emails we send you.
             </p>
+            {locale !== "en" && (
+              <p className="text-xs text-ink-tertiary mt-0.5">
+                {t("settings.languageHint")}
+              </p>
+            )}
           </div>
           <select
             value={locale}

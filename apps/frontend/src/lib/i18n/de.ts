@@ -1044,6 +1044,9 @@ export const de: LocaleDict = {
       "Wiederherstellung gestartet: {count} gelöschte Galerie(n) gefunden. Die ZIPs werden im Hintergrund gebaut.",
     filesCount: "{count} Dateien",
     plansMissingInDb: "{count} Plan(e) fehlen in der DB",
+      languageWord: "Sprache",
+    languageHint:
+      "Sprache der Studio-Oberfläche. Wird auch für E-Mails an dich verwendet.",
   },
 
   annotation: {

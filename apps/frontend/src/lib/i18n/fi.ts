@@ -1035,6 +1035,9 @@ export const fi = {
     restoreStarted: "Palautus aloitettu: löytyi {count} poistettua galleriaa. ZIP-tiedostot rakennetaan taustalla.",
     filesCount: "{count} tiedostoa",
     plansMissingInDb: "{count} pakettia puuttuu tietokannasta",
+      languageWord: "Kieli",
+    languageHint:
+      "Studion käyttöliittymän kieli. Käytetään myös sinulle lähetettävissä sähköposteissa.",
   },
 
   annotation: {

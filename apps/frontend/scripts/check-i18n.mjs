@@ -71,8 +71,29 @@ function extractKeys(file) {
 }
 
 const enKeys = extractKeys(join(I18N_DIR, "en.ts"));
-const deKeys = extractKeys(join(I18N_DIR, "de.ts"));
-const itKeys = extractKeys(join(I18N_DIR, "it.ts"));
+/**
+ * Die uebrigen Sprachen kommen aus dict.ts, nicht aus einer Liste hier.
+ *
+ * Vorher stand jede Sprache dreimal fest im Script. Als Italienisch dazukam,
+ * wurde sie nachgetragen; als Finnisch dazukam, nicht — der Check meldete
+ * weiter "all three dictionaries" und haette eine unvollstaendige fi.ts
+ * stillschweigend durchgelassen. Genau die Klasse Fehler, die dieser Check
+ * verhindern soll.
+ */
+const localeUnion = readFileSync(join(I18N_DIR, "dict.ts"), "utf8").match(
+  /export type Locale =([^;]+);/
+);
+if (!localeUnion) {
+  console.error("Cannot read the Locale union from dict.ts");
+  process.exit(1);
+}
+const locales = [...localeUnion[1].matchAll(/"(\w+)"/g)]
+  .map((m) => m[1])
+  .filter((l) => l !== "en");
+
+const otherKeys = new Map(
+  locales.map((l) => [l, extractKeys(join(I18N_DIR, `${l}.ts`))])
+);
 
 let failures = 0;
 const report = (title, items, format = (x) => x) => {
@@ -83,22 +104,16 @@ const report = (title, items, format = (x) => x) => {
 };
 
 // --- 1. keys missing from one dictionary -----------------------------------
-report(
-  "Keys in en.ts but not de.ts",
-  [...enKeys].filter((k) => !deKeys.has(k)).sort()
-);
-report(
-  "Keys in de.ts but not en.ts",
-  [...deKeys].filter((k) => !enKeys.has(k)).sort()
-);
-report(
-  "Keys in en.ts but not it.ts",
-  [...enKeys].filter((k) => !itKeys.has(k)).sort()
-);
-report(
-  "Keys in it.ts but not en.ts",
-  [...itKeys].filter((k) => !enKeys.has(k)).sort()
-);
+for (const [locale, keys] of otherKeys) {
+  report(
+    `Keys in en.ts but not ${locale}.ts`,
+    [...enKeys].filter((k) => !keys.has(k)).sort()
+  );
+  report(
+    `Keys in ${locale}.ts but not en.ts`,
+    [...keys].filter((k) => !enKeys.has(k)).sort()
+  );
+}
 
 // --- 2. t() calls pointing at nothing -------------------------------------
 const files = walk(SRC).filter((f) => !f.startsWith(I18N_DIR));
@@ -111,7 +126,12 @@ for (const file of files) {
 
   for (const m of text.matchAll(/\bt\(\s*"([^"]+)"/g)) {
     const key = m[1];
-    if (!enKeys.has(key) || !deKeys.has(key) || !itKeys.has(key)) {
+    // Ein Key muss in JEDER Sprache stehen — sonst faellt genau diese
+    // Sprache an dieser Stelle auf den Key-Namen zurueck.
+    const missingSomewhere =
+      !enKeys.has(key) ||
+      [...otherKeys.values()].some((keys) => !keys.has(key));
+    if (missingSomewhere) {
       if (!broken.has(key)) broken.set(key, new Set());
       broken.get(key).add(rel);
     }
@@ -395,7 +415,8 @@ report(
 
 if (failures === 0) {
   console.log(
-    `i18n check passed — ${enKeys.size} keys in all three dictionaries, ` +
+    `i18n check passed — ${enKeys.size} keys in all ${locales.length + 1} ` +
+      `dictionaries, ` +
       `no dangling t() references, no hardcoded locales.`
   );
   process.exit(0);
