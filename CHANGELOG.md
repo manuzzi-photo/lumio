@@ -29,6 +29,11 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.72.0] - 2026-08-21
+
+A pull is enough — no changes to `.env`, the compose command or the database. Frontend and API are affected, so only the main server.
+
+
 ### Added
 
 - **Emails are now available in Italian.** All 338 mail phrases translated, so an Italian studio gets an Italian interface *and* Italian mail — the gap that remained after the interface translation landed. Contributed by [@manuzzi](https://github.com/manuzzi).
