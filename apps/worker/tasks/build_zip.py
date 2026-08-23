@@ -48,6 +48,7 @@ from botocore.exceptions import ClientError
 from app import app
 from storage import get_s3_client, get_bucket
 from db import get_conn
+from ziputil import prepare_entry
 
 
 log = structlog.get_logger(__name__)
@@ -334,7 +335,18 @@ def _pack_and_upload(s3, bucket: str, files: list[dict],
                     )
                     raise
 
-                with zf.open(zinfo, "w") as zentry:
+                # Größe VOR dem Schreiben setzen: zipfile entscheidet daran,
+                # ob der Eintrag ZIP64-Felder bekommt. Ohne das scheitert
+                # jede Einzeldatei über 2 GiB — und zwar erst, nachdem sie
+                # komplett durchgelaufen ist. Siehe ziputil.py.
+                # ContentLength kommt direkt vom Objekt und ist damit
+                # verlässlicher als die DB-Spalte; die bleibt Fallback.
+                force64 = prepare_entry(
+                    zinfo,
+                    obj.get("ContentLength") or f.get("size_bytes"),
+                )
+
+                with zf.open(zinfo, "w", force_zip64=force64) as zentry:
                     body = obj["Body"]
                     while True:
                         chunk = body.read(1024 * 1024)

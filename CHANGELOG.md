@@ -29,6 +29,11 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Downloading a gallery failed whenever it contained a file larger than 2 GiB — typically video. The download would run for several minutes and then report a generic build error. Cause: the archive entry for each file is opened before its contents are streamed in, and at that moment the packer had no size to go on, so it laid the entry out with 32-bit fields. It only noticed the overflow once the whole file had already been pulled from storage, and aborted. Splitting the gallery into several download packages did not help: a single file always lands whole in one package, no matter how small the size limit is set. The size is now known up front, and large entries use the ZIP64 layout. Archives that only contain photos are unchanged and stay maximally compatible with older unpacking tools.
+- The same flaw affected the super-admin recovery archive for deleted objects; fixed alongside.
+
 ## [0.73.4] - 2026-08-21
 
 A pull is enough — no changes to `.env`, the compose command or the database. The frontend is affected, so only the main server.
