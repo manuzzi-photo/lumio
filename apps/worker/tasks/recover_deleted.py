@@ -35,6 +35,7 @@ import structlog
 
 from app import app
 from storage import get_s3_client, get_bucket
+from ziputil import prepare_entry
 
 # Status-/Upload-Helfer aus export_zip wiederverwenden — identische
 # tenant_export_items-Tabelle, identisches Multipart-Upload.
@@ -156,7 +157,10 @@ def _build(*, tenant_id: str, gallery_id: str) -> dict[str, Any]:
                 zinfo = zipfile.ZipInfo(filename=arcname)
                 zinfo.compress_type = zipfile.ZIP_STORED
                 zinfo.date_time = datetime.utcnow().timetuple()[:6]
-                with zf.open(zinfo, "w") as zentry:
+                # Ohne gesetzte Größe schreibt zipfile einen 32-Bit-Eintrag
+                # und bricht ab 2 GiB ab — siehe ziputil.py.
+                force64 = prepare_entry(zinfo, obj.get("ContentLength"))
+                with zf.open(zinfo, "w", force_zip64=force64) as zentry:
                     body = obj["Body"]
                     while True:
                         chunk = body.read(1024 * 1024)
