@@ -4,12 +4,17 @@ Lumio Worker — Encoder-Profil-Auswahl
 Wählt Hardware- oder Software-Encoding für den HLS-Transcoder.
 Konfiguration via Env-Variable LUMIO_HW_ENCODER:
 
-  auto       — versucht NVENC, dann QSV, dann VAAPI, fällt sonst auf libx264
-               zurück (default, fail-safe)
-  nvenc      — NVIDIA GPU (Quadro/RTX/etc., braucht --gpus all am Container)
-  qsv        — Intel QuickSync (Linux mit /dev/dri/renderD128 durchgereicht)
-  vaapi      — VA-API (AMD oder Intel, ebenfalls /dev/dri/renderD128)
-  software   — explizit libx264, kein Probing
+  auto         — versucht NVENC, dann QSV, dann VAAPI, dann VideoToolbox,
+                 fällt sonst auf libx264 zurück (default, fail-safe)
+  nvenc        — NVIDIA GPU (Quadro/RTX/etc., braucht --gpus all am Container)
+  qsv          — Intel QuickSync (Linux mit /dev/dri/renderD128 durchgereicht)
+  vaapi        — VA-API (AMD oder Intel, ebenfalls /dev/dri/renderD128)
+  videotoolbox — Apple VideoToolbox. Nur relevant, wenn der Worker-Prozess
+                 NATIV auf macOS läuft (kein Docker — Docker Desktop reicht
+                 VideoToolbox nicht an Linux-Container durch). Kein Device-
+                 File wie bei VAAPI/NVENC; die Verfügbarkeit hängt allein
+                 an der Plattform + ob ffmpeg den Encoder im Build hat.
+  software     — explizit libx264, kein Probing
 
 Pro Variante (verschiedene HLS-Stufen) werden die richtigen Codec-Args
 plus Preset/Bitrate-Args generiert. Die ffmpeg-Befehlsstruktur bleibt
@@ -22,6 +27,7 @@ from __future__ import annotations
 
 import os
 import glob
+import platform
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -31,7 +37,7 @@ import structlog
 
 log = structlog.get_logger(__name__)
 
-EncoderName = Literal["nvenc", "qsv", "vaapi", "software"]
+EncoderName = Literal["nvenc", "qsv", "vaapi", "videotoolbox", "software"]
 
 # Welche Hardware-Encoder gibt's überhaupt im aktuellen ffmpeg-Build?
 _available_encoders: set[str] | None = None
@@ -57,6 +63,8 @@ def _detect_available() -> set[str]:
         found.add("qsv")
     if "h264_vaapi" in out:
         found.add("vaapi")
+    if "h264_videotoolbox" in out:
+        found.add("videotoolbox")
     # libx264 ist quasi immer drin, aber sicherheitshalber prüfen
     if "libx264" in out:
         found.add("software")
@@ -75,6 +83,15 @@ def _render_device_present() -> bool:
 
 # Rückwärtskompatibler Alias (wird ggf. anderswo importiert).
 _vaapi_device_present = _render_device_present
+
+
+def _videotoolbox_present() -> bool:
+    """VideoToolbox ist kein Device-File, sondern ein macOS-Framework —
+    sinnvoll nur auf Darwin. Der Encoder-String allein (aus `ffmpeg
+    -encoders`) sagt nichts über die Plattform aus, deshalb zusätzlich
+    dieser Check, bevor 'auto' bzw. ein expliziter Request videotoolbox
+    tatsächlich wählt."""
+    return platform.system() == "Darwin"
 
 
 def _nvidia_device_present() -> bool:
@@ -131,6 +148,13 @@ def select_encoder() -> EncoderName:
                  reason="device_or_codec_missing", fallback="software")
         return "software"
 
+    if requested == "videotoolbox":
+        if "videotoolbox" in available and _videotoolbox_present():
+            return "videotoolbox"
+        log.warn("encoder.requested_unavailable", requested="videotoolbox",
+                 reason="device_or_codec_missing", fallback="software")
+        return "software"
+
     # 'auto': probieren in Reihenfolge — jeweils nur, wenn auch ein passendes
     # Device vorhanden ist. Encoder-Liste allein genügt NICHT (s. oben).
     if "nvenc" in available and _nvidia_device_present():
@@ -139,6 +163,8 @@ def select_encoder() -> EncoderName:
         return "qsv"
     if "vaapi" in available and _render_device_present():
         return "vaapi"
+    if "videotoolbox" in available and _videotoolbox_present():
+        return "videotoolbox"
     return "software"
 
 
@@ -177,6 +203,20 @@ def profile_for(variant_height: int) -> EncoderProfile:
             extra_input_args=[
                 "-vaapi_device", "/dev/dri/renderD128",
             ],
+            extra_video_args=[],
+        )
+    if name == "videotoolbox":
+        # Anders als VAAPI nimmt h264_videotoolbox normale Software-Frames
+        # entgegen (kein hwupload/format-Filter nötig) — der bestehende
+        # scale=-2:h-Zweig in process_video.py greift also unverändert.
+        # Kein klassisches x264-Preset; VideoToolbox unterstützt kein CRF,
+        # Qualität läuft ausschließlich über -b:v/-maxrate/-bufsize, was
+        # dem Rest der Pipeline ohnehin entspricht.
+        return EncoderProfile(
+            name="videotoolbox",
+            codec="h264_videotoolbox",
+            preset="",
+            extra_input_args=[],
             extra_video_args=[],
         )
     # Software-Fallback

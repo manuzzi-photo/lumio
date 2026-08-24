@@ -12,9 +12,11 @@ Video-Verarbeitung via ffmpeg:
                +faststart, libx264/HW je nach Encoder-Profil
 
 Codec: H.264 + AAC. Encoder ist konfigurierbar via LUMIO_HW_ENCODER
-(auto/nvenc/qsv/vaapi/software, default 'auto'). 'auto' probiert
-Hardware in der Reihenfolge NVENC → QSV → VAAPI und fällt sonst auf
-libx264 zurück — Self-Hoster ohne GPU müssen nichts konfigurieren.
+(auto/nvenc/qsv/vaapi/videotoolbox/software, default 'auto'). 'auto'
+probiert Hardware in der Reihenfolge NVENC → QSV → VAAPI →
+VideoToolbox und fällt sonst auf libx264 zurück — Self-Hoster ohne GPU
+müssen nichts konfigurieren. VideoToolbox greift nur, wenn der Worker
+NATIV auf macOS läuft (nicht in Docker, siehe encoder_profile.py).
 
 Storage-Layout:
   renditions/poster.jpg
@@ -377,9 +379,11 @@ def _make_hls(*, src_path: Path, out_dir: Path, source_height: int,
         Source mindestens diese Hoehe hat (kein Upscaling).
 
     Encoder-Auswahl: software (libx264, default) oder Hardware (NVENC, QSV,
-    VAAPI) je nach LUMIO_HW_ENCODER-Env. Bei Hardware-Encodern haben wir
-    je nach Codec leicht andere Filter- und Encoder-Args, aber die HLS-
-    Muxer-Args bleiben identisch.
+    VAAPI, VideoToolbox) je nach LUMIO_HW_ENCODER-Env. Bei Hardware-Encodern
+    haben wir je nach Codec leicht andere Filter- und Encoder-Args, aber die
+    HLS-Muxer-Args bleiben identisch. VideoToolbox braucht — anders als
+    VAAPI — keinen hwupload/format-Filter vor dem Scale, es läuft über den
+    normalen scale=-2:h-Zweig unten.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
 
