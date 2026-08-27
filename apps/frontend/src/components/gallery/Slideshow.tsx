@@ -517,7 +517,10 @@ function SlideImage({
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
       src={src}
-      alt={file.filename}
+      // Kein Dateiname: der ist null, wenn die Galerie dem Kunden keine
+      // Dateinamen zeigt. In der Slideshow gibt es ohnehin keine
+      // Bezeichnung — ein leeres alt ist hier korrekt (dekorativ).
+      alt=""
       draggable={false}
       className={className}
       style={style}

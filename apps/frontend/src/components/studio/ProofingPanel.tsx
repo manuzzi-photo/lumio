@@ -7,6 +7,7 @@ import { api, type ProofingSummary, type GalleryFile } from "@/lib/api";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { ProofingFileDetail } from "@/components/studio/ProofingFileDetail";
 import { useT } from "@/lib/i18n";
+import { useShowFilenames } from "@/lib/useShowFilenames";
 import { useErrorText } from "@/lib/error-i18n";
 
 export function ProofingPanel({
@@ -18,6 +19,7 @@ export function ProofingPanel({
 }) {
   const errText = useErrorText();
   const t = useT();
+  const { showFilenames } = useShowFilenames();
   const router = useRouter();
   const id = galleryId;
   const [data, setData] = useState<ProofingSummary | null>(null);
@@ -217,7 +219,7 @@ export function ProofingPanel({
                     key={f.id}
                     onClick={() => setDetailFile(f)}
                     className="relative aspect-square rounded overflow-hidden bg-surface-sunken border border-line-subtle hover:border-accent transition-colors duration-motion group"
-                    title={f.originalFilename}
+                    title={showFilenames ? f.originalFilename : undefined}
                     style={{
                       // Offscreen-Tiles skipt der Browser komplett —
                       // hilft enorm bei 500+ Bildern in der Übersicht.
@@ -229,7 +231,7 @@ export function ProofingPanel({
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={f.thumbUrl}
-                        alt={f.originalFilename}
+                        alt={showFilenames ? f.originalFilename : ""}
                         className="w-full h-full object-cover"
                       />
                     ) : (

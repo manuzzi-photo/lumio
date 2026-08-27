@@ -28,6 +28,7 @@ import {
 } from "@/lib/api";
 import { useT, useFormat} from "@/lib/i18n";
 import { useImageZoom } from "@/lib/useImageZoom";
+import { useShowFilenames } from "@/lib/useShowFilenames";
 import {
   AnnotationOverlay,
   AnnotationToolbar,
@@ -49,6 +50,7 @@ interface Props {
 export function ProofingFileDetail({ galleryId, file, onClose }: Props) {
   const fmt = useFormat();
   const t = useT();
+  const { showFilenames } = useShowFilenames();
   const [comments, setComments] = useState<Comment[] | null>(null);
   const [strokes, setStrokes] = useState<AnnotationStroke[]>([]);
   const [saving, setSaving] = useState(false);
@@ -164,8 +166,11 @@ export function ProofingFileDetail({ galleryId, file, onClose }: Props) {
         >
           ✕ {t("annotation.studioDetail.close")}
         </button>
+        {/* Dateiname nur wenn der Studio-User Dateinamen eingeschaltet
+            hat. Ausgeschaltet bleibt der Platz leer — der Spacer rechts
+            haelt die Kopfzeile trotzdem symmetrisch. */}
         <div className="text-ui-sm font-medium text-ink-primary truncate max-w-md">
-          {file.originalFilename}
+          {showFilenames ? file.originalFilename : ""}
         </div>
         <div className="w-20" /> {/* Spacer für Symmetrie */}
       </div>
@@ -227,7 +232,7 @@ export function ProofingFileDetail({ galleryId, file, onClose }: Props) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewUrl}
-                  alt={file.originalFilename}
+                  alt={showFilenames ? file.originalFilename : ""}
                   className="max-h-[calc(100vh-180px)] max-w-full object-contain block"
                   draggable={false}
                 />

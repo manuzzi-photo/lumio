@@ -25,6 +25,11 @@ export type ApiUser = {
 
 export type GalleryMode = "collaboration" | "presentation";
 export type GalleryStatus = "draft" | "live" | "archived";
+
+/** Welche Bezeichnung ein Kunde unter einem Bild in seiner Galerie sieht.
+ *  Das Studio entscheidet den Modus; der Kunde darf ihn (wenn
+ *  customerLabelToggleEnabled) nur ein-/ausblenden, nie wechseln. */
+export type CustomerLabelMode = "hidden" | "filename" | "index";
 export type FileStatus = "uploading" | "processing" | "ready" | "failed" | "hidden";
 export type FileKind = "image" | "heic" | "raw" | "video" | "pdf" | "other";
 export type ZipStatus = "pending" | "building" | "ready" | "failed";
@@ -55,6 +60,16 @@ export interface Gallery {
   /** Wenn true: Tag-Filter ist in der Customer-Galerie sichtbar +
    *  Tag-gefilterte ZIP-Downloads sind moeglich. Default false. */
   customerTagFilterEnabled?: boolean;
+  /** Welche Bezeichnung sieht der KUNDE unter dem Bild?
+   *    "hidden"   = keine (Default)
+   *    "filename" = echter Dateiname
+   *    "index"    = neutrale Nummer ("Bild 12 von 84")
+   *  Bei "hidden" liefert die Customer-API den Dateinamen gar nicht mit. */
+  customerLabelMode?: CustomerLabelMode;
+  /** Darf der Kunde die Bezeichnung selbst ein-/ausblenden? Er wechselt
+   *  nur zwischen customerLabelMode und "aus", nie den Modus selbst.
+   *  Ohne Wirkung wenn customerLabelMode = "hidden". */
+  customerLabelToggleEnabled?: boolean;
   publicAccess?: boolean;
   selectionLimit: number | null;
   brandingId?: string | null;
@@ -285,6 +300,9 @@ export interface PublicGalleryMeta {
   /** Wenn true: Tag-Filter wird in der Customer-Galerie angezeigt
    *  und Tag-gefilterte ZIP-Downloads sind moeglich. */
   customerTagFilterEnabled?: boolean;
+  /** Siehe Gallery.customerLabelMode. */
+  customerLabelMode?: CustomerLabelMode;
+  customerLabelToggleEnabled?: boolean;
   selectionLimit: number | null;
   requiresPassword: boolean;
   publicAccess: boolean;
@@ -388,7 +406,16 @@ export interface SpriteSheet {
 
 export interface PublicFile {
   id: string;
-  filename: string;
+  /** Echter Dateiname — NUR gesetzt, wenn die Galerie
+   *  customerLabelMode = "filename" hat. Sonst null: der Server liefert
+   *  ihn dann bewusst nicht mit, damit er nicht ueber den Netzwerk-Tab
+   *  einsehbar bleibt. Fuer Anzeige/Teilen fileLabel() bzw.
+   *  shareFilename() aus lib/fileLabel benutzen, nicht dieses Feld. */
+  filename: string | null;
+  /** 1-basierte Position in der GALERIE-Reihenfolge (sortIndex), vom
+   *  Server berechnet. Bleibt stabil, wenn der Kunde filtert oder
+   *  umsortiert — Basis fuer customerLabelMode = "index". */
+  labelIndex: number;
   mimeType: string;
   sizeBytes: number;
   kind: FileKind;

@@ -1,9 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   api,
   ApiError,
+  type CustomerLabelMode,
   type PublicFile,
   type PublicGalleryMeta,
   type PublicSection,
@@ -18,6 +27,7 @@ import { GalleryHero } from "./GalleryHero";
 import { ShareButton } from "./ShareButton";
 import { usePickedFiles } from "./usePickedFiles";
 import { useT } from "@/lib/i18n";
+import { fileLabel, shareFilename } from "@/lib/fileLabel";
 import { useReveal } from "@/lib/useReveal";
 import { useImageZoom } from "@/lib/useImageZoom";
 import {
@@ -50,6 +60,44 @@ type FilterMode = "all" | "liked" | "red" | "yellow" | "green";
 
 type SortMode = "gallery" | "name" | "taken";
 
+/**
+ * Bild-Bezeichnung fuer die ganze Kundengalerie.
+ *
+ * Als Context und nicht als Prop, weil sonst drei Ebenen
+ * (GalleryView → FilesGrid → GalleryTile) und zusaetzlich Lightbox und
+ * Slideshow je zwei weitere Props durchschleifen muessten — FilesGrid
+ * wird an mehreren Stellen gerendert (Default-Bucket + je Section), und
+ * genau dort wuerde man den Parameter irgendwann vergessen.
+ *
+ * `visible` ist der Kunden-Toggle: er schaltet nur zwischen `mode` und
+ * "aus", nie den Modus selbst.
+ */
+type LabelCtx = {
+  mode: CustomerLabelMode;
+  total: number;
+  visible: boolean;
+};
+
+const LabelContext = createContext<LabelCtx>({
+  mode: "hidden",
+  total: 0,
+  visible: false,
+});
+
+/** Gibt den anzuzeigenden Text zurueck, oder null wenn nichts angezeigt
+ *  werden soll. `alt` ist der Fallback fuer alt-Attribute: dort wollen
+ *  wir auch bei versteckter Bezeichnung etwas Sinnvolles fuer
+ *  Screenreader haben (die Position verraet nichts, die ist im Grid
+ *  ohnehin sichtbar). */
+function useFileLabel(file: PublicFile): { text: string | null; alt: string } {
+  const ctx = useContext(LabelContext);
+  const t = useT();
+  const text = fileLabel(file, ctx.mode, ctx.total, ctx.visible, t);
+  const alt =
+    text ?? t("gallery.labelIndex", { n: file.labelIndex, total: ctx.total });
+  return { text, alt };
+}
+
 // Natürlich-numerischer Vergleich, damit "IMG_2" vor "IMG_10" kommt
 // (lexikografisch wäre es umgekehrt). Sprachneutral, Groß/Klein egal.
 const _nameCollator = new Intl.Collator(undefined, {
@@ -65,7 +113,13 @@ function sortPublicFiles(list: PublicFile[], mode: SortMode): PublicFile[] {
   if (mode === "gallery") return list;
   const copy = [...list];
   if (mode === "name") {
-    copy.sort((a, b) => _nameCollator.compare(a.filename, b.filename));
+    // filename ist null, wenn die Galerie dem Kunden keine Dateinamen
+    // zeigt. Die Option wird dann gar nicht angeboten (siehe Toolbar) —
+    // der Fallback haelt die Sortierung trotzdem stabil, falls sie ueber
+    // einen alten State-Wert doch erreicht wird.
+    copy.sort((a, b) =>
+      _nameCollator.compare(a.filename ?? "", b.filename ?? "")
+    );
     return copy;
   }
   // mode === "taken": Aufnahmedatum aufsteigend. Dateien ohne EXIF-Datum
@@ -111,6 +165,37 @@ export function GalleryView({
   // bedingt unten. State immer halten damit Toggle nicht alles
   // ueberraschend resetted.
   const [tagFilter, setTagFilter] = useState<Set<string>>(new Set());
+  // Bild-Bezeichnung: Modus kommt vom Studio, das Ein-/Ausblenden darf
+  // der Kunde (wenn erlaubt) selbst. Startwert = an, weil das Studio den
+  // Modus bewusst gesetzt hat; die Kundenwahl ueberschreibt das dann.
+  const labelMode: CustomerLabelMode = meta.customerLabelMode ?? "hidden";
+  const labelToggleAllowed =
+    labelMode !== "hidden" && meta.customerLabelToggleEnabled !== false;
+  const [labelVisible, setLabelVisible] = useState(true);
+  // Pro Galerie im localStorage, nicht in der DB: eine reine
+  // Ansichtsvorliebe, und Galerien laufen oft ueber einen Link ohne
+  // Account — es gibt also gar keinen User, an dem das haengen koennte.
+  useEffect(() => {
+    if (!labelToggleAllowed) return;
+    try {
+      const v = localStorage.getItem(`lumio.gallery.${slug}.labels`);
+      if (v !== null) setLabelVisible(v === "1");
+    } catch {
+      /* localStorage nicht verfuegbar (Private Mode) — Default greift */
+    }
+  }, [slug, labelToggleAllowed]);
+  const toggleLabels = useCallback(() => {
+    setLabelVisible((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(
+          `lumio.gallery.${slug}.labels`,
+          next ? "1" : "0"
+        );
+      } catch {}
+      return next;
+    });
+  }, [slug]);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [slideshowIdx, setSlideshowIdx] = useState<number | null>(null);
   const [finalizing, setFinalizing] = useState(false);
@@ -232,8 +317,21 @@ export function GalleryView({
     };
   }, [files, mySelections]);
 
+  const labelCtx = useMemo<LabelCtx>(
+    () => ({
+      mode: labelMode,
+      total: files.length,
+      // Wenn das Studio den Kunden-Toggle nicht erlaubt, ist die
+      // Bezeichnung immer sichtbar — der lokale State wird ignoriert,
+      // statt ihn zu resetten (sonst verliert der Kunde seine Wahl,
+      // falls das Studio den Toggle spaeter wieder erlaubt).
+      visible: labelToggleAllowed ? labelVisible : true,
+    }),
+    [labelMode, files.length, labelToggleAllowed, labelVisible]
+  );
+
   return (
-    <>
+    <LabelContext.Provider value={labelCtx}>
       {/* Hero — kann personalisiert sein (Hero-Bild, Logo, Welcome-
           Markdown, Overlay-Farbe). Wenn keine Customization gesetzt
           ist, sieht's aus wie der bisherige minimale Hero. */}
@@ -343,9 +441,43 @@ export function GalleryView({
                 aria-label={t("gallery.sortLabel")}
               >
                 <option value="gallery">{t("gallery.sortGallery")}</option>
-                <option value="name">{t("gallery.sortName")}</option>
+                {/* Nach Name sortieren nur, wenn der Kunde die Dateinamen
+                    auch sehen darf — sonst liefert die API sie gar nicht
+                    mit und die Option wuerde ins Leere sortieren. */}
+                {labelMode === "filename" && (
+                  <option value="name">{t("gallery.sortName")}</option>
+                )}
                 <option value="taken">{t("gallery.sortTaken")}</option>
               </select>
+            )}
+            {/* Bezeichnung ein-/ausblenden. Nur wenn das Studio ueberhaupt
+                eine Bezeichnung zeigt UND das Umschalten erlaubt hat. Der
+                Kunde wechselt dabei nie den Modus — er sieht entweder das
+                vom Studio gewaehlte Label oder keins. */}
+            {labelToggleAllowed && (
+              <button
+                type="button"
+                onClick={toggleLabels}
+                aria-pressed={labelVisible}
+                style={{
+                  borderColor: "var(--brand-border)",
+                  color: "var(--brand-fg)",
+                  backgroundColor: labelVisible
+                    ? "var(--brand-surface)"
+                    : "transparent",
+                  opacity: labelVisible ? 1 : 0.6,
+                }}
+                className="text-ui-sm h-8 rounded border px-2.5 cursor-pointer transition-colors duration-motion"
+                title={
+                  labelVisible
+                    ? t("gallery.labelsHide")
+                    : t("gallery.labelsShow")
+                }
+              >
+                {labelVisible
+                  ? t("gallery.labelsHide")
+                  : t("gallery.labelsShow")}
+              </button>
             )}
             {interactive && stats.total > 0 ? (
               <>
@@ -760,7 +892,7 @@ export function GalleryView({
           </div>
         </div>
       )}
-    </>
+    </LabelContext.Provider>
   );
 }
 
@@ -1186,6 +1318,7 @@ function GalleryTile({
   commented?: boolean;
 }) {
   const { ref, revealed } = useReveal<HTMLDivElement>();
+  const { text: labelText, alt: labelAlt } = useFileLabel(file);
   // Thumbnail-Selbstheilung: abgebrochene/transiente Loads (vor allem in
   // Brave durch das Zusammenspiel von content-visibility + lazy) führen
   // sonst zum stehenden Broken-Image-„?". Wir versuchen es bis zu 2x neu
@@ -1286,7 +1419,7 @@ function GalleryTile({
           <img
             key={imgAttempt}
             src={file.thumbUrl}
-            alt={file.filename}
+            alt={labelAlt}
             loading="lazy"
             decoding="async"
             onError={() => {
@@ -1416,6 +1549,17 @@ function GalleryTile({
             </span>
           </div>
         )}
+
+        {/* Bild-Bezeichnung (Dateiname oder neutrale Nummer). Als
+            Overlay im unteren Rand mit Gradient, damit sie auf hellen
+            wie dunklen Bildern lesbar bleibt. Dauerhaft sichtbar (nicht
+            nur bei Hover) — auf Touch-Geraeten gibt es kein Hover, und
+            wer sie eingeschaltet hat, will sie sehen. */}
+        {labelText && (
+          <div className="absolute bottom-0 inset-x-0 px-2 pt-4 pb-1.5 bg-gradient-to-t from-black/75 via-black/35 to-transparent text-white text-ui-xs truncate pointer-events-none">
+            {labelText}
+          </div>
+        )}
       </button>
     </div>
   );
@@ -1500,6 +1644,7 @@ function Lightbox({
   // hinten), schließen wir die Lightbox lautlos. Vor dem Fix war der
   // Crash 'cannot read properties of undefined (id)'.
   const file = files[index];
+  const { text: labelText, alt: labelAlt } = useFileLabel(file);
   useEffect(() => {
     if (!file) onClose();
   }, [file, onClose]);
@@ -1829,7 +1974,10 @@ function Lightbox({
         });
         if (!res.ok) throw new Error(`blob status ${res.status}`);
         const blob = await res.blob();
-        const shareFile = new File([blob], file.filename, {
+        // Nicht file.filename direkt: der ist null, wenn die Galerie dem
+        // Kunden keine Dateinamen zeigt. shareFilename() baut dann einen
+        // neutralen Namen aus der Position ("image-012.jpg").
+        const shareFile = new File([blob], shareFilename(file), {
           type: blob.type || file.mimeType || "application/octet-stream",
         });
         if (
@@ -1850,7 +1998,7 @@ function Lightbox({
         setSharingVariant(null);
       }
     },
-    [slug, file.id, file.filename, file.mimeType]
+    [slug, file.id, file.filename, file.labelIndex, file.mimeType]
   );
 
   return (
@@ -1865,8 +2013,21 @@ function Lightbox({
           <span className="text-base leading-none">✕</span>
           <span className="hidden sm:inline">{t("gallery.close")}</span>
         </button>
-        <div className="text-ui-xs text-white/50 font-mono">
-          {index + 1} / {files.length}
+        {/* Mitte: Bezeichnung (wenn aktiv) plus der Navigations-Zaehler.
+            Die beiden sind bewusst verschieden: labelText ist die STABILE
+            Nummer bzw. der Dateiname aus der Galerie-Reihenfolge, der
+            Zaehler zeigt die Position in der gerade durchblaetterten
+            (ggf. gefilterten) Liste. Darum unterschiedlich gesetzt —
+            Bezeichnung normal, Zaehler klein und mono. */}
+        <div className="min-w-0 px-2 text-center">
+          {labelText && (
+            <div className="text-ui-xs text-white/75 truncate">
+              {labelText}
+            </div>
+          )}
+          <div className="text-ui-xs text-white/50 font-mono">
+            {index + 1} / {files.length}
+          </div>
         </div>
         <div className="flex items-center gap-1">
           {commentsActive && (
@@ -2009,7 +2170,7 @@ function Lightbox({
                         ""
                       : file.webUrl ?? file.previewUrl ?? ""
                   }
-                  alt={file.filename}
+                  alt={labelAlt}
                   className="max-h-[calc(100vh-160px)] max-w-full object-contain animate-fade-in block"
                   draggable={false}
                   key={`${file.id}-${pdfPage}`}

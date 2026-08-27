@@ -3,9 +3,16 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { api, ApiError, type GalleryDetail, type GalleryFile } from "@/lib/api";
+import {
+  api,
+  ApiError,
+  type CustomerLabelMode,
+  type GalleryDetail,
+  type GalleryFile,
+} from "@/lib/api";
 import { uploadFiles, type UploadProgress } from "@/lib/upload";
 import { useImageZoom } from "@/lib/useImageZoom";
+import { useShowFilenames } from "@/lib/useShowFilenames";
 import { VideoPlayer } from "@/components/gallery/VideoPlayer";
 import { SharePanel } from "@/components/studio/SharePanel";
 import { GalleryHeaderEditor } from "@/components/studio/GalleryHeaderEditor";
@@ -168,6 +175,9 @@ export default function GalleryDetailPage() {
     "view"
   );
   const selectionMode = gridMode === "select";
+  // Dateinamen in den Studio-Ansichten. Geraete-Praeferenz, unabhaengig
+  // davon was der Kunde sieht (das ist gallery.customerLabelMode).
+  const { showFilenames, toggleFilenames } = useShowFilenames();
   // Lightbox: ID des aktuell groß angezeigten Files (null = geschlossen).
   const [lightboxId, setLightboxId] = useState<string | null>(null);
   // Sub-Umschaltung im "Auswahl & Statistik"-Tab.
@@ -784,7 +794,8 @@ export default function GalleryDetailPage() {
       | "downloadOriginalsEnabled"
       | "watermarkEnabled"
       | "commentsEnabled"
-      | "customerTagFilterEnabled",
+      | "customerTagFilterEnabled"
+      | "customerLabelToggleEnabled",
     next: boolean
   ) {
     if (!gallery) return;
@@ -1441,6 +1452,29 @@ export default function GalleryDetailPage() {
             value={gallery.customerTagFilterEnabled ?? false}
             onChange={(v) => toggleSetting("customerTagFilterEnabled", v)}
           />
+          <SettingSelect<CustomerLabelMode>
+            label={t("studio.labelModeLabel")}
+            description={t("studio.labelModeDesc")}
+            value={gallery.customerLabelMode ?? "hidden"}
+            options={[
+              { value: "hidden", label: t("studio.labelModeHidden") },
+              { value: "filename", label: t("studio.labelModeFilename") },
+              { value: "index", label: t("studio.labelModeIndex") },
+            ]}
+            onChange={async (v) => {
+              await api.updateGallery(gallery.id, { customerLabelMode: v });
+              await load();
+            }}
+          />
+          {/* Nur sinnvoll wenn ueberhaupt eine Bezeichnung angezeigt wird. */}
+          {(gallery.customerLabelMode ?? "hidden") !== "hidden" && (
+            <SettingToggle
+              label={t("studio.labelToggleLabel")}
+              description={t("studio.labelToggleDesc")}
+              value={gallery.customerLabelToggleEnabled ?? true}
+              onChange={(v) => toggleSetting("customerLabelToggleEnabled", v)}
+            />
+          )}
           {tenantFeatures?.includes("print_shop") && (
             <SettingToggle
               label={t("studio.printShopLabel")}
@@ -1693,6 +1727,21 @@ export default function GalleryDetailPage() {
                     >{t("studio.findDuplicates")}</Button>
                     <Button
                       size="sm"
+                      variant="ghost"
+                      onClick={toggleFilenames}
+                      aria-pressed={showFilenames}
+                      title={
+                        showFilenames
+                          ? t("studio.filenamesHideTitle")
+                          : t("studio.filenamesShowTitle")
+                      }
+                    >
+                      {showFilenames
+                        ? t("studio.filenamesHide")
+                        : t("studio.filenamesShow")}
+                    </Button>
+                    <Button
+                      size="sm"
                       variant="secondary"
                       onClick={() => setGridMode("select")}
                     >
@@ -1798,6 +1847,7 @@ export default function GalleryDetailPage() {
                       index={i}
                       mode={gridMode}
                       selected={selected.has(f.id)}
+                      showFilename={showFilenames}
                       onToggle={toggleSelected}
                       onOpen={openLightbox}
                     />
@@ -1880,6 +1930,7 @@ export default function GalleryDetailPage() {
         <Lightbox
           files={visibleFiles}
           currentId={lightboxId}
+          showFilename={showFilenames}
           onClose={() => setLightboxId(null)}
         />
       )}
@@ -2219,6 +2270,48 @@ function SettingToggle({
 }
 
 /**
+ * Wie SettingToggle, aber mit Dropdown statt Checkbox — fuer Settings
+ * mit mehr als zwei Zustaenden (aktuell: die Bild-Bezeichnung in der
+ * Kundengalerie mit aus/Dateiname/Nummer).
+ */
+function SettingSelect<T extends string>({
+  label,
+  description,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  description?: string;
+  value: T;
+  options: Array<{ value: T; label: string }>;
+  onChange: (next: T) => void;
+}) {
+  return (
+    <div className="flex items-start gap-3 py-1">
+      <div className="flex-1">
+        <div className="text-ui text-ink-primary">{label}</div>
+        {description && (
+          <div className="text-ui-xs text-ink-tertiary mt-0.5">{description}</div>
+        )}
+      </div>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        className="text-ui-sm h-8 rounded-xs border border-line-strong bg-surface-raised text-ink-primary px-2 cursor-pointer shrink-0"
+        aria-label={label}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/**
  * Input für `selectionLimit`. Leeres Feld = unbegrenzt (null). Wir speichern
  * onBlur und nur, wenn sich der Wert wirklich geändert hat — sonst pingt
  * jedes Klicken auf das Feld unnötig die API. State spiegelt während der
@@ -2319,10 +2412,14 @@ function SelectionLimitInput({
 function Lightbox({
   files,
   currentId,
+  showFilename,
   onClose,
 }: {
   files: GalleryFile[];
   currentId: string;
+  /** Dateiname unter dem Bild anzeigen? Geraete-Praeferenz des
+   *  Studio-Users (Toolbar-Toggle im Grid). */
+  showFilename: boolean;
   onClose: () => void;
 }) {
   const t = useT();
@@ -2454,7 +2551,12 @@ function Lightbox({
         </div>
       )}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 text-center text-white/60 text-ui-sm max-w-[80vw] truncate px-4">
-        {file.originalFilename}
+        {/* Bei ausgeschalteten Dateinamen die Position statt eines leeren
+            Streifens — sonst weiss man in einer 400-Bild-Galerie nicht
+            mehr, wo man gerade ist. */}
+        {showFilename
+          ? file.originalFilename
+          : t("studio.lbPosition", { n: i + 1, total: files.length })}
       </div>
 
       {i < files.length - 1 && (
@@ -2561,6 +2663,7 @@ function _FileTile({
   index,
   mode,
   selected,
+  showFilename,
   onToggle,
   onOpen,
 }: {
@@ -2568,6 +2671,10 @@ function _FileTile({
   index: number;
   mode: "view" | "select" | "sort";
   selected: boolean;
+  /** Dateinamen-Overlay anzeigen? Geraete-Praeferenz des Studio-Users,
+   *  nicht die Kunden-Sichtbarkeit (das ist customerLabelMode an der
+   *  Galerie). Boolean, bricht das memo also nicht. */
+  showFilename: boolean;
   /** Bekommt die file.id als Argument, damit der Caller keinen
    *  Arrow-Wrapper () => onToggle(file.id) bauen muss — der wuerde
    *  bei jedem Render eine neue Funktion erzeugen und memo brechen. */
@@ -2817,10 +2924,13 @@ function _FileTile({
         </div>
       )}
 
-      {/* Filename-Overlay erscheint auf Hover */}
-      <div className="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-ui-xs truncate opacity-0 group-hover:opacity-100 transition-opacity duration-motion">
-        {file.originalFilename}
-      </div>
+      {/* Filename-Overlay erscheint auf Hover — nur wenn der Studio-User
+          Dateinamen eingeschaltet hat (Toolbar-Toggle). */}
+      {showFilename && (
+        <div className="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-ui-xs truncate opacity-0 group-hover:opacity-100 transition-opacity duration-motion">
+          {file.originalFilename}
+        </div>
+      )}
     </li>
   );
 }

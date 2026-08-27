@@ -23,6 +23,12 @@ const templateSchema = z.object({
   watermarkEnabled: z.boolean().default(false),
   commentsEnabled: z.boolean().default(true),
   ratingsEnabled: z.boolean().default(true),
+  // Vorgabe fuer die Bild-Bezeichnung in der Kundengalerie neuer
+  // Galerien aus diesem Template. Siehe Gallery.customerLabelMode.
+  customerLabelMode: z
+    .enum(["hidden", "filename", "index"])
+    .default("hidden"),
+  customerLabelToggleEnabled: z.boolean().default(true),
   defaultExpiryDays: z.number().int().min(1).max(3650).nullable().optional(),
   defaultDescription: z.string().max(2000).nullable().optional(),
   brandingId: z.string().uuid().nullable().optional(),
@@ -88,6 +94,8 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
         watermarkEnabled: body.watermarkEnabled,
         commentsEnabled: body.commentsEnabled,
         ratingsEnabled: body.ratingsEnabled,
+        customerLabelMode: body.customerLabelMode,
+        customerLabelToggleEnabled: body.customerLabelToggleEnabled,
         defaultExpiryDays: body.defaultExpiryDays ?? null,
         defaultDescription: body.defaultDescription ?? null,
         brandingId: body.brandingId ?? null,
@@ -146,6 +154,12 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
             : {}),
           ...(body.ratingsEnabled !== undefined
             ? { ratingsEnabled: body.ratingsEnabled }
+            : {}),
+          ...(body.customerLabelMode !== undefined
+            ? { customerLabelMode: body.customerLabelMode }
+            : {}),
+          ...(body.customerLabelToggleEnabled !== undefined
+            ? { customerLabelToggleEnabled: body.customerLabelToggleEnabled }
             : {}),
           ...(body.defaultExpiryDays !== undefined
             ? { defaultExpiryDays: body.defaultExpiryDays }

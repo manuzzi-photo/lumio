@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { api, type PublicFile } from "@/lib/api";
+import { shareFilename } from "@/lib/fileLabel";
 import { useT, useFormat} from "@/lib/i18n";
 import { CropFrame, defaultCropForAspect, type Crop } from "@/components/print-shop/CropFrame";
 import type { Formatters } from "@/lib/i18n/format";
@@ -231,12 +232,12 @@ function BrowseStep({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={f.thumbUrl}
-                  alt={f.filename}
+                  alt={shareFilename(f)}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-xs text-ink-tertiary">
-                  {f.filename}
+                  {shareFilename(f)}
                 </div>
               )}
               <div className="absolute inset-0 flex items-end justify-end p-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/50 to-transparent">
@@ -323,7 +324,11 @@ function PickerDialog({
     onAdd({
       variantId: selectedVariant.id,
       fileId: file.id,
-      fileName: file.filename,
+      // Nicht file.filename direkt: null, wenn die Galerie dem Kunden
+      // keine Dateinamen zeigt. shareFilename() liefert dann einen
+      // neutralen Namen aus der Position ("image-012.jpg"), damit die
+      // Warenkorb-Zeile und die Bestellung identifizierbar bleiben.
+      fileName: shareFilename(file),
       fileThumbUrl: file.thumbUrl,
       product: selectedProduct,
       variant: selectedVariant,
@@ -359,7 +364,7 @@ function PickerDialog({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={file.previewUrl ?? file.thumbUrl}
-                  alt={file.filename}
+                  alt={shareFilename(file)}
                   className="max-w-full max-h-[360px] object-contain"
                 />
               )

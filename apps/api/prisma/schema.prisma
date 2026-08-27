@@ -385,6 +385,9 @@ model GalleryTemplate {
   watermarkEnabled  Boolean  @default(false)
   commentsEnabled   Boolean  @default(true)
   ratingsEnabled    Boolean  @default(true)
+  // Vorgabe für neue Galerien aus diesem Template — siehe Gallery.
+  customerLabelMode String   @default("hidden") // hidden | filename | index
+  customerLabelToggleEnabled Boolean @default(true)
   
   // Standard-Ablaufzeit in Tagen ab Erstellung — null = unbegrenzt
   defaultExpiryDays Int?
@@ -447,6 +450,23 @@ model Gallery {
   // damit Tag-Vorschlaege/-Korrekturen nicht versehentlich Kunden-
   // sichtbar werden. Studio aktiviert pro Galerie wenn gewuenscht.
   customerTagFilterEnabled Boolean @default(false)
+  // Welche Bild-Bezeichnung sieht der Kunde unter/über dem Bild?
+  //   "hidden"   = keine (Default — entspricht dem Verhalten vor v0.74)
+  //   "filename" = der echte Dateiname (IMG_4821.jpg)
+  //   "index"    = neutrale Nummer ("Bild 12 von 84"), stabil an der
+  //                Galerie-Reihenfolge, unabhängig von Filter/Sortierung
+  // Absicht: Dateinamen verraten über die Nummernfolge, wie viel
+  // aussortiert wurde, und enthalten teils interne Shoot-Codes. "index"
+  // gibt dem Kunden trotzdem etwas Zitierbares für Rückfragen.
+  // Bei "hidden" liefert die Customer-API den Dateinamen gar nicht mit
+  // (privacy by default, analog customerTagFilterEnabled) — deshalb
+  // entfällt dort auch die "nach Name sortieren"-Option.
+  customerLabelMode String @default("hidden") // hidden | filename | index
+  // Darf der Kunde die Bezeichnung selbst ein-/ausblenden? Er wechselt
+  // dabei NUR zwischen customerLabelMode und "aus" — nie den Modus
+  // selbst, sonst könnte er die vom Studio versteckten Dateinamen
+  // hervorholen. Ohne Wirkung wenn customerLabelMode = "hidden".
+  customerLabelToggleEnabled Boolean @default(true)
   selectionLimit  Int?     // max Anzahl Auswahl für Kunde
   emailRequired   Boolean  @default(false) // Kunde muss E-Mail eingeben
   // Zugriffsmodus:

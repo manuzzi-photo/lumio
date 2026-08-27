@@ -33,6 +33,7 @@ import {
   verifyVisitorToken,
   visitorCookieName,
 } from "../services/visitor.js";
+import { shouldExposeFilename } from "../services/customerLabel.js";
 
 // ---------------------------------------------------------------------------
 // Customer-Download: Variant-Auflösung (geteilt)
@@ -156,6 +157,9 @@ const createGallerySchema = z.object({
   commentsEnabled: z.boolean().optional(),
   ratingsEnabled: z.boolean().optional(),
   customerTagFilterEnabled: z.boolean().optional(),
+  // Bild-Bezeichnung in der Kundengalerie. Siehe Gallery-Model.
+  customerLabelMode: z.enum(["hidden", "filename", "index"]).optional(),
+  customerLabelToggleEnabled: z.boolean().optional(),
   publicAccess: z.boolean().optional(),
   selectionLimit: z.number().int().positive().optional(),
   expiresAt: z.string().datetime().optional(),
@@ -572,6 +576,12 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         body.commentsEnabled ?? template?.commentsEnabled ?? true,
       ratingsEnabled:
         body.ratingsEnabled ?? template?.ratingsEnabled ?? true,
+      customerLabelMode:
+        body.customerLabelMode ?? template?.customerLabelMode ?? "hidden",
+      customerLabelToggleEnabled:
+        body.customerLabelToggleEnabled ??
+        template?.customerLabelToggleEnabled ??
+        true,
       expiresAt: body.expiresAt
         ? new Date(body.expiresAt)
         : template?.defaultExpiryDays
@@ -611,6 +621,8 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         watermarkEnabled: eff.watermarkEnabled,
         commentsEnabled: eff.commentsEnabled,
         ratingsEnabled: eff.ratingsEnabled,
+        customerLabelMode: eff.customerLabelMode,
+        customerLabelToggleEnabled: eff.customerLabelToggleEnabled,
         selectionLimit: body.selectionLimit ?? null,
         expiresAt: eff.expiresAt,
       },
@@ -906,6 +918,12 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
             : {}),
           ...(body.customerTagFilterEnabled !== undefined
             ? { customerTagFilterEnabled: body.customerTagFilterEnabled }
+            : {}),
+          ...(body.customerLabelMode !== undefined
+            ? { customerLabelMode: body.customerLabelMode }
+            : {}),
+          ...(body.customerLabelToggleEnabled !== undefined
+            ? { customerLabelToggleEnabled: body.customerLabelToggleEnabled }
             : {}),
           ...(body.publicAccess !== undefined
             ? { publicAccess: body.publicAccess }
@@ -1669,6 +1687,8 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         commentsEnabled: true,
         ratingsEnabled: true,
         customerTagFilterEnabled: true,
+        customerLabelMode: true,
+        customerLabelToggleEnabled: true,
         selectionLimit: true,
         passwordHash: true,
         publicAccess: true,
@@ -1883,6 +1903,12 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         commentsEnabled: gallery.commentsEnabled,
         ratingsEnabled: gallery.ratingsEnabled,
         customerTagFilterEnabled: gallery.customerTagFilterEnabled,
+        // Welche Bild-Bezeichnung der Kunde sieht und ob er sie selbst
+        // ausblenden darf. Bei "hidden" liefert /files gar keinen
+        // Dateinamen mit — das Frontend blendet dann auch die
+        // "nach Name sortieren"-Option aus.
+        customerLabelMode: gallery.customerLabelMode,
+        customerLabelToggleEnabled: gallery.customerLabelToggleEnabled,
         selectionLimit: gallery.selectionLimit,
         requiresPassword: !!gallery.passwordHash,
         publicAccess: gallery.publicAccess,
@@ -2112,8 +2138,14 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
           watermarkEnabled: true,
           downloadEnabled: true,
           customerTagFilterEnabled: true,
+          customerLabelMode: true,
         },
       });
+      // Dateiname nur ausliefern, wenn das Studio ihn dem Kunden auch
+      // zeigen will — die Begruendung steht bei shouldExposeFilename().
+      const exposeFilename = shouldExposeFilename(
+        galleryRow?.customerLabelMode
+      );
       // Watermark wird ausgeliefert, wenn watermarkEnabled UND der Kunde
       // sowieso keinen Download bekommt (sonst hätten sie das Original).
       const useWatermark =
@@ -2141,7 +2173,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
       // und eine watermarked-Rendition existiert, ersetzen wir die
       // preview-/web-URLs durch deren signierten Pfad.
       const items = await Promise.all(
-        files.map(async (f) => {
+        files.map(async (f, idx) => {
           const thumb = f.renditions.find(
             (r) => r.kind === "thumb" && r.page === 0
           );
@@ -2210,7 +2242,12 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
               : undefined;
           return {
             id: f.id,
-            filename: f.originalFilename,
+            filename: exposeFilename ? f.originalFilename : null,
+            // 1-basierte Position in der GALERIE-Reihenfolge (sortIndex),
+            // nicht in der gerade angezeigten Liste. Bleibt damit stabil,
+            // wenn der Kunde filtert oder umsortiert — eine Nummer, die
+            // beim Zurueckfragen wandert, waere schlimmer als keine.
+            labelIndex: idx + 1,
             mimeType: f.mimeType,
             sizeBytes: Number(f.sizeBytes),
             kind: f.kind,
