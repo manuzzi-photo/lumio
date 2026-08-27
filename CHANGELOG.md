@@ -29,6 +29,24 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.74.0] - 2026-08-27
+
+A pull is enough — no changes to `.env` or the compose command. The database migrates automatically on start. Only the main server is affected; worker nodes are unchanged.
+
+### Added
+
+- Image labels can now be shown under each photo, in the studio and in the client gallery, and they can be turned off.
+  - **In the studio** it is a per-device preference: a "Filenames" button in the gallery toolbar toggles the filename overlay in the grid, the lightbox and the proofing view. Nobody has to be given permission for this — internally the filename is a working tool, so each team member decides for their own view. The setting has no effect whatsoever on what clients see.
+  - **In the client gallery** it is a per-gallery setting, because the filename carries information there. Three options: none (the previous behaviour), the real filename, or a neutral number ("Image 12 of 84"). The number is meant for the case where clients need to refer to a specific photo — a filename would reveal through its numbering how many shots were culled, and some studios carry internal shoot codes or client names in their filenames.
+  - A second switch decides whether clients may show and hide the label themselves. They can only turn the label on and off, never change its type — what is displayed stays the studio's decision.
+  - Both settings can be preset in a gallery template.
+- The neutral number stays fixed to the gallery order. Filtering or re-sorting in the client gallery does not renumber the photos, so a number a client mentions still points at the same photo later.
+
+### Changed
+
+- When a gallery does not show filenames to clients, the filenames are no longer sent to the browser at all, rather than merely being hidden in the display. Otherwise they would still be readable in the browser's network inspector, which defeats the point of hiding them.
+- As a consequence, the "Sort by name" option no longer appears in client galleries that do not show filenames — there is nothing to sort by. Existing galleries default to not showing filenames, so this option disappears from them. Set the label to "Filename" for a gallery to get it back.
+
 ## [0.73.5] - 2026-08-23
 
 A pull is enough — no changes to `.env`, the compose command or the database. The worker is affected, so all worker nodes need the update too, after the main server.
