@@ -169,8 +169,12 @@ export function GalleryView({
   // der Kunde (wenn erlaubt) selbst. Startwert = an, weil das Studio den
   // Modus bewusst gesetzt hat; die Kundenwahl ueberschreibt das dann.
   const labelMode: CustomerLabelMode = meta.customerLabelMode ?? "hidden";
+  // files.length > 0: in einer leeren Galerie gibt es nichts zu
+  // bezeichnen, da waere der Umschalter ein Klick ins Nichts.
   const labelToggleAllowed =
-    labelMode !== "hidden" && meta.customerLabelToggleEnabled !== false;
+    labelMode !== "hidden" &&
+    meta.customerLabelToggleEnabled !== false &&
+    files.length > 0;
   const [labelVisible, setLabelVisible] = useState(true);
   // Pro Galerie im localStorage, nicht in der DB: eine reine
   // Ansichtsvorliebe, und Galerien laufen oft ueber einen Link ohne
@@ -450,35 +454,6 @@ export function GalleryView({
                 <option value="taken">{t("gallery.sortTaken")}</option>
               </select>
             )}
-            {/* Bezeichnung ein-/ausblenden. Nur wenn das Studio ueberhaupt
-                eine Bezeichnung zeigt UND das Umschalten erlaubt hat. Der
-                Kunde wechselt dabei nie den Modus — er sieht entweder das
-                vom Studio gewaehlte Label oder keins. */}
-            {labelToggleAllowed && (
-              <button
-                type="button"
-                onClick={toggleLabels}
-                aria-pressed={labelVisible}
-                style={{
-                  borderColor: "var(--brand-border)",
-                  color: "var(--brand-fg)",
-                  backgroundColor: labelVisible
-                    ? "var(--brand-surface)"
-                    : "transparent",
-                  opacity: labelVisible ? 1 : 0.6,
-                }}
-                className="text-ui-sm h-8 rounded border px-2.5 cursor-pointer transition-colors duration-motion"
-                title={
-                  labelVisible
-                    ? t("gallery.labelsHide")
-                    : t("gallery.labelsShow")
-                }
-              >
-                {labelVisible
-                  ? t("gallery.labelsHide")
-                  : t("gallery.labelsShow")}
-              </button>
-            )}
             {interactive && stats.total > 0 ? (
               <>
                 <FilterChip
@@ -652,6 +627,37 @@ export function GalleryView({
                   </>
                 )}
               </DownloadMenu>
+            )}
+            {/* Bezeichnung ein-/ausblenden. Nur wenn das Studio ueberhaupt
+                eine Bezeichnung zeigt UND das Umschalten erlaubt hat.
+                Bewusst ein Icon und nicht der ausgeschriebene Text: als
+                Textbutton stand er in einer Praesentations-Galerie (keine
+                Sortierung, keine Filter-Chips) als einziges Element links
+                und las sich wie die Hauptaktion der Seite — und belegte
+                auf dem Handy eine eigene Zeile. Hier rechts sitzt er bei
+                den anderen kleinen Utility-Controls. */}
+            {labelToggleAllowed && (
+              <button
+                type="button"
+                onClick={toggleLabels}
+                aria-pressed={labelVisible}
+                aria-label={
+                  labelVisible
+                    ? t("gallery.labelsHide")
+                    : t("gallery.labelsShow")
+                }
+                title={
+                  labelVisible
+                    ? t("gallery.labelsHide")
+                    : t("gallery.labelsShow")
+                }
+                style={{ color: "var(--brand-fg)" }}
+                className={`h-8 w-8 rounded inline-flex items-center justify-center cursor-pointer transition-opacity duration-motion hover:opacity-100 ${
+                  labelVisible ? "opacity-80" : "opacity-45"
+                }`}
+              >
+                {labelVisible ? <LabelOnIcon /> : <LabelOffIcon />}
+              </button>
             )}
             {/* Teilen-Button steht ganz rechts in der Toolbar — Kunden
                 können die Galerie per Web-Share-API teilen (mobil
@@ -893,6 +899,45 @@ export function GalleryView({
         </div>
       )}
     </LabelContext.Provider>
+  );
+}
+
+/** Auge — Bezeichnung ist sichtbar. */
+function LabelOnIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M1.8 12S5.4 5.3 12 5.3 22.2 12 22.2 12 18.6 18.7 12 18.7 1.8 12 1.8 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+/** Durchgestrichenes Auge — Bezeichnung ist ausgeblendet. */
+function LabelOffIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9.9 5.6A9.8 9.8 0 0 1 12 5.3c6.6 0 10.2 6.7 10.2 6.7a18.9 18.9 0 0 1-2.4 3.4M6.2 7.4A18.6 18.6 0 0 0 1.8 12S5.4 18.7 12 18.7a9.7 9.7 0 0 0 4-.8" />
+      <path d="M10 10a3 3 0 0 0 4 4" />
+      <path d="M3 3l18 18" />
+    </svg>
   );
 }
 
