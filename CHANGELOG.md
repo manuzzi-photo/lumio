@@ -29,6 +29,15 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.74.1] - 2026-08-27
+
+A pull is enough. Only the main server is affected.
+
+### Changed
+
+- The "show/hide label" control in the client gallery is now a small eye icon next to the share button, instead of a wide text button on the left of the toolbar. In a presentation gallery there is no sorting dropdown and no filter chips, so the text button ended up standing alone on the left and reading like the page's main action — and on a phone it took up a whole row of its own.
+- The control no longer appears in a gallery that has no files yet, where there was nothing to label.
+
 ## [0.74.0] - 2026-08-27
 
 A pull is enough — no changes to `.env` or the compose command. The database migrates automatically on start. Only the main server is affected; worker nodes are unchanged.
