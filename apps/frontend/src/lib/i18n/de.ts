@@ -67,6 +67,7 @@ export const de: LocaleDict = {
     captchaFailed:
       "CAPTCHA-Prüfung fehlgeschlagen. Bitte lade die Seite neu und versuche es erneut.",
     customerMismatch: "Session gehört nicht zu diesem Tenant.",
+    deleteNotAllowed: "Du hast keine Berechtigung, diese Galerie zu löschen.",
     emailTaken: "Diese E-Mail-Adresse ist im Studio bereits vergeben.",
     galleryHasPrintOrders:
       "Diese Galerie hat Druckbestellungen und kann nicht gelöscht werden.",
