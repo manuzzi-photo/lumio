@@ -714,7 +714,7 @@ export const fi = {
     deletePermanently: "Poista pysyvästi",
     deleteConfirmTitle: "Poista galleria pysyvästi",
     deleteConfirmMessage:
-      "Tämä poistaa pysyvästi galleria ”{title}” ja kaiken sen sisällön — tiedostot, jakolinkit, kommentit ja arvostelut. Toimintoa ei voi perua.\n\nVahvista kirjoittamalla gallerian nimi.",
+      "Tämä poistaa pysyvästi gallerian ”{title}” ja kaiken sen sisällön — tiedostot, jakolinkit, kommentit ja arvostelut. Toimintoa ei voi perua.\n\nVahvista kirjoittamalla gallerian nimi.",
     deleteTitleMismatch:
       "Kirjoittamasi teksti ei vastaa gallerian nimeä. Mitään ei poistettu.",
     deleteActive: "Poista aktiiviset",
