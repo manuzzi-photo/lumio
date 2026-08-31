@@ -29,11 +29,11 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
-A pull + regular redeploy is enough for the server/worker (the new
-`originalMd5` column is picked up by the existing `prisma migrate deploy`
-step). **Anyone using the Lightroom plug-in has to reinstall it:** the
-plug-in-side changes live only in the folder loaded into Lightroom, which
-is not updated along with the server. Re-add
+A pull + regular redeploy is enough for the server/worker -- no schema
+migration involved, the new hash reuses the existing (previously unused)
+`exif` JSON field. **Anyone using the Lightroom plug-in has to reinstall
+it:** the plug-in-side changes live only in the folder loaded into
+Lightroom, which is not updated along with the server. Re-add
 `apps/lightroom-plugin/lumio.lrdevplugin` in Lightroom, and check that a
 `icon.png` now shows for the Lumio publish service where it used to be
 blank/broken.
@@ -41,6 +41,10 @@ blank/broken.
 ### Added
 
 - Lightroom plug-in: the Publish-Service now embeds the MD5 hash of the original master file into a custom XMP field of the uploaded JPEG, and the Selection-Import side uses it to automatically resolve ambiguous filename matches (e.g. the same shot published as both `.NEF` and `.DNG`) and, with a new opt-in option, to recover files that were renamed in Lightroom after publishing. Only available for files published from this plug-in version onward. · *The Lightroom plug-in's Publish-Service now embeds the original master file's MD5 hash into a custom XMP field of the uploaded JPEG, and Selection-Import uses it to automatically resolve ambiguous filename matches (e.g. the same shot published as both `.NEF` and `.DNG`) and, with a new opt-in option, to recover files renamed in Lightroom after publishing. Only available for files published from this plug-in version onward.*
+
+### Changed
+
+- Lightroom plug-in: "Show in Lumio" (right-click a published collection) now opens the gallery's Studio management view instead of the public customer-facing gallery link. · *"Show in Lumio" (right-click a published collection) now opens the gallery's Studio management view instead of the public customer-facing gallery link.*
 
 ### Fixed
 

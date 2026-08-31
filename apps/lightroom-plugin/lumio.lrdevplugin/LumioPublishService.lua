@@ -463,7 +463,7 @@ local function uploadOnePhoto(rendition, filepath, galleryId)
     -- and would have been uploaded again on every publish = duplicates.
     -- The URL call is optional in the SDK and the upload response carries no
     -- viewable address (only a presigned PUT), so it is removed.
-    -- "Show in Lumio" at gallery level still works (host + /g/<slug>).
+    -- "Show in Lumio" at gallery level still works (host + /studio/<id>).
 end
 
 -- ============================================================================
@@ -477,13 +477,12 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
 
     -- Get the gallery ID from the collection settings. If there is none:
     -- create the gallery now (the user gave a "new gallery" title).
-    local galleryId, gallerySlug, collProps
+    local galleryId, collProps
     if exportContext.publishedCollection then
         local collInfo = exportContext.publishedCollection:getCollectionInfoSummary()
         if collInfo and collInfo.collectionSettings then
             collProps = collInfo.collectionSettings
             galleryId = collProps.galleryId
-            gallerySlug = collProps.gallerySlug
         end
     end
 
@@ -506,7 +505,6 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
             return
         end
         galleryId = created.id
-        gallerySlug = created.slug
         -- Persist into the collection settings -- LR saves this on the
         -- next dialog open. Direct write access to the published
         -- collection's settings goes through catalog:withWriteAccessDo.
@@ -514,7 +512,6 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
         catalog:withWriteAccessDo("Lumio: assign gallery", function()
             local current = exportContext.publishedCollection:getCollectionInfoSummary().collectionSettings or {}
             current.galleryId = galleryId
-            current.gallerySlug = gallerySlug
             exportContext.publishedCollection:setCollectionSettings(current)
         end)
     end
@@ -664,41 +661,33 @@ end
 -- ============================================================================
 -- goToPublishedCollection
 -- ============================================================================
--- Called from the "Show in Lumio" menu entry. Opens the gallery in the
--- browser.
+-- Called from the "Show in Lumio" menu entry. Opens the gallery's STUDIO
+-- management page (photographer-facing: branding, status, files) -- NOT
+-- the public customer-facing gallery (/g/<slug>). A photographer clicking
+-- this from inside Lightroom wants to manage the gallery, not see what
+-- the customer sees; if they need the public link, "In Lumio anzeigen" /
+-- copy-link from the Studio itself already covers that.
+-- The Studio route is keyed by galleryId, not slug, so this no longer
+-- needs the slug-from-cache lookup the public-link version required.
 function exportServiceProvider.goToPublishedCollection(publishSettings, info)
     local LrHttp = import "LrHttp"
     local collInfo = info.publishedCollection and info.publishedCollection:getCollectionInfoSummary()
     if not collInfo then return end
     local collSettings = collInfo.collectionSettings or {}
-    local slug = collSettings.gallerySlug
+    local galleryId = collSettings.galleryId
     -- Was `publishSettings.host`, which does not exist -- the host is set in
     -- the plug-in's own settings (PluginManager), not in the publish service
     -- settings. That is why "Show in Lumio" could never have worked.
     local host = (LrPrefs.prefsForPlugin().host or ""):gsub("/+$", "")
 
-    -- The slug is missing if the gallery was picked from the dropdown (it was
-    -- only stored when creating a new one). Look it up in the cache by galleryId.
-    if (not slug or slug == "") and collSettings.galleryId then
-        local prefs = LrPrefs.prefsForPlugin()
-        if type(prefs.galleryCacheJson) == "string" and prefs.galleryCacheJson ~= "" then
-            local okDecode, cached = pcall(json.decode, prefs.galleryCacheJson)
-            if okDecode and type(cached) == "table" then
-                for _, g in ipairs(cached) do
-                    if g.id == collSettings.galleryId then slug = g.slug break end
-                end
-            end
-        end
-    end
-
-    if not slug or slug == "" or host == "" then
+    if not galleryId or galleryId == "" or host == "" then
         LrDialogs.message("Lumio",
-            "Gallery slug or host is missing. Publish the collection once, " ..
+            "Gallery ID or host is missing. Publish the collection once, " ..
             "or set the server address in Plug-in Manager.", "warning")
         return
     end
-    -- Public gallery URL
-    LrHttp.openUrlInBrowser(host:gsub("/+$", "") .. "/g/" .. slug)
+    -- Studio gallery management URL
+    LrHttp.openUrlInBrowser(host .. "/studio/" .. galleryId)
 end
 
 return exportServiceProvider
