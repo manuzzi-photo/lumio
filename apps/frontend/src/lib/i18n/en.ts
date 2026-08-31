@@ -68,6 +68,7 @@ export const en = {
     captchaFailed:
       "CAPTCHA check failed. Please reload the page and try again.",
     customerMismatch: "This session does not belong to this tenant.",
+    deleteNotAllowed: "You don't have permission to delete this gallery.",
     emailTaken: "That email address is already in use in this studio.",
     galleryHasPrintOrders:
       "This gallery has print orders and cannot be deleted.",

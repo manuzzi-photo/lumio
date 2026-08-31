@@ -68,6 +68,7 @@ export const fi = {
     captchaFailed:
       "CAPTCHA-tarkistus epäonnistui. Lataa sivu uudelleen ja yritä uudestaan.",
     customerMismatch: "Tämä istunto ei kuulu tälle studiolle.",
+    deleteNotAllowed: "Sinulla ei ole oikeutta poistaa tätä galleriaa.",
     emailTaken: "Tämä sähköpostiosoite on jo käytössä tässä studiossa.",
     galleryHasPrintOrders:
       "Tällä gallerialla on tulostustilauksia, eikä sitä voi poistaa.",

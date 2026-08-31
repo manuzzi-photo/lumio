@@ -65,6 +65,7 @@ export const it: LocaleDict = {
     captchaFailed:
       "Verifica CAPTCHA non riuscita. Ricarica la pagina e riprova.",
     customerMismatch: "Questa sessione non appartiene a questo tenant.",
+    deleteNotAllowed: "Non hai il permesso di eliminare questa galleria.",
     emailTaken: "Questo indirizzo email è già in uso in questo studio.",
     galleryHasPrintOrders:
       "Questa galleria ha ordini di stampa e non può essere eliminata.",
