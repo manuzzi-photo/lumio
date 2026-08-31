@@ -40,6 +40,22 @@ import { galleryAccessWhere } from "../lib/gallery-access.js";
 
 const API_VERSION = "1";
 
+// originalMd5 has no dedicated column -- it lives inside the existing
+// `exif` JSONB field, under exif.lumio.originalMd5 (see
+// apps/worker/db.py:mark_file_ready and the `exif` field's comment in
+// schema.prisma). Avoids a schema migration for a value that today only
+// the Lightroom plug-in's Selection-Import ever reads. Defensive about
+// shape: exif is free-form JSON, nothing guarantees the nested keys exist
+// or look like a hash.
+const ORIGINAL_MD5_RE = /^[0-9a-f]{32}$/;
+function extractOriginalMd5(exif: unknown): string | null {
+  if (!exif || typeof exif !== "object") return null;
+  const lumio = (exif as Record<string, unknown>).lumio;
+  if (!lumio || typeof lumio !== "object") return null;
+  const value = (lumio as Record<string, unknown>).originalMd5;
+  return typeof value === "string" && ORIGINAL_MD5_RE.test(value) ? value : null;
+}
+
 export async function registerPluginRoutes(app: FastifyInstance) {
   app.get("/plugin/version", async (req) => {
     // Auth erforderlich, damit das Plugin den Token-Healthcheck machen kann
@@ -211,6 +227,7 @@ export async function registerPluginRoutes(app: FastifyInstance) {
           id: true,
           originalFilename: true,
           sha256: true,
+          exif: true,
           sizeBytes: true,
           mimeType: true,
           kind: true,
@@ -225,6 +242,7 @@ export async function registerPluginRoutes(app: FastifyInstance) {
           id: f.id,
           filename: f.originalFilename,
           sha256: f.sha256,
+          originalMd5: extractOriginalMd5(f.exif),
           sizeBytes: Number(f.sizeBytes),
           mimeType: f.mimeType,
           kind: f.kind,
@@ -318,6 +336,7 @@ export async function registerPluginRoutes(app: FastifyInstance) {
           originalFilename: true,
           kind: true,
           sizeBytes: true,
+          exif: true,
           selections: {
             select: {
               status: true,
@@ -353,6 +372,12 @@ export async function registerPluginRoutes(app: FastifyInstance) {
           filename: f.originalFilename,
           kind: f.kind,
           sizeBytes: Number(f.sizeBytes),
+          // Only set when this file was published via the Lightroom plug-in
+          // from the version that embeds it (see JpegXmp.lua) -- null for
+          // everything else. The plug-in's Selection-Import uses it to
+          // resolve renamed/ambiguous filename matches; harmless to ignore
+          // for any other consumer of this endpoint.
+          originalMd5: extractOriginalMd5(f.exif),
           picked,
           liked,
           color,

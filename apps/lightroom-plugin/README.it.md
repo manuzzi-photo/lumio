@@ -118,12 +118,19 @@ vengono aggregati lato server:
 
 ## Limitazioni note
 
-- **Matching per nome file (import selezione)**: se hai rinominato
-  i file in Lightroom, non li troviamo. Un matching basato su
-  SHA-256 è pianificato come miglioramento futuro.
-- **Nomi file duplicati**: se il tuo catalogo contiene più foto con
-  lo stesso nome file (es. due fotocamere), vengono aggiornate
-  tutte.
+- **Matching per nome file (import selezione)**: per i file pubblicati
+  con questa versione del plugin, nel JPEG caricato viene incorporato
+  anche un hash MD5 del master originale. Questo risolve automaticamente
+  le corrispondenze ambigue, e con l'opzione "ritrova i file rinominati
+  tramite hash" è possibile ritrovare anche i file rinominati. Per i file
+  pubblicati con versioni precedenti (o caricati da browser/upload-link)
+  questo hash non esiste — per quelli vale ancora: i file rinominati non
+  vengono trovati.
+- **Nomi file duplicati**: se il tuo catalogo contiene più foto con lo
+  stesso nome file (es. due fotocamere), la corrispondenza è considerata
+  ambigua. Senza un hash che la risolva, per questi file non viene
+  scritto nulla — meglio saltarli che aggiornare per errore la foto
+  sbagliata.
 - **Flag Reject**: al momento Lumio conosce solo "pick" e "none",
   non "reject". Per questo, durante l'import nessun flag Reject
   esistente viene sovrascritto.
@@ -141,13 +148,15 @@ vengono aggregati lato server:
 ```
 lumio.lrdevplugin/
 ├── Info.lua                       Manifest (Selection + Publish)
-├── PluginManager.lua              UI im Zusatzmodul-Manager (Host+Token)
-├── ImportSelectionDialog.lua      Galerie- + Optionen-Dialog (Import)
-├── ImportSelectionTask.lua        Eigentliche Import-Logik
+├── PluginManager.lua              UI nel gestore plug-in (Host+Token)
+├── ImportSelectionDialog.lua      Dialogo galleria + opzioni (Import)
+├── ImportSelectionTask.lua        Logica dell'import
 ├── LumioPublishService.lua        Publish-Service-Provider (Upload)
-├── LumioApi.lua                   HTTP-Wrapper mit Bearer-Auth
-├── Json.lua                       JSON-Lib (MIT, rxi/json.lua)
-└── Logger.lua                     LrLogger-Wrapper
+├── LumioApi.lua                   Wrapper HTTP con Bearer-Auth
+├── JpegXmp.lua                    Incorpora l'hash originale come XMP
+├── Json.lua                       Libreria JSON (MIT, rxi/json.lua)
+├── Logger.lua                     Wrapper LrLogger
+└── icon.png / icon@2x.png         Icona del Publish-Service
 ```
 
 ## Log

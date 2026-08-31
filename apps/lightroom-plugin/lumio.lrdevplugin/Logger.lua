@@ -1,11 +1,11 @@
 --[[
     Logger.lua
 
-    Dünner Wrapper um LrLogger. Schreibt nach
-    `~/Documents/LrClassicLogs/Lumio.log` (macOS) bzw.
+    Thin wrapper around LrLogger. Writes to
+    `~/Documents/LrClassicLogs/Lumio.log` (macOS) resp.
     `%USERPROFILE%\Documents\LrClassicLogs\Lumio.log` (Windows).
 
-    Verwendung:
+    Usage:
         local log = require "Logger"
         log:trace("debug")
         log:info("info")

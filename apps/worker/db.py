@@ -55,32 +55,42 @@ def mark_file_ready(
     width: int | None,
     height: int | None,
     sha256: str | None = None,
+    original_md5: str | None = None,
 ) -> None:
-    """Setzt status='ready' + finale Maße. Wenn sha256 mitgegeben wird,
-    wird der Hash in derselben Transaktion geschrieben — vermeidet eine
-    Zwischen-Zeile mit ready=true aber sha256=NULL, die für die Dup-
-    Detection als 'ungehashed' zählen würde."""
+    """Setzt status='ready' + finale Maße. Wenn sha256/original_md5
+    mitgegeben werden, werden sie in derselben Transaktion geschrieben —
+    vermeidet eine Zwischen-Zeile mit ready=true aber Hash=NULL (fuer
+    sha256 wuerde das faelschlich als 'ungehashed' in die Dup-Detection
+    einfliessen).
+
+    original_md5 bekommt KEINE eigene Spalte, sondern landet unter
+    exif->'lumio'->'originalMd5'. Die exif-Spalte existiert bereits
+    (aktuell von nirgendwo beschrieben, nur von auto_tag.py defensiv
+    gelesen) -- kein Schema-Change noetig. JSONB-Merge (||) ergaenzt nur
+    den 'lumio'-Key, ohne andere evtl. vorhandene exif-Keys zu loeschen.
+
+    COALESCE behaelt jeweils den bestehenden Wert wenn das Argument None
+    ist, statt ihn zu ueberschreiben -- die meisten Aufrufer haben keinen
+    original_md5 zu melden (nur ueber das Lightroom-Plugin veroeffentlichte
+    Files haben ueberhaupt einen)."""
+    import json
+    lumio_patch = (
+        json.dumps({"lumio": {"originalMd5": original_md5}})
+        if original_md5 is not None
+        else None
+    )
     with get_conn() as conn:
-        if sha256 is not None:
-            conn.execute(
-                """
-                UPDATE files
-                SET status = 'ready', width = %s, height = %s,
-                    sha256 = %s, "updatedAt" = NOW()
-                WHERE id = %s
-                """,
-                (width, height, sha256, file_id),
-            )
-        else:
-            conn.execute(
-                """
-                UPDATE files
-                SET status = 'ready', width = %s, height = %s,
-                    "updatedAt" = NOW()
-                WHERE id = %s
-                """,
-                (width, height, file_id),
-            )
+        conn.execute(
+            """
+            UPDATE files
+            SET status = 'ready', width = %s, height = %s,
+                sha256 = COALESCE(%s, sha256),
+                exif = COALESCE(exif, '{}'::jsonb) || COALESCE(%s::jsonb, '{}'::jsonb),
+                "updatedAt" = NOW()
+            WHERE id = %s
+            """,
+            (width, height, sha256, lumio_patch, file_id),
+        )
 
 
 def reconcile_original_size(file_id: str, size_bytes: int) -> None:

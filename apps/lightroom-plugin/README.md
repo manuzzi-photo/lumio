@@ -113,11 +113,18 @@ werden die Werte serverseitig zusammengefasst:
 
 ## Bekannte Einschränkungen
 
-- **Filename-Matching (Selection-Import)**: Wenn du Files in Lightroom
-  umbenannt hast, finden wir sie nicht. SHA-256-basiertes Matching ist
-  als zukünftige Verbesserung geplant.
+- **Filename-Matching (Selection-Import)**: Für Files, die mit dieser
+  Plugin-Version veröffentlicht wurden, wird zusätzlich ein MD5-Hash des
+  Original-Masters im hochgeladenen JPEG hinterlegt. Damit werden
+  mehrdeutige Treffer automatisch aufgelöst, und mit der Option
+  „Rinominati per hash" lassen sich auch umbenannte Files wiederfinden.
+  Für älter veröffentlichte Files (oder Uploads über Browser/Upload-Link)
+  gibt es diesen Hash nicht — dort gilt weiterhin: umbenannte Files werden
+  nicht gefunden.
 - **Doppelte Filenames**: Wenn dein Katalog mehrere Photos mit demselben
-  Dateinamen enthält (z.B. zwei Kameras), werden alle aktualisiert.
+  Dateinamen enthält (z.B. zwei Kameras), gilt der Treffer als mehrdeutig.
+  Ohne auflösbaren Hash wird für diese Files nichts geschrieben — lieber
+  überspringen als versehentlich das falsche Photo aktualisieren.
 - **Reject-Flag**: Lumio kennt aktuell nur „pick" und „none", kein
   „reject". Daher wird beim Import kein bestehender Reject-Flag
   überschrieben.
@@ -139,8 +146,10 @@ lumio.lrdevplugin/
 ├── ImportSelectionTask.lua        Eigentliche Import-Logik
 ├── LumioPublishService.lua        Publish-Service-Provider (Upload)
 ├── LumioApi.lua                   HTTP-Wrapper mit Bearer-Auth
+├── JpegXmp.lua                    Bettet Original-Hash als XMP ein
 ├── Json.lua                       JSON-Lib (MIT, rxi/json.lua)
-└── Logger.lua                     LrLogger-Wrapper
+├── Logger.lua                     LrLogger-Wrapper
+└── icon.png / icon@2x.png         Publish-Service-Icon
 ```
 
 ## Logs
