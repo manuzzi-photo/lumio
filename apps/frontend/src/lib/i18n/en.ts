@@ -69,6 +69,9 @@ export const en = {
       "CAPTCHA check failed. Please reload the page and try again.",
     customerMismatch: "This session does not belong to this tenant.",
     emailTaken: "That email address is already in use in this studio.",
+    galleryHasPrintOrders:
+      "This gallery has print orders and cannot be deleted.",
+    galleryNotArchived: "Archive the gallery before deleting it permanently.",
     inUse:
       "There are orders using this variant. Deactivate it instead.",
     invalidChallenge: "Please sign in again.",
@@ -707,6 +710,12 @@ export const en = {
     lbActualSizeTitle: "Actual size (0)",
       reactivate: "Reactivate",
     archive: "Archive",
+    deletePermanently: "Delete permanently",
+    deleteConfirmTitle: "Delete gallery permanently",
+    deleteConfirmMessage:
+      "This permanently deletes “{title}” and everything in it — files, share links, comments and ratings. This cannot be undone.\n\nType the gallery title to confirm.",
+    deleteTitleMismatch:
+      "The text you typed doesn't match the gallery title. Nothing was deleted.",
     deleteActive: "Delete active",
     saveFilterHint:
       "Save a filter under a name. It then appears above the gallery list as a shortcut.",
