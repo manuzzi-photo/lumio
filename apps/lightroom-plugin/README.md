@@ -84,8 +84,9 @@ umbenennen (oder per Rechtsklick → „Paketinhalt zeigen").
 6. **Veröffentlichen** klicken → Lightroom rendert die Bilder als
    JPEG (sRGB), lädt sie zu Lumio hoch. Pro Upload werden im Hintergrund
    Vorschau-, Thumbnail- und ggf. Watermark-Varianten erzeugt.
-7. **In Lumio anzeigen** (Rechtsklick auf Sammlung) öffnet die
-   Galerie im Browser.
+7. **In Lumio anzeigen** (Rechtsklick auf Sammlung) öffnet die Galerie
+   im Studio-Verwaltungsbereich im Browser (nicht die öffentliche
+   Kunden-Ansicht).
 
 ### Re-Publish
 

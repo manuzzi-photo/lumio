@@ -90,7 +90,8 @@ non riesci ad aprirla — rinominala semplicemente da `.lrdevplugin` a
    generate in background le varianti di anteprima, thumbnail ed
    eventualmente watermark.
 7. **Mostra in Lumio** (clic destro sulla raccolta) apre la galleria
-   nel browser.
+   nell'area di gestione dello Studio nel browser (non la vista
+   pubblica lato cliente).
 
 ### Ripubblicare
 
