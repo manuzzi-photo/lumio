@@ -29,6 +29,24 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+A pull + regular redeploy is enough for the server/worker (the new
+`originalMd5` column is picked up by the existing `prisma migrate deploy`
+step). **Anyone using the Lightroom plug-in has to reinstall it:** the
+plug-in-side changes live only in the folder loaded into Lightroom, which
+is not updated along with the server. Re-add
+`apps/lightroom-plugin/lumio.lrdevplugin` in Lightroom, and check that a
+`icon.png` now shows for the Lumio publish service where it used to be
+blank/broken.
+
+### Added
+
+- Lightroom plug-in: the Publish-Service now embeds the MD5 hash of the original master file into a custom XMP field of the uploaded JPEG, and the Selection-Import side uses it to automatically resolve ambiguous filename matches (e.g. the same shot published as both `.NEF` and `.DNG`) and, with a new opt-in option, to recover files that were renamed in Lightroom after publishing. Only available for files published from this plug-in version onward. · *The Lightroom plug-in's Publish-Service now embeds the original master file's MD5 hash into a custom XMP field of the uploaded JPEG, and Selection-Import uses it to automatically resolve ambiguous filename matches (e.g. the same shot published as both `.NEF` and `.DNG`) and, with a new opt-in option, to recover files renamed in Lightroom after publishing. Only available for files published from this plug-in version onward.*
+
+### Fixed
+
+- Lightroom plug-in: the publish service's icon was referenced but never shipped, so it showed up blank/broken in Lightroom's Publishing Services panel. · *The publish service's icon was referenced but never shipped, so it showed up blank/broken in Lightroom's Publishing Services panel.*
+- Lightroom plug-in: re-publishing a photo (after an edit, or via "Republish") uploaded a new file without ever removing the previous one, so the online gallery accumulated several versions of the same photo. The plug-in now deletes the old remote file before uploading the new one. · *Re-publishing a photo (after an edit, or via "Republish") uploaded a new file without ever removing the previous one, so the online gallery accumulated several versions of the same photo. The plug-in now deletes the old remote file before uploading the new one.*
+
 ### Added
 
 - Galleries can now be permanently deleted. A gallery must be archived first, deletion respects studio roles (admins can delete any gallery they can see, owners only their own, members not at all), and any gallery with print orders is protected so order records are never lost.
