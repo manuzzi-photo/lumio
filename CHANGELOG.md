@@ -29,6 +29,10 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Added
+
+- Galleries can now be permanently deleted. A gallery must be archived first, deletion respects studio roles (owners and admins can delete any gallery they can see, members not at all), and any gallery with print orders is protected so order records are never lost.
+
 ## [0.83.0] - 2026-09-21
 
 A pull is enough for the server and the worker — nothing changes on their side. **Anyone using the Lightroom plug-in has to reinstall it:** the plug-in-side changes live only in the folder loaded into Lightroom, which is not updated along with the server. Re-add `apps/lightroom-plugin/lumio.lrdevplugin` in Lightroom (the plug-in then shows version 0.4.2).

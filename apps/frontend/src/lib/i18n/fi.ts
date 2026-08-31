@@ -69,6 +69,9 @@ export const fi = {
       "CAPTCHA-tarkistus epäonnistui. Lataa sivu uudelleen ja yritä uudestaan.",
     customerMismatch: "Tämä istunto ei kuulu tälle studiolle.",
     emailTaken: "Tämä sähköpostiosoite on jo käytössä tässä studiossa.",
+    galleryHasPrintOrders:
+      "Tällä gallerialla on tulostustilauksia, eikä sitä voi poistaa.",
+    galleryNotArchived: "Arkistoi galleria ennen sen pysyvää poistamista.",
     inUse:
       "Tähän varianttiin liittyy tilauksia. Poista se sen sijaan käytöstä.",
     invalidChallenge: "Kirjaudu sisään uudelleen.",
@@ -707,6 +710,12 @@ export const fi = {
     lbActualSizeTitle: "Todellinen koko (0)",
       reactivate: "Aktivoi uudelleen",
     archive: "Arkistoi",
+    deletePermanently: "Poista pysyvästi",
+    deleteConfirmTitle: "Poista galleria pysyvästi",
+    deleteConfirmMessage:
+      "Tämä poistaa pysyvästi galleria ”{title}” ja kaiken sen sisällön — tiedostot, jakolinkit, kommentit ja arvostelut. Toimintoa ei voi perua.\n\nVahvista kirjoittamalla gallerian nimi.",
+    deleteTitleMismatch:
+      "Kirjoittamasi teksti ei vastaa gallerian nimeä. Mitään ei poistettu.",
     deleteActive: "Poista aktiiviset",
     saveFilterHint:
       "Tallenna suodatin nimellä. Se näkyy tämän jälkeen pikavalintana gallerialistan yläpuolella.",
