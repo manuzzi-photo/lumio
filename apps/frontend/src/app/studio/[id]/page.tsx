@@ -1275,12 +1275,25 @@ export default function GalleryDetailPage() {
         )}
 
         {tab === "share" && (
-          <SharePanel
-            galleryId={gallery.id}
-            gallerySlug={gallery.slug}
-            initialPublicAccess={gallery.publicAccess ?? true}
-            initialHasPassword={gallery.hasPassword ?? false}
-          />
+          <>
+        {/* Custom gallery URL (/g/<slug>) — owner-only. Shown before
+            SharePanel since the slug is the base the share links build
+            on top of. */}
+        <GallerySlugEditor
+          galleryId={gallery.id}
+          slug={gallery.slug}
+          isOwner={role === "owner"}
+          onChanged={async () => {
+            await load();
+          }}
+        />
+        <SharePanel
+          galleryId={gallery.id}
+          gallerySlug={gallery.slug}
+          initialPublicAccess={gallery.publicAccess ?? true}
+          initialHasPassword={gallery.hasPassword ?? false}
+        />
+          </>
         )}
 
         {tab === "settings" && (
@@ -1305,16 +1318,6 @@ export default function GalleryDetailPage() {
             }}
           />
         </section>
-
-        {/* Custom gallery URL (/g/<slug>) — owner-only */}
-        <GallerySlugEditor
-          galleryId={gallery.id}
-          slug={gallery.slug}
-          isOwner={role === "owner"}
-          onChanged={async () => {
-            await load();
-          }}
-        />
 
         {/* Header-Customization — Hero, Logo, Welcome-Text */}
         <GalleryHeaderEditor
