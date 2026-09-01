@@ -1,0 +1,95 @@
+"use client";
+
+import { useState } from "react";
+import { api } from "@/lib/api";
+import { useT } from "@/lib/i18n";
+import { useErrorText } from "@/lib/error-i18n";
+
+/**
+ * Owner-only editor for the gallery's public share slug (/g/<slug>).
+ * Hidden entirely for non-owners, same pattern as the tenant subdomain
+ * editor in studio/settings/page.tsx — a disabled field would still leak
+ * the fact that the control exists.
+ */
+export function GallerySlugEditor({
+  galleryId,
+  slug,
+  isOwner,
+  onChanged,
+}: {
+  galleryId: string;
+  slug: string;
+  isOwner: boolean;
+  onChanged: () => Promise<void>;
+}) {
+  const t = useT();
+  const errText = useErrorText();
+  const [value, setValue] = useState(slug);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+
+  if (!isOwner) return null;
+
+  const cleaned = value.trim().toLowerCase();
+  const disabled = saving || !cleaned || cleaned === slug;
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      await api.updateGallery(galleryId, { slug: cleaned });
+      await onChanged();
+    } catch (err) {
+      setError(errText(err, t("studio.gallerySlugSaveError")));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="rounded-md border border-line-subtle bg-surface-raised p-5 space-y-3">
+      <div>
+        <h2 className="text-ui-md font-medium text-ink-primary">
+          {t("studio.gallerySlugHeading")}
+        </h2>
+        <p className="text-ui-sm text-ink-tertiary -mt-1">
+          {t("studio.gallerySlugDesc")}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-ui-sm text-ink-tertiary font-mono whitespace-nowrap">
+          {origin}/g/
+        </span>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value.toLowerCase().replace(/\s/g, ""))}
+          maxLength={60}
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          className="flex-1 h-9 px-2.5 rounded bg-surface-sunken border border-line-subtle hover:border-line-strong focus:border-accent text-ui text-ink-primary focus:outline-none transition-colors duration-motion disabled:opacity-50"
+        />
+      </div>
+      <div className="rounded-sm bg-semantic-warning/10 border border-semantic-warning/30 px-3 py-2 text-xs text-ink-secondary leading-relaxed">
+        {t("studio.gallerySlugWarnPre")}{" "}
+        <span className="font-mono">
+          {origin}/g/{slug}
+        </span>{" "}
+        {t("studio.gallerySlugWarnPost")}
+      </div>
+      {error && <p className="text-ui-sm text-semantic-danger">{error}</p>}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={save}
+          disabled={disabled}
+          className="text-sm px-3 py-1.5 rounded-md border border-line-subtle hover:bg-surface-sunken disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? t("common.saving") : t("common.save")}
+        </button>
+      </div>
+    </section>
+  );
+}
