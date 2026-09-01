@@ -49,14 +49,12 @@ export function GallerySlugEditor({
 
   return (
     <section className="rounded-md border border-line-subtle bg-surface-raised p-5 space-y-3">
-      <div>
-        <h2 className="text-ui-md font-medium text-ink-primary">
-          {t("studio.gallerySlugHeading")}
-        </h2>
-        <p className="text-ui-sm text-ink-tertiary -mt-1">
-          {t("studio.gallerySlugDesc")}
-        </p>
-      </div>
+      <h2 className="text-ui-md font-medium text-ink-primary">
+        {t("studio.gallerySlugHeading")}
+      </h2>
+      <p className="text-ui-sm text-ink-tertiary -mt-1">
+        {t("studio.gallerySlugDesc")}
+      </p>
       <div className="flex items-center gap-2">
         <span className="text-ui-sm text-ink-tertiary font-mono whitespace-nowrap">
           {origin}/g/
