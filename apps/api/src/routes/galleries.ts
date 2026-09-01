@@ -19,7 +19,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { prisma } from "../db.js";
 import { config } from "../config.js";
 import { generateGallerySlug } from "../services/ids.js";
-import { validateGallerySlugFormat } from "../services/slugs.js";
+import { validateGallerySlugFormat, GALLERY_SLUG_MAX_LENGTH } from "../services/slugs.js";
 import { presignGet, presignPut, getObjectStream } from "../services/storage.js";
 import { verifyPassword, hashPassword } from "../services/auth.js";
 import { isTenantPubliclyVisible } from "../services/tenant.js";
@@ -175,11 +175,12 @@ const HEX_RGB_OR_RGBA = /^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
 const updateGallerySchema = createGallerySchema.partial().extend({
   status: z.enum(["draft", "live", "archived"]).optional(),
-  // Custom gallery slug (the /g/<slug> path segment). Accepted loosely
-  // here; format/reserved-word/uniqueness checks happen in the route
+  // Custom gallery slug (the /g/<slug> path segment). Max length matches
+  // GALLERY_SLUG_MAX_LENGTH so the schema fails fast on oversized input;
+  // format/reserved-word/uniqueness checks still happen in the route
   // handler via validateGallerySlugFormat, same pattern as the tenant
   // slug in routes/settings.ts.
-  slug: z.string().max(80).optional(),
+  slug: z.string().max(GALLERY_SLUG_MAX_LENGTH).optional(),
   // Passwortschutz: String = setzen, null = entfernen, weglassen =
   // unverändert. Wird serverseitig gehasht.
   password: z.string().min(1).max(200).nullable().optional(),

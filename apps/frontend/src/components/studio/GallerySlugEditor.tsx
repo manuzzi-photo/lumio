@@ -66,6 +66,7 @@ export function GallerySlugEditor({
           value={value}
           onChange={(e) => setValue(e.target.value.toLowerCase().replace(/\s/g, ""))}
           maxLength={60}
+          aria-label={t("studio.gallerySlugHeading")}
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
