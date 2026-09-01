@@ -71,6 +71,8 @@ export const it: LocaleDict = {
       "Questa galleria ha ordini di stampa e non può essere eliminata.",
     galleryNotArchived:
       "Archivia la galleria prima di eliminarla definitivamente.",
+    gallerySlugOwnerOnly: "Solo il proprietario può modificare l'URL della galleria.",
+    gallerySlugTaken: "Questo URL della galleria è già in uso.",
     inUse:
       "Ci sono ordini che usano questa variante. Disattivala invece di eliminarla.",
     invalidChallenge: "Accedi di nuovo.",
@@ -593,6 +595,12 @@ export const it: LocaleDict = {
     activeUploads: "Caricamenti attivi",
     galleryTags: "Tag della galleria",
     galleryTagsDesc: "Classifica l'intera galleria nella panoramica (da non confondere con i tag sulle singole immagini).",
+    gallerySlugHeading: "URL della galleria",
+    gallerySlugDesc:
+      "Il link pubblico con cui i clienti raggiungono questa galleria (/g/…). I link condivisi si aggiornano automaticamente al salvataggio.",
+    gallerySlugWarnPre: "Dopo la modifica, il link precedente",
+    gallerySlugWarnPost: "non sarà più raggiungibile.",
+    gallerySlugSaveError: "Non è stato possibile modificare l'URL della galleria",
     selected: "Selezionati",
     secSyncTitle: "File con il tag nel capitolo, gli altri fuori",
     secSyncing: "Sincronizzazione…",

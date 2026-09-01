@@ -19,6 +19,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { prisma } from "../db.js";
 import { config } from "../config.js";
 import { generateGallerySlug } from "../services/ids.js";
+import { validateGallerySlugFormat, GALLERY_SLUG_MAX_LENGTH } from "../services/slugs.js";
 import { presignGet, presignPut, getObjectStream } from "../services/storage.js";
 import { verifyPassword, hashPassword } from "../services/auth.js";
 import { isTenantPubliclyVisible } from "../services/tenant.js";
@@ -174,6 +175,12 @@ const HEX_RGB_OR_RGBA = /^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
 const updateGallerySchema = createGallerySchema.partial().extend({
   status: z.enum(["draft", "live", "archived"]).optional(),
+  // Custom gallery slug (the /g/<slug> path segment). Max length matches
+  // GALLERY_SLUG_MAX_LENGTH so the schema fails fast on oversized input;
+  // format/reserved-word/uniqueness checks still happen in the route
+  // handler via validateGallerySlugFormat, same pattern as the tenant
+  // slug in routes/settings.ts.
+  slug: z.string().max(GALLERY_SLUG_MAX_LENGTH).optional(),
   // Passwortschutz: String = setzen, null = entfernen, weglassen =
   // unverändert. Wird serverseitig gehasht.
   password: z.string().min(1).max(200).nullable().optional(),
@@ -876,6 +883,43 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
       });
       if (!existing) return reply.status(404).send({ error: "not_found" });
 
+      // Custom slug: owner-only, because changing it breaks any link
+      // already shared with clients (same tradeoff as the tenant
+      // subdomain change in routes/settings.ts).
+      let newGallerySlug: string | undefined;
+      if (body.slug !== undefined) {
+        if (s.user.role !== "owner") {
+          return reply.status(403).send({
+            error: "gallery_slug_owner_only",
+            message: "Nur der Owner kann die Galerie-URL ändern.",
+          });
+        }
+        const candidate = body.slug.trim().toLowerCase();
+        const fmt = validateGallerySlugFormat(candidate);
+        if (!fmt.ok) {
+          return reply.status(400).send({
+            error: "invalid_gallery_slug",
+            message: fmt.message ?? "Ungültige Galerie-URL.",
+          });
+        }
+        if (candidate !== existing.slug) {
+          // Global uniqueness, no tenantId filter — slugs are shared
+          // across all tenants (see the create-flow comment above on
+          // generateGallerySlug's collision-retry loop).
+          const taken = await prisma.gallery.findFirst({
+            where: { slug: candidate, NOT: { id: existing.id } },
+            select: { id: true },
+          });
+          if (taken) {
+            return reply.status(409).send({
+              error: "gallery_slug_taken",
+              message: "Diese Galerie-URL ist bereits vergeben.",
+            });
+          }
+        }
+        newGallerySlug = candidate;
+      }
+
       const turningOnWatermark =
         body.watermarkEnabled === true && !existing.watermarkEnabled;
       const goingLive = body.status === "live" && existing.status !== "live";
@@ -894,6 +938,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         where: { id: existing.id },
         data: {
           ...(passwordHashUpdate ?? {}),
+          ...(newGallerySlug !== undefined ? { slug: newGallerySlug } : {}),
           ...(body.title !== undefined ? { title: body.title } : {}),
           ...(body.description !== undefined
             ? { description: body.description }
@@ -1037,7 +1082,10 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
           eventType: "gallery.live",
           payload: {
             galleryId: gallery.id,
-            slug: existing.slug,
+            // gallery.slug, not existing.slug: a single PATCH can change
+            // the slug and flip status to live at the same time, and the
+            // webhook should report the slug the gallery now actually has.
+            slug: gallery.slug,
             title: gallery.title,
           },
         });

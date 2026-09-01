@@ -73,6 +73,8 @@ export const de: LocaleDict = {
       "Diese Galerie hat Druckbestellungen und kann nicht gelöscht werden.",
     galleryNotArchived:
       "Die Galerie muss vor dem endgültigen Löschen archiviert werden.",
+    gallerySlugOwnerOnly: "Nur der Owner kann die Galerie-URL ändern.",
+    gallerySlugTaken: "Diese Galerie-URL ist bereits vergeben.",
     inUse:
       "Es gibt Bestellungen mit dieser Variante. Deaktiviere stattdessen.",
     invalidChallenge: "Bitte erneut anmelden.",
@@ -593,6 +595,12 @@ export const de: LocaleDict = {
     activeUploads: "Aktive Uploads",
     galleryTags: "Galerie-Tags",
     galleryTagsDesc: "Ordnen die ganze Galerie in der Übersicht ein (nicht zu verwechseln mit Tags auf einzelnen Bildern).",
+    gallerySlugHeading: "Galerie-URL",
+    gallerySlugDesc:
+      "Der öffentliche Link, unter dem Kunden diese Galerie erreichen (/g/…). Geteilte Links aktualisieren sich automatisch, sobald du hier speicherst.",
+    gallerySlugWarnPre: "Nach dem Ändern ist der bisherige Link",
+    gallerySlugWarnPost: "nicht mehr erreichbar.",
+    gallerySlugSaveError: "Galerie-URL konnte nicht geändert werden",
     selected: "Ausgewählt",
     secSyncTitle: "Files mit dem Tag in die Section, andere raus",
     secSyncing: "Sync…",
