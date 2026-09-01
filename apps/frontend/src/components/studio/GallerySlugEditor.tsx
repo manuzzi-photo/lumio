@@ -57,21 +57,23 @@ export function GallerySlugEditor({
           {t("studio.gallerySlugDesc")}
         </p>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-ink-tertiary font-mono whitespace-nowrap">
-          {origin}/g/
-        </span>
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value.toLowerCase().replace(/\s/g, ""))}
-          maxLength={60}
-          aria-label={t("studio.gallerySlugHeading")}
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          className="flex-1 rounded-md border border-line-subtle px-3 py-2 text-sm disabled:opacity-50"
-        />
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="text-sm text-ink-tertiary font-mono whitespace-nowrap">
+            {origin}/g/
+          </span>
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => setValue(e.target.value.toLowerCase().replace(/\s/g, ""))}
+            maxLength={60}
+            aria-label={t("studio.gallerySlugHeading")}
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            className="flex-1 min-w-0 rounded-md border border-line-subtle px-3 py-2 text-sm disabled:opacity-50"
+          />
+        </div>
         <button
           type="button"
           onClick={save}
