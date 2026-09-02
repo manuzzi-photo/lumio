@@ -74,7 +74,22 @@ function M.embedOriginalMd5(jpegPath, md5Hex)
     end
     local segment = string.char(0xFF, 0xE1) .. u16be(segmentLen) .. payload
 
-    local newData = data:sub(1, 2) .. segment .. data:sub(3)
+    -- If the very first segment after SOI is an APP0/JFIF marker, insert
+    -- AFTER it instead of before. Some strict readers (print lab intake,
+    -- some third-party tools) expect JFIF to stay the first segment in
+    -- the file; every reader tolerates our XMP segment appearing right
+    -- after it just as well. Otherwise (no APP0, or anything else first)
+    -- keep inserting directly after SOI, as before.
+    local insertAt = 3  -- 1-indexed: right after the 2-byte SOI
+    if #data >= 6 and data:byte(3) == 0xFF and data:byte(4) == 0xE0 then
+        local app0Len = data:byte(5) * 256 + data:byte(6)
+        if app0Len < 2 or #data < 4 + app0Len then
+            error("JpegXmp: malformed or truncated APP0 segment")
+        end
+        insertAt = 5 + app0Len
+    end
+
+    local newData = data:sub(1, insertAt - 1) .. segment .. data:sub(insertAt)
 
     local out, werr = io.open(jpegPath, "wb")
     if not out then

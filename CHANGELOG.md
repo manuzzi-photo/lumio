@@ -44,12 +44,15 @@ blank/broken.
 
 ### Changed
 
-- Lightroom plug-in: "Show in Lumio" (right-click a published collection) now opens the gallery's Studio management view instead of the public customer-facing gallery link. · *"Show in Lumio" (right-click a published collection) now opens the gallery's Studio management view instead of the public customer-facing gallery link.*
+- Lightroom plug-in: "Show in Lumio" (right-click a published collection) now opens the gallery's Studio management view instead of the public customer-facing gallery link. A new per-photo "Show public gallery" entry (right-click a published photo) covers the case where you do want the customer's view. · *"Show in Lumio" (right-click a published collection) now opens the gallery's Studio management view instead of the public customer-facing gallery link. A new per-photo "Show public gallery" entry (right-click a published photo) covers the case where you do want the customer's view.*
 
 ### Fixed
 
 - Lightroom plug-in: the publish service's icon was referenced but never shipped, so it showed up blank/broken in Lightroom's Publishing Services panel. · *The publish service's icon was referenced but never shipped, so it showed up blank/broken in Lightroom's Publishing Services panel.*
 - Lightroom plug-in: re-publishing a photo (after an edit, or via "Republish") uploaded a new file without ever removing the previous one, so the online gallery accumulated several versions of the same photo. The plug-in now deletes the old remote file before uploading the new one. · *Re-publishing a photo (after an edit, or via "Republish") uploaded a new file without ever removing the previous one, so the online gallery accumulated several versions of the same photo. The plug-in now deletes the old remote file before uploading the new one.*
+- Lightroom plug-in: the embedded original-file hash could land before a leading JFIF (APP0) segment in the uploaded JPEG, which some strict readers (print lab intake, some third-party tools) don't tolerate. It's now inserted after APP0 when one is present. · *The embedded original-file hash could land before a leading JFIF (APP0) segment in the uploaded JPEG, which some strict readers (print lab intake, some third-party tools) don't tolerate. It's now inserted after APP0 when one is present.*
+- Lightroom plug-in: the renamed-file recovery pass could silently skip files when several Lumio uploads shared the same original-file hash (e.g. virtual copies of one master) — only one of them was ever attempted. All of them are now resolved. · *The renamed-file recovery pass could silently skip files when several Lumio uploads shared the same original-file hash (e.g. virtual copies of one master) — only one of them was ever attempted. All of them are now resolved.*
+- Worker: processing a file with no original-file hash to report (i.e. almost every file, since only the Lightroom plug-in ever produces one) was quietly turning `exif` from `NULL` into `{}`. The `exif` column is now left untouched when there's nothing to write into it. · *Processing a file with no original-file hash to report (i.e. almost every file, since only the Lightroom plug-in ever produces one) was quietly turning `exif` from `NULL` into `{}`. The `exif` column is now left untouched when there's nothing to write into it.*
 
 ## [0.74.1] - 2026-08-27
 

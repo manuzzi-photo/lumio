@@ -273,9 +273,20 @@ function M.run(opts)
             local resolvedByHashCount = 0
             local missing = {}
             if not canceled and opts.matchByHash then
-                local targets = {}  -- md5 -> file
+                -- md5 -> array of files sharing that hash. A single hash can
+                -- legitimately map to SEVERAL Lumio files: virtual copies of
+                -- the same master all hash identically at publish time (see
+                -- computeOriginalMd5 in LumioPublishService.lua), so a
+                -- catalog with virtual copies can easily produce more than
+                -- one uploaded file per original hash. A plain "md5 -> file"
+                -- map would keep only the last one and silently never even
+                -- attempt the others.
+                local targets = {}
                 for _, file in ipairs(missingCandidates) do
-                    if file.originalMd5 then targets[file.originalMd5] = file end
+                    if file.originalMd5 then
+                        targets[file.originalMd5] = targets[file.originalMd5] or {}
+                        table.insert(targets[file.originalMd5], file)
+                    end
                 end
                 if next(targets) then
                     progress:setCaption("Recomputing hashes to find renamed files…")
@@ -286,10 +297,16 @@ function M.run(opts)
                         if okPath and path then
                             local okHash, hash = LrTasks.pcall(fileMd5, path)
                             if okHash and hash and targets[hash] then
-                                local file = targets[hash]
-                                resolved[file] = { photo }
+                                -- Every file sharing this hash resolves to the
+                                -- SAME candidate photo here -- we cannot tell
+                                -- which upload came from which virtual copy,
+                                -- but resolving all of them beats silently
+                                -- dropping every file after the first one.
+                                for _, file in ipairs(targets[hash]) do
+                                    resolved[file] = { photo }
+                                    resolvedByHashCount = resolvedByHashCount + 1
+                                end
                                 targets[hash] = nil  -- consumed, keep scanning for the rest
-                                resolvedByHashCount = resolvedByHashCount + 1
                             end
                         end
                     end

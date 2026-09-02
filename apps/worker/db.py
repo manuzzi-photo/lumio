@@ -66,31 +66,52 @@ def mark_file_ready(
     original_md5 bekommt KEINE eigene Spalte, sondern landet unter
     exif->'lumio'->'originalMd5'. Die exif-Spalte existiert bereits
     (aktuell von nirgendwo beschrieben, nur von auto_tag.py defensiv
-    gelesen) -- kein Schema-Change noetig. JSONB-Merge (||) ergaenzt nur
-    den 'lumio'-Key, ohne andere evtl. vorhandene exif-Keys zu loeschen.
+    gelesen) -- kein Schema-Change noetig.
 
-    COALESCE behaelt jeweils den bestehenden Wert wenn das Argument None
-    ist, statt ihn zu ueberschreiben -- die meisten Aufrufer haben keinen
-    original_md5 zu melden (nur ueber das Lightroom-Plugin veroeffentlichte
-    Files haben ueberhaupt einen)."""
-    import json
-    lumio_patch = (
-        json.dumps({"lumio": {"originalMd5": original_md5}})
-        if original_md5 is not None
-        else None
-    )
+    Die exif-Klausel laeuft NUR wenn original_md5 tatsaechlich gesetzt
+    ist. Bei jedem anderen File (die grosse Mehrheit -- alles ausser
+    ueber das Lightroom-Plugin veroeffentlichte Files) bleibt exif
+    komplett unangetastet, insbesondere bleibt ein bestehendes NULL NULL
+    statt bei jedem Aufruf auf {} zu wechseln.
+
+    jsonb_set setzt gezielt nur den 'lumio'-Key innerhalb von exif (Pfad
+    {lumio}), der neue Wert dafuer wird vorher separat aus dem
+    BESTEHENDEN 'lumio'-Objekt gemergt (COALESCE(exif->'lumio', '{}') ||
+    jsonb_build_object(...)) -- ein kuenftiges zweites Feld unter 'lumio'
+    (z.B. exif.lumio.irgendwas) uebersteht einen originalMd5-Write also
+    unversehrt, und umgekehrt. Der Umweg ueber den einstufigen Pfad
+    {lumio} statt direkt {lumio,originalMd5} ist noetig, weil jsonb_set
+    keine mehrstufig FEHLENDEN Zwischenebenen anlegen kann -- ein
+    zweistufiger Pfad auf leerem exif waere ein stiller No-Op."""
     with get_conn() as conn:
-        conn.execute(
-            """
-            UPDATE files
-            SET status = 'ready', width = %s, height = %s,
-                sha256 = COALESCE(%s, sha256),
-                exif = COALESCE(exif, '{}'::jsonb) || COALESCE(%s::jsonb, '{}'::jsonb),
-                "updatedAt" = NOW()
-            WHERE id = %s
-            """,
-            (width, height, sha256, lumio_patch, file_id),
-        )
+        if original_md5 is not None:
+            conn.execute(
+                """
+                UPDATE files
+                SET status = 'ready', width = %s, height = %s,
+                    sha256 = COALESCE(%s, sha256),
+                    exif = jsonb_set(
+                        COALESCE(exif, '{}'::jsonb),
+                        '{lumio}',
+                        COALESCE(exif->'lumio', '{}'::jsonb) || jsonb_build_object('originalMd5', %s::text),
+                        true
+                    ),
+                    "updatedAt" = NOW()
+                WHERE id = %s
+                """,
+                (width, height, sha256, original_md5, file_id),
+            )
+        else:
+            conn.execute(
+                """
+                UPDATE files
+                SET status = 'ready', width = %s, height = %s,
+                    sha256 = COALESCE(%s, sha256),
+                    "updatedAt" = NOW()
+                WHERE id = %s
+                """,
+                (width, height, sha256, file_id),
+            )
 
 
 def reconcile_original_size(file_id: str, size_bytes: int) -> None:

@@ -26,6 +26,12 @@
       - processRenderedPhotos                 : per publish batch
       - deletePhotosFromPublishedCollection   : photos removed from LR coll.
 
+    "Go to" menu entries:
+      - goToPublishedCollection                : right-click a collection ->
+                                                  Studio management view
+      - goToPublishedPhoto                     : right-click a photo ->
+                                                  public customer-facing gallery
+
     Metadata-triggered:
       - metadataThatTriggersRepublish         : what has to change for LR
                                                  to show the 'Republish' button
@@ -82,7 +88,7 @@ exportServiceProvider.titleForPublishedCollection_standalone = "Lumio Gallery"
 exportServiceProvider.titleForPublishedSmartCollection      = "Lumio Smart Gallery"
 exportServiceProvider.titleForPublishedSmartCollection_standalone = "Lumio Smart Gallery"
 exportServiceProvider.titleForGoToPublishedCollection       = "Show in Lumio"
-exportServiceProvider.titleForGoToPublishedPhoto            = "Show in Lumio"
+exportServiceProvider.titleForGoToPublishedPhoto            = "Show public gallery"
 exportServiceProvider.small_icon = "icon.png"
 exportServiceProvider.supportsCustomSortOrder = false
 exportServiceProvider.disableRenamePublishedCollection      = false
@@ -477,12 +483,15 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
 
     -- Get the gallery ID from the collection settings. If there is none:
     -- create the gallery now (the user gave a "new gallery" title).
-    local galleryId, collProps
+    -- gallerySlug is only used by goToPublishedPhoto (public gallery link,
+    -- see below) -- goToPublishedCollection itself now uses galleryId.
+    local galleryId, gallerySlug, collProps
     if exportContext.publishedCollection then
         local collInfo = exportContext.publishedCollection:getCollectionInfoSummary()
         if collInfo and collInfo.collectionSettings then
             collProps = collInfo.collectionSettings
             galleryId = collProps.galleryId
+            gallerySlug = collProps.gallerySlug
         end
     end
 
@@ -505,6 +514,7 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
             return
         end
         galleryId = created.id
+        gallerySlug = created.slug
         -- Persist into the collection settings -- LR saves this on the
         -- next dialog open. Direct write access to the published
         -- collection's settings goes through catalog:withWriteAccessDo.
@@ -512,6 +522,7 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
         catalog:withWriteAccessDo("Lumio: assign gallery", function()
             local current = exportContext.publishedCollection:getCollectionInfoSummary().collectionSettings or {}
             current.galleryId = galleryId
+            current.gallerySlug = gallerySlug
             exportContext.publishedCollection:setCollectionSettings(current)
         end)
     end
@@ -658,17 +669,40 @@ function exportServiceProvider.deletePhotosFromPublishedCollection(
     end
 end
 
+-- Looks up a gallery's public slug: prefer the value already stored on the
+-- collection (only set when the gallery was CREATED from this plug-in),
+-- falling back to the background-refreshed gallery list cache built in
+-- viewForCollectionSettings (needed when the gallery was picked from the
+-- "existing gallery" dropdown instead, where the slug is never stored
+-- locally). Returns nil if it cannot be determined.
+local function resolveGallerySlug(collSettings)
+    local slug = collSettings.gallerySlug
+    if slug and slug ~= "" then return slug end
+    if not collSettings.galleryId or collSettings.galleryId == "" then return nil end
+
+    local prefs = LrPrefs.prefsForPlugin()
+    if type(prefs.galleryCacheJson) ~= "string" or prefs.galleryCacheJson == "" then
+        return nil
+    end
+    local okDecode, cached = pcall(json.decode, prefs.galleryCacheJson)
+    if not (okDecode and type(cached) == "table") then return nil end
+    for _, g in ipairs(cached) do
+        if g.id == collSettings.galleryId then return g.slug end
+    end
+    return nil
+end
+
 -- ============================================================================
 -- goToPublishedCollection
 -- ============================================================================
--- Called from the "Show in Lumio" menu entry. Opens the gallery's STUDIO
--- management page (photographer-facing: branding, status, files) -- NOT
--- the public customer-facing gallery (/g/<slug>). A photographer clicking
--- this from inside Lightroom wants to manage the gallery, not see what
--- the customer sees; if they need the public link, "In Lumio anzeigen" /
--- copy-link from the Studio itself already covers that.
--- The Studio route is keyed by galleryId, not slug, so this no longer
--- needs the slug-from-cache lookup the public-link version required.
+-- Called from the "Show in Lumio" menu entry (right-click a published
+-- collection). Opens the gallery's STUDIO management page (photographer-
+-- facing: branding, status, files) -- NOT the public customer-facing
+-- gallery. A photographer right-clicking the COLLECTION wants to manage
+-- it, not see what the customer sees; goToPublishedPhoto below (right-
+-- click a PHOTO) covers the "show me the public link" case instead.
+-- The Studio route is keyed by galleryId, not slug, so this does not need
+-- resolveGallerySlug.
 function exportServiceProvider.goToPublishedCollection(publishSettings, info)
     local LrHttp = import "LrHttp"
     local collInfo = info.publishedCollection and info.publishedCollection:getCollectionInfoSummary()
@@ -688,6 +722,34 @@ function exportServiceProvider.goToPublishedCollection(publishSettings, info)
     end
     -- Studio gallery management URL
     LrHttp.openUrlInBrowser(host .. "/studio/" .. galleryId)
+end
+
+-- ============================================================================
+-- goToPublishedPhoto
+-- ============================================================================
+-- Called from the per-photo "Show public gallery" menu entry (right-click
+-- a single published photo). Complements goToPublishedCollection: that one
+-- opens the Studio management view, this one opens the PUBLIC customer-
+-- facing gallery link -- for the times a photographer genuinely wants to
+-- see what the client sees, which a Studio-only link can't cover (it also
+-- needs an active Studio browser session, unlike the public link).
+-- Opens the whole gallery, not a link anchored to this one photo -- the
+-- public gallery view has no per-photo deep link today.
+function exportServiceProvider.goToPublishedPhoto(publishSettings, info)
+    local LrHttp = import "LrHttp"
+    local collInfo = info.publishedCollectionInfo
+    if not collInfo then return end
+    local collSettings = collInfo.collectionSettings or {}
+    local host = (LrPrefs.prefsForPlugin().host or ""):gsub("/+$", "")
+    local slug = resolveGallerySlug(collSettings)
+
+    if not slug or slug == "" or host == "" then
+        LrDialogs.message("Lumio",
+            "Gallery slug or host is missing. Publish the collection once, " ..
+            "or set the server address in Plug-in Manager.", "warning")
+        return
+    end
+    LrHttp.openUrlInBrowser(host .. "/g/" .. slug)
 end
 
 return exportServiceProvider
