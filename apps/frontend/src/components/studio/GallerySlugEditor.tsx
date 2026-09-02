@@ -6,22 +6,26 @@ import { useT } from "@/lib/i18n";
 import { useErrorText } from "@/lib/error-i18n";
 
 /**
- * Owner-only editor for the gallery's public share slug (/g/<slug>).
+ * Owner/admin editor for the gallery's public share slug (/g/<slug>).
  * Rendered above SharePanel in the "share" tab, styled to match its
  * section convention (rounded-lg/p-4, div-wrapped heading+description)
  * since the slug is the base the share links build on top of. Hidden
- * entirely for non-owners — a disabled field would still leak the fact
+ * entirely for members — a disabled field would still leak the fact
  * that the control exists.
  */
 export function GallerySlugEditor({
   galleryId,
   slug,
-  isOwner,
+  canEdit,
+  publicAccess,
+  hasPassword,
   onChanged,
 }: {
   galleryId: string;
   slug: string;
-  isOwner: boolean;
+  canEdit: boolean;
+  publicAccess: boolean;
+  hasPassword: boolean;
   onChanged: () => Promise<void>;
 }) {
   const t = useT();
@@ -31,7 +35,7 @@ export function GallerySlugEditor({
   const [error, setError] = useState<string | null>(null);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
-  if (!isOwner) return null;
+  if (!canEdit) return null;
 
   const cleaned = value.trim().toLowerCase();
   const disabled = saving || !cleaned || cleaned === slug;
@@ -90,6 +94,11 @@ export function GallerySlugEditor({
         </span>{" "}
         {t("studio.gallerySlugWarnPost")}
       </div>
+      {publicAccess && !hasPassword && (
+        <div className="rounded-md bg-semantic-warning/10 border border-semantic-warning/30 px-3 py-2 text-xs text-ink-secondary leading-relaxed">
+          {t("studio.gallerySlugWarnGuessable")}
+        </div>
+      )}
       {error && <p className="text-sm text-semantic-danger">{error}</p>}
     </section>
   );
