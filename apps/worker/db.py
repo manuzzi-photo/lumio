@@ -1,9 +1,9 @@
 """
 Lumio Worker — Database Access
 
-Schlanke DB-Anbindung über psycopg + raw SQL. Kein ORM-Overkill auf
-Worker-Seite — die Logik ist begrenzt: File-Status updaten, Rendition
-einfügen, Job-Stream konsumieren.
+Thin DB access via psycopg + raw SQL. No ORM overkill on the worker
+side -- the logic is limited: update file status, insert renditions,
+consume the job stream.
 """
 from __future__ import annotations
 
@@ -20,8 +20,8 @@ DATABASE_URL = os.environ["DATABASE_URL"]
 
 @contextmanager
 def get_conn() -> Iterator[psycopg.Connection]:
-    """Eine Connection pro Job — keep it simple. Bei steigender Last
-    auf einen Connection-Pool umstellen (psycopg_pool)."""
+    """One connection per job -- keep it simple. Switch to a connection
+    pool (psycopg_pool) if load increases."""
     conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
     try:
         yield conn
@@ -58,38 +58,37 @@ def mark_file_ready(
     original_md5: str | None = None,
     original_size: int | None = None,
 ) -> None:
-    """Setzt status='ready' + finale Maße. Wenn sha256/original_md5
-    mitgegeben werden, werden sie in derselben Transaktion geschrieben —
-    vermeidet eine Zwischen-Zeile mit ready=true aber Hash=NULL (fuer
-    sha256 wuerde das faelschlich als 'ungehashed' in die Dup-Detection
-    einfliessen).
+    """Sets status='ready' + final dimensions. When sha256/original_md5
+    are given, they are written in the same transaction -- avoids an
+    intermediate row with ready=true but hash=NULL (for sha256 that would
+    incorrectly count as "unhashed" in dup detection).
 
-    original_md5 (+ optional original_size, die Byte-Groesse des
-    Original-Masters -- ein billiger Pre-Filter fuer Selection-Import,
-    siehe ImportSelectionTask.lua) bekommen KEINE eigene Spalte, sondern
-    landen unter exif->'lumio'->{originalMd5,originalSize}. Die exif-
-    Spalte existiert bereits (aktuell von nirgendwo beschrieben, nur von
-    auto_tag.py defensiv gelesen) -- kein Schema-Change noetig.
+    original_md5 (+ optional original_size, the original master's byte
+    size -- a cheap pre-filter for Selection-Import, see
+    ImportSelectionTask.lua) get NO dedicated column, instead landing
+    under exif->'lumio'->{originalMd5,originalSize}. The exif column
+    already exists (currently written by nothing, only read defensively
+    by auto_tag.py) -- no schema change needed.
 
-    Die exif-Klausel laeuft NUR wenn original_md5 tatsaechlich gesetzt
-    ist. Bei jedem anderen File (die grosse Mehrheit -- alles ausser
-    ueber das Lightroom-Plugin veroeffentlichte Files) bleibt exif
-    komplett unangetastet, insbesondere bleibt ein bestehendes NULL NULL
-    statt bei jedem Aufruf auf {} zu wechseln. original_size ohne
-    original_md5 wird ignoriert -- kommt in der Praxis nicht vor, beide
-    stammen aus demselben eingebetteten XMP-Paket (extract_metadata).
+    The exif clause only runs when original_md5 is actually set. For
+    every other file (the vast majority -- everything except files
+    published via the Lightroom plug-in), exif is left completely
+    untouched, in particular an existing NULL stays NULL instead of
+    flipping to {} on every call. original_size without original_md5 is
+    ignored -- doesn't happen in practice, both come from the same
+    embedded XMP packet (extract_metadata).
 
-    jsonb_set setzt gezielt nur den 'lumio'-Key innerhalb von exif (Pfad
-    {lumio}), der neue Wert dafuer wird vorher separat aus dem
-    BESTEHENDEN 'lumio'-Objekt gemergt (COALESCE(exif->'lumio', '{}') ||
-    jsonb_strip_nulls(jsonb_build_object(...))) -- ein kuenftiges drittes
-    Feld unter 'lumio' uebersteht einen originalMd5/-Size-Write also
-    unversehrt, und umgekehrt; jsonb_strip_nulls laesst originalSize ganz
-    weg statt es als {"originalSize": null} zu schreiben, wenn keine
-    Groesse mitgegeben wurde. Der Umweg ueber den einstufigen Pfad
-    {lumio} statt direkt {lumio,originalMd5} ist noetig, weil jsonb_set
-    keine mehrstufig FEHLENDEN Zwischenebenen anlegen kann -- ein
-    zweistufiger Pfad auf leerem exif waere ein stiller No-Op."""
+    jsonb_set targets only the 'lumio' key within exif (path {lumio});
+    the new value for it is merged separately beforehand from the
+    EXISTING 'lumio' object (COALESCE(exif->'lumio', '{}') ||
+    jsonb_strip_nulls(jsonb_build_object(...))) -- a future third field
+    under 'lumio' survives an originalMd5/-Size write unharmed, and vice
+    versa; jsonb_strip_nulls leaves originalSize out entirely instead of
+    writing it as {"originalSize": null} when no size was given. The
+    detour via the one-level path {lumio} instead of directly
+    {lumio,originalMd5} is necessary because jsonb_set cannot create
+    multiple MISSING intermediate levels -- a two-level path on an empty
+    exif would be a silent no-op."""
     with get_conn() as conn:
         if original_md5 is not None:
             conn.execute(
@@ -124,21 +123,21 @@ def mark_file_ready(
 
 
 def reconcile_original_size(file_id: str, size_bytes: int) -> None:
-    """Schreibt die TATSAECHLICHE Groesse des hochgeladenen Originals in
-    files.sizeBytes zurueck.
+    """Writes the ACTUAL size of the uploaded original back into
+    files.sizeBytes.
 
-    Hintergrund: Beim /uploads/init meldet der Client die Groesse selbst;
-    dieser Wert landet ungeprueft in files.sizeBytes. Fuer Single-Part-
-    Uploads pinnt die Presigned-URL zwar die Content-Length, aber bei
-    Multipart-Uploads sind die Part-URLs nicht groessengebunden — ein
-    Client koennte also eine kleine Groesse melden und real mehr hochladen.
-    Da die Storage-/Quota-Abrechnung (computeStorageBytes) files.sizeBytes
-    aufsummiert, waere das ein Weg, das Speicherlimit zu unterlaufen.
+    Background: at /uploads/init the client reports the size itself; this
+    value lands in files.sizeBytes unchecked. For single-part uploads the
+    presigned URL does pin the Content-Length, but for multipart uploads
+    the part URLs are not size-bound -- a client could report a small
+    size and actually upload more. Since storage/quota accounting
+    (computeStorageBytes) sums up files.sizeBytes, that would be a way to
+    circumvent the storage limit.
 
-    Der Worker kennt nach dem Download die echte Groesse (os.path.getsize)
-    und korrigiert den Wert hier — die einzige Quelle der Wahrheit ist das
-    tatsaechlich in S3 liegende Objekt. Idempotent; ueberschreibt immer mit
-    dem gemessenen Wert."""
+    The worker knows the real size after downloading (os.path.getsize)
+    and corrects the value here -- the only source of truth is the
+    object actually sitting in S3. Idempotent; always overwrites with the
+    measured value."""
     if size_bytes is None or size_bytes < 0:
         return
     with get_conn() as conn:
@@ -149,7 +148,7 @@ def reconcile_original_size(file_id: str, size_bytes: int) -> None:
 
 
 def update_file_sha256(file_id: str, sha256: str) -> None:
-    """Setzt nur den sha256 (für Backfill bestehender Files)."""
+    """Sets only the sha256 (for backfilling existing files)."""
     with get_conn() as conn:
         conn.execute(
             'UPDATE files SET sha256 = %s, "updatedAt" = NOW() WHERE id = %s',
@@ -158,9 +157,9 @@ def update_file_sha256(file_id: str, sha256: str) -> None:
 
 
 def set_taken_at(file_id: str, taken_at) -> None:
-    """Setzt den Aufnahmezeitpunkt aus EXIF. taken_at ist ein (naiver)
-    datetime oder None. Bei None passiert NICHTS — wir überschreiben ein
-    evtl. schon gesetztes Datum nicht mit NULL."""
+    """Sets the capture timestamp from EXIF. taken_at is a (naive)
+    datetime or None. On None, NOTHING happens -- we don't overwrite an
+    already-set date with NULL."""
     if taken_at is None:
         return
     with get_conn() as conn:
@@ -193,7 +192,7 @@ def upsert_rendition(
     metadata: dict | None = None,
     page: int = 0,
 ) -> None:
-    """Insert oder Update (auf fileId+kind+page unique)."""
+    """Insert or update (unique on fileId+kind+page)."""
     import json
     meta_json = json.dumps(metadata) if metadata is not None else None
     with get_conn() as conn:
@@ -218,7 +217,7 @@ def upsert_rendition(
 
 
 def set_page_count(file_id: str, page_count: int) -> None:
-    """Setzt die Seitenzahl eines mehrseitigen Dokuments (PDF)."""
+    """Sets the page count of a multi-page document (PDF)."""
     with get_conn() as conn:
         conn.execute(
             'UPDATE files SET "pageCount" = %s, "updatedAt" = NOW() WHERE id = %s',

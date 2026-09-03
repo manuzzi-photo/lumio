@@ -1,19 +1,19 @@
-"""Tests für exif_meta.py: Aufnahmezeit (extract_taken_at) und den vom
-Lightroom-Plugin eingebetteten Original-Hash/-Groesse (extract_original_md5,
+"""Tests for exif_meta.py: capture timestamp (extract_taken_at) and the
+original hash/size embedded by the Lightroom plug-in (extract_original_md5,
 extract_original_size).
 
-Seit dem Wechsel von pyexiv2 auf exiftool (Multi-Arch, ARM-Support) lesen
-wir alle Werte via exiftool-Subprocess. Diese Tests legen ein echtes
-JPEG an, schreiben die EXIF-Date-Tags mit exiftool bzw. betten den
-Original-Hash direkt als APP1-XMP-Segment ein (siehe _stamp_original_md5
--- spiegelt das Byte-Format von apps/lightroom-plugin/.../JpegXmp.lua,
-ohne dessen APP0-Sonderfall zu testen; das gehoert zur Lua-Seite) und
-pruefen Prioritaet, Fallback-Kette und defensives Verhalten.
+Since the switch from pyexiv2 to exiftool (multi-arch, ARM support) we
+read all values via an exiftool subprocess. These tests create a real
+JPEG, write the EXIF date tags with exiftool resp. embed the original
+hash directly as an APP1-XMP segment (see _stamp_original_md5 -- mirrors
+the byte format of apps/lightroom-plugin/.../JpegXmp.lua, without testing
+its APP0 special case; that belongs to the Lua side) and check priority,
+fallback chain, and defensive behaviour.
 
-Die Guard-Tests für _parse_exif_datetime brauchen weder exiftool noch
-Pillow und laufen immer. Die End-to-End-Tests werden übersprungen, wenn
-exiftool/Pillow im Test-Environment fehlen (lokale Sandbox); in CI ist
-exiftool installiert.
+The guard tests for _parse_exif_datetime need neither exiftool nor Pillow
+and always run. The end-to-end tests are skipped when exiftool/Pillow are
+missing from the test environment (local sandbox); exiftool is installed
+in CI.
 """
 from __future__ import annotations
 
@@ -45,14 +45,14 @@ except Exception:
 
 needs_tools = pytest.mark.skipif(
     not (_HAS_EXIFTOOL and _HAS_PIL),
-    reason="exiftool und/oder Pillow nicht verfügbar",
+    reason="exiftool and/or Pillow not available",
 )
 
 
 def _make_jpeg(path, **date_tags):
-    """Erzeugt ein winziges JPEG und schreibt die übergebenen EXIF-Date-Tags.
+    """Creates a tiny JPEG and writes the given EXIF date tags.
 
-    date_tags: z.B. DateTimeOriginal="2023:05:01 14:30:15"
+    date_tags: e.g. DateTimeOriginal="2023:05:01 14:30:15"
     """
     from PIL import Image
 
@@ -96,7 +96,7 @@ def _stamp_original_md5(path, md5_hex, size=None):
 
 
 # ---------------------------------------------------------------------------
-# Guard-Logik (immer aktiv, kein exiftool nötig)
+# Guard logic (always active, no exiftool needed)
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
@@ -116,7 +116,7 @@ def test_parse_exif_datetime(value, expected):
 
 
 # ---------------------------------------------------------------------------
-# End-to-End über exiftool
+# End-to-end via exiftool
 # ---------------------------------------------------------------------------
 
 @needs_tools
@@ -160,7 +160,7 @@ def test_non_image_returns_none(tmp_path):
 
 
 def test_missing_file_returns_none():
-    # Wirft nie, auch wenn exiftool fehlt oder die Datei nicht existiert.
+    # Never throws, even if exiftool is missing or the file doesn't exist.
     assert extract_taken_at("/tmp/lumio-does-not-exist-xyz.jpg") is None
 
 
