@@ -1276,13 +1276,15 @@ export default function GalleryDetailPage() {
 
         {tab === "share" && (
           <>
-        {/* Custom gallery URL (/g/<slug>) — owner-only. Shown before
+        {/* Custom gallery URL (/g/<slug>) — owner or admin. Shown before
             SharePanel since the slug is the base the share links build
             on top of. */}
         <GallerySlugEditor
           galleryId={gallery.id}
           slug={gallery.slug}
-          isOwner={role === "owner"}
+          canEdit={role === "owner" || role === "admin"}
+          publicAccess={gallery.publicAccess ?? true}
+          hasPassword={gallery.hasPassword ?? false}
           onChanged={async () => {
             await load();
           }}

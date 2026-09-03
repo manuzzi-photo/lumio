@@ -73,7 +73,7 @@ export const fi = {
     galleryHasPrintOrders:
       "Tällä gallerialla on tulostustilauksia, eikä sitä voi poistaa.",
     galleryNotArchived: "Arkistoi galleria ennen sen pysyvää poistamista.",
-    gallerySlugOwnerOnly: "Vain omistaja voi muuttaa gallerian URL-osoitetta.",
+    gallerySlugForbidden: "Vain omistaja tai admin voi muuttaa gallerian URL-osoitetta.",
     gallerySlugTaken: "Kyseinen gallerian URL-osoite on jo varattu.",
     inUse:
       "Tähän varianttiin liittyy tilauksia. Poista se sen sijaan käytöstä.",
@@ -600,6 +600,8 @@ export const fi = {
       "Julkinen linkki, jolla asiakkaat löytävät tämän gallerian (/g/…). Jaetut linkit päivittyvät automaattisesti tallennuksen jälkeen.",
     gallerySlugWarnPre: "Muutoksen jälkeen aiempi linkki",
     gallerySlugWarnPost: "ei ole enää käytettävissä.",
+    gallerySlugWarnGuessable:
+      "Tämä galleria on julkinen eikä siinä ole salasanaa — itse URL-osoite on ainoa pääsynhallinta. Luettava osoite on helpompi arvata kuin satunnainen.",
     gallerySlugSaveError: "Gallerian URL-osoitetta ei voitu muuttaa",
     selected: "Valitut",
     secSyncTitle: "Tunnisteella merkityt tiedostot osioon, muut pois",

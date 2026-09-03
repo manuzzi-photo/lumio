@@ -73,7 +73,7 @@ export const en = {
     galleryHasPrintOrders:
       "This gallery has print orders and cannot be deleted.",
     galleryNotArchived: "Archive the gallery before deleting it permanently.",
-    gallerySlugOwnerOnly: "Only the owner can change the gallery URL.",
+    gallerySlugForbidden: "Only the studio owner or an admin can change the gallery URL.",
     gallerySlugTaken: "That gallery URL is already taken.",
     inUse:
       "There are orders using this variant. Deactivate it instead.",
@@ -600,6 +600,8 @@ export const en = {
       "The public link clients use to reach this gallery (/g/…). Shared links update automatically once you save here.",
     gallerySlugWarnPre: "After changing it, the previous link",
     gallerySlugWarnPost: "is no longer reachable.",
+    gallerySlugWarnGuessable:
+      "This gallery is public and has no password — the URL itself is what keeps it private. A readable slug is easier to guess than a random one.",
     gallerySlugSaveError: "The gallery URL could not be changed",
     selected: "Selected",
     secSyncTitle: "Files with the tag into the section, others out",
