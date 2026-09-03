@@ -343,6 +343,12 @@ end
 -- offline (external/network drive). Neither should ever block a publish,
 -- so failures here are logged and swallowed -- the upload proceeds without
 -- the hash, exactly like publishing did before this feature existed.
+--
+-- Also returns the master's byte size, at zero extra cost (the file is
+-- already fully in RAM to hash it). Selection-Import uses this as a cheap
+-- pre-filter -- an OS stat call, no file content read -- before hashing a
+-- rename-recovery candidate, instead of hashing every candidate in the
+-- catalog. See ImportSelectionTask.lua.
 local function computeOriginalMd5(photo)
     local path = photo:getRawMetadata("path")
     if not path then return nil end
@@ -357,7 +363,7 @@ local function computeOriginalMd5(photo)
         log:warn("original hash: master is empty or unreadable: " .. tostring(path))
         return nil
     end
-    return LrMD5.digest(data):lower()
+    return LrMD5.digest(data):lower(), #data
 end
 
 -- RE-PUBLISH. Before: every re-publish (edit -> "Republish", or a manual
@@ -384,12 +390,12 @@ local function uploadOnePhoto(rendition, filepath, galleryId)
     -- Compute + embed the original hash BEFORE measuring the file size --
     -- embedding changes the file size, and initUpload needs the actual
     -- (final) size for the S3 presign.
-    local okHash, hashResult = LrTasks.pcall(computeOriginalMd5, photo)
+    local okHash, hashResult, sizeResult = LrTasks.pcall(computeOriginalMd5, photo)
     local originalMd5 = okHash and hashResult or nil
     if not okHash then
         log:warn("original hash: computation failed: " .. tostring(hashResult))
     elseif originalMd5 then
-        local okEmbed, embedErr = LrTasks.pcall(jpegXmp.embedOriginalMd5, filepath, originalMd5)
+        local okEmbed, embedErr = LrTasks.pcall(jpegXmp.embedOriginalMd5, filepath, originalMd5, sizeResult)
         if not okEmbed then
             log:warn("original hash: embedding into JPEG failed: " .. tostring(embedErr))
         end
@@ -472,6 +478,30 @@ local function uploadOnePhoto(rendition, filepath, galleryId)
     -- "Show in Lumio" at gallery level still works (host + /studio/<id>).
 end
 
+-- Looks up a gallery's public slug: prefer the value already stored on the
+-- collection (only set when the gallery was CREATED from this plug-in, or
+-- self-healed on an existing one -- see the self-heal branch in
+-- processRenderedPhotos below), falling back to the background-refreshed
+-- gallery list cache built in viewForCollectionSettings. Returns nil if it
+-- cannot be determined. Used both by that self-heal branch and by
+-- goToPublishedPhoto further below.
+local function resolveGallerySlug(collSettings)
+    local slug = collSettings.gallerySlug
+    if slug and slug ~= "" then return slug end
+    if not collSettings.galleryId or collSettings.galleryId == "" then return nil end
+
+    local prefs = LrPrefs.prefsForPlugin()
+    if type(prefs.galleryCacheJson) ~= "string" or prefs.galleryCacheJson == "" then
+        return nil
+    end
+    local okDecode, cached = pcall(json.decode, prefs.galleryCacheJson)
+    if not (okDecode and type(cached) == "table") then return nil end
+    for _, g in ipairs(cached) do
+        if g.id == collSettings.galleryId then return g.slug end
+    end
+    return nil
+end
+
 -- ============================================================================
 -- processRenderedPhotos — upload loop
 -- ============================================================================
@@ -525,6 +555,35 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
             current.gallerySlug = gallerySlug
             exportContext.publishedCollection:setCollectionSettings(current)
         end)
+    elseif collProps and (not gallerySlug or gallerySlug == "") then
+        -- SELF-HEAL. gallerySlug is only ever captured above, when a NEW
+        -- gallery is created from this dialog. A collection bound to an
+        -- EXISTING gallery (picked from the dropdown in
+        -- viewForCollectionSettings) never gets one, leaving
+        -- goToPublishedPhoto dependent entirely on the gallery-list cache
+        -- -- which only refreshes when "Edit Lumio Gallery" is reopened,
+        -- so it goes stale as soon as a gallery is created/renamed in
+        -- Studio instead. Resolve it here (same cache-fallback lookup
+        -- used for the public-gallery link) and persist it the same
+        -- proven way used above for a newly created gallery, so it
+        -- self-heals on the very next publish to any collection bound to
+        -- an existing gallery. Best-effort: unlike gallery creation this
+        -- must never fail the publish itself, so it's wrapped in pcall.
+        local resolvedSlug = resolveGallerySlug(collProps)
+        if resolvedSlug and resolvedSlug ~= "" then
+            gallerySlug = resolvedSlug
+            local okHeal, healErr = LrTasks.pcall(function()
+                local catalog = LrApplication.activeCatalog()
+                catalog:withWriteAccessDo("Lumio: repair gallery slug", function()
+                    local current = exportContext.publishedCollection:getCollectionInfoSummary().collectionSettings or {}
+                    current.gallerySlug = gallerySlug
+                    exportContext.publishedCollection:setCollectionSettings(current)
+                end)
+            end)
+            if not okHeal then
+                log:warn("gallerySlug self-heal failed: " .. tostring(healErr))
+            end
+        end
     end
 
     if not galleryId or galleryId == "" then
@@ -669,29 +728,6 @@ function exportServiceProvider.deletePhotosFromPublishedCollection(
     end
 end
 
--- Looks up a gallery's public slug: prefer the value already stored on the
--- collection (only set when the gallery was CREATED from this plug-in),
--- falling back to the background-refreshed gallery list cache built in
--- viewForCollectionSettings (needed when the gallery was picked from the
--- "existing gallery" dropdown instead, where the slug is never stored
--- locally). Returns nil if it cannot be determined.
-local function resolveGallerySlug(collSettings)
-    local slug = collSettings.gallerySlug
-    if slug and slug ~= "" then return slug end
-    if not collSettings.galleryId or collSettings.galleryId == "" then return nil end
-
-    local prefs = LrPrefs.prefsForPlugin()
-    if type(prefs.galleryCacheJson) ~= "string" or prefs.galleryCacheJson == "" then
-        return nil
-    end
-    local okDecode, cached = pcall(json.decode, prefs.galleryCacheJson)
-    if not (okDecode and type(cached) == "table") then return nil end
-    for _, g in ipairs(cached) do
-        if g.id == collSettings.galleryId then return g.slug end
-    end
-    return nil
-end
-
 -- ============================================================================
 -- goToPublishedCollection
 -- ============================================================================
@@ -735,21 +771,64 @@ end
 -- needs an active Studio browser session, unlike the public link).
 -- Opens the whole gallery, not a link anchored to this one photo -- the
 -- public gallery view has no per-photo deep link today.
+--
+-- REAL-DEVICE FIX (credit: @canja006, tested against a real LrC install,
+-- see PR #27). The first version assumed info.publishedCollectionInfo had
+-- the same shape as getCollectionInfoSummary() elsewhere in this file (in
+-- particular a .collectionSettings field) -- wrong. Logged on a real
+-- install, info.publishedCollectionInfo only ever carries
+-- {isDefaultCollection, name, parents}, and LrPublishedPhoto has no
+-- getPublishedCollection() either. The only route to the collection's
+-- settings is via the PHOTO: photo:getContainedPublishedCollections().
+-- That call reads the catalog and therefore yields, so it cannot run
+-- inside a plain pcall ("Yielding is not allowed within a C or metamethod
+-- call") -- hence the LrTasks.startAsyncTask wrapper.
 function exportServiceProvider.goToPublishedPhoto(publishSettings, info)
     local LrHttp = import "LrHttp"
-    local collInfo = info.publishedCollectionInfo
-    if not collInfo then return end
-    local collSettings = collInfo.collectionSettings or {}
-    local host = (LrPrefs.prefsForPlugin().host or ""):gsub("/+$", "")
-    local slug = resolveGallerySlug(collSettings)
+    info = info or {}
 
-    if not slug or slug == "" or host == "" then
-        LrDialogs.message("Lumio",
-            "Gallery slug or host is missing. Publish the collection once, " ..
-            "or set the server address in Plug-in Manager.", "warning")
-        return
-    end
-    LrHttp.openUrlInBrowser(host .. "/g/" .. slug)
+    LrTasks.startAsyncTask(function()
+        -- publishedCollectionInfo.name is the one usable hint for WHICH
+        -- collection we want, in case the photo is published to more than
+        -- one Lumio gallery at once.
+        local wantedName = (type(info.publishedCollectionInfo) == "table")
+                           and info.publishedCollectionInfo.name or nil
+
+        local collSettings = {}
+        if info.photo then
+            local ok, colls = LrTasks.pcall(function()
+                return info.photo:getContainedPublishedCollections()
+            end)
+            if ok and type(colls) == "table" then
+                local fallback
+                for _, coll in ipairs(colls) do
+                    local okName, name = LrTasks.pcall(function() return coll:getName() end)
+                    local okSummary, summary = LrTasks.pcall(function()
+                        return coll:getCollectionInfoSummary()
+                    end)
+                    local settings = okSummary and summary and summary.collectionSettings or nil
+                    if type(settings) == "table" and settings.galleryId and settings.galleryId ~= "" then
+                        if okName and wantedName and name == wantedName then
+                            collSettings = settings
+                            break
+                        end
+                        fallback = fallback or settings
+                    end
+                end
+                if next(collSettings) == nil and fallback then collSettings = fallback end
+            end
+        end
+
+        local host = (LrPrefs.prefsForPlugin().host or ""):gsub("/+$", "")
+        local slug = resolveGallerySlug(collSettings)
+        if not slug or slug == "" or host == "" then
+            LrDialogs.message("Lumio",
+                "Gallery slug or host is missing. Publish the collection once, " ..
+                "or set the server address in Plug-in Manager.", "warning")
+            return
+        end
+        LrHttp.openUrlInBrowser(host .. "/g/" .. slug)
+    end)
 end
 
 return exportServiceProvider

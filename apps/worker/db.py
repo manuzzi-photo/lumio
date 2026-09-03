@@ -56,6 +56,7 @@ def mark_file_ready(
     height: int | None,
     sha256: str | None = None,
     original_md5: str | None = None,
+    original_size: int | None = None,
 ) -> None:
     """Setzt status='ready' + finale Maße. Wenn sha256/original_md5
     mitgegeben werden, werden sie in derselben Transaktion geschrieben —
@@ -63,23 +64,29 @@ def mark_file_ready(
     sha256 wuerde das faelschlich als 'ungehashed' in die Dup-Detection
     einfliessen).
 
-    original_md5 bekommt KEINE eigene Spalte, sondern landet unter
-    exif->'lumio'->'originalMd5'. Die exif-Spalte existiert bereits
-    (aktuell von nirgendwo beschrieben, nur von auto_tag.py defensiv
-    gelesen) -- kein Schema-Change noetig.
+    original_md5 (+ optional original_size, die Byte-Groesse des
+    Original-Masters -- ein billiger Pre-Filter fuer Selection-Import,
+    siehe ImportSelectionTask.lua) bekommen KEINE eigene Spalte, sondern
+    landen unter exif->'lumio'->{originalMd5,originalSize}. Die exif-
+    Spalte existiert bereits (aktuell von nirgendwo beschrieben, nur von
+    auto_tag.py defensiv gelesen) -- kein Schema-Change noetig.
 
     Die exif-Klausel laeuft NUR wenn original_md5 tatsaechlich gesetzt
     ist. Bei jedem anderen File (die grosse Mehrheit -- alles ausser
     ueber das Lightroom-Plugin veroeffentlichte Files) bleibt exif
     komplett unangetastet, insbesondere bleibt ein bestehendes NULL NULL
-    statt bei jedem Aufruf auf {} zu wechseln.
+    statt bei jedem Aufruf auf {} zu wechseln. original_size ohne
+    original_md5 wird ignoriert -- kommt in der Praxis nicht vor, beide
+    stammen aus demselben eingebetteten XMP-Paket (extract_metadata).
 
     jsonb_set setzt gezielt nur den 'lumio'-Key innerhalb von exif (Pfad
     {lumio}), der neue Wert dafuer wird vorher separat aus dem
     BESTEHENDEN 'lumio'-Objekt gemergt (COALESCE(exif->'lumio', '{}') ||
-    jsonb_build_object(...)) -- ein kuenftiges zweites Feld unter 'lumio'
-    (z.B. exif.lumio.irgendwas) uebersteht einen originalMd5-Write also
-    unversehrt, und umgekehrt. Der Umweg ueber den einstufigen Pfad
+    jsonb_strip_nulls(jsonb_build_object(...))) -- ein kuenftiges drittes
+    Feld unter 'lumio' uebersteht einen originalMd5/-Size-Write also
+    unversehrt, und umgekehrt; jsonb_strip_nulls laesst originalSize ganz
+    weg statt es als {"originalSize": null} zu schreiben, wenn keine
+    Groesse mitgegeben wurde. Der Umweg ueber den einstufigen Pfad
     {lumio} statt direkt {lumio,originalMd5} ist noetig, weil jsonb_set
     keine mehrstufig FEHLENDEN Zwischenebenen anlegen kann -- ein
     zweistufiger Pfad auf leerem exif waere ein stiller No-Op."""
@@ -93,13 +100,15 @@ def mark_file_ready(
                     exif = jsonb_set(
                         COALESCE(exif, '{}'::jsonb),
                         '{lumio}',
-                        COALESCE(exif->'lumio', '{}'::jsonb) || jsonb_build_object('originalMd5', %s::text),
+                        COALESCE(exif->'lumio', '{}'::jsonb) || jsonb_strip_nulls(
+                            jsonb_build_object('originalMd5', %s::text, 'originalSize', %s::bigint)
+                        ),
                         true
                     ),
                     "updatedAt" = NOW()
                 WHERE id = %s
                 """,
-                (width, height, sha256, original_md5, file_id),
+                (width, height, sha256, original_md5, original_size, file_id),
             )
         else:
             conn.execute(

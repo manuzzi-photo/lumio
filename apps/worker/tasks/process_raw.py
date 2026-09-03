@@ -93,14 +93,15 @@ def _process(file_row: dict) -> None:
         # damit ein Decode-Fehler den Hash nicht verhindert.
         src_sha = sha256_file(src_path)
 
-        # Aufnahmezeitpunkt + original-Hash aus EXIF des RAW-Originals
-        # (best-effort). exiftool liest die meisten RAW-Container; nicht
-        # unterstützte → None. Der original-Hash ist hier praktisch immer
-        # None: das Lightroom-Plugin veroeffentlicht ausschliesslich JPEG-
-        # Renders (nie das RAW selbst), also traegt ein direkt hochgeladenes
-        # RAW nie den eingebetteten Tag -- Extraktion bleibt trotzdem drin,
-        # damit process_file/process_raw symmetrisch bleiben.
-        taken_at, original_md5 = extract_metadata(src_path)
+        # Aufnahmezeitpunkt + original-Hash/-Groesse aus EXIF des RAW-
+        # Originals (best-effort). exiftool liest die meisten RAW-
+        # Container; nicht unterstützte → None. original_md5/original_size
+        # sind hier praktisch immer None: das Lightroom-Plugin
+        # veroeffentlicht ausschliesslich JPEG-Renders (nie das RAW
+        # selbst), also traegt ein direkt hochgeladenes RAW nie den
+        # eingebetteten Tag -- Extraktion bleibt trotzdem drin, damit
+        # process_file/process_raw symmetrisch bleiben.
+        taken_at, original_md5, original_size = extract_metadata(src_path)
 
         preview_jpeg_path = os.path.join(tmp, "preview.jpg")
         method = _extract_or_demosaic(src_path, preview_jpeg_path)
@@ -134,13 +135,14 @@ def _process(file_row: dict) -> None:
         orig_w, orig_h = _read_sensor_size(src_path)
         final_w = orig_w or src_w
         final_h = orig_h or src_h
-        mark_file_ready(file_id, final_w, final_h, sha256=src_sha, original_md5=original_md5)
+        mark_file_ready(file_id, final_w, final_h, sha256=src_sha,
+                        original_md5=original_md5, original_size=original_size)
         set_taken_at(file_id, taken_at)
         _publish_status(gallery_id, file_id, "ready",
                         width=final_w, height=final_h)
         log.info("process_raw.complete",
                  file_id=file_id, width=final_w, height=final_h,
-                 sha256=src_sha, original_md5=original_md5)
+                 sha256=src_sha, original_md5=original_md5, original_size=original_size)
         # Auto-Tagging anstossen — analog zu process_file. Task selbst
         # entscheidet via Feature-Flag ob er was tut.
         try:

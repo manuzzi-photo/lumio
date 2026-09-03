@@ -156,8 +156,9 @@ lumio.lrdevplugin/
 ## Logs
 
 Plugin-Logs liegen unter:
-- macOS: `~/Documents/LrClassicLogs/Lumio.log`
+- macOS: `~/Library/Logs/Adobe/Lightroom/LrClassicLogs/Lumio.log` (bestätigt auf LrC 15.5)
 - Windows: `%USERPROFILE%\Documents\LrClassicLogs\Lumio.log`
+- Der Speicherort von LrLogger hat sich in der Vergangenheit schon zwischen LrC-Versionen verschoben — im Zweifel beide Pfade prüfen.
 
 ## Lizenz
 

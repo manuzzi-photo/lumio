@@ -1,5 +1,6 @@
 """Tests für exif_meta.py: Aufnahmezeit (extract_taken_at) und den vom
-Lightroom-Plugin eingebetteten Original-Hash (extract_original_md5).
+Lightroom-Plugin eingebetteten Original-Hash/-Groesse (extract_original_md5,
+extract_original_size).
 
 Seit dem Wechsel von pyexiv2 auf exiftool (Multi-Arch, ARM-Support) lesen
 wir alle Werte via exiftool-Subprocess. Diese Tests legen ein echtes
@@ -30,6 +31,7 @@ from exif_meta import (  # noqa: E402
     _parse_exif_datetime,
     extract_metadata,
     extract_original_md5,
+    extract_original_size,
     extract_taken_at,
 )
 
@@ -63,20 +65,27 @@ def _make_jpeg(path, **date_tags):
     return str(path)
 
 
-def _stamp_original_md5(path, md5_hex):
-    """Inserts a minimal APP1-XMP segment carrying <lumio:OriginalMD5>
-    right after SOI -- exiftool has no way to WRITE an unregistered custom
-    XMP tag without a .ExifTool_config, so this constructs the exact bytes
-    by hand instead (mirrors JpegXmp.lua's format, not its APP0-aware
-    insertion point, which is out of scope for a worker-side test)."""
+def _stamp_original_md5(path, md5_hex, size=None):
+    """Inserts a minimal APP1-XMP segment carrying <lumio:OriginalMD5> (and,
+    when given, <lumio:OriginalSize>) right after SOI -- exiftool has no way
+    to WRITE an unregistered custom XMP tag without a .ExifTool_config, so
+    this constructs the exact bytes by hand instead (mirrors JpegXmp.lua's
+    format, not its APP0-aware insertion point, which is out of scope for a
+    worker-side test)."""
     xmp_header = b"http://ns.adobe.com/xap/1.0/\x00"
+    size_field = (
+        b"<lumio:OriginalSize>" + str(size).encode("ascii") + b"</lumio:OriginalSize>"
+        if size is not None
+        else b""
+    )
     packet = (
         b'<?xpacket begin="\xef\xbb\xbf" id="W5M0MpCehiHzreSzNTczkc9d"?>'
         b'<x:xmpmeta xmlns:x="adobe:ns:meta/">'
         b'<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
         b'<rdf:Description rdf:about="" xmlns:lumio="https://lumio.app/ns/1.0/">'
         b"<lumio:OriginalMD5>" + md5_hex.encode("ascii") + b"</lumio:OriginalMD5>"
-        b'</rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end="w"?>'
+        + size_field
+        + b'</rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end="w"?>'
     )
     payload = xmp_header + packet
     segment = bytes([0xFF, 0xE1]) + (len(payload) + 2).to_bytes(2, "big") + payload
@@ -192,14 +201,45 @@ def test_original_md5_missing_file_returns_none():
     assert extract_original_md5("/tmp/lumio-does-not-exist-xyz.jpg") is None
 
 
+# ---------------------------------------------------------------------------
+# Original-Size (custom XMP tag, embedded alongside the hash -- cheap
+# pre-filter for the Selection-Import rename-recovery pass)
+# ---------------------------------------------------------------------------
+
 @needs_tools
-def test_extract_metadata_returns_both_from_a_single_exiftool_call(tmp_path, monkeypatch):
-    # process_file.py/process_raw.py call extract_metadata() specifically
-    # to avoid running exiftool twice per file (once for the date, once
-    # for the hash) -- assert that invariant directly, not just the
-    # returned values.
-    p = _make_jpeg(tmp_path / "i.jpg", DateTimeOriginal="2023:05:01 14:30:15")
+def test_original_size_read_back(tmp_path):
+    p = _make_jpeg(tmp_path / "j.jpg")
+    _stamp_original_md5(p, "d41d8cd98f00b204e9800998ecf8427e", size=25_600_000)
+    assert extract_original_size(p) == 25_600_000
+
+
+@needs_tools
+def test_original_size_absent_returns_none(tmp_path):
+    # Stamped WITHOUT a size (size=None) -- older/partial embeddings must
+    # not be misread as size 0 or crash.
+    p = _make_jpeg(tmp_path / "k.jpg")
     _stamp_original_md5(p, "d41d8cd98f00b204e9800998ecf8427e")
+    assert extract_original_size(p) is None
+
+
+@needs_tools
+def test_original_size_zero_or_negative_rejected(tmp_path):
+    p = _make_jpeg(tmp_path / "l.jpg")
+    _stamp_original_md5(p, "d41d8cd98f00b204e9800998ecf8427e", size=0)
+    assert extract_original_size(p) is None
+
+
+def test_original_size_missing_file_returns_none():
+    assert extract_original_size("/tmp/lumio-does-not-exist-xyz.jpg") is None
+
+
+@needs_tools
+def test_extract_metadata_returns_all_three_from_a_single_exiftool_call(tmp_path, monkeypatch):
+    # process_file.py/process_raw.py call extract_metadata() specifically
+    # to avoid running exiftool multiple times per file -- assert that
+    # invariant directly, not just the returned values.
+    p = _make_jpeg(tmp_path / "i.jpg", DateTimeOriginal="2023:05:01 14:30:15")
+    _stamp_original_md5(p, "d41d8cd98f00b204e9800998ecf8427e", size=25_600_000)
 
     real_run = subprocess.run
     calls = []
@@ -210,7 +250,8 @@ def test_extract_metadata_returns_both_from_a_single_exiftool_call(tmp_path, mon
 
     monkeypatch.setattr(subprocess, "run", counting_run)
 
-    taken_at, original_md5 = extract_metadata(p)
+    taken_at, original_md5, original_size = extract_metadata(p)
     assert taken_at == datetime(2023, 5, 1, 14, 30, 15)
     assert original_md5 == "d41d8cd98f00b204e9800998ecf8427e"
+    assert original_size == 25_600_000
     assert len(calls) == 1

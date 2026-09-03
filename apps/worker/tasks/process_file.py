@@ -115,12 +115,12 @@ def _process(file_row: dict) -> None:
         # Hash, alle Renditions kommen erst danach.
         src_sha = sha256_file(src_path)
 
-        # Aufnahmezeitpunkt + original-Hash aus EXIF des Originals lesen
-        # (best-effort, wirft nie). Vom ORIGINAL, nicht vom PSD-Composite
-        # o.ä. — nur das Original trägt die Kamera-EXIF (und einen evtl.
-        # vom Lightroom-Plugin eingebetteten Hash). Ein einziger
-        # exiftool-Aufruf fuer beide Werte statt zwei.
-        taken_at, original_md5 = extract_metadata(src_path)
+        # Aufnahmezeitpunkt + original-Hash/-Groesse aus EXIF des Originals
+        # lesen (best-effort, wirft nie). Vom ORIGINAL, nicht vom PSD-
+        # Composite o.ä. — nur das Original trägt die Kamera-EXIF (und
+        # einen evtl. vom Lightroom-Plugin eingebetteten Hash/Groesse).
+        # Ein einziger exiftool-Aufruf fuer alle drei Werte statt mehrere.
+        taken_at, original_md5, original_size = extract_metadata(src_path)
 
         def _persist(
             kind: str, out_path: str, w: int, h: int, fmt: str
@@ -152,13 +152,14 @@ def _process(file_row: dict) -> None:
             on_rendition=_persist,
         )
 
-        mark_file_ready(file_id, final_w, final_h, sha256=src_sha, original_md5=original_md5)
+        mark_file_ready(file_id, final_w, final_h, sha256=src_sha,
+                        original_md5=original_md5, original_size=original_size)
         set_taken_at(file_id, taken_at)
         _publish_status(gallery_id, file_id, "ready",
                         width=final_w, height=final_h)
         log.info("process_file.complete", file_id=file_id,
                  width=final_w, height=final_h, sha256=src_sha,
-                 original_md5=original_md5)
+                 original_md5=original_md5, original_size=original_size)
 
         # Auto-Tagging anstossen — eigener Celery-Task, asynchron.
         # Der Task selbst checkt das Feature-Flag und skipped wenn aus.

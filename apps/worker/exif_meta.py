@@ -6,13 +6,16 @@ exiftool (installed in the worker image). Best-effort: on missing/broken
 EXIF or an unsupported format this returns None -- processing must NEVER
 fail because of it.
 
-Also reads the ORIGINAL-file content hash the Lightroom Publish-Service
-plug-in embeds into a custom XMP field of the uploaded JPEG (see
-apps/lightroom-plugin/lumio.lrdevplugin/JpegXmp.lua), so Selection-Import
-can match a photo back to the Lightroom catalog by content when the
-filename alone isn't enough (renamed file, or several masters sharing a
-basename). Only ever present for files published that way -- absent for
-everything else (browser uploads, upload-links, older plug-in versions).
+Also reads the ORIGINAL-file content hash (and byte size) the Lightroom
+Publish-Service plug-in embeds into a custom XMP field of the uploaded
+JPEG (see apps/lightroom-plugin/lumio.lrdevplugin/JpegXmp.lua), so
+Selection-Import can match a photo back to the Lightroom catalog by
+content when the filename alone isn't enough (renamed file, or several
+masters sharing a basename). The size is a cheap pre-filter Selection-
+Import checks (a plain file-size stat) before hashing a rename-recovery
+candidate's full content. Only ever present for files published that
+way -- absent for everything else (browser uploads, upload-links, older
+plug-in versions).
 
 Used by process_file (JPEG/PNG/HEIC/TIFF) and process_raw (CR2/NEF/
 ARW/CR3/...). exiftool reads EXIF from practically every RAW container too;
@@ -58,13 +61,15 @@ _EXIF_DT_FMT = "%Y:%m:%d %H:%M:%S"
 # exiftool must not hang forever on a pathological file.
 _EXIFTOOL_TIMEOUT_S = 30
 
-# Custom XMP tag written by JpegXmp.lua (namespace "lumio", see there).
+# Custom XMP tags written by JpegXmp.lua (namespace "lumio", see there).
 # Verified empirically: exiftool exposes an unregistered/custom XMP
-# namespace's flat property out of the box -- no .ExifTool_config needed --
-# and with only one "OriginalMD5"-named tag in play, "-j" flattens it to
-# this bare key (group-qualified: "XMP-lumio:OriginalMD5").
+# namespace's flat properties out of the box -- no .ExifTool_config needed
+# -- and with only one tag of each name in play, "-j" flattens them to
+# these bare keys (group-qualified: "XMP-lumio:OriginalMD5",
+# "XMP-lumio:OriginalSize").
 _ORIGINAL_MD5_TAG_KEY = "OriginalMD5"
 _ORIGINAL_MD5_RE = re.compile(r"^[0-9a-f]{32}$")
+_ORIGINAL_SIZE_TAG_KEY = "OriginalSize"
 
 
 def _parse_exif_datetime(value: str) -> datetime | None:
@@ -85,10 +90,11 @@ def _parse_exif_datetime(value: str) -> datetime | None:
 def _run_exiftool(src_path: str) -> dict | None:
     """Single exiftool invocation gathering everything this module can
     extract: the date tags for _taken_at_from_record() and the custom
-    Lumio content-hash tag for _original_md5_from_record(). Returns the
-    raw JSON record, or None on any failure (missing exiftool, timeout,
-    bad JSON, unsupported format) -- every extractor below treats that as
-    "nothing available", never as an error.
+    Lumio content-hash/size tags for _original_md5_from_record() and
+    _original_size_from_record(). Returns the raw JSON record, or None on
+    any failure (missing exiftool, timeout, bad JSON, unsupported format)
+    -- every extractor below treats that as "nothing available", never as
+    an error.
     """
     if shutil.which("exiftool") is None:
         log.warning("exif.exiftool_unavailable")
@@ -107,6 +113,7 @@ def _run_exiftool(src_path: str) -> dict | None:
         "-EXIF:CreateDate",
         "-EXIF:ModifyDate",
         "-XMP-lumio:OriginalMD5",
+        "-XMP-lumio:OriginalSize",
         src_path,
     ]
     try:
@@ -166,6 +173,23 @@ def _original_md5_from_record(record: dict | None) -> str | None:
     return value
 
 
+def _original_size_from_record(record: dict | None) -> int | None:
+    if not record:
+        return None
+    raw = record.get(_ORIGINAL_SIZE_TAG_KEY)
+    if raw is None:
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        log.info("exif.original_size_malformed", value=str(raw)[:64])
+        return None
+    if value <= 0:
+        log.info("exif.original_size_malformed", value=value)
+        return None
+    return value
+
+
 def extract_taken_at(src_path: str) -> datetime | None:
     """Capture timestamp from the original's EXIF data.
 
@@ -185,10 +209,25 @@ def extract_original_md5(src_path: str) -> str | None:
     return _original_md5_from_record(_run_exiftool(src_path))
 
 
-def extract_metadata(src_path: str) -> tuple[datetime | None, str | None]:
-    """Like calling extract_taken_at() and extract_original_md5() together,
+def extract_original_size(src_path: str) -> int | None:
+    """Byte size of the ORIGINAL master file, as embedded by the Lightroom
+    plug-in's Publish-Service alongside extract_original_md5() (same custom
+    XMP field, see JpegXmp.lua). Used as a cheap pre-filter by Selection-
+    Import before hashing a rename-recovery candidate's full content. None
+    for everything else -- never throws.
+    """
+    return _original_size_from_record(_run_exiftool(src_path))
+
+
+def extract_metadata(src_path: str) -> tuple[datetime | None, str | None, int | None]:
+    """Like calling extract_taken_at() and extract_original_md5() (plus the
+    paired original file size, see _original_size_from_record) together,
     but with a SINGLE exiftool invocation. Use this at call sites that need
-    both, so a file isn't run through exiftool twice.
+    more than one of these, so a file isn't run through exiftool twice.
     """
     record = _run_exiftool(src_path)
-    return _taken_at_from_record(record), _original_md5_from_record(record)
+    return (
+        _taken_at_from_record(record),
+        _original_md5_from_record(record),
+        _original_size_from_record(record),
+    )

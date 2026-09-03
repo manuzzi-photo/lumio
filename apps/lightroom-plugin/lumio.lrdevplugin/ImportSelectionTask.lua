@@ -19,6 +19,7 @@
 
 local LrApplication    = import "LrApplication"
 local LrPathUtils      = import "LrPathUtils"
+local LrFileUtils      = import "LrFileUtils"
 local LrTasks          = import "LrTasks"
 local LrFunctionContext = import "LrFunctionContext"
 local LrProgressScope  = import "LrProgressScope"
@@ -264,15 +265,48 @@ function M.run(opts)
             end
 
             -- 4. PASS 2 (read-only, opt-in): for files that still weren't
-            -- found by filename, try to recover them by hashing the WHOLE
-            -- search pool once and checking against the missing files'
-            -- originalMd5 in a single pass -- much cheaper than hashing the
-            -- pool once per missing file. Only runs if the user enabled it
-            -- (it can be slow: it reads every candidate's full file) and
-            -- only for files that actually carry a server-side hash.
+            -- found by filename, try to recover them by hashing candidates
+            -- from the search pool and checking against the missing files'
+            -- originalMd5. Only runs if the user enabled it and only for
+            -- files that actually carry a server-side hash.
+            --
+            -- PERFORMANCE. Measured on a real 2774-photo catalog: 3.8s when
+            -- matchScope narrowed the pool to 70 photos, but 4m12s against
+            -- the full library (the default scope), with Lightroom visibly
+            -- sluggish and memory climbing throughout. Three causes, all
+            -- fixed here:
+            --   1. No early exit: once every target hash was found, the
+            --      loop kept scanning the rest of the pool for nothing.
+            --   2. Photos pass 1 already matched by filename were hashed
+            --      again here, uselessly (they're not "missing").
+            --   3. fileMd5 reads a candidate's ENTIRE file into RAM just to
+            --      rule it out -- for RAW that's 25-80 MB per candidate,
+            --      repeated across the whole catalog.
+            -- (1) and (2) are free fixes. (3) is the dominant cost and
+            -- needs a real pre-filter, not just a patch: LumioPublishService
+            -- .lua now embeds the ORIGINAL file's byte size alongside its
+            -- hash (computeOriginalMd5 already has the file fully in RAM,
+            -- so the size is free there), and the server exposes it as
+            -- file.originalSize. Checking a candidate's size is a plain OS
+            -- stat call (LrFileUtils.fileAttributes, already used the same
+            -- way in uploadOnePhoto) -- no file content is read. Only
+            -- candidates whose size matches a hash we're still looking for
+            -- get the expensive full read+hash. An exact byte-size
+            -- collision between two genuinely different photos is rare, so
+            -- this turns "read every RAW in the catalog" into "stat every
+            -- RAW, fully read only the handful worth checking" -- identity
+            -- is still always confirmed by the real hash, never by size
+            -- alone.
             local resolvedByHashCount = 0
             local missing = {}
             if not canceled and opts.matchByHash then
+                -- Photos pass 1 already resolved (by filename, or by
+                -- disambiguating an ambiguous match) -- skip re-hashing them.
+                local usedPhotos = {}
+                for _, photos in pairs(resolved) do
+                    for _, photo in ipairs(photos) do usedPhotos[photo] = true end
+                end
+
                 -- md5 -> array of files sharing that hash. A single hash can
                 -- legitimately map to SEVERAL Lumio files: virtual copies of
                 -- the same master all hash identically at publish time (see
@@ -282,31 +316,48 @@ function M.run(opts)
                 -- map would keep only the last one and silently never even
                 -- attempt the others.
                 local targets = {}
+                -- Every byte size we might still need to fully hash for --
+                -- built from whichever missing files actually carry one.
+                local sizesToCheck = {}
                 for _, file in ipairs(missingCandidates) do
                     if file.originalMd5 then
                         targets[file.originalMd5] = targets[file.originalMd5] or {}
                         table.insert(targets[file.originalMd5], file)
+                        if file.originalSize then
+                            sizesToCheck[file.originalSize] = true
+                        end
                     end
                 end
                 if next(targets) then
                     progress:setCaption("Recomputing hashes to find renamed files…")
                     for i, photo in ipairs(pool) do
                         if progress:isCanceled() then canceled = true break end
-                        if i % 20 == 0 then progress:setPortionComplete(i, #pool) end
-                        local okPath, path = LrTasks.pcall(function() return photo:getRawMetadata("path") end)
-                        if okPath and path then
-                            local okHash, hash = LrTasks.pcall(fileMd5, path)
-                            if okHash and hash and targets[hash] then
-                                -- Every file sharing this hash resolves to the
-                                -- SAME candidate photo here -- we cannot tell
-                                -- which upload came from which virtual copy,
-                                -- but resolving all of them beats silently
-                                -- dropping every file after the first one.
-                                for _, file in ipairs(targets[hash]) do
-                                    resolved[file] = { photo }
-                                    resolvedByHashCount = resolvedByHashCount + 1
+                        if not usedPhotos[photo] then
+                            if i % 20 == 0 then progress:setPortionComplete(i, #pool) end
+                            local okPath, path = LrTasks.pcall(function() return photo:getRawMetadata("path") end)
+                            if okPath and path then
+                                local attrs = LrFileUtils.fileAttributes(path)
+                                local size = attrs and attrs.fileSize
+                                -- Cheap pre-filter (see PERFORMANCE above):
+                                -- only hash candidates whose size could
+                                -- possibly match a hash we're still after.
+                                if size and sizesToCheck[size] then
+                                    local okHash, hash = LrTasks.pcall(fileMd5, path)
+                                    if okHash and hash and targets[hash] then
+                                        -- Every file sharing this hash resolves
+                                        -- to the SAME candidate photo here -- we
+                                        -- cannot tell which upload came from
+                                        -- which virtual copy, but resolving all
+                                        -- of them beats silently dropping every
+                                        -- file after the first one.
+                                        for _, file in ipairs(targets[hash]) do
+                                            resolved[file] = { photo }
+                                            resolvedByHashCount = resolvedByHashCount + 1
+                                        end
+                                        targets[hash] = nil
+                                        if not next(targets) then break end  -- all found, stop scanning
+                                    end
                                 end
-                                targets[hash] = nil  -- consumed, keep scanning for the rest
                             end
                         end
                     end
