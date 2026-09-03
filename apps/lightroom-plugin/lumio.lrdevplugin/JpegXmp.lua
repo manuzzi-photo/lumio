@@ -3,9 +3,11 @@
 
     Inserts a tiny, self-contained XMP APP1 segment into an already
     rendered JPEG, right after the SOI marker (0xFFD8). Used to stamp the
-    MD5 hash of the original file (RAW/master) into the uploaded JPEG --
-    for robust matching during Selection-Import, independent of the
-    (possibly changed) filename.
+    MD5 hash (and byte size) of the original file (RAW/master) into the
+    uploaded JPEG -- for robust matching during Selection-Import,
+    independent of the (possibly changed) filename. The size is a cheap
+    pre-filter so a rename-recovery scan doesn't have to fully hash every
+    candidate in the catalog, only those whose size already matches.
 
     Why a NEW segment instead of patching the existing EXIF APP1 segment
     that LR already wrote during render: inserting a new tag into an
@@ -32,13 +34,17 @@ local function u16be(n)
     return string.char(math.floor(n / 256) % 256, n % 256)
 end
 
-local function buildXmpPacket(md5Hex)
+local function buildXmpPacket(md5Hex, sizeBytes)
+    local fields = { '<lumio:OriginalMD5>' .. md5Hex .. '</lumio:OriginalMD5>' }
+    if sizeBytes then
+        table.insert(fields, '<lumio:OriginalSize>' .. tostring(sizeBytes) .. '</lumio:OriginalSize>')
+    end
     return table.concat({
         '<?xpacket begin="\239\187\191" id="W5M0MpCehiHzreSzNTczkc9d"?>',
         '<x:xmpmeta xmlns:x="adobe:ns:meta/">',
         '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">',
         '<rdf:Description rdf:about="" xmlns:lumio="' .. M.NAMESPACE_URI .. '">',
-        '<lumio:OriginalMD5>' .. md5Hex .. '</lumio:OriginalMD5>',
+        table.concat(fields),
         '</rdf:Description>',
         '</rdf:RDF>',
         '</x:xmpmeta>',
@@ -46,12 +52,22 @@ local function buildXmpPacket(md5Hex)
     })
 end
 
--- Writes md5Hex (32 hex chars, lowercase) as <lumio:OriginalMD5> into a new
--- APP1-XMP segment at the start of jpegPath. Throws on failure -- callers
--- should treat this as best-effort (embedding must never fail a publish).
-function M.embedOriginalMd5(jpegPath, md5Hex)
+-- Writes md5Hex (32 hex chars, lowercase) as <lumio:OriginalMD5>, and --
+-- when given -- the original file's byte size as <lumio:OriginalSize>,
+-- into a new APP1-XMP segment at the start of jpegPath. The size costs
+-- nothing extra to obtain (the caller already has the whole master in RAM
+-- to compute md5Hex) and lets Selection-Import cheaply rule out most
+-- rename-recovery candidates via a plain file-size check before hashing
+-- them (see ImportSelectionTask.lua). sizeBytes is optional so existing
+-- callers/tests that only care about the hash keep working unchanged.
+-- Throws on failure -- callers should treat this as best-effort (embedding
+-- must never fail a publish).
+function M.embedOriginalMd5(jpegPath, md5Hex, sizeBytes)
     if not (md5Hex and md5Hex:match("^%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x$")) then
         error("JpegXmp: invalid MD5 hash: " .. tostring(md5Hex))
+    end
+    if sizeBytes ~= nil and (type(sizeBytes) ~= "number" or sizeBytes <= 0 or sizeBytes ~= math.floor(sizeBytes)) then
+        error("JpegXmp: invalid size in bytes: " .. tostring(sizeBytes))
     end
 
     local f, ferr = io.open(jpegPath, "rb")
@@ -65,7 +81,7 @@ function M.embedOriginalMd5(jpegPath, md5Hex)
         error("JpegXmp: not a valid JPEG file (missing SOI marker): " .. jpegPath)
     end
 
-    local payload = XMP_HEADER .. buildXmpPacket(md5Hex:lower())
+    local payload = XMP_HEADER .. buildXmpPacket(md5Hex:lower(), sizeBytes)
     local segmentLen = #payload + 2  -- the length field counts itself
     if segmentLen > 0xFFFF then
         -- Can practically never happen with a 32-char hex payload, but a
@@ -74,7 +90,22 @@ function M.embedOriginalMd5(jpegPath, md5Hex)
     end
     local segment = string.char(0xFF, 0xE1) .. u16be(segmentLen) .. payload
 
-    local newData = data:sub(1, 2) .. segment .. data:sub(3)
+    -- If the very first segment after SOI is an APP0/JFIF marker, insert
+    -- AFTER it instead of before. Some strict readers (print lab intake,
+    -- some third-party tools) expect JFIF to stay the first segment in
+    -- the file; every reader tolerates our XMP segment appearing right
+    -- after it just as well. Otherwise (no APP0, or anything else first)
+    -- keep inserting directly after SOI, as before.
+    local insertAt = 3  -- 1-indexed: right after the 2-byte SOI
+    if #data >= 6 and data:byte(3) == 0xFF and data:byte(4) == 0xE0 then
+        local app0Len = data:byte(5) * 256 + data:byte(6)
+        if app0Len < 2 or #data < 4 + app0Len then
+            error("JpegXmp: malformed or truncated APP0 segment")
+        end
+        insertAt = 5 + app0Len
+    end
+
+    local newData = data:sub(1, insertAt - 1) .. segment .. data:sub(insertAt)
 
     local out, werr = io.open(jpegPath, "wb")
     if not out then

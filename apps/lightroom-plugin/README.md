@@ -118,7 +118,7 @@ werden die Werte serverseitig zusammengefasst:
   Plugin-Version veröffentlicht wurden, wird zusätzlich ein MD5-Hash des
   Original-Masters im hochgeladenen JPEG hinterlegt. Damit werden
   mehrdeutige Treffer automatisch aufgelöst, und mit der Option
-  „Rinominati per hash" lassen sich auch umbenannte Files wiederfinden.
+  „Umbenannte Dateien per Hash wiederfinden" lassen sich auch umbenannte Files wiederfinden.
   Für älter veröffentlichte Files (oder Uploads über Browser/Upload-Link)
   gibt es diesen Hash nicht — dort gilt weiterhin: umbenannte Files werden
   nicht gefunden.
@@ -156,8 +156,9 @@ lumio.lrdevplugin/
 ## Logs
 
 Plugin-Logs liegen unter:
-- macOS: `~/Documents/LrClassicLogs/Lumio.log`
+- macOS: `~/Library/Logs/Adobe/Lightroom/LrClassicLogs/Lumio.log` (bestätigt auf LrC 15.5)
 - Windows: `%USERPROFILE%\Documents\LrClassicLogs\Lumio.log`
+- Der Speicherort von LrLogger hat sich in der Vergangenheit schon zwischen LrC-Versionen verschoben — im Zweifel beide Pfade prüfen.
 
 ## Lizenz
 
