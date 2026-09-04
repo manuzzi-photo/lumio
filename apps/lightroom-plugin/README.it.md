@@ -8,9 +8,12 @@ Ponte bidirezionale tra Lightroom Classic e Lumio:
    una galleria arriva nel catalogo Lightroom come flag Pick, stelle
    e Color Label.
 2. **Servizio di pubblicazione** (LR → Lumio): carica le immagini da
-   LR direttamente in una galleria Lumio. Una raccolta pubblicata
-   per ogni galleria Lumio. Il contenuto è determinato da
-   drag-and-drop o da regole della smart collection.
+   LR direttamente in una galleria Lumio. Una singola raccolta
+   pubblicata diventa una **Simple Gallery** (1:1). Un **set di
+   raccolte** diventa una **Lumio Gallery** con capitoli — ogni
+   raccolta aggiuntiva nel set diventa un capitolo (vedi "Capitoli"
+   più sotto). Il contenuto è determinato da drag-and-drop o da
+   regole della smart collection.
 
 ## Prerequisiti
 
@@ -104,6 +107,29 @@ caricato quello nuovo.
 
 Rimuovi la foto dalla raccolta oppure elimina la raccolta → Lumio
 elimina automaticamente i file corrispondenti.
+
+### Capitoli (Lumio Gallery come set di raccolte)
+
+Invece di una singola raccolta pubblicata, sotto il servizio Lumio
+puoi anche creare un **set di raccolte**:
+
+1. Clic destro sul servizio Lumio → **Nuovo set di raccolte…**,
+   scegli la galleria come al solito o creane una nuova — il set
+   stesso è la "Lumio Gallery".
+2. Lightroom crea automaticamente una raccolta predefinita nel set.
+   Le immagini che pubblichi lì finiscono nell'area senza capitoli
+   della galleria — esattamente come in modalità Simple Gallery.
+3. Ogni raccolta **aggiuntiva** che crei nel set diventa, alla prima
+   pubblicazione, un vero **capitolo** su Lumio. Il titolo del
+   capitolo segue il nome della raccolta in Lightroom — rinomina la
+   raccolta per rinominare il capitolo.
+4. Elimina la raccolta → anche il capitolo corrispondente viene
+   eliminato su Lumio (le immagini restano e tornano nell'area senza
+   capitoli). Eliminare l'intero set/la galleria resta un'azione da
+   fare in Lumio Studio.
+
+Le raccolte pubblicate singole già esistenti (**Simple Gallery**)
+continuano a funzionare invariate — i capitoli sono facoltativi.
 
 ## Logica di aggregazione (import selezione)
 
