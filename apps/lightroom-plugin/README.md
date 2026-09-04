@@ -7,9 +7,11 @@ Bidirektionale Brücke zwischen Lightroom Classic und Lumio:
 1. **Selection-Import** (Lumio → LR): Kunden-Auswahl aus einer Galerie
    landet als Pick-Flag, Sterne und Color-Label im Lightroom-Katalog.
 2. **Publish-Service** (LR → Lumio): Bilder aus LR direkt in eine
-   Lumio-Galerie hochladen. Pro Lumio-Galerie eine Veröffentlichte
-   Sammlung. Drag-and-Drop oder Smart-Collection-Regeln bestimmen den
-   Inhalt.
+   Lumio-Galerie hochladen. Eine einzelne Veröffentlichte Sammlung
+   ergibt eine **Simple Gallery** (1:1). Ein **Sammlungs-Set** ergibt
+   eine **Lumio Gallery** mit Kapiteln — jede zusätzliche Sammlung im
+   Set wird ein Kapitel (siehe „Kapitel" weiter unten). Drag-and-Drop
+   oder Smart-Collection-Regeln bestimmen den Inhalt.
 
 ## Voraussetzungen
 
@@ -99,6 +101,30 @@ neue hochgeladen.
 
 Photo aus der Sammlung entfernen oder Sammlung löschen → Lumio
 löscht die entsprechenden Files automatisch.
+
+### Kapitel (Lumio Gallery als Sammlungs-Set)
+
+Statt einer einzelnen Veröffentlichten Sammlung kannst du unter dem
+Lumio-Service auch ein **Sammlungs-Set** anlegen:
+
+1. Rechtsklick auf den Lumio-Service → **Neues Sammlungs-Set…**,
+   Galerie wie gewohnt wählen oder neu anlegen — das Set selbst ist
+   die „Lumio Gallery".
+2. Lightroom legt automatisch eine Standard-Sammlung im Set an.
+   Bilder, die du dort veröffentlichst, landen im normalen,
+   kapitellosen Bereich der Galerie — genau wie im
+   Simple-Gallery-Modus.
+3. Jede **zusätzliche** Sammlung, die du im Set anlegst, wird beim
+   ersten Veröffentlichen zu einem echten **Kapitel** auf Lumio. Der
+   Kapitel-Titel folgt dem Namen der Sammlung in Lightroom — die
+   Sammlung umbenennen, um das Kapitel umzubenennen.
+4. Sammlung löschen → das zugehörige Kapitel wird auf Lumio ebenfalls
+   gelöscht (die Bilder bleiben erhalten und fallen in den
+   kapitellosen Bereich zurück). Das ganze Set bzw. die Galerie zu
+   löschen bleibt weiterhin eine Aktion im Lumio Studio.
+
+Bestehende einzelne Veröffentlichte Sammlungen (**Simple Gallery**)
+funktionieren unverändert weiter — Kapitel sind rein optional.
 
 ## Aggregations-Logik (Selection-Import)
 

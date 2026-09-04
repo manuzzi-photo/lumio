@@ -29,6 +29,10 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Added
+
+- Lightroom plug-in (v0.4.0): a published collection can now be a Collection Set, which becomes a "Lumio Gallery" with a chapter structure — creating the Set auto-creates a default child collection (photos land in the gallery's normal unsectioned bucket, same as today), and every additional child collection you add becomes a real Chapter (`GallerySection`) on Lumio, with its uploaded photos assigned to that chapter automatically. Renaming or deleting a chapter collection in Lightroom syncs to the corresponding chapter on Lumio. A plain collection directly under the publish service keeps working exactly as before, now labeled "Simple Gallery" to distinguish it from the new Set-based mode. No server-side changes were needed for this — reuses the existing Studio Section API.
+
 ## [0.82.0] - 2026-09-21
 
 A pull is enough. Only the main server is affected. Nothing changes on a single-studio installation.
