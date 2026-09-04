@@ -1036,6 +1036,101 @@ function exportServiceProvider.deletePhotosFromPublishedCollection(
 end
 
 -- ============================================================================
+-- renamePublishedCollection / deletePublishedCollection -- Chapter sync
+-- ============================================================================
+-- Fired when the photographer renames or deletes a plain published
+-- collection in Lightroom. Only a "chapter" collection (a non-default
+-- child of a Collection Set, with a sectionId) has anything to sync --
+-- root ("Simple Gallery") and a Set's default child never had a Section,
+-- so both hooks are a no-op for them. Best-effort throughout: a sync
+-- failure here must never block the rename/delete Lightroom already
+-- performed locally, so everything is wrapped in pcall + logged, matching
+-- this file's existing swallow-and-log philosophy (see uploadOnePhoto's
+-- re-publish delete-old-file handling above).
+--
+-- The exact `info` payload shape (does it carry the new name directly, or
+-- do we have to read it back off the collection object? one collection
+-- per call, or an array for a multi-select delete?) is only
+-- high-level-documented in the Adobe SDK reference -- must-verify-manually
+-- against a real Lightroom Classic install. Written defensively so a
+-- shape mismatch degrades to a no-op + warning log rather than an error
+-- that could interrupt the rename/delete itself.
+
+local function syncChapterRename(collSettings, newName)
+    if not collSettings or not collSettings.sectionId or collSettings.sectionId == "" then
+        return -- not a chapter (or not yet published once) -- nothing to sync
+    end
+    if not collSettings.galleryId or collSettings.galleryId == "" then
+        return
+    end
+    if not newName or newName == "" then
+        return
+    end
+    local ok, err = LrTasks.pcall(
+        api.patchSection, collSettings.galleryId, collSettings.sectionId, { title = newName }
+    )
+    if not ok then
+        log:warn("chapter rename sync failed: " .. tostring(err))
+    end
+end
+
+function exportServiceProvider.renamePublishedCollection(publishSettings, info)
+    info = info or {}
+    local collSettings = info.collectionSettings
+    if not collSettings and info.publishedCollection then
+        local okSummary, summary = LrTasks.pcall(function()
+            return info.publishedCollection:getCollectionInfoSummary()
+        end)
+        if okSummary and summary then collSettings = summary.collectionSettings end
+    end
+    local newName = info.name
+    if (not newName or newName == "") and info.publishedCollection then
+        local okName, name = LrTasks.pcall(function() return info.publishedCollection:getName() end)
+        if okName then newName = name end
+    end
+    syncChapterRename(collSettings, newName)
+end
+
+local function syncChapterDelete(collSettings)
+    if not collSettings or not collSettings.sectionId or collSettings.sectionId == "" then
+        return
+    end
+    if not collSettings.galleryId or collSettings.galleryId == "" then
+        return
+    end
+    local ok, err = LrTasks.pcall(api.deleteSection, collSettings.galleryId, collSettings.sectionId)
+    if not ok then
+        log:warn("chapter delete sync failed: " .. tostring(err))
+    end
+end
+
+function exportServiceProvider.deletePublishedCollection(publishSettings, info)
+    info = info or {}
+    -- Different SDK call sites may hand back either a single collection or
+    -- an array (e.g. a multi-select delete, or a whole Set's children
+    -- being torn down at once) -- handle both rather than assume one.
+    local collections = info.publishedCollections or info.collections
+    if collections then
+        for _, coll in ipairs(collections) do
+            local okSummary, summary = LrTasks.pcall(function() return coll:getCollectionInfoSummary() end)
+            if okSummary and summary then
+                syncChapterDelete(summary.collectionSettings)
+            end
+        end
+        return
+    end
+
+    local collSettings = info.collectionSettings
+    if not collSettings and info.publishedCollection then
+        local okSummary, summary = LrTasks.pcall(function()
+            return info.publishedCollection:getCollectionInfoSummary()
+        end)
+        if okSummary and summary then collSettings = summary.collectionSettings end
+    end
+    syncChapterDelete(collSettings)
+end
+
+-- ============================================================================
 -- goToPublishedCollection
 -- ============================================================================
 -- Called from the "Show in Lumio" menu entry (right-click a published
