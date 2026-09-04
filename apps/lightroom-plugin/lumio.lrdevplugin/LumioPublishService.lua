@@ -83,8 +83,16 @@ exportServiceProvider.hideSections = {
 }
 exportServiceProvider.allowFileFormats = { "JPEG" }
 exportServiceProvider.allowColorSpaces = { "sRGB" }
-exportServiceProvider.titleForPublishedCollection           = "Lumio Gallery"
-exportServiceProvider.titleForPublishedCollection_standalone = "Lumio Gallery"
+-- Two kinds of published collection now exist:
+--   - a plain collection directly under the service = "Simple Gallery",
+--     the original flat 1:1 mode (no chapters)
+--   - a Collection Set = "Lumio Gallery", whose child collections become
+--     Chapters (see titleForPublishedCollectionSet below and
+--     viewForCollectionSettings's classifyCollection branching)
+exportServiceProvider.titleForPublishedCollection           = "Simple Gallery"
+exportServiceProvider.titleForPublishedCollection_standalone = "Simple Gallery"
+exportServiceProvider.titleForPublishedCollectionSet          = "Lumio Gallery"
+exportServiceProvider.titleForPublishedCollectionSet_standalone = "Lumio Gallery"
 exportServiceProvider.titleForPublishedSmartCollection      = "Lumio Smart Gallery"
 exportServiceProvider.titleForPublishedSmartCollection_standalone = "Lumio Smart Gallery"
 exportServiceProvider.titleForGoToPublishedCollection       = "Show in Lumio"
@@ -92,20 +100,25 @@ exportServiceProvider.titleForGoToPublishedPhoto            = "Show public galle
 exportServiceProvider.small_icon = "icon.png"
 exportServiceProvider.supportsCustomSortOrder = false
 exportServiceProvider.disableRenamePublishedCollection      = false
-exportServiceProvider.disableRenamePublishedCollectionSet   = true
+-- Was `true`: a Collection Set (Lumio Gallery) can now be renamed, which
+-- syncs to the Lumio gallery title -- see updateCollectionSetSettings.
+exportServiceProvider.disableRenamePublishedCollectionSet   = false
 
--- This was missing entirely. Without getCollectionBehaviorInfo, Lightroom
--- assumes Collection Set support and fails with
--- "?:0: attempt to call method 'hierarchyCreated' (a nil value)" when a
--- collection is created in the publish service. The plug-in has NO set-level
--- callbacks (e.g. updateCollectionSetSettings), so tell LR outright that
--- hierarchies are unsupported: maxCollectionSetDepth = 0.
+-- getCollectionBehaviorInfo was originally added with maxCollectionSetDepth
+-- = 0 to dodge a crash: without it, Lightroom assumes Collection Set support
+-- and fails with "?:0: attempt to call method 'hierarchyCreated' (a nil
+-- value)" as soon as a collection is created, because the plug-in had NO
+-- set-level callbacks at all. We now DO implement the required set-level
+-- callbacks (viewForCollectionSetSettings / endDialogForCollectionSetSettings
+-- / updateCollectionSetSettings, below), so one level of nesting is safe.
+-- maxCollectionSetDepth = 1 on purpose, not unlimited: this plug-in only
+-- ever needs Gallery -> Chapter, never Chapter -> Sub-chapter.
 function exportServiceProvider.getCollectionBehaviorInfo(publishSettings)
     return {
-        defaultCollectionName         = "Lumio Gallery",
+        defaultCollectionName         = "Simple Gallery",
         defaultCollectionCanBeDeleted = true,
         canAddCollection              = true,
-        maxCollectionSetDepth         = 0,
+        maxCollectionSetDepth         = 1,
     }
 end
 
@@ -138,8 +151,9 @@ function exportServiceProvider.sectionsForTopOfDialog(viewFactory, propertyTable
             },
             viewFactory:row {
                 viewFactory:static_text {
-                    title = "Note: one published collection is created per Lumio gallery.",
+                    title = "Note: a plain collection is a Simple Gallery (1:1). A Collection Set is a Lumio Gallery whose child collections become Chapters.",
                     width_in_chars = 60,
+                    height_in_lines = 2,
                     text_color = LrColor(0.5, 0.5, 0.5),
                 },
             },
@@ -148,33 +162,87 @@ function exportServiceProvider.sectionsForTopOfDialog(viewFactory, propertyTable
 end
 
 -- ============================================================================
--- Collection settings (per Lumio gallery)
+-- Collection classification
 -- ============================================================================
--- Here the photographer picks which Lumio gallery belongs to this LR
--- collection. If none exists yet: create one.
+-- Once maxCollectionSetDepth > 0, a plain collection either sits directly
+-- under the publish service (no parent -- "root", the original flat
+-- "Simple Gallery" mode) or inside a Collection Set (a "Lumio Gallery" --
+-- see viewForCollectionSetSettings below). Inside a Set, exactly one child
+-- is LR's own auto-created default collection (info.isDefaultCollection)
+-- -- its photos fall into the gallery's normal unsectioned bucket, same as
+-- Simple Gallery photos. Every OTHER child becomes a real Lumio Chapter
+-- (GallerySection).
+--
+-- info.parents / info.isDefaultCollection are Adobe-SDK-documented fields
+-- on the info tables passed to collection-set callbacks; this plug-in has
+-- previously real-device-confirmed the same three fields (isDefaultCollection,
+-- name, parents) on a *different* info table shape (info.publishedCollectionInfo
+-- in goToPublishedPhoto below), which is reassuring but NOT the same call
+-- site as here -- written defensively (nil-safe) on purpose, verify against
+-- a real Lightroom Classic install before relying on it further.
+local function classifyCollection(info)
+    local parents = info and info.parents
+    if not parents or #parents == 0 then
+        return "root"
+    end
+    if info.isDefaultCollection then
+        return "default_child"
+    end
+    return "chapter"
+end
 
-function exportServiceProvider.viewForCollectionSettings(viewFactory, publishSettings, info)
-    local f = viewFactory
-    local props = info.collectionSettings
+-- Resolves a child collection's parent Collection Set's own Lumio-gallery
+-- settings. maxCollectionSetDepth is 1 (see getCollectionBehaviorInfo), so
+-- there is at most one ancestor -- parents[1] is unambiguous. Returns
+-- (settingsTable, setObject); both nil if there is no parent or it can't be
+-- resolved (e.g. an SDK method-name mismatch -- see classifyCollection's
+-- comment above; must-verify-manually item).
+local function getParentSetSettings(info)
+    local parents = info and info.parents
+    if not parents or not parents[1] or not parents[1].localCollectionId then
+        return nil, nil
+    end
+    local catalog = LrApplication.activeCatalog()
+    local ok, setObj = LrTasks.pcall(function()
+        return catalog:getPublishedCollectionSetByLocalIdentifier(parents[1].localCollectionId)
+    end)
+    if not ok or not setObj then
+        log:warn("could not resolve parent collection set: " .. tostring(setObj))
+        return nil, nil
+    end
+    local ok2, summary = LrTasks.pcall(function() return setObj:getCollectionInfoSummary() end)
+    if not ok2 or not summary then
+        return nil, setObj
+    end
+    return summary.collectionSettings or {}, setObj
+end
 
-    -- Set defaults -- otherwise the property fields are nil and LR complains
+-- ============================================================================
+-- Gallery-picker -- shared between a root ("Simple Gallery") collection's
+-- own settings and a Collection Set's ("Lumio Gallery") settings. Both let
+-- the photographer pick an existing Lumio gallery or create a new one the
+-- same way; only the group_box title around it differs per caller.
+-- ============================================================================
+
+-- Sets defaults on `props` and (re)builds the gallery dropdown, synchronously
+-- from the cache and then again asynchronously from the server.
+--
+-- Existing galleries did not show up in the menu. The server was not at
+-- fault: GET /plugin/galleries returns 200 and the correct list (verified
+-- with a direct API call). Two bugs in the plug-in:
+--   1. The list was set ONLY asynchronously, after the dialog had been
+--      built, by which time the binding no longer refreshed the popup_menu.
+--   2. The old line was `props.availableGalleries = props.availableGalleries or {...}`
+--      and because props PERSISTS, on the second open the `or` kept the
+--      stale (usually "Loading…") value and the list never refreshed.
+-- Fix: build the menu SYNCHRONOUSLY from the prefs cache right away, and
+-- refresh that cache in the background for the next open.
+local function initGalleryPickerProps(props)
     props.galleryId = props.galleryId or ""
     props.galleryTitle = props.galleryTitle or ""
     props.galleryMode = props.galleryMode or "collaboration"
-    props.galleryStatus = props.galleryStatus or "draft"
     props.makeLive = props.makeLive or false
 
-    -- Existing galleries did not show up in the menu. The server was not at
-    -- fault: GET /plugin/galleries returns 200 and the correct list (verified
-    -- with a direct API call). Two bugs in the plug-in:
-    --   1. The list was set ONLY asynchronously, after the dialog had been
-    --      built, by which time the binding no longer refreshed the popup_menu.
-    --   2. The old line was `props.availableGalleries = props.availableGalleries or {...}`
-    --      and because props = info.collectionSettings PERSISTS, on the second
-    --      open the `or` kept the stale (usually "Loading…") value and the list
-    --      never refreshed.
-    -- Fix: build the menu SYNCHRONOUSLY from the prefs cache right away, and
-    -- refresh that cache in the background for the next open.
     local prefs = LrPrefs.prefsForPlugin()
 
     local function buildGalleryItems(list)
@@ -191,9 +259,7 @@ function exportServiceProvider.viewForCollectionSettings(viewFactory, publishSet
 
     -- The cache does NOT go into prefs as a table. LrPrefs only stores simple
     -- values reliably; a table of tables was lost silently, so on the next open
-    -- the list read back empty. The log proved it: "gallery list refreshed:
-    -- 1 galleries" was written, yet the menu stayed empty. Store it as a JSON
-    -- string instead.
+    -- the list read back empty. Store it as a JSON string instead.
     local cached = {}
     if type(prefs.galleryCacheJson) == "string" and prefs.galleryCacheJson ~= "" then
         local okDecode, decoded = pcall(json.decode, prefs.galleryCacheJson)
@@ -239,88 +305,197 @@ function exportServiceProvider.viewForCollectionSettings(viewFactory, publishSet
         log:info("gallery list refreshed: " .. #galleries ..
                  " galleries, cache " .. (okEnc and "written" or "FAILED"))
     end)
+end
 
-    -- THIS was the real cause of the 'hierarchyCreated' failure.
-    -- sectionsForTopOfDialog returns a table of SECTIONS (title/synopsis/…),
-    -- but viewForCollectionSettings has to return a SINGLE VIEW. This returned
-    -- a sections-shaped table, so LR tried to call the method
-    -- 'hierarchyCreated' on it -> "An internal error has occurred". The
-    -- function itself ran to completion (hence the gallery fetches in the log),
-    -- but the dialog died on the return value -- which is why the dropdown was
-    -- never seen at all.
+-- Builds the picker's inner content (no group_box wrapper -- callers title
+-- their own box differently).
+--
+-- THIS was the real cause of the historic 'hierarchyCreated' failure.
+-- sectionsForTopOfDialog returns a table of SECTIONS (title/synopsis/…),
+-- but viewForCollectionSettings has to return a SINGLE VIEW. Returning a
+-- sections-shaped table made LR try to call the method 'hierarchyCreated'
+-- on it -> "An internal error has occurred". Kept as a warning for anyone
+-- touching this area again.
+local function buildGalleryPickerView(f, props)
+    return f:column {
+        spacing = f:control_spacing(),
+        fill_horizontal = 1,
+        f:row {
+            f:static_text {
+                title = "Existing gallery:",
+                width = LrView.share "label_width",
+                alignment = "right",
+            },
+            f:popup_menu {
+                bind_to_object = props,
+                value = LrView.bind("galleryId"),
+                items = LrView.bind("availableGalleries"),
+                width_in_chars = 40,
+            },
+        },
+        f:row {
+            f:static_text {
+                title = "OR create new:",
+                width = LrView.share "label_width",
+                alignment = "right",
+            },
+            f:edit_field {
+                bind_to_object = props,
+                value = LrView.bind("galleryTitle"),
+                placeholder_string = "Gallery title (e.g. 'Mäyränkatu 14')",
+                width_in_chars = 40,
+            },
+        },
+        f:row {
+            f:static_text {
+                title = "Mode:",
+                width = LrView.share "label_width",
+                alignment = "right",
+            },
+            f:popup_menu {
+                bind_to_object = props,
+                value = LrView.bind("galleryMode"),
+                items = {
+                    { title = "Selection / proofing (client likes & picks)", value = "collaboration" },
+                    { title = "Presentation (view only)", value = "presentation" },
+                },
+                width_in_chars = 40,
+            },
+        },
+        f:row {
+            f:static_text {
+                title = " ",
+                width = LrView.share "label_width",
+            },
+            f:checkbox {
+                bind_to_object = props,
+                value = LrView.bind("makeLive"),
+                title = "Set gallery live automatically after upload",
+            },
+        },
+        f:row {
+            f:static_text {
+                title = " ",
+                width = LrView.share "label_width",
+            },
+            f:static_text {
+                title = "Tip: configure header, branding and password in Lumio Studio after the first upload.",
+                width_in_chars = 50,
+                text_color = LrColor(0.5, 0.5, 0.5),
+                height_in_lines = 2,
+            },
+        },
+    }
+end
+
+-- ============================================================================
+-- Collection settings (per Lumio gallery)
+-- ============================================================================
+-- Fires for every plain published collection, whether it's a root
+-- ("Simple Gallery") or a child of a Collection Set ("Lumio Gallery" --
+-- see viewForCollectionSetSettings below). Three cases, via
+-- classifyCollection:
+--   "root"          -- unchanged flat-mode picker, just relabeled
+--   "default_child" -- the Set's own auto-created collection: no picker,
+--                      gallery is inherited from the parent Set at publish
+--                      time, photos land in the gallery's unsectioned bucket
+--   "chapter"        -- any OTHER child of a Set: becomes a Lumio Chapter,
+--                      title follows this collection's own LR name
+function exportServiceProvider.viewForCollectionSettings(viewFactory, publishSettings, info)
+    local f = viewFactory
+    local props = info.collectionSettings
+    local kind = classifyCollection(info)
+
+    if kind == "root" then
+        initGalleryPickerProps(props)
+        return f:group_box {
+            title = "Simple Gallery",
+            fill_horizontal = 1,
+            buildGalleryPickerView(f, props),
+        }
+    end
+
+    if kind == "default_child" then
+        return f:group_box {
+            title = "Lumio Gallery",
+            fill_horizontal = 1,
+            f:column {
+                spacing = f:control_spacing(),
+                fill_horizontal = 1,
+                f:row {
+                    f:static_text {
+                        title = "Photos published here appear in the gallery without a chapter.",
+                        width_in_chars = 55,
+                        height_in_lines = 2,
+                    },
+                },
+                f:row {
+                    f:static_text {
+                        title = "Gallery, mode and status are configured on the parent Collection Set itself.",
+                        width_in_chars = 55,
+                        text_color = LrColor(0.5, 0.5, 0.5),
+                        height_in_lines = 2,
+                    },
+                },
+            },
+        }
+    end
+
+    -- kind == "chapter"
     return f:group_box {
-        title = "Lumio Gallery",
+        title = "Lumio Chapter",
         fill_horizontal = 1,
         f:column {
             spacing = f:control_spacing(),
             fill_horizontal = 1,
             f:row {
                 f:static_text {
-                    title = "Existing gallery:",
-                    width = LrView.share "label_width",
-                    alignment = "right",
-                },
-                f:popup_menu {
-                    bind_to_object = props,
-                    value = LrView.bind("galleryId"),
-                    items = LrView.bind("availableGalleries"),
-                    width_in_chars = 40,
-                },
-            },
-            f:row {
-                f:static_text {
-                    title = "OR create new:",
-                    width = LrView.share "label_width",
-                    alignment = "right",
-                },
-                f:edit_field {
-                    bind_to_object = props,
-                    value = LrView.bind("galleryTitle"),
-                    placeholder_string = "Gallery title (e.g. 'Mäyränkatu 14')",
-                    width_in_chars = 40,
-                },
-            },
-            f:row {
-                f:static_text {
-                    title = "Mode:",
-                    width = LrView.share "label_width",
-                    alignment = "right",
-                },
-                f:popup_menu {
-                    bind_to_object = props,
-                    value = LrView.bind("galleryMode"),
-                    items = {
-                        { title = "Selection / proofing (client likes & picks)", value = "collaboration" },
-                        { title = "Presentation (view only)", value = "presentation" },
-                    },
-                    width_in_chars = 40,
-                },
-            },
-            f:row {
-                f:static_text {
-                    title = " ",
-                    width = LrView.share "label_width",
-                },
-                f:checkbox {
-                    bind_to_object = props,
-                    value = LrView.bind("makeLive"),
-                    title = "Set gallery live automatically after upload",
-                },
-            },
-            f:row {
-                f:static_text {
-                    title = " ",
-                    width = LrView.share "label_width",
-                },
-                f:static_text {
-                    title = "Tip: configure header, branding and password in Lumio Studio after the first upload.",
-                    width_in_chars = 50,
-                    text_color = LrColor(0.5, 0.5, 0.5),
+                    title = "This collection is a chapter of its parent Lumio Gallery.",
+                    width_in_chars = 55,
                     height_in_lines = 2,
+                },
+            },
+            f:row {
+                f:static_text {
+                    title = "The chapter title follows this collection's own name — rename the collection to rename the chapter.",
+                    width_in_chars = 55,
+                    text_color = LrColor(0.5, 0.5, 0.5),
+                    height_in_lines = 3,
                 },
             },
         },
     }
+end
+
+-- ============================================================================
+-- Collection-Set settings (= a Lumio Gallery with Chapters)
+-- ============================================================================
+-- Set-level counterpart of viewForCollectionSettings above. Required once
+-- maxCollectionSetDepth > 0 -- without these three callbacks Lightroom
+-- assumes Collection Set support and crashes the same way documented at
+-- getCollectionBehaviorInfo ("hierarchyCreated" nil-method error).
+
+function exportServiceProvider.viewForCollectionSetSettings(viewFactory, publishSettings, info)
+    local f = viewFactory
+    local props = info.collectionSettings
+    initGalleryPickerProps(props)
+    return f:group_box {
+        title = "Lumio Gallery",
+        fill_horizontal = 1,
+        buildGalleryPickerView(f, props),
+    }
+end
+
+-- Dialog closed (Cancel or Save). No server call here -- gallery creation
+-- is deferred to the first publish of one of this Set's children, exactly
+-- like a root "Simple Gallery" collection today (see processRenderedPhotos).
+function exportServiceProvider.endDialogForCollectionSetSettings(publishSettings, info)
+end
+
+-- Dialog SAVED (not called on Cancel). The bound galleryTitle/galleryMode/
+-- makeLive fields are already persisted into info.collectionSettings by LR
+-- itself via the view's bindings -- nothing else to do until first publish.
+function exportServiceProvider.updateCollectionSetSettings(publishSettings, info)
 end
 
 -- ============================================================================
