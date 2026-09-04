@@ -600,7 +600,7 @@ local function uploadOnePhoto(rendition, filepath, galleryId)
     end
 
     -- Init call: returns a presigned PUT URL
-    local okUpload, uploadErr = LrTasks.pcall(function()
+    local okUpload, resultOrErr = LrTasks.pcall(function()
         local uploads = api.initUpload(galleryId, {
             {
                 filename = filename,
@@ -625,6 +625,11 @@ local function uploadOnePhoto(rendition, filepath, galleryId)
         -- LR remembers the Lumio file ID. On a later republish/delete, LR
         -- hands this ID to deletePhotosFromPublishedCollection.
         rendition:recordPublishedPhotoId(u.fileId)
+
+        -- Handed back to processRenderedPhotos so a chapter publish can
+        -- batch-assign this publish's uploaded files to its Section
+        -- afterwards (see assignFilesToSection there).
+        return u.fileId
     end)
 
     if not okUpload then
@@ -635,11 +640,11 @@ local function uploadOnePhoto(rendition, filepath, galleryId)
             -- loud instead of letting it read like an ordinary upload error.
             error("WARNING: the previous version was removed from Lumio but the new " ..
                 "upload failed -- this photo is NO LONGER visible in the online " ..
-                "gallery, republish as soon as possible: " .. tostring(uploadErr))
+                "gallery, republish as soon as possible: " .. tostring(resultOrErr))
         else
-            -- Level 0: uploadErr already carries a "file:line:" prefix from
+            -- Level 0: resultOrErr already carries a "file:line:" prefix from
             -- the inner error() call, re-adding one would just double it up.
-            error(uploadErr, 0)
+            error(resultOrErr, 0)
         end
     end
     -- This was `rendition:recordPublishedPhotoUrl(nil)`. LR requires a string
@@ -651,6 +656,7 @@ local function uploadOnePhoto(rendition, filepath, galleryId)
     -- The URL call is optional in the SDK and the upload response carries no
     -- viewable address (only a presigned PUT), so it is removed.
     -- "Show in Lumio" at gallery level still works (host + /studio/<id>).
+    return resultOrErr -- the Lumio fileId, on success
 end
 
 -- Looks up a gallery's public slug: prefer the value already stored on the
@@ -827,6 +833,30 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
         return
     end
 
+    -- Chapter-only: resolve (or create, on first publish) this collection's
+    -- Lumio Section. A default-child collection never gets one -- its
+    -- photos stay in the gallery's unsectioned bucket (kind == "default_child"
+    -- or "root" both leave sectionId nil, same effect).
+    local sectionId
+    if kind == "chapter" then
+        sectionId = collProps and collProps.sectionId
+        if not sectionId or sectionId == "" then
+            local chapterTitle = exportContext.publishedCollection:getName()
+            local ok, created = LrTasks.pcall(api.createSection, galleryId, chapterTitle)
+            if not ok then
+                LrDialogs.message("Lumio", "Could not create chapter: " .. tostring(created), "critical")
+                return
+            end
+            sectionId = created.id
+            local catalog = LrApplication.activeCatalog()
+            catalog:withWriteAccessDo("Lumio: assign chapter", function()
+                local current = exportContext.publishedCollection:getCollectionInfoSummary().collectionSettings or {}
+                current.sectionId = sectionId
+                exportContext.publishedCollection:setCollectionSettings(current)
+            end)
+        end
+    end
+
     local nPhotos = exportSession:countRenditions()
     local progressScope = exportContext:configureProgress {
         title = nPhotos > 1
@@ -837,6 +867,10 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
     local uploaded = 0
     local failed = 0
     local failedList = {}
+    -- Chapter-only: this run's successfully uploaded fileIds, batch-assigned
+    -- to the Section after the loop (see below) instead of one call per
+    -- photo -- far fewer HTTP round-trips on a large publish.
+    local uploadedFileIds = {}
 
     -- Wire cancellation into the API layer's waits. Without this the retry
     -- sleeps do not react to the Cancel button at all, because cancellation is
@@ -862,15 +896,18 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
             -- was never uploaded.
             rendition:uploadFailed(tostring(pathOrMessage))
         else
-            local ok, errMsg = LrTasks.pcall(uploadOnePhoto, rendition, pathOrMessage, galleryId)
+            local ok, resultOrErr = LrTasks.pcall(uploadOnePhoto, rendition, pathOrMessage, galleryId)
             if ok then
                 uploaded = uploaded + 1
+                if sectionId and sectionId ~= "" then
+                    table.insert(uploadedFileIds, resultOrErr)
+                end
             else
                 failed = failed + 1
                 local fname = rendition.photo:getFormattedMetadata("fileName") or "?"
-                table.insert(failedList, fname .. ": " .. tostring(errMsg))
-                log:warn("Upload failed for " .. fname .. ": " .. tostring(errMsg))
-                rendition:uploadFailed(tostring(errMsg))
+                table.insert(failedList, fname .. ": " .. tostring(resultOrErr))
+                log:warn("Upload failed for " .. fname .. ": " .. tostring(resultOrErr))
+                rendition:uploadFailed(tostring(resultOrErr))
             end
             -- Clean up the temp file
             if pathOrMessage and LrFileUtils.exists(pathOrMessage) then
@@ -879,6 +916,26 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
         end
 
         progressScope:setPortionComplete(i / nPhotos)
+    end
+
+    -- Chapter-only: assign this run's uploaded files to the Section, chunked
+    -- to sectionAssignSchema's 500-per-call server limit -- a large wedding
+    -- publish can easily exceed that in one go.
+    local sectionAssignError = nil
+    if sectionId and sectionId ~= "" and #uploadedFileIds > 0 then
+        local CHUNK = 500
+        for offset = 1, #uploadedFileIds, CHUNK do
+            local chunk = {}
+            for j = offset, math.min(offset + CHUNK - 1, #uploadedFileIds) do
+                table.insert(chunk, uploadedFileIds[j])
+            end
+            local ok, err = LrTasks.pcall(api.assignFilesToSection, galleryId, sectionId, chunk)
+            if not ok then
+                sectionAssignError = tostring(err)
+                log:warn("section assignment failed: " .. sectionAssignError)
+                break
+            end
+        end
     end
 
     -- Set status to 'live' if requested. For a default/chapter child,
@@ -919,6 +976,11 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
         table.insert(notes,
             "Gallery status could NOT be set to live:\n" .. statusPatchError ..
             "\nThe gallery is still a draft — set it live in Lumio Studio.")
+    end
+    if sectionAssignError then
+        table.insert(notes,
+            "Some photos could NOT be assigned to their chapter:\n" .. sectionAssignError ..
+            "\nThe photos are uploaded and visible in the gallery — assign them to the chapter manually in Lumio Studio.")
     end
     if failed > 0 then
         local msg = uploaded .. " succeeded, " .. failed .. " failed.\n"
