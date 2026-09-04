@@ -687,12 +687,16 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
     local exportSession = exportContext.exportSession
 
     -- Get the gallery ID from the collection settings. If there is none:
-    -- create the gallery now (the user gave a "new gallery" title).
+    -- create the gallery now (the user gave a "new gallery" title) -- or,
+    -- for a Set's default/chapter child, inherit it from the parent Set,
+    -- creating the Set's gallery on its own first-ever publish if needed
+    -- (mirrors the root/flat "create on first publish" pattern below,
+    -- just one level up).
     -- gallerySlug is only used by goToPublishedPhoto (public gallery link,
     -- see below) -- goToPublishedCollection itself now uses galleryId.
-    local galleryId, gallerySlug, collProps
+    local galleryId, gallerySlug, collProps, collInfo
     if exportContext.publishedCollection then
-        local collInfo = exportContext.publishedCollection:getCollectionInfoSummary()
+        collInfo = exportContext.publishedCollection:getCollectionInfoSummary()
         if collInfo and collInfo.collectionSettings then
             collProps = collInfo.collectionSettings
             galleryId = collProps.galleryId
@@ -700,8 +704,65 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
         end
     end
 
-    if (not galleryId or galleryId == "") and collProps then
-        -- Create a new gallery
+    local kind = classifyCollection(collInfo)
+    -- Resolved once, up front, for a default/chapter child: reused both to
+    -- inherit/create the gallery below and, further down, to read a fresh
+    -- makeLive (never cached on the child -- it's a live toggle owned by
+    -- the Set, may be flipped after chapters already exist).
+    local parentSettings, parentSetObj
+    if kind == "default_child" or kind == "chapter" then
+        parentSettings, parentSetObj = getParentSetSettings(collInfo)
+    end
+
+    if (not galleryId or galleryId == "") and collProps and (kind == "default_child" or kind == "chapter") then
+        if not parentSettings then
+            LrDialogs.message("Lumio",
+                "Could not resolve this chapter's parent Lumio Gallery. Re-open the Collection Set's settings and try again.",
+                "critical")
+            return
+        end
+        galleryId = parentSettings.galleryId
+        gallerySlug = parentSettings.gallerySlug
+        if not galleryId or galleryId == "" then
+            -- The Set itself has no gallery yet -- this is effectively the
+            -- Set's first-ever publish, via whichever child ran first.
+            local title = (parentSettings.galleryTitle or ""):gsub("^%s+", ""):gsub("%s+$", "")
+            if title == "" then
+                LrDialogs.message("Lumio",
+                    "This Lumio Gallery has no title. Open the Collection Set's 'Edit Published Collection Set' and enter one.",
+                    "critical")
+                return
+            end
+            local ok, created = LrTasks.pcall(api.createGallery, title, parentSettings.galleryMode, nil)
+            if not ok then
+                LrDialogs.message("Lumio", "Could not create gallery: " .. tostring(created), "critical")
+                return
+            end
+            galleryId = created.id
+            gallerySlug = created.slug
+            if parentSetObj then
+                local catalog = LrApplication.activeCatalog()
+                catalog:withWriteAccessDo("Lumio: assign gallery to Set", function()
+                    local current = parentSetObj:getCollectionInfoSummary().collectionSettings or {}
+                    current.galleryId = galleryId
+                    current.gallerySlug = gallerySlug
+                    parentSetObj:setCollectionSettings(current)
+                end)
+            end
+        end
+        -- Cache onto the child's OWN settings too -- this is what keeps
+        -- deletePhotosFromPublishedCollection/goToPublishedCollection/
+        -- goToPublishedPhoto working unchanged: they all read straight off
+        -- the child's own settings and never need to walk up to the parent.
+        local catalog = LrApplication.activeCatalog()
+        catalog:withWriteAccessDo("Lumio: inherit gallery from Set", function()
+            local current = exportContext.publishedCollection:getCollectionInfoSummary().collectionSettings or {}
+            current.galleryId = galleryId
+            current.gallerySlug = gallerySlug
+            exportContext.publishedCollection:setCollectionSettings(current)
+        end)
+    elseif (not galleryId or galleryId == "") and collProps then
+        -- kind == "root": unchanged flat-mode gallery creation.
         local title = (collProps.galleryTitle or ""):gsub("^%s+", ""):gsub("%s+$", "")
         if title == "" then
             LrDialogs.message(
@@ -820,12 +881,21 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
         progressScope:setPortionComplete(i / nPhotos)
     end
 
-    -- Set status to 'live' if requested.
+    -- Set status to 'live' if requested. For a default/chapter child,
+    -- makeLive is never cached locally -- it's owned by the parent Set and
+    -- read fresh here (parentSettings was resolved at the top of this
+    -- function, a local catalog read, no extra network call).
+    local effectiveMakeLive
+    if kind == "default_child" or kind == "chapter" then
+        effectiveMakeLive = parentSettings and parentSettings.makeLive or false
+    else
+        effectiveMakeLive = collProps and collProps.makeLive or false
+    end
     -- A failure here used to surface only in the log, so the photographer
     -- believed the gallery was published and sent the client a link to a
     -- gallery that was still a draft. This actually happened at 14:15 (HTTP 429).
     local statusPatchError = nil
-    if collProps and collProps.makeLive and uploaded > 0 then
+    if effectiveMakeLive and uploaded > 0 then
         local ok, err = LrTasks.pcall(function()
             api.patchGallery(galleryId, { status = "live" })
         end)
