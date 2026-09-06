@@ -74,8 +74,11 @@ umbenennen (oder per Rechtsklick → „Paketinhalt zeigen").
 2. **Veröffentlichte Sammlung erstellen** unter dem Lumio-Service.
 3. Im Dialog:
    - **Vorhandene Galerie** aus der Liste wählen, ODER
-   - **Neue anlegen** mit Titel + Modus (Auswahl/Proofing oder
-     Präsentation).
+   - **„— Neu anlegen —"** lassen: die neue Galerie bekommt automatisch
+     den Namen der Sammlung, den du gerade im Namensfeld von Lightroom
+     eingibst — kein separates Titelfeld, du gibst den Namen nur
+     einmal ein.
+   - **Modus** (Auswahl/Proofing oder Präsentation).
    - **Nach Upload automatisch auf 'live' schalten**: wenn an, wird
      die Galerie nach dem ersten erfolgreichen Upload sofort live —
      Kunden können die URL aufrufen.
@@ -123,7 +126,11 @@ Lumio-Service auch ein **Sammlungs-Set** anlegen:
 3. Jede **zusätzliche** Sammlung, die du im Set anlegst, wird beim
    ersten Veröffentlichen zu einem echten **Kapitel** auf Lumio. Der
    Kapitel-Titel folgt dem Namen der Sammlung in Lightroom — die
-   Sammlung umbenennen, um das Kapitel umzubenennen.
+   Sammlung umbenennen, um das Kapitel umzubenennen. (Der Menüeintrag
+   zum Anlegen heißt in Lightroom generisch „Veröffentlichte Sammlung
+   erstellen…", nicht „Simple Gallery" — dieser Text ist im
+   Set nicht separat anpassbar, siehe Kommentar bei
+   `titleForPublishedCollection` im Code.)
 4. Sammlung löschen → das zugehörige Kapitel wird auf Lumio ebenfalls
    gelöscht (die Bilder bleiben erhalten und fallen in den
    kapitellosen Bereich zurück). Das ganze Set bzw. die Galerie zu
