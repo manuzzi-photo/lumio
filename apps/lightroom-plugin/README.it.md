@@ -79,8 +79,11 @@ non riesci ad aprirla — rinominala semplicemente da `.lrdevplugin` a
 2. **Crea raccolta pubblicata** sotto il servizio Lumio.
 3. Nella finestra di dialogo:
    - scegli una **galleria esistente** dalla lista, OPPURE
-   - **creane una nuova** con titolo + modalità (selezione/proofing
-     o presentazione).
+   - lascia **"— Crea nuova —"**: la nuova galleria prende
+     automaticamente il nome della raccolta che stai scrivendo nel
+     campo nome di Lightroom — nessun campo titolo separato, il nome
+     lo scrivi una volta sola.
+   - **Modalità** (selezione/proofing o presentazione).
    - **Metti automaticamente 'live' dopo il caricamento**: se
      attivo, la galleria diventa live subito dopo il primo
      caricamento riuscito — i clienti possono aprire l'URL.
@@ -129,7 +132,11 @@ puoi anche creare un **set di raccolte**:
 3. Ogni raccolta **aggiuntiva** che crei nel set diventa, alla prima
    pubblicazione, un vero **capitolo** su Lumio. Il titolo del
    capitolo segue il nome della raccolta in Lightroom — rinomina la
-   raccolta per rinominare il capitolo.
+   raccolta per rinominare il capitolo. (La voce di menu per crearla
+   si chiama, genericamente, "Crea raccolta pubblicata…", non
+   "Simple Gallery" — questo testo non è personalizzabile in modo
+   selettivo dentro un set, vedi il commento su
+   `titleForPublishedCollection` nel codice.)
 4. Elimina la raccolta → anche il capitolo corrispondente viene
    eliminato su Lumio (le immagini restano e tornano nell'area senza
    capitoli). Eliminare l'intero set/la galleria resta un'azione da
