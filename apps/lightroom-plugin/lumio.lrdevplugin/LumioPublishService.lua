@@ -666,8 +666,15 @@ local function uploadOnePhoto(rendition, filepath, galleryId)
         end
     end
 
-    -- File size (measure AFTER embedding, see above)
-    local sizeBytes = LrFileUtils.fileAttributes(filepath).fileSize or 0
+    -- File size (measure AFTER embedding, see above). fileAttributes can
+    -- return nil (temp render deleted/moved from under us, disk hiccup) --
+    -- guard before indexing so this fails with a clear message instead of
+    -- an "attempt to index a nil value" Lua error.
+    local attrs = LrFileUtils.fileAttributes(filepath)
+    if not attrs then
+        error("Rendered file is missing or inaccessible: " .. filepath)
+    end
+    local sizeBytes = attrs.fileSize or 0
     if sizeBytes == 0 then
         error("File is empty: " .. filepath)
     end
