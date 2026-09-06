@@ -109,10 +109,12 @@ Lumio-Service auch ein **Sammlungs-Set** anlegen:
 
 1. Rechtsklick auf den Lumio-Service → **Neues Sammlungs-Set…**,
    Galerie wie gewohnt wählen oder neu anlegen — das Set selbst ist
-   die „Chapters Gallery". Rechtsklick auf eine bestehende Chapters
-   Gallery bietet bewusst nur eine einzige Möglichkeit, ein Kind
-   anzulegen — eine neue Sammlung (kein Smart-Collection-Eintrag,
-   keine verschachtelten Sets).
+   die „Chapters Gallery". Verschachtelte Sets sind blockiert. Der
+   generische Lightroom-Eintrag „Veröffentlichte intelligente Sammlung
+   erstellen" bleibt im Rechtsklick-Menü sichtbar — Lightroom bietet
+   dafür keine Möglichkeit, ihn vollständig zu entfernen, nur ihn
+   umzubenennen; er heißt daher bewusst nicht „Lumio …", damit klar
+   ist, dass er keine Lumio-Funktion ist.
 2. Beim Speichern legt das Plugin sofort eine Sammlung namens
    **„Default"** im Set an. Bilder, die du dort veröffentlichst,
    landen im normalen, kapitellosen Bereich der Galerie — genau wie

@@ -115,10 +115,12 @@ puoi anche creare un **set di raccolte**:
 
 1. Clic destro sul servizio Lumio → **Nuovo set di raccolte…**,
    scegli la galleria come al solito o creane una nuova — il set
-   stesso è la "Chapters Gallery". Il clic destro su una Chapters
-   Gallery già esistente mostra volutamente un'unica possibilità per
-   aggiungere un figlio — una nuova raccolta (nessuna voce Smart
-   Collection, nessun set annidato).
+   stesso è la "Chapters Gallery". I set annidati sono bloccati.
+   La voce generica di Lightroom "Crea raccolta dinamica pubblicata"
+   resta visibile nel menu contestuale — Lightroom non offre un modo
+   per rimuoverla del tutto, solo per rinominarla, quindi resta
+   volutamente con il nome generico invece di un'etichetta "Lumio…"
+   fuorviante, per chiarire che non è una funzione di Lumio.
 2. Al salvataggio, il plugin crea subito una raccolta chiamata
    **"Default"** nel set. Le immagini che pubblichi lì finiscono
    nell'area senza capitoli della galleria — esattamente come in
