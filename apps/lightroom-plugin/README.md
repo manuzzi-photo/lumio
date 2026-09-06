@@ -9,7 +9,7 @@ Bidirektionale Brücke zwischen Lightroom Classic und Lumio:
 2. **Publish-Service** (LR → Lumio): Bilder aus LR direkt in eine
    Lumio-Galerie hochladen. Eine einzelne Veröffentlichte Sammlung
    ergibt eine **Simple Gallery** (1:1). Ein **Sammlungs-Set** ergibt
-   eine **Lumio Gallery** mit Kapiteln — jede zusätzliche Sammlung im
+   eine **Chapters Gallery** mit Kapiteln — jede zusätzliche Sammlung im
    Set wird ein Kapitel (siehe „Kapitel" weiter unten). Drag-and-Drop
    oder Smart-Collection-Regeln bestimmen den Inhalt.
 
@@ -102,18 +102,22 @@ neue hochgeladen.
 Photo aus der Sammlung entfernen oder Sammlung löschen → Lumio
 löscht die entsprechenden Files automatisch.
 
-### Kapitel (Lumio Gallery als Sammlungs-Set)
+### Kapitel (Chapters Gallery als Sammlungs-Set)
 
 Statt einer einzelnen Veröffentlichten Sammlung kannst du unter dem
 Lumio-Service auch ein **Sammlungs-Set** anlegen:
 
 1. Rechtsklick auf den Lumio-Service → **Neues Sammlungs-Set…**,
    Galerie wie gewohnt wählen oder neu anlegen — das Set selbst ist
-   die „Lumio Gallery".
-2. Lightroom legt automatisch eine Standard-Sammlung im Set an.
-   Bilder, die du dort veröffentlichst, landen im normalen,
-   kapitellosen Bereich der Galerie — genau wie im
-   Simple-Gallery-Modus.
+   die „Chapters Gallery". Rechtsklick auf eine bestehende Chapters
+   Gallery bietet bewusst nur eine einzige Möglichkeit, ein Kind
+   anzulegen — eine neue Sammlung (kein Smart-Collection-Eintrag,
+   keine verschachtelten Sets).
+2. Beim Speichern legt das Plugin sofort eine Sammlung namens
+   **„Default"** im Set an. Bilder, die du dort veröffentlichst,
+   landen im normalen, kapitellosen Bereich der Galerie — genau wie
+   im Simple-Gallery-Modus. Diese Sammlung kann umbenannt werden,
+   ohne ihre Sonderrolle zu verlieren.
 3. Jede **zusätzliche** Sammlung, die du im Set anlegst, wird beim
    ersten Veröffentlichen zu einem echten **Kapitel** auf Lumio. Der
    Kapitel-Titel folgt dem Namen der Sammlung in Lightroom — die
