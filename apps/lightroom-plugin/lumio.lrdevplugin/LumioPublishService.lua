@@ -102,8 +102,11 @@ exportServiceProvider.titleForGoToPublishedPhoto            = "Show public galle
 exportServiceProvider.small_icon = "icon.png"
 exportServiceProvider.supportsCustomSortOrder = false
 exportServiceProvider.disableRenamePublishedCollection      = false
--- Was `true`: a Collection Set (Chapters Gallery) can now be renamed, which
--- syncs to the Lumio gallery title -- see updateCollectionSetSettings.
+-- Was `true`: a Collection Set (Chapters Gallery) can now be renamed in
+-- Lightroom's UI. NOTE: the rename itself is NOT currently synced to the
+-- Lumio gallery's title (renamePublishedCollection below only syncs a
+-- CHAPTER's title, gated on collectionSettings.sectionId, which a Set
+-- never has) -- renaming the Set only affects its local LR name today.
 exportServiceProvider.disableRenamePublishedCollectionSet   = false
 
 -- getCollectionBehaviorInfo was originally added with maxCollectionSetDepth
@@ -182,11 +185,18 @@ end
 -- once, at creation time, so classification stays entirely under this
 -- plug-in's own control.
 --
--- info.parents is still an Adobe-SDK-documented field on the info tables
--- passed to collection-set callbacks, not yet real-device-confirmed for
--- every call site used here -- written defensively (nil-safe) on purpose,
--- verify against a real Lightroom Classic install before relying on it
--- further.
+-- info.parents is confirmed (official Lightroom Classic 15 SDK reference)
+-- on LrPublishedCollection:getCollectionInfoSummary()'s return table --
+-- reliable for classifying a collection at PUBLISH time (processRenderedPhotos),
+-- which is all this plug-in's actual logic depends on. KNOWN COSMETIC GAP:
+-- on viewForCollectionSettings's info table specifically, `parents` is
+-- documented as "only present when editing an existing published
+-- collection" -- so a brand-new chapter's very first settings dialog
+-- (before it has ever been saved) misclassifies as "root" and shows the
+-- Simple Gallery picker instead of the Lumio Chapter text. Harmless: the
+-- dialog reopens correctly labeled on any later edit, and
+-- processRenderedPhotos classifies correctly regardless since the
+-- collection already exists by the time anything is ever published.
 local function classifyCollection(info)
     local parents = info and info.parents
     if not parents or #parents == 0 then
@@ -200,25 +210,27 @@ local function classifyCollection(info)
 end
 
 -- Resolves a child collection's parent Collection Set's own Lumio-gallery
--- settings. maxCollectionSetDepth is 1 (see getCollectionBehaviorInfo), so
--- there is at most one ancestor -- parents[1] is unambiguous. Returns
--- (settingsTable, setObject); both nil if there is no parent or it can't be
--- resolved (e.g. an SDK method-name mismatch -- see classifyCollection's
--- comment above; must-verify-manually item).
-local function getParentSetSettings(info)
-    local parents = info and info.parents
-    if not parents or not parents[1] or not parents[1].localCollectionId then
-        return nil, nil
-    end
-    local catalog = LrApplication.activeCatalog()
-    local ok, setObj = LrTasks.pcall(function()
-        return catalog:getPublishedCollectionSetByLocalIdentifier(parents[1].localCollectionId)
-    end)
+-- settings, via the collection object's own getParent() -- confirmed on
+-- LrPublishedCollection in the official Lightroom Classic 15 SDK reference
+-- (there is no catalog:getPublishedCollectionSetByLocalIdentifier method;
+-- an earlier version of this function assumed one existed and threw
+-- "attempt to call method ... (a nil value)" on every publish). Takes the
+-- actual collection OBJECT (e.g. exportContext.publishedCollection), not
+-- an info/summary table. Returns (settingsTable, setObject); both nil if
+-- there is no parent or it can't be resolved.
+local function getParentSetSettings(collectionObj)
+    if not collectionObj then return nil, nil end
+    local ok, setObj = LrTasks.pcall(function() return collectionObj:getParent() end)
     if not ok or not setObj then
-        log:warn("could not resolve parent collection set: " .. tostring(setObj))
+        if not ok then
+            log:warn("could not resolve parent collection set: " .. tostring(setObj))
+        end
         return nil, nil
     end
-    local ok2, summary = LrTasks.pcall(function() return setObj:getCollectionInfoSummary() end)
+    -- A LrPublishedCollectionSet's settings come from getCollectionSetInfoSummary
+    -- -- NOT getCollectionInfoSummary, which is the plain-collection method and
+    -- does not exist on a Set object.
+    local ok2, summary = LrTasks.pcall(function() return setObj:getCollectionSetInfoSummary() end)
     if not ok2 or not summary then
         return nil, setObj
     end
@@ -510,8 +522,12 @@ end
 -- What IS done here, immediately: create the Set's "Default" child
 -- collection right away, rather than leaving the Set empty until the
 -- photographer manually adds one. info.publishService (LrPublishService)
--- and info.publishedCollectionSet (the Set just saved) are both
--- SDK-documented fields on this info table.
+-- and info.publishedCollection (confirmed field name for THIS hook in the
+-- official Lightroom Classic 15 SDK reference -- despite the value being a
+-- LrPublishedCollectionSet here, the field is not called
+-- "publishedCollectionSet" the way it is on endDialogForCollectionSetSettings;
+-- an earlier version of this function used the wrong name and the Default
+-- collection was silently never created) are both present on this info table.
 -- createPublishedCollection(name, parent, canReturnExisting) must run
 -- inside a catalog:with___WriteAccessDo gate; canReturnExisting = true
 -- makes this idempotent if the dialog is saved again later with no
@@ -522,9 +538,9 @@ end
 -- default child for as long as it exists, independent of its LR name.
 function exportServiceProvider.updateCollectionSetSettings(publishSettings, info)
     local publishService = info.publishService
-    local newSet = info.publishedCollectionSet
+    local newSet = info.publishedCollection
     if not publishService or not newSet then
-        log:warn("updateCollectionSetSettings: missing publishService/publishedCollectionSet, cannot create Default chapter")
+        log:warn("updateCollectionSetSettings: missing publishService/publishedCollection, cannot create Default chapter")
         return
     end
     local catalog = LrApplication.activeCatalog()
@@ -763,7 +779,7 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
     -- the Set, may be flipped after chapters already exist).
     local parentSettings, parentSetObj
     if kind == "default_child" or kind == "chapter" then
-        parentSettings, parentSetObj = getParentSetSettings(collInfo)
+        parentSettings, parentSetObj = getParentSetSettings(exportContext.publishedCollection)
     end
 
     if (not galleryId or galleryId == "") and collProps and (kind == "default_child" or kind == "chapter") then
@@ -795,10 +811,12 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
             if parentSetObj then
                 local catalog = LrApplication.activeCatalog()
                 catalog:withWriteAccessDo("Lumio: assign gallery to Set", function()
-                    local current = parentSetObj:getCollectionInfoSummary().collectionSettings or {}
+                    -- A LrPublishedCollectionSet uses the SetInfoSummary/
+                    -- SetSettings pair, not the plain-collection methods.
+                    local current = parentSetObj:getCollectionSetInfoSummary().collectionSettings or {}
                     current.galleryId = galleryId
                     current.gallerySlug = gallerySlug
-                    parentSetObj:setCollectionSettings(current)
+                    parentSetObj:setCollectionSetSettings(current)
                 end)
             end
         end
@@ -1084,23 +1102,32 @@ end
 -- ============================================================================
 -- renamePublishedCollection / deletePublishedCollection -- Chapter sync
 -- ============================================================================
--- Fired when the photographer renames or deletes a plain published
--- collection in Lightroom. Only a "chapter" collection (a non-default
+-- Fired when the photographer renames or deletes a published collection OR
+-- collection set in Lightroom (confirmed via the official SDK reference:
+-- both hooks are shared between plain collections and Sets --
+-- info.publishedCollection can be either an LrPublishedCollection or an
+-- LrPublishedCollectionSet). Only a "chapter" collection (a non-default
 -- child of a Collection Set, with a sectionId) has anything to sync --
--- root ("Simple Gallery") and a Set's default child never had a Section,
--- so both hooks are a no-op for them. Best-effort throughout: a sync
--- failure here must never block the rename/delete Lightroom already
--- performed locally, so everything is wrapped in pcall + logged, matching
--- this file's existing swallow-and-log philosophy (see uploadOnePhoto's
--- re-publish delete-old-file handling above).
+-- root ("Simple Gallery"), a Set's default child, and the Set itself
+-- never have a sectionId, so all three are a no-op here (renaming/
+-- deleting the Set itself is deliberately NOT synced to the Lumio gallery
+-- -- see the note at disableRenamePublishedCollectionSet above). Best-
+-- effort throughout: a sync failure here must never block the rename/
+-- delete Lightroom already performed locally, so everything is wrapped in
+-- pcall + logged, matching this file's existing swallow-and-log
+-- philosophy (see uploadOnePhoto's re-publish delete-old-file handling
+-- above).
 --
--- The exact `info` payload shape (does it carry the new name directly, or
--- do we have to read it back off the collection object? one collection
--- per call, or an array for a multi-select delete?) is only
--- high-level-documented in the Adobe SDK reference -- must-verify-manually
--- against a real Lightroom Classic install. Written defensively so a
--- shape mismatch degrades to a no-op + warning log rather than an error
--- that could interrupt the rename/delete itself.
+-- info.collectionSettings is NOT a documented field on either hook's info
+-- table (only isDefaultCollection/name/parents/publishService/
+-- publishedCollection/remoteId/remoteUrl are) -- settings must be read
+-- back via info.publishedCollection:getCollectionInfoSummary(). Calling
+-- that on a Set object would fail (Sets use getCollectionSetInfoSummary
+-- instead, see getParentSetSettings above) -- caught by the pcall below,
+-- which is exactly the desired no-op for a Set-level rename/delete.
+-- info.publishedCollection is confirmed singular (one call per collection,
+-- not an array) even for a multi-select delete in the Publish Services
+-- panel.
 
 local function syncChapterRename(collSettings, newName)
     if not collSettings or not collSettings.sectionId or collSettings.sectionId == "" then
@@ -1122,19 +1149,17 @@ end
 
 function exportServiceProvider.renamePublishedCollection(publishSettings, info)
     info = info or {}
-    local collSettings = info.collectionSettings
-    if not collSettings and info.publishedCollection then
+    local collSettings
+    if info.publishedCollection then
         local okSummary, summary = LrTasks.pcall(function()
             return info.publishedCollection:getCollectionInfoSummary()
         end)
         if okSummary and summary then collSettings = summary.collectionSettings end
     end
-    local newName = info.name
-    if (not newName or newName == "") and info.publishedCollection then
-        local okName, name = LrTasks.pcall(function() return info.publishedCollection:getName() end)
-        if okName then newName = name end
-    end
-    syncChapterRename(collSettings, newName)
+    -- info.name is documented as "the new name being assigned to this
+    -- collection" -- reliable directly, no need to read it back off the
+    -- object.
+    syncChapterRename(collSettings, info.name)
 end
 
 local function syncChapterDelete(collSettings)
@@ -1152,22 +1177,8 @@ end
 
 function exportServiceProvider.deletePublishedCollection(publishSettings, info)
     info = info or {}
-    -- Different SDK call sites may hand back either a single collection or
-    -- an array (e.g. a multi-select delete, or a whole Set's children
-    -- being torn down at once) -- handle both rather than assume one.
-    local collections = info.publishedCollections or info.collections
-    if collections then
-        for _, coll in ipairs(collections) do
-            local okSummary, summary = LrTasks.pcall(function() return coll:getCollectionInfoSummary() end)
-            if okSummary and summary then
-                syncChapterDelete(summary.collectionSettings)
-            end
-        end
-        return
-    end
-
-    local collSettings = info.collectionSettings
-    if not collSettings and info.publishedCollection then
+    local collSettings
+    if info.publishedCollection then
         local okSummary, summary = LrTasks.pcall(function()
             return info.publishedCollection:getCollectionInfoSummary()
         end)
