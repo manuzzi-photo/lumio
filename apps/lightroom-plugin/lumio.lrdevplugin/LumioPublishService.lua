@@ -86,21 +86,23 @@ exportServiceProvider.allowColorSpaces = { "sRGB" }
 -- Two kinds of published collection now exist:
 --   - a plain collection directly under the service = "Simple Gallery",
 --     the original flat 1:1 mode (no chapters)
---   - a Collection Set = "Lumio Gallery", whose child collections become
+--   - a Collection Set = "Chapters Gallery", whose child collections become
 --     Chapters (see titleForPublishedCollectionSet below and
 --     viewForCollectionSettings's classifyCollection branching)
+-- Smart Collections are deliberately NOT offered (no
+-- titleForPublishedSmartCollection): a Chapters Gallery's right-click menu
+-- should show exactly one way to add a child -- a plain published
+-- collection/chapter -- not a second "Create Smart Collection" option.
 exportServiceProvider.titleForPublishedCollection           = "Simple Gallery"
 exportServiceProvider.titleForPublishedCollection_standalone = "Simple Gallery"
-exportServiceProvider.titleForPublishedCollectionSet          = "Lumio Gallery"
-exportServiceProvider.titleForPublishedCollectionSet_standalone = "Lumio Gallery"
-exportServiceProvider.titleForPublishedSmartCollection      = "Lumio Smart Gallery"
-exportServiceProvider.titleForPublishedSmartCollection_standalone = "Lumio Smart Gallery"
+exportServiceProvider.titleForPublishedCollectionSet          = "Chapters Gallery"
+exportServiceProvider.titleForPublishedCollectionSet_standalone = "Chapters Gallery"
 exportServiceProvider.titleForGoToPublishedCollection       = "Show in Lumio"
 exportServiceProvider.titleForGoToPublishedPhoto            = "Show public gallery"
 exportServiceProvider.small_icon = "icon.png"
 exportServiceProvider.supportsCustomSortOrder = false
 exportServiceProvider.disableRenamePublishedCollection      = false
--- Was `true`: a Collection Set (Lumio Gallery) can now be renamed, which
+-- Was `true`: a Collection Set (Chapters Gallery) can now be renamed, which
 -- syncs to the Lumio gallery title -- see updateCollectionSetSettings.
 exportServiceProvider.disableRenamePublishedCollectionSet   = false
 
@@ -151,7 +153,7 @@ function exportServiceProvider.sectionsForTopOfDialog(viewFactory, propertyTable
             },
             viewFactory:row {
                 viewFactory:static_text {
-                    title = "Note: a plain collection is a Simple Gallery (1:1). A Collection Set is a Lumio Gallery whose child collections become Chapters.",
+                    title = "Note: a plain collection is a Simple Gallery (1:1). A Collection Set is a Chapters Gallery whose child collections become Chapters.",
                     width_in_chars = 60,
                     height_in_lines = 2,
                     text_color = LrColor(0.5, 0.5, 0.5),
@@ -166,26 +168,32 @@ end
 -- ============================================================================
 -- Once maxCollectionSetDepth > 0, a plain collection either sits directly
 -- under the publish service (no parent -- "root", the original flat
--- "Simple Gallery" mode) or inside a Collection Set (a "Lumio Gallery" --
+-- "Simple Gallery" mode) or inside a Collection Set (a "Chapters Gallery" --
 -- see viewForCollectionSetSettings below). Inside a Set, exactly one child
--- is LR's own auto-created default collection (info.isDefaultCollection)
--- -- its photos fall into the gallery's normal unsectioned bucket, same as
--- Simple Gallery photos. Every OTHER child becomes a real Lumio Chapter
--- (GallerySection).
+-- is the "Default" collection WE create explicitly, right when the Set
+-- itself is created (see updateCollectionSetSettings) -- its photos fall
+-- into the gallery's normal unsectioned bucket, same as Simple Gallery
+-- photos. Every OTHER child becomes a real Lumio Chapter (GallerySection).
 --
--- info.parents / info.isDefaultCollection are Adobe-SDK-documented fields
--- on the info tables passed to collection-set callbacks; this plug-in has
--- previously real-device-confirmed the same three fields (isDefaultCollection,
--- name, parents) on a *different* info table shape (info.publishedCollectionInfo
--- in goToPublishedPhoto below), which is reassuring but NOT the same call
--- site as here -- written defensively (nil-safe) on purpose, verify against
--- a real Lightroom Classic install before relying on it further.
+-- Deliberately NOT keyed off LR's own info.isDefaultCollection (SDK-
+-- documented but never real-device-confirmed at this exact call site) or
+-- off the collection's name (renaming "Default" must not silently turn it
+-- into a chapter) -- collectionSettings.isDefaultChapter is a flag WE set
+-- once, at creation time, so classification stays entirely under this
+-- plug-in's own control.
+--
+-- info.parents is still an Adobe-SDK-documented field on the info tables
+-- passed to collection-set callbacks, not yet real-device-confirmed for
+-- every call site used here -- written defensively (nil-safe) on purpose,
+-- verify against a real Lightroom Classic install before relying on it
+-- further.
 local function classifyCollection(info)
     local parents = info and info.parents
     if not parents or #parents == 0 then
         return "root"
     end
-    if info.isDefaultCollection then
+    local settings = info and info.collectionSettings
+    if settings and settings.isDefaultChapter then
         return "default_child"
     end
     return "chapter"
@@ -219,7 +227,7 @@ end
 
 -- ============================================================================
 -- Gallery-picker -- shared between a root ("Simple Gallery") collection's
--- own settings and a Collection Set's ("Lumio Gallery") settings. Both let
+-- own settings and a Collection Set's ("Chapters Gallery") settings. Both let
 -- the photographer pick an existing Lumio gallery or create a new one the
 -- same way; only the group_box title around it differs per caller.
 -- ============================================================================
@@ -392,13 +400,14 @@ end
 -- Collection settings (per Lumio gallery)
 -- ============================================================================
 -- Fires for every plain published collection, whether it's a root
--- ("Simple Gallery") or a child of a Collection Set ("Lumio Gallery" --
+-- ("Simple Gallery") or a child of a Collection Set ("Chapters Gallery" --
 -- see viewForCollectionSetSettings below). Three cases, via
 -- classifyCollection:
 --   "root"          -- unchanged flat-mode picker, just relabeled
---   "default_child" -- the Set's own auto-created collection: no picker,
---                      gallery is inherited from the parent Set at publish
---                      time, photos land in the gallery's unsectioned bucket
+--   "default_child" -- the Set's own "Default" collection (created by us
+--                      in updateCollectionSetSettings): no picker, gallery
+--                      is inherited from the parent Set at publish time,
+--                      photos land in the gallery's unsectioned bucket
 --   "chapter"        -- any OTHER child of a Set: becomes a Lumio Chapter,
 --                      title follows this collection's own LR name
 function exportServiceProvider.viewForCollectionSettings(viewFactory, publishSettings, info)
@@ -417,7 +426,7 @@ function exportServiceProvider.viewForCollectionSettings(viewFactory, publishSet
 
     if kind == "default_child" then
         return f:group_box {
-            title = "Lumio Gallery",
+            title = "Chapters Gallery",
             fill_horizontal = 1,
             f:column {
                 spacing = f:control_spacing(),
@@ -450,7 +459,7 @@ function exportServiceProvider.viewForCollectionSettings(viewFactory, publishSet
             fill_horizontal = 1,
             f:row {
                 f:static_text {
-                    title = "This collection is a chapter of its parent Lumio Gallery.",
+                    title = "This collection is a chapter of its parent Chapters Gallery.",
                     width_in_chars = 55,
                     height_in_lines = 2,
                 },
@@ -468,7 +477,7 @@ function exportServiceProvider.viewForCollectionSettings(viewFactory, publishSet
 end
 
 -- ============================================================================
--- Collection-Set settings (= a Lumio Gallery with Chapters)
+-- Collection-Set settings (= a Chapters Gallery)
 -- ============================================================================
 -- Set-level counterpart of viewForCollectionSettings above. Required once
 -- maxCollectionSetDepth > 0 -- without these three callbacks Lightroom
@@ -480,7 +489,7 @@ function exportServiceProvider.viewForCollectionSetSettings(viewFactory, publish
     local props = info.collectionSettings
     initGalleryPickerProps(props)
     return f:group_box {
-        title = "Lumio Gallery",
+        title = "Chapters Gallery",
         fill_horizontal = 1,
         buildGalleryPickerView(f, props),
     }
@@ -492,10 +501,47 @@ end
 function exportServiceProvider.endDialogForCollectionSetSettings(publishSettings, info)
 end
 
--- Dialog SAVED (not called on Cancel). The bound galleryTitle/galleryMode/
--- makeLive fields are already persisted into info.collectionSettings by LR
--- itself via the view's bindings -- nothing else to do until first publish.
+-- Dialog SAVED (not called on Cancel, so this only ever runs once the
+-- photographer actually confirms the Set). The bound galleryTitle/
+-- galleryMode/makeLive fields are already persisted into
+-- info.collectionSettings by LR itself via the view's bindings -- nothing
+-- to do for those until first publish (see processRenderedPhotos).
+--
+-- What IS done here, immediately: create the Set's "Default" child
+-- collection right away, rather than leaving the Set empty until the
+-- photographer manually adds one. info.publishService (LrPublishService)
+-- and info.publishedCollectionSet (the Set just saved) are both
+-- SDK-documented fields on this info table.
+-- createPublishedCollection(name, parent, canReturnExisting) must run
+-- inside a catalog:with___WriteAccessDo gate; canReturnExisting = true
+-- makes this idempotent if the dialog is saved again later with no
+-- actual changes (returns the existing "Default" instead of erroring on
+-- a name clash).
+-- isDefaultChapter is OUR OWN flag (see classifyCollection above) -- set
+-- once here so this specific collection is recognized as the unsectioned
+-- default child for as long as it exists, independent of its LR name.
 function exportServiceProvider.updateCollectionSetSettings(publishSettings, info)
+    local publishService = info.publishService
+    local newSet = info.publishedCollectionSet
+    if not publishService or not newSet then
+        log:warn("updateCollectionSetSettings: missing publishService/publishedCollectionSet, cannot create Default chapter")
+        return
+    end
+    local catalog = LrApplication.activeCatalog()
+    local ok, err = LrTasks.pcall(function()
+        catalog:withWriteAccessDo("Lumio: create default chapter collection", function()
+            local defaultColl = publishService:createPublishedCollection("Default", newSet, true)
+            if not defaultColl then
+                error("createPublishedCollection returned nil (name clash?)")
+            end
+            local current = defaultColl:getCollectionInfoSummary().collectionSettings or {}
+            current.isDefaultChapter = true
+            defaultColl:setCollectionSettings(current)
+        end)
+    end)
+    if not ok then
+        log:warn("could not create Default chapter collection: " .. tostring(err))
+    end
 end
 
 -- ============================================================================
@@ -723,7 +769,7 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
     if (not galleryId or galleryId == "") and collProps and (kind == "default_child" or kind == "chapter") then
         if not parentSettings then
             LrDialogs.message("Lumio",
-                "Could not resolve this chapter's parent Lumio Gallery. Re-open the Collection Set's settings and try again.",
+                "Could not resolve this chapter's parent Chapters Gallery. Re-open the Collection Set's settings and try again.",
                 "critical")
             return
         end
@@ -735,7 +781,7 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
             local title = (parentSettings.galleryTitle or ""):gsub("^%s+", ""):gsub("%s+$", "")
             if title == "" then
                 LrDialogs.message("Lumio",
-                    "This Lumio Gallery has no title. Open the Collection Set's 'Edit Published Collection Set' and enter one.",
+                    "This Chapters Gallery has no title. Open the Collection Set's 'Edit Published Collection Set' and enter one.",
                     "critical")
                 return
             end
@@ -803,8 +849,8 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
         -- EXISTING gallery (picked from the dropdown in
         -- viewForCollectionSettings) never gets one, leaving
         -- goToPublishedPhoto dependent entirely on the gallery-list cache
-        -- -- which only refreshes when "Edit Lumio Gallery" is reopened,
-        -- so it goes stale as soon as a gallery is created/renamed in
+        -- -- which only refreshes when "Edit Published Collection" is
+        -- reopened, so it goes stale as soon as a gallery is created/renamed in
         -- Studio instead. Resolve it here (same cache-fallback lookup
         -- used for the public-gallery link) and persist it the same
         -- proven way used above for a newly created gallery, so it
