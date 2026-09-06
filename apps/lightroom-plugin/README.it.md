@@ -10,7 +10,7 @@ Ponte bidirezionale tra Lightroom Classic e Lumio:
 2. **Servizio di pubblicazione** (LR → Lumio): carica le immagini da
    LR direttamente in una galleria Lumio. Una singola raccolta
    pubblicata diventa una **Simple Gallery** (1:1). Un **set di
-   raccolte** diventa una **Lumio Gallery** con capitoli — ogni
+   raccolte** diventa una **Chapters Gallery** con capitoli — ogni
    raccolta aggiuntiva nel set diventa un capitolo (vedi "Capitoli"
    più sotto). Il contenuto è determinato da drag-and-drop o da
    regole della smart collection.
@@ -108,17 +108,22 @@ caricato quello nuovo.
 Rimuovi la foto dalla raccolta oppure elimina la raccolta → Lumio
 elimina automaticamente i file corrispondenti.
 
-### Capitoli (Lumio Gallery come set di raccolte)
+### Capitoli (Chapters Gallery come set di raccolte)
 
 Invece di una singola raccolta pubblicata, sotto il servizio Lumio
 puoi anche creare un **set di raccolte**:
 
 1. Clic destro sul servizio Lumio → **Nuovo set di raccolte…**,
    scegli la galleria come al solito o creane una nuova — il set
-   stesso è la "Lumio Gallery".
-2. Lightroom crea automaticamente una raccolta predefinita nel set.
-   Le immagini che pubblichi lì finiscono nell'area senza capitoli
-   della galleria — esattamente come in modalità Simple Gallery.
+   stesso è la "Chapters Gallery". Il clic destro su una Chapters
+   Gallery già esistente mostra volutamente un'unica possibilità per
+   aggiungere un figlio — una nuova raccolta (nessuna voce Smart
+   Collection, nessun set annidato).
+2. Al salvataggio, il plugin crea subito una raccolta chiamata
+   **"Default"** nel set. Le immagini che pubblichi lì finiscono
+   nell'area senza capitoli della galleria — esattamente come in
+   modalità Simple Gallery. Questa raccolta può essere rinominata
+   senza perdere il suo ruolo speciale.
 3. Ogni raccolta **aggiuntiva** che crei nel set diventa, alla prima
    pubblicazione, un vero **capitolo** su Lumio. Il titolo del
    capitolo segue il nome della raccolta in Lightroom — rinomina la
