@@ -84,17 +84,34 @@ exportServiceProvider.hideSections = {
 exportServiceProvider.allowFileFormats = { "JPEG" }
 exportServiceProvider.allowColorSpaces = { "sRGB" }
 -- Two kinds of published collection now exist:
---   - a plain collection directly under the service = "Simple Gallery",
---     the original flat 1:1 mode (no chapters)
+--   - a plain collection directly under the service = "Simple Gallery" in
+--     our OWN dialog UI (see viewForCollectionSettings), the original flat
+--     1:1 mode (no chapters)
 --   - a Collection Set = "Chapters Gallery", whose child collections become
 --     Chapters (see titleForPublishedCollectionSet below and
 --     viewForCollectionSettings's classifyCollection branching)
--- Smart Collections are deliberately NOT offered (no
--- titleForPublishedSmartCollection): a Chapters Gallery's right-click menu
--- should show exactly one way to add a child -- a plain published
--- collection/chapter -- not a second "Create Smart Collection" option.
-exportServiceProvider.titleForPublishedCollection           = "Simple Gallery"
-exportServiceProvider.titleForPublishedCollection_standalone = "Simple Gallery"
+--
+-- titleForPublishedCollection is DELIBERATELY left unset (Lightroom's own
+-- default, "Published Collection", is used instead of "Simple Gallery"):
+-- this ONE string drives LR's native "Create ^1.../Rename ^1..." menu
+-- wording for EVERY plain collection, including one created INSIDE a
+-- Chapters Gallery -- which is a Chapter, not a "Simple Gallery". There is
+-- no way to vary this string by context (confirmed: no equivalent of
+-- viewForCollectionSettings's per-instance classifyCollection branching
+-- exists for this native-menu-text layer), so showing "Simple Gallery" in
+-- BOTH places would misname a Chapter; Lightroom's own generic wording is
+-- the more honest compromise. The wording we DO fully control -- the
+-- group_box title inside our own dialog -- still reads "Simple Gallery" /
+-- "Chapters Gallery" / "Lumio Chapter" correctly per context.
+--
+-- Smart Collections are similarly NOT offered a custom title
+-- (titleForPublishedSmartCollection) -- but note this does NOT remove the
+-- "Create Smart Collection" menu entry, only its wording; there is no
+-- documented SDK flag to remove the entry itself (confirmed against the
+-- official SDK reference -- no canAddSmartCollection-equivalent exists in
+-- getCollectionBehaviorInfo). Left unset so it reads as Lightroom's own
+-- generic "Published Smart Collection" rather than a misleading
+-- "Lumio ..." name for a feature this plug-in doesn't actually support.
 exportServiceProvider.titleForPublishedCollectionSet          = "Chapters Gallery"
 exportServiceProvider.titleForPublishedCollectionSet_standalone = "Chapters Gallery"
 exportServiceProvider.titleForGoToPublishedCollection       = "Show in Lumio"
@@ -259,14 +276,17 @@ end
 -- refresh that cache in the background for the next open.
 local function initGalleryPickerProps(props)
     props.galleryId = props.galleryId or ""
-    props.galleryTitle = props.galleryTitle or ""
     props.galleryMode = props.galleryMode or "collaboration"
     props.makeLive = props.makeLive or false
 
     local prefs = LrPrefs.prefsForPlugin()
 
     local function buildGalleryItems(list)
-        local items = { { title = "— Create new gallery (enter title below) —", value = "" } }
+        -- No separate title field for a NEW gallery -- it's named after
+        -- whatever the photographer already typed into Lightroom's own
+        -- collection-name field (see processRenderedPhotos), so this
+        -- popup is the only thing the picker needs to ask.
+        local items = { { title = "— Create new (uses this item's name) —", value = "" } }
         for _, g in ipairs(list or {}) do
             table.insert(items, {
                 title = string.format("%s (%s, %d files)",
@@ -300,10 +320,8 @@ local function initGalleryPickerProps(props)
             if it.value == props.galleryId then found = true break end
         end
         if not found then
-            local label = (props.galleryTitle and props.galleryTitle ~= "")
-                and props.galleryTitle or props.galleryId
             table.insert(props.availableGalleries, 2,
-                { title = "(current) " .. tostring(label), value = props.galleryId })
+                { title = "(current) " .. tostring(props.galleryId), value = props.galleryId })
         end
     end
 
@@ -342,7 +360,7 @@ local function buildGalleryPickerView(f, props)
         fill_horizontal = 1,
         f:row {
             f:static_text {
-                title = "Existing gallery:",
+                title = "Gallery:",
                 width = LrView.share "label_width",
                 alignment = "right",
             },
@@ -350,19 +368,6 @@ local function buildGalleryPickerView(f, props)
                 bind_to_object = props,
                 value = LrView.bind("galleryId"),
                 items = LrView.bind("availableGalleries"),
-                width_in_chars = 40,
-            },
-        },
-        f:row {
-            f:static_text {
-                title = "OR create new:",
-                width = LrView.share "label_width",
-                alignment = "right",
-            },
-            f:edit_field {
-                bind_to_object = props,
-                value = LrView.bind("galleryTitle"),
-                placeholder_string = "Gallery title (e.g. 'Mäyränkatu 14')",
                 width_in_chars = 40,
             },
         },
@@ -514,10 +519,13 @@ function exportServiceProvider.endDialogForCollectionSetSettings(publishSettings
 end
 
 -- Dialog SAVED (not called on Cancel, so this only ever runs once the
--- photographer actually confirms the Set). The bound galleryTitle/
--- galleryMode/makeLive fields are already persisted into
--- info.collectionSettings by LR itself via the view's bindings -- nothing
--- to do for those until first publish (see processRenderedPhotos).
+-- photographer actually confirms the Set). The bound galleryId/galleryMode/
+-- makeLive fields (if an existing gallery was picked, or mode/makeLive for
+-- a new one) are already persisted into info.collectionSettings by LR
+-- itself via the view's bindings -- nothing to do for those until first
+-- publish (see processRenderedPhotos). There is no separate title field to
+-- persist -- a new gallery's title is this Set's own LR name, read at
+-- first-publish time, not asked for separately here.
 --
 -- What IS done here, immediately: create the Set's "Default" child
 -- collection right away, rather than leaving the Set empty until the
@@ -544,19 +552,39 @@ function exportServiceProvider.updateCollectionSetSettings(publishSettings, info
         return
     end
     local catalog = LrApplication.activeCatalog()
-    local ok, err = LrTasks.pcall(function()
+
+    -- Two SEPARATE write-access gates on purpose. Confirmed via real-device
+    -- log: querying a collection's info in the SAME withWriteAccessDo call
+    -- that created it throws "Can't get collection information after
+    -- creating collection inside the same withWriteAccessDo function" --
+    -- the original single-gate version of this function hit that on every
+    -- Set creation, and the whole gate (including the create) rolled back,
+    -- so "Default" silently never existed. LrPublishedCollection:getParent's
+    -- own doc already warned of an equivalent same-gate restriction; this
+    -- confirms it isn't unique to getParent.
+    local defaultColl
+    local okCreate, createErr = LrTasks.pcall(function()
         catalog:withWriteAccessDo("Lumio: create default chapter collection", function()
-            local defaultColl = publishService:createPublishedCollection("Default", newSet, true)
+            defaultColl = publishService:createPublishedCollection("Default", newSet, true)
             if not defaultColl then
                 error("createPublishedCollection returned nil (name clash?)")
             end
+        end)
+    end)
+    if not okCreate then
+        log:warn("could not create Default chapter collection: " .. tostring(createErr))
+        return
+    end
+
+    local okMark, markErr = LrTasks.pcall(function()
+        catalog:withWriteAccessDo("Lumio: mark default chapter collection", function()
             local current = defaultColl:getCollectionInfoSummary().collectionSettings or {}
             current.isDefaultChapter = true
             defaultColl:setCollectionSettings(current)
         end)
     end)
-    if not ok then
-        log:warn("could not create Default chapter collection: " .. tostring(err))
+    if not okMark then
+        log:warn("Default chapter collection created, but could not set isDefaultChapter flag: " .. tostring(markErr))
     end
 end
 
@@ -782,23 +810,39 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
         parentSettings, parentSetObj = getParentSetSettings(exportContext.publishedCollection)
     end
 
-    if (not galleryId or galleryId == "") and collProps and (kind == "default_child" or kind == "chapter") then
+    if collProps and (kind == "default_child" or kind == "chapter") then
+        -- Checked via `kind` FIRST, unconditionally -- NOT gated on
+        -- galleryId already being empty. viewForCollectionSettings cannot
+        -- tell "root" from "chapter" apart while a collection is still
+        -- being created (info.parents is only populated once editing an
+        -- EXISTING collection -- see classifyCollection's comment), so the
+        -- full root-style picker (including "pick an existing gallery")
+        -- may have been shown, and used, for what turns out to be a
+        -- chapter. Always trusting the parent Set here overrides any such
+        -- stray galleryId rather than silently publishing to the wrong
+        -- gallery.
         if not parentSettings then
             LrDialogs.message("Lumio",
                 "Could not resolve this chapter's parent Chapters Gallery. Re-open the Collection Set's settings and try again.",
                 "critical")
             return
         end
-        galleryId = parentSettings.galleryId
-        gallerySlug = parentSettings.gallerySlug
-        if not galleryId or galleryId == "" then
+        local resolvedGalleryId = parentSettings.galleryId
+        local resolvedGallerySlug = parentSettings.gallerySlug
+        if not resolvedGalleryId or resolvedGalleryId == "" then
             -- The Set itself has no gallery yet -- this is effectively the
             -- Set's first-ever publish, via whichever child ran first.
-            local title = (parentSettings.galleryTitle or ""):gsub("^%s+", ""):gsub("%s+$", "")
+            -- Title = the Set's own LR name, exactly like a chapter's title
+            -- is its own collection's LR name -- no separate, redundant
+            -- title field to fill in anywhere in this flow.
+            local title = ""
+            if parentSetObj then
+                local okName, name = LrTasks.pcall(function() return parentSetObj:getName() end)
+                if okName and name then title = name end
+            end
+            title = title:gsub("^%s+", ""):gsub("%s+$", "")
             if title == "" then
-                LrDialogs.message("Lumio",
-                    "This Chapters Gallery has no title. Open the Collection Set's 'Edit Published Collection Set' and enter one.",
-                    "critical")
+                LrDialogs.message("Lumio", "Could not read this Chapters Gallery's name.", "critical")
                 return
             end
             local ok, created = LrTasks.pcall(api.createGallery, title, parentSettings.galleryMode, nil)
@@ -806,16 +850,16 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
                 LrDialogs.message("Lumio", "Could not create gallery: " .. tostring(created), "critical")
                 return
             end
-            galleryId = created.id
-            gallerySlug = created.slug
+            resolvedGalleryId = created.id
+            resolvedGallerySlug = created.slug
             if parentSetObj then
                 local catalog = LrApplication.activeCatalog()
                 catalog:withWriteAccessDo("Lumio: assign gallery to Set", function()
                     -- A LrPublishedCollectionSet uses the SetInfoSummary/
                     -- SetSettings pair, not the plain-collection methods.
                     local current = parentSetObj:getCollectionSetInfoSummary().collectionSettings or {}
-                    current.galleryId = galleryId
-                    current.gallerySlug = gallerySlug
+                    current.galleryId = resolvedGalleryId
+                    current.gallerySlug = resolvedGallerySlug
                     parentSetObj:setCollectionSetSettings(current)
                 end)
             end
@@ -824,22 +868,27 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
         -- deletePhotosFromPublishedCollection/goToPublishedCollection/
         -- goToPublishedPhoto working unchanged: they all read straight off
         -- the child's own settings and never need to walk up to the parent.
-        local catalog = LrApplication.activeCatalog()
-        catalog:withWriteAccessDo("Lumio: inherit gallery from Set", function()
-            local current = exportContext.publishedCollection:getCollectionInfoSummary().collectionSettings or {}
-            current.galleryId = galleryId
-            current.gallerySlug = gallerySlug
-            exportContext.publishedCollection:setCollectionSettings(current)
-        end)
+        -- Only write when something actually changed (first inherit, or
+        -- correcting a stray value) -- avoids an unnecessary catalog write
+        -- (and Undo History entry) on every single publish once correct.
+        if galleryId ~= resolvedGalleryId or gallerySlug ~= resolvedGallerySlug then
+            galleryId = resolvedGalleryId
+            gallerySlug = resolvedGallerySlug
+            local catalog = LrApplication.activeCatalog()
+            catalog:withWriteAccessDo("Lumio: inherit gallery from Set", function()
+                local current = exportContext.publishedCollection:getCollectionInfoSummary().collectionSettings or {}
+                current.galleryId = galleryId
+                current.gallerySlug = gallerySlug
+                exportContext.publishedCollection:setCollectionSettings(current)
+            end)
+        end
     elseif (not galleryId or galleryId == "") and collProps then
-        -- kind == "root": unchanged flat-mode gallery creation.
-        local title = (collProps.galleryTitle or ""):gsub("^%s+", ""):gsub("%s+$", "")
+        -- kind == "root": title = this collection's own LR name -- no
+        -- separate, redundant title field in the dialog (see
+        -- buildGalleryPickerView).
+        local title = (exportContext.publishedCollection:getName() or ""):gsub("^%s+", ""):gsub("%s+$", "")
         if title == "" then
-            LrDialogs.message(
-                "Lumio",
-                "This collection has no gallery assigned. Open 'Edit Published Collection' and either choose an existing gallery or enter a title for a new one.",
-                "critical"
-            )
+            LrDialogs.message("Lumio", "This collection has no name.", "critical")
             return
         end
         local ok, created = LrTasks.pcall(
@@ -1191,18 +1240,44 @@ end
 -- goToPublishedCollection
 -- ============================================================================
 -- Called from the "Show in Lumio" menu entry (right-click a published
--- collection). Opens the gallery's STUDIO management page (photographer-
--- facing: branding, status, files) -- NOT the public customer-facing
--- gallery. A photographer right-clicking the COLLECTION wants to manage
--- it, not see what the customer sees; goToPublishedPhoto below (right-
--- click a PHOTO) covers the "show me the public link" case instead.
+-- collection OR a Collection Set -- confirmed this fires for both: a real-
+-- device test throwing an unguarded error on a Set is what surfaced this).
+-- Opens the gallery's STUDIO management page (photographer-facing:
+-- branding, status, files) -- NOT the public customer-facing gallery. A
+-- photographer right-clicking the COLLECTION wants to manage it, not see
+-- what the customer sees; goToPublishedPhoto below (right-click a PHOTO)
+-- covers the "show me the public link" case instead.
 -- The Studio route is keyed by galleryId, not slug, so this does not need
 -- resolveGallerySlug.
+--
+-- info.publishedCollection can be a plain LrPublishedCollection OR an
+-- LrPublishedCollectionSet -- they use DIFFERENT info-summary methods
+-- (getCollectionInfoSummary vs getCollectionSetInfoSummary, no shared
+-- superclass method), so try the plain-collection one first and fall back
+-- to the Set one. Previously this only tried the plain-collection method,
+-- unguarded -- calling it on a Set threw "attempt to call method ... (a
+-- nil value)", which is why "Show in Lumio" on a Chapters Gallery always
+-- errored while the same command on a chapter (a plain collection) worked.
 function exportServiceProvider.goToPublishedCollection(publishSettings, info)
     local LrHttp = import "LrHttp"
-    local collInfo = info.publishedCollection and info.publishedCollection:getCollectionInfoSummary()
-    if not collInfo then return end
-    local collSettings = collInfo.collectionSettings or {}
+    if not info.publishedCollection then return end
+
+    local collSettings
+    local okPlain, summary = LrTasks.pcall(function()
+        return info.publishedCollection:getCollectionInfoSummary()
+    end)
+    if okPlain and summary then
+        collSettings = summary.collectionSettings
+    else
+        local okSet, setSummary = LrTasks.pcall(function()
+            return info.publishedCollection:getCollectionSetInfoSummary()
+        end)
+        if okSet and setSummary then
+            collSettings = setSummary.collectionSettings
+        end
+    end
+    if not collSettings then return end
+
     local galleryId = collSettings.galleryId
     -- Was `publishSettings.host`, which does not exist -- the host is set in
     -- the plug-in's own settings (PluginManager), not in the publish service
