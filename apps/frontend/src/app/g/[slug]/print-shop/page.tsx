@@ -30,6 +30,11 @@ import { useT, useFormat} from "@/lib/i18n";
 import { CropFrame, defaultCropForAspect, type Crop } from "@/components/print-shop/CropFrame";
 import type { Formatters } from "@/lib/i18n/format";
 import { useErrorText } from "@/lib/error-i18n";
+import { unitPriceForQuantity } from "@/lib/print-pricing";
+
+// Deep quantity-break tiers (e.g. "400 and above") need a generous
+// ceiling — must match the server-side cap in print-shop-public.ts.
+const MAX_CART_QUANTITY = 999;
 
 type Catalog = Awaited<ReturnType<typeof api.getGalleryPrintShopCatalog>>;
 type ProductRow = Catalog["products"][number];
@@ -425,7 +430,12 @@ function PickerDialog({
                       >
                         {selectedProduct.variants.map((v) => (
                           <option key={v.id} value={v.id}>
-                            {v.name} — {formatPrice(fmt, v.priceCents, catalog.config.currency)}
+                            {v.name} —{" "}
+                            {v.priceTiers && v.priceTiers.length > 0
+                              ? t("printShop.fromPrice", {
+                                  price: formatPrice(fmt, v.priceCents, catalog.config.currency),
+                                })
+                              : formatPrice(fmt, v.priceCents, catalog.config.currency)}
                           </option>
                         ))}
                       </select>
@@ -439,15 +449,30 @@ function PickerDialog({
                   <input
                     type="number"
                     min={1}
-                    max={20}
+                    max={MAX_CART_QUANTITY}
                     value={quantity}
                     onChange={(e) =>
                       setQuantity(
-                        Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 1))
+                        Math.max(
+                          1,
+                          Math.min(MAX_CART_QUANTITY, parseInt(e.target.value, 10) || 1)
+                        )
                       )
                     }
                     className="w-24 rounded border border-line-subtle bg-surface-raised px-2 py-1.5 text-sm"
                   />
+                  {selectedVariant?.priceTiers && selectedVariant.priceTiers.length > 0 && (
+                    <span className="block text-xs text-ink-tertiary mt-1">
+                      {t("printShop.perUnitAtQuantity", {
+                        quantity,
+                        price: formatPrice(
+                          fmt,
+                          unitPriceForQuantity(selectedVariant, quantity),
+                          catalog.config.currency
+                        ),
+                      })}
+                    </span>
+                  )}
                 </label>
 
                 {cropActive && (
@@ -459,8 +484,11 @@ function PickerDialog({
                 <div className="text-sm pt-2 border-t border-line-subtle flex justify-between">
                   <span className="text-ink-tertiary">{t("printShop.subtotal")}</span>
                   <span className="font-semibold tabular-nums">
-                    {formatPrice(fmt, 
-                      (selectedVariant?.priceCents ?? 0) * quantity,
+                    {formatPrice(
+                      fmt,
+                      selectedVariant
+                        ? unitPriceForQuantity(selectedVariant, quantity) * quantity
+                        : 0,
                       catalog.config.currency
                     )}
                   </span>
@@ -577,7 +605,9 @@ function CartStep({
   }
   function updateQty(idx: number, q: number) {
     onUpdateCart(
-      cart.map((it, i) => (i === idx ? { ...it, quantity: Math.max(1, q) } : it))
+      cart.map((it, i) =>
+        i === idx ? { ...it, quantity: Math.max(1, Math.min(MAX_CART_QUANTITY, q)) } : it
+      )
     );
   }
 
@@ -700,14 +730,15 @@ function CartStep({
               <input
                 type="number"
                 min={1}
-                max={20}
+                max={MAX_CART_QUANTITY}
                 value={it.quantity}
                 onChange={(e) => updateQty(idx, parseInt(e.target.value, 10) || 1)}
                 className="w-16 rounded border border-line-subtle bg-surface-raised px-2 py-1 text-sm"
               />
               <div className="text-sm tabular-nums w-20 text-right">
-                {formatPrice(fmt, 
-                  it.variant.priceCents * it.quantity,
+                {formatPrice(
+                  fmt,
+                  unitPriceForQuantity(it.variant, it.quantity) * it.quantity,
                   catalog.config.currency
                 )}
               </div>

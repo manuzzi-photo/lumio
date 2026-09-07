@@ -9,6 +9,7 @@
 import { prisma } from "../../db.js";
 import { logger } from "../../logger.js";
 import { sendMail } from "../mail.js";
+import { resolveUnitPriceForQuantity } from "./pricing-tiers.js";
 import {
   tmplPrintOrderConfirmGuest,
   tmplPrintOrderNotifyStudio,
@@ -98,7 +99,10 @@ export async function priceCart(opts: {
       enabled: true,
       printProduct: { tenantId: opts.tenantId, enabled: true },
     },
-    include: { printProduct: { select: { vatBpsOverride: true } } },
+    include: {
+      printProduct: { select: { vatBpsOverride: true } },
+      priceTiers: { orderBy: { minQty: "asc" } },
+    },
   });
   const variantMap = new Map(variants.map((v) => [v.id, v]));
   if (variantMap.size !== new Set(variantIds).size) {
@@ -135,7 +139,7 @@ export async function priceCart(opts: {
   // Subtotal pro Item
   const pricedItems = opts.items.map((i) => {
     const v = variantMap.get(i.variantId)!;
-    const unit = v.priceCents;
+    const unit = resolveUnitPriceForQuantity(v.priceCents, v.priceTiers, i.quantity);
     const lineTotal = unit * i.quantity;
     return {
       variantId: i.variantId,
