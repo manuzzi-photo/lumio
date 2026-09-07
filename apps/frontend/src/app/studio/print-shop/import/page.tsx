@@ -24,6 +24,7 @@ import type { PrintImportProduct, PrintImportReport, PrintImportRowStatus } from
 import { useT } from "@/lib/i18n";
 import { Button, Select } from "@/components/ui";
 import { useErrorText } from "@/lib/error-i18n";
+import { useCatalogText } from "@/lib/catalog-i18n";
 
 type ProviderMine = Awaited<ReturnType<typeof api.listTenantPrintProviders>>["providers"][number];
 type Step = "upload" | "preview" | "done";
@@ -31,6 +32,7 @@ type Step = "upload" | "preview" | "done";
 export default function PrintImportPage() {
   const errText = useErrorText();
   const t = useT();
+  const ct = useCatalogText();
   const [step, setStep] = useState<Step>("upload");
   const [providers, setProviders] = useState<ProviderMine[] | null>(null);
   const [providerKey, setProviderKey] = useState("");
@@ -154,7 +156,7 @@ export default function PrintImportPage() {
                     ?.filter((p) => p.enabled)
                     .map((p) => (
                       <option key={p.providerKey} value={p.providerKey}>
-                        {p.providerLabel}
+                        {ct("Provider", p.providerKey, "Label", p.providerLabel)}
                       </option>
                     ))}
                 </Select>

@@ -22,6 +22,7 @@ import type {
 import { Button, Input, Select, Textarea } from "@/components/ui";
 import type { Formatters } from "@/lib/i18n/format";
 import { useErrorText } from "@/lib/error-i18n";
+import { useCatalogText } from "@/lib/catalog-i18n";
 import { useConfirm } from "@/components/ui/dialogs";
 
 type Product = Awaited<
@@ -51,6 +52,7 @@ export default function PrintProductsPage() {
   const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
+  const ct = useCatalogText();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [providers, setProviders] = useState<ProviderMine[] | null>(null);
   const [editing, setEditing] = useState<
@@ -188,9 +190,13 @@ export default function PrintProductsPage() {
                     )}
                   </div>
                   <div className="text-xs text-ink-tertiary">
-                    Anbieter:{" "}
-                    {providers.find((pr) => pr.providerKey === p.providerKey)
-                      ?.providerLabel ?? p.providerKey}
+                    {t("printProducts.providerPrefix")}{" "}
+                    {(() => {
+                      const pr = providers.find((pr) => pr.providerKey === p.providerKey);
+                      return pr
+                        ? ct("Provider", pr.providerKey, "Label", pr.providerLabel)
+                        : p.providerKey;
+                    })()}
                     {p.providerProductRef &&
                       ` · SKU: ${p.providerProductRef}`}
                   </div>
@@ -356,6 +362,7 @@ function ProductDialog({
 }) {
   const errText = useErrorText();
   const t = useT();
+  const ct = useCatalogText();
   const [name, setName] = useState(existing?.name ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
   const [providerKey, setProviderKey] = useState(
@@ -420,7 +427,7 @@ function ProductDialog({
           >
             {enabledProviders.map((p) => (
               <option key={p.providerKey} value={p.providerKey}>
-                {p.providerLabel}
+                {ct("Provider", p.providerKey, "Label", p.providerLabel)}
               </option>
             ))}
           </Select>
