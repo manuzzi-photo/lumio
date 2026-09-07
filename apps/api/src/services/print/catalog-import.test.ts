@@ -147,6 +147,18 @@ describe("planVariant", () => {
     expect(plan.data?.priceCents).toBe(12);
     expect(plan.warnings).toContain("price_rounded_to_nearest_cent");
   });
+
+  it("skips with an error when costEur is negative", () => {
+    const plan = planVariant({ ...baseVariant, costEur: -0.5 }, 0, emptyExisting, new Set());
+    expect(plan.action).toBe("skip");
+    expect(plan.errors).toContain("invalid_cost_eur");
+  });
+
+  it("accepts a zero costEur (free/no-cost self-print)", () => {
+    const plan = planVariant({ ...baseVariant, costEur: 0 }, 0, emptyExisting, new Set());
+    expect(plan.action).toBe("create");
+    expect(plan.data?.costCents).toBe(0);
+  });
 });
 
 describe("planProduct", () => {

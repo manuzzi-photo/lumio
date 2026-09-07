@@ -591,20 +591,29 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
   // than being silently coerced. The downloadable template shows the
   // expected types, so this is a reasonable baseline contract.
 
+  // Deliberately type-only, no range constraints (.positive(), .min(), a
+  // tier-count cap): a value that's merely out of range — zero width,
+  // a negative tier price, a 25-tier ladder — must be reported and
+  // skipped as ONE broken row by catalog-import.ts, not fail this
+  // zod .parse() and 400/500 the entire request out from under every
+  // other valid row in the file. Range/ladder validation already lives
+  // in pricing-tiers.ts's validateTierLadder() and planVariant() —
+  // duplicating it here as a hard parse constraint would just reintroduce
+  // the whole-file failure this importer exists to avoid.
   const importTierSchema = z.object({
-    minQty: z.number().int().min(1),
-    maxQty: z.number().int().min(1).nullable(),
-    unitPriceEur: z.number().min(0),
+    minQty: z.number().int(),
+    maxQty: z.number().int().nullable(),
+    unitPriceEur: z.number(),
   });
   const importVariantSchema = z.object({
     name: z.string(),
-    widthMm: z.number().positive().nullable().optional(),
-    heightMm: z.number().positive().nullable().optional(),
+    widthMm: z.number().nullable().optional(),
+    heightMm: z.number().nullable().optional(),
     finishType: z.string().nullable().optional(),
     sku: z.string().nullable().optional(),
     priceEur: z.number().nullable().optional(),
     costEur: z.number().nullable().optional(),
-    priceTiers: z.array(importTierSchema).max(20).optional(),
+    priceTiers: z.array(importTierSchema).optional(),
   });
   const importProductSchema = z.object({
     name: z.string(),
@@ -615,7 +624,11 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
   });
   const importBodySchema = z.object({
     providerKey: z.string().min(1),
-    products: z.array(importProductSchema).min(1).max(1000),
+    // No .min(1): an empty file is a valid (if pointless) import — it
+    // should produce a zero-row report, not a 400/500. .max(1000) stays:
+    // an overall request-size ceiling is a sanity guard against a
+    // pathological payload, not a per-row data-quality judgment.
+    products: z.array(importProductSchema).max(1000),
   });
 
   app.get("/print-shop/import/template", async (req, reply) => {

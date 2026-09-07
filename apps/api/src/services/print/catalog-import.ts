@@ -236,7 +236,16 @@ export function planVariant(
   if (row.costEur !== undefined && row.costEur !== null) {
     const { cents, imprecise } = eurToCents(row.costEur);
     if (imprecise) warnings.push("cost_rounded_to_nearest_cent");
+    if (cents < 0) errors.push("invalid_cost_eur");
     costCents = cents;
+  }
+
+  // Second error check: costEur is only known to be valid past this
+  // point, so a negative cost (caught above) must still skip the row —
+  // mirrors the priceEur check earlier, which the first return already
+  // covers for every error pushed before it.
+  if (errors.length > 0) {
+    return { rowIndex, sourceName: name, action: "skip", errors, warnings };
   }
 
   const existing = sku ? existingBySku.get(sku) : undefined;

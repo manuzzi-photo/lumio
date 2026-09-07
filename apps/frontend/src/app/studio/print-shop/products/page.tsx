@@ -32,6 +32,11 @@ type ProviderMine = Awaited<
   ReturnType<typeof api.listTenantPrintProviders>
 >["providers"][number];
 
+// Must match MAX_TIERS in apps/api's pricing-tiers.ts — capped client-
+// side too so a studio can't build a ladder the server will reject at
+// submit time after filling in 20+ rows by hand.
+const MAX_PRICE_TIERS = 20;
+
 const CATEGORIES = [
   { value: "print", label: "printProducts.catPrint" },
   { value: "canvas", label: "printProducts.catCanvas" },
@@ -495,6 +500,7 @@ function VariantDialog({
   const [error, setError] = useState<string | null>(null);
 
   function addTierRow() {
+    if (tierRows.length >= MAX_PRICE_TIERS) return;
     setTierRows([...tierRows, { minQty: "", maxQty: "", priceEuros: "" }]);
   }
   function removeTierRow(idx: number) {
@@ -693,7 +699,13 @@ function VariantDialog({
                 >✕</Button>
               </div>
             ))}
-            <Button type="button" variant="secondary" size="sm" onClick={addTierRow}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={addTierRow}
+              disabled={tierRows.length >= MAX_PRICE_TIERS}
+            >
               {t("printProducts.addTier")}
             </Button>
           </div>
