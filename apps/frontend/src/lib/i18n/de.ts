@@ -1601,6 +1601,7 @@ export const de: LocaleDict = {
   },
 
   printProducts: {
+    providerPrefix: "Anbieter:",
     catPrint: "Foto-Print",
     catCanvas: "Leinwand",
     catPhotobook: "Photobook",

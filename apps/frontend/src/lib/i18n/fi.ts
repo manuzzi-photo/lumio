@@ -1590,6 +1590,7 @@ export const fi = {
   },
 
   printProducts: {
+    providerPrefix: "Toimittaja:",
     catPrint: "Valokuvatuloste",
     catCanvas: "Kangastaulu",
     catPhotobook: "Valokuvakirja",

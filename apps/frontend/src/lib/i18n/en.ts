@@ -1589,6 +1589,7 @@ export const en = {
   },
 
   printProducts: {
+    providerPrefix: "Provider:",
     catPrint: "Photo print",
     catCanvas: "Canvas",
     catPhotobook: "Photobook",

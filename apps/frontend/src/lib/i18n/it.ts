@@ -1597,6 +1597,7 @@ export const it: LocaleDict = {
   },
 
   printProducts: {
+    providerPrefix: "Fornitore:",
     catPrint: "Stampa fotografica",
     catCanvas: "Tela",
     catPhotobook: "Fotolibro",
