@@ -234,6 +234,44 @@ function M.deleteGalleryFile(galleryId, fileId)
     )
 end
 
+-- ============================================================================
+-- Chapters (Lumio "GallerySection")
+-- ============================================================================
+-- No plug-in-specific /plugin/... routes for these -- like /uploads/init
+-- and /uploads/complete above, the generic Studio routes already accept
+-- Bearer-token auth, so we call them directly (galleries.ts's Section-CRUD
+-- block). Used by processRenderedPhotos/renamePublishedCollection/
+-- deletePublishedCollection for a chapter (non-default) child collection.
+
+function M.createSection(galleryId, title)
+    local res = M.request("POST", "/galleries/" .. galleryId .. "/sections", { title = title })
+    return res and res.section
+end
+
+function M.patchSection(galleryId, sectionId, fields)
+    local res = M.request("PATCH", "/galleries/" .. galleryId .. "/sections/" .. sectionId, fields)
+    return res and res.section
+end
+
+function M.deleteSection(galleryId, sectionId)
+    -- NB: the server returns 200 { ok = true }, not 204 -- M.request already
+    -- handles both shapes fine (returns the decoded body either way), no
+    -- special-casing needed here.
+    M.request("DELETE", "/galleries/" .. galleryId .. "/sections/" .. sectionId)
+end
+
+-- fileIds: sectionAssignSchema caps this at 500 per call server-side --
+-- callers with a larger batch (e.g. a big wedding publish) must chunk
+-- before calling this, see processRenderedPhotos.
+function M.assignFilesToSection(galleryId, sectionId, fileIds)
+    local res = M.request(
+        "POST",
+        "/galleries/" .. galleryId .. "/sections/" .. sectionId .. "/files",
+        { fileIds = fileIds }
+    )
+    return res and res.assigned
+end
+
 -- Upload-init: registers n files, gets back presigned PUT URLs. We use the
 -- existing Studio upload endpoint -- no plug-in-specific path needed, since
 -- it already supports Bearer-token auth.
