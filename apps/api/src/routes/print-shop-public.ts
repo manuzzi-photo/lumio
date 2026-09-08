@@ -178,6 +178,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
           estimatedDaysMin: s.estimatedDaysMin,
           estimatedDaysMax: s.estimatedDaysMax,
           countries: s.countries,
+          isPickup: s.isPickup,
         })),
       };
     }
@@ -253,15 +254,20 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
     shippingMethodId: z.string().uuid(),
     guestName: z.string().min(1).max(200),
     guestEmail: z.string().email().max(200),
-    shippingAddress: z.object({
-      street: z.string().min(1).max(200),
-      street2: z.string().max(200).optional(),
-      postalCode: z.string().min(1).max(20),
-      city: z.string().min(1).max(100),
-      region: z.string().max(100).optional(),
-      countryCode: z.string().length(2).toUpperCase(),
-      phone: z.string().max(50).optional(),
-    }),
+    // Required unless the chosen shipping method is a pickup method —
+    // that depends on a DB lookup, so it's enforced in createOrder(),
+    // not here.
+    shippingAddress: z
+      .object({
+        street: z.string().min(1).max(200),
+        street2: z.string().max(200).optional(),
+        postalCode: z.string().min(1).max(20),
+        city: z.string().min(1).max(100),
+        region: z.string().max(100).optional(),
+        countryCode: z.string().length(2).toUpperCase(),
+        phone: z.string().max(50).optional(),
+      })
+      .optional(),
     billingAddress: z
       .object({
         street: z.string().min(1).max(200),
@@ -323,7 +329,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
           shippingMethodId: body.shippingMethodId,
           guestName: body.guestName,
           guestEmail: body.guestEmail,
-          shippingAddress: body.shippingAddress,
+          shippingAddress: body.shippingAddress ?? null,
           billingAddress: body.billingAddress ?? null,
           paymentMode: body.paymentMode,
           guestNote: body.guestNote ?? null,

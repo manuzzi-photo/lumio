@@ -3301,6 +3301,7 @@ export const api = {
         estimatedDaysMax: number | null;
         countries: string[];
         providerShippingRef: string | null;
+        isPickup: boolean;
         enabled: boolean;
         displayOrder: number;
       }>;
@@ -3349,6 +3350,7 @@ export const api = {
         currency: string;
         status: string;
         paymentMode: string;
+        isPickupDelivery: boolean;
         providerKey: string;
         createdAt: string;
         paidAt: string | null;
@@ -3374,6 +3376,7 @@ export const api = {
         | "mark_paid"
         | "mark_in_production"
         | "mark_shipped"
+        | "mark_ready_for_pickup"
         | "mark_delivered"
         | "cancel"
         | "refund";
@@ -3440,6 +3443,7 @@ export const api = {
         estimatedDaysMin: number | null;
         estimatedDaysMax: number | null;
         countries: string[];
+        isPickup: boolean;
       }>;
     }>(`/g/${slug}/print-shop/catalog`),
 
@@ -3463,6 +3467,7 @@ export const api = {
       currency: string;
       vatBps: number;
       vatHandling: "inclusive" | "exclusive";
+      isPickupDelivery: boolean;
     }>(`/g/${slug}/print-shop/price`, {
       method: "POST",
       body: JSON.stringify(input),
@@ -3480,7 +3485,8 @@ export const api = {
       shippingMethodId: string;
       guestName: string;
       guestEmail: string;
-      shippingAddress: {
+      /** Omit for a pickup shipping method — no address is collected. */
+      shippingAddress?: {
         street: string;
         street2?: string;
         postalCode: string;
@@ -3489,7 +3495,7 @@ export const api = {
         countryCode: string;
         phone?: string;
       };
-      billingAddress?: typeof input.shippingAddress | null;
+      billingAddress?: NonNullable<typeof input.shippingAddress> | null;
       paymentMode: "stripe_connect" | "offline_invoice";
       guestNote?: string;
       acceptedTerms: boolean;
@@ -3731,8 +3737,9 @@ export interface PrintOrderDetail {
   orderNumber: string;
   guestName: string;
   guestEmail: string;
-  shippingAddress: Record<string, string>;
+  shippingAddress: Record<string, string> | null;
   billingAddress: Record<string, string> | null;
+  isPickupDelivery: boolean;
   paymentMode: string;
   stripePaymentIntentId: string | null;
   stripeChargeId: string | null;
@@ -3754,6 +3761,7 @@ export interface PrintOrderDetail {
   paidAt: string | null;
   productionStartedAt: string | null;
   shippedAt: string | null;
+  readyForPickupAt: string | null;
   deliveredAt: string | null;
   cancelledAt: string | null;
   refundedAt: string | null;
@@ -3917,6 +3925,7 @@ export interface ShippingMethodCreateInput {
   estimatedDaysMax?: number | null;
   countries?: string[];
   providerShippingRef?: string | null;
+  isPickup?: boolean;
   enabled?: boolean;
   displayOrder?: number;
 }

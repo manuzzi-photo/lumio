@@ -14,6 +14,7 @@ import {
   tmplPrintOrderConfirmGuest,
   tmplPrintOrderNotifyStudio,
   tmplPrintOrderShippedGuest,
+  tmplPrintOrderReadyForPickupGuest,
 } from "../mail-print.js";
 import { config } from "../../config.js";
 import { studioNotifyEnabled } from "../notifications.js";
@@ -53,6 +54,9 @@ export interface PricingResult {
   currency: string;
   vatBps: number;
   vatHandling: "inclusive" | "exclusive";
+  /** Snapshot of the chosen shipping method's isPickup flag. false when
+   *  no shippingMethodId was given (price-preview without a choice yet). */
+  isPickupDelivery: boolean;
   /** Pro-Item-Aufschluesselung fuer Reporting / Order-Storage */
   items: Array<{
     variantId: string;
@@ -170,6 +174,7 @@ export async function priceCart(opts: {
 
   // Shipping
   let shippingCents = 0;
+  let isPickupDelivery = false;
   if (opts.shippingMethodId) {
     const sm = await prisma.shippingMethod.findFirst({
       where: {
@@ -180,6 +185,7 @@ export async function priceCart(opts: {
     });
     if (!sm) throw new Error("Versandmethode unbekannt");
     shippingCents = sm.priceCents;
+    isPickupDelivery = sm.isPickup;
   }
 
   // Subtotal pro Item (Staffelpreis-Aufloesung: siehe resolveCartItemPricing)
@@ -222,6 +228,7 @@ export async function priceCart(opts: {
     currency: cfg.currency,
     vatBps,
     vatHandling: cfg.vatHandling as "inclusive" | "exclusive",
+    isPickupDelivery,
     items: pricedItems,
   };
 }
@@ -236,7 +243,9 @@ export interface CheckoutInput {
   shippingMethodId: string;
   guestEmail: string;
   guestName: string;
-  shippingAddress: Record<string, unknown>;
+  /** Null only allowed when the resolved shipping method is a pickup
+   *  method — enforced below, after priceCart() resolves it. */
+  shippingAddress: Record<string, unknown> | null;
   billingAddress?: Record<string, unknown> | null;
   paymentMode: "stripe_connect" | "offline_invoice";
   guestNote?: string | null;
@@ -257,6 +266,9 @@ export async function createOrder(input: CheckoutInput): Promise<{
     items: input.items,
     shippingMethodId: input.shippingMethodId,
   });
+  if (!totals.isPickupDelivery && !input.shippingAddress) {
+    throw new Error("Lieferadresse erforderlich fuer diese Versandmethode");
+  }
 
   // Provider-Resolve: erste Variante reicht — alle Items eines Carts
   // muessen denselben Provider haben (sonst splitten wir spaeter).
@@ -288,6 +300,7 @@ export async function createOrder(input: CheckoutInput): Promise<{
       status: "pending_payment",
       providerKey,
       shippingMethodId: input.shippingMethodId,
+      isPickupDelivery: totals.isPickupDelivery,
       guestNote: input.guestNote ?? null,
       items: {
         create: totals.items.map((i) => ({
@@ -335,6 +348,11 @@ type Transition =
       trackingCarrier?: string;
       trackingUrl?: string;
     }
+  | {
+      type: "mark_ready_for_pickup";
+      actor: "studio" | "system";
+      actorUserId?: string;
+    }
   | { type: "mark_delivered"; actor: "studio" | "system"; actorUserId?: string }
   | { type: "cancel"; actor: "studio" | "system" | "guest"; actorUserId?: string; reason?: string }
   | { type: "refund"; actor: "studio" | "system"; actorUserId?: string; reason?: string };
@@ -354,6 +372,35 @@ export function isMissingRequiredPaymentReference(
   );
 }
 
+/** Allowed next transitions from a given status. The 'in_production'
+ *  step forks on isPickupDelivery: courier orders move to 'shipped',
+ *  pickup orders to 'ready_for_pickup' — both converge back on the
+ *  shared 'delivered' terminal status. */
+export function allowedTransitionsFor(
+  status: string,
+  isPickupDelivery: boolean
+): Transition["type"][] {
+  switch (status) {
+    case "draft":
+      return ["cancel"];
+    case "pending_payment":
+      return ["mark_paid", "cancel"];
+    case "paid":
+      return ["mark_in_production", "cancel", "refund"];
+    case "in_production":
+      return isPickupDelivery
+        ? ["mark_ready_for_pickup", "cancel", "refund"]
+        : ["mark_shipped", "cancel", "refund"];
+    case "shipped":
+    case "ready_for_pickup":
+      return ["mark_delivered", "refund"];
+    case "delivered":
+      return ["refund"];
+    default:
+      return [];
+  }
+}
+
 export async function transitionOrder(
   orderId: string,
   t: Transition
@@ -363,18 +410,7 @@ export async function transitionOrder(
   });
   if (!order) throw new Error("Order nicht gefunden");
 
-  // Erlaubte Transitions je Quellzustand
-  const allowed: Record<string, Transition["type"][]> = {
-    draft: ["cancel"],
-    pending_payment: ["mark_paid", "cancel"],
-    paid: ["mark_in_production", "cancel", "refund"],
-    in_production: ["mark_shipped", "cancel", "refund"],
-    shipped: ["mark_delivered", "refund"],
-    delivered: ["refund"],
-    cancelled: [],
-    refunded: [],
-  };
-  const allowedHere = allowed[order.status] ?? [];
+  const allowedHere = allowedTransitionsFor(order.status, order.isPickupDelivery);
   if (!allowedHere.includes(t.type)) {
     throw new Error(
       `Transition ${t.type} aus Status ${order.status} nicht erlaubt`
@@ -412,6 +448,10 @@ export async function transitionOrder(
       if (t.trackingNumber) updates.trackingNumber = t.trackingNumber;
       if (t.trackingCarrier) updates.trackingCarrier = t.trackingCarrier;
       if (t.trackingUrl) updates.trackingUrl = t.trackingUrl;
+      break;
+    case "mark_ready_for_pickup":
+      updates.status = "ready_for_pickup";
+      updates.readyForPickupAt = now;
       break;
     case "mark_delivered":
       updates.status = "delivered";
@@ -507,6 +547,10 @@ export async function transitionOrder(
     void sendOrderMails(orderId, "shipped").catch((err) =>
       logger.warn({ err, orderId }, "print.order.mail_failed")
     );
+  } else if (t.type === "mark_ready_for_pickup") {
+    void sendOrderMails(orderId, "ready_for_pickup").catch((err) =>
+      logger.warn({ err, orderId }, "print.order.mail_failed")
+    );
   }
 }
 
@@ -535,7 +579,7 @@ function extractEventData(t: Transition): Record<string, unknown> | null {
  */
 export async function sendOrderMails(
   orderId: string,
-  trigger: "paid" | "shipped"
+  trigger: "paid" | "shipped" | "ready_for_pickup"
 ): Promise<void> {
   const order = await prisma.printOrder.findUnique({
     where: { id: orderId },
@@ -615,6 +659,17 @@ export async function sendOrderMails(
     await sendMail({
       to: order.guestEmail,
       ...tmplPrintOrderShippedGuest({
+        branding: mailBranding,
+        studioName,
+        supportEmail,
+        order: orderForMail,
+        locale: guestLocale,
+      }),
+    });
+  } else if (trigger === "ready_for_pickup") {
+    await sendMail({
+      to: order.guestEmail,
+      ...tmplPrintOrderReadyForPickupGuest({
         branding: mailBranding,
         studioName,
         supportEmail,
