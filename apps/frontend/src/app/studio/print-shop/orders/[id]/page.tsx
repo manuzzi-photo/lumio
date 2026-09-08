@@ -11,7 +11,7 @@
  *  - Status-Transition-Buttons je nach aktuellem Status
  *  - Studio-Note (editierbar)
  */
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import type { PrintOrderDetail } from "@/lib/api";
@@ -40,6 +40,72 @@ export default function OrderDetailPage({
   const [busy, setBusy] = useState(false);
   const [shippingDialog, setShippingDialog] = useState(false);
   const [noteValue, setNoteValue] = useState("");
+  const [zipJob, setZipJob] = useState<{
+    zipId: string;
+    galleryId: string;
+    status: string;
+    fileCount: number | null;
+    url: string | null;
+    error: string | null;
+  } | null>(null);
+  const zipPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (zipPollRef.current) clearInterval(zipPollRef.current);
+    };
+  }, []);
+
+  async function requestZip() {
+    try {
+      const res = await api.requestPrintOrderZip(id);
+      setZipJob({
+        zipId: res.id,
+        galleryId: res.galleryId,
+        status: res.status,
+        fileCount: res.fileCount,
+        url: null,
+        error: null,
+      });
+      if (zipPollRef.current) clearInterval(zipPollRef.current);
+      zipPollRef.current = setInterval(async () => {
+        try {
+          const st = await api.getStudioZipStatus(res.galleryId, res.id);
+          setZipJob((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: st.status,
+                  fileCount: st.fileCount,
+                  error: st.errorMessage,
+                  url:
+                    st.status === "ready"
+                      ? api.studioZipDownloadUrl(res.galleryId, res.id)
+                      : null,
+                }
+              : prev
+          );
+          if (st.status === "ready" || st.status === "failed") {
+            if (zipPollRef.current) {
+              clearInterval(zipPollRef.current);
+              zipPollRef.current = null;
+            }
+          }
+        } catch (err) {
+          console.error("print order zip status poll failed:", err);
+        }
+      }, 2000);
+    } catch (err) {
+      setZipJob({
+        zipId: "",
+        galleryId: "",
+        status: "failed",
+        fileCount: null,
+        url: null,
+        error: errText(err, t("common.error")),
+      });
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -269,12 +335,48 @@ export default function OrderDetailPage({
       <Section
         title={t("orderDetail.secItems", { n: order.items.length })}
         action={
-          <a
-            href={api.printOrderExportCsvUrl(id)}
-            className="text-xs text-accent hover:underline whitespace-nowrap"
-          >
-            {t("orderDetail.downloadCsv")}
-          </a>
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            <a
+              href={api.printOrderExportCsvUrl(id)}
+              className="text-xs text-accent hover:underline whitespace-nowrap"
+            >
+              {t("orderDetail.downloadCsv")}
+            </a>
+            <a
+              href={api.printOrderExportMdUrl(id)}
+              className="text-xs text-accent hover:underline whitespace-nowrap"
+            >
+              {t("orderDetail.downloadMd")}
+            </a>
+            {!zipJob && (
+              <button
+                type="button"
+                onClick={() => void requestZip()}
+                className="text-xs text-accent hover:underline whitespace-nowrap"
+              >
+                {t("orderDetail.downloadZip")}
+              </button>
+            )}
+            {zipJob && zipJob.status !== "ready" && zipJob.status !== "failed" && (
+              <span className="text-xs text-ink-secondary flex items-center gap-1.5 whitespace-nowrap">
+                <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />
+                {t("orderDetail.zipBuilding")}
+              </span>
+            )}
+            {zipJob && zipJob.status === "ready" && zipJob.url && (
+              <a
+                href={zipJob.url}
+                className="text-xs text-semantic-success hover:underline font-medium whitespace-nowrap"
+              >
+                {t("orderDetail.zipReady")}
+              </a>
+            )}
+            {zipJob && zipJob.status === "failed" && (
+              <span className="text-xs text-semantic-danger whitespace-nowrap">
+                {t("orderDetail.zipFailed")}
+              </span>
+            )}
+          </div>
         }
       >
         <ul className="divide-y divide-line-subtle">
