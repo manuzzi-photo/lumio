@@ -1136,6 +1136,9 @@ export const en = {
     noProducts: "No products available.",
     product: "Product",
     variant: "Variant",
+    finishOption: "Finish",
+    finishOptionChoose: "Choose a finish…",
+    finishOptionWithSurcharge: "{name} (+{price})",
     quantity: "Quantity",
     perUnitAtQuantity: "at {quantity} pcs.: {price}/pc.",
     fromPrice: "from {price}",
@@ -1648,6 +1651,18 @@ export const en = {
     tierLadderErrorGap:
       "Tiers must follow on directly from each other, with no gaps or overlaps.",
     tieredBadge: "from {price} · {n} tiers",
+    finishOptionsCount: "{n} finish options",
+    finishOptionsLabel: "Finish options (optional)",
+    finishOptionsHint:
+      "Selectable options that don't change the size, e.g. a frame color. If any exist, the client must pick one before adding to cart.",
+    finishName: "Name",
+    finishNamePlaceholder: "e.g. Black frame",
+    finishSku: "SKU (optional)",
+    finishPriceDelta: "Price add-on (EUR)",
+    addFinishOption: "+ Finish option",
+    finishOptionErrorMissingName: "Every finish option needs a name.",
+    finishOptionErrorDuplicateName: "Finish option names must be unique within a variant.",
+    finishOptionErrorPriceDelta: "Invalid price add-on.",
   },
 
   printImport: {

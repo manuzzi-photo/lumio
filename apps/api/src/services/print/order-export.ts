@@ -18,6 +18,8 @@ export interface OrderExportRow {
   variantName: string;
   widthMm: number;
   heightMm: number;
+  /** Selected finish option (e.g. frame color), if the variant offers any. */
+  finishName: string | null;
   sku: string | null;
   quantity: number;
   unitPriceCents: number;
@@ -43,6 +45,7 @@ export function buildOrderItemsCsv(
     "Filename",
     "Product",
     "Format",
+    "Finish",
     "Width (mm)",
     "Height (mm)",
     "SKU",
@@ -61,6 +64,7 @@ export function buildOrderItemsCsv(
         r.filename,
         r.productName,
         r.variantName,
+        r.finishName ?? "",
         String(r.widthMm),
         String(r.heightMm),
         r.sku ?? "",

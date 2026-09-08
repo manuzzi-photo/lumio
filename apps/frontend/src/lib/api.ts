@@ -3238,6 +3238,7 @@ export const api = {
           displayOrder: number;
           enabled: boolean;
           priceTiers: PrintPriceTier[];
+          finishOptions: PrintFinishOption[];
         }>;
       }>;
     }>("/print-shop/products"),
@@ -3426,6 +3427,7 @@ export const api = {
           finishType: string | null;
           priceCents: number;
           priceTiers: PrintPriceTier[];
+          finishOptions: Array<{ id: string; name: string; priceDeltaCents: number }>;
         }>;
       }>;
       shipping: Array<{
@@ -3446,6 +3448,7 @@ export const api = {
         fileId: string;
         quantity: number;
         crop?: { x: number; y: number; width: number; height: number } | null;
+        finishOptionId?: string | null;
       }>;
       shippingMethodId: string | null;
     }
@@ -3471,6 +3474,7 @@ export const api = {
         fileId: string;
         quantity: number;
         crop?: { x: number; y: number; width: number; height: number } | null;
+        finishOptionId?: string | null;
       }>;
       shippingMethodId: string;
       guestName: string;
@@ -3527,6 +3531,7 @@ export const api = {
         productName: string;
         widthMm: number;
         heightMm: number;
+        finishName: string | null;
         totalPriceCents: number;
       }>;
       shippingMethod: string | null;
@@ -3758,6 +3763,9 @@ export interface PrintOrderDetail {
     unitPriceCents: number;
     totalPriceCents: number;
     crop: { x: number; y: number; width: number; height: number } | null;
+    finishOptionId: string | null;
+    finishOptionName: string | null;
+    finishOptionSku: string | null;
     printProductVariant: {
       name: string;
       widthMm: number;
@@ -3811,6 +3819,18 @@ export interface PrintPriceTier {
   unitPriceCents: number;
 }
 
+/** Selectable variant option (e.g. frame color) — distinct from the
+ *  scalar finishType field, which is just a descriptive material
+ *  label. sku is Studio-only (not exposed on the public catalog). */
+export interface PrintFinishOption {
+  id: string;
+  name: string;
+  sku: string | null;
+  priceDeltaCents: number;
+  displayOrder: number;
+  enabled: boolean;
+}
+
 export interface PrintVariantCreateInput {
   name: string;
   widthMm: number;
@@ -3826,6 +3846,9 @@ export interface PrintVariantCreateInput {
    *  Present (even []) on an update = explicitly setting the ladder;
    *  [] switches the variant back to flat pricing. */
   priceTiers?: PrintPriceTier[];
+  /** Absent = no selectable finishes. Present (even []) on an update =
+   *  explicitly setting the finish-option list. */
+  finishOptions?: Array<{ name: string; sku?: string | null; priceDeltaCents: number }>;
 }
 
 // =============================================================================

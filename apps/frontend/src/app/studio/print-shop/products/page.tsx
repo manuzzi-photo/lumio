@@ -37,6 +37,8 @@ type ProviderMine = Awaited<
 // side too so a studio can't build a ladder the server will reject at
 // submit time after filling in 20+ rows by hand.
 const MAX_PRICE_TIERS = 20;
+// Matches the .max(20) on the server's finishOptions zod schema.
+const MAX_FINISH_OPTIONS = 20;
 
 const CATEGORIES = [
   { value: "print", label: "printProducts.catPrint" },
@@ -253,6 +255,8 @@ export default function PrintProductsPage() {
                           <span className="text-ink-tertiary">
                             · {v.widthMm}×{v.heightMm} mm
                             {v.finishType && ` · ${v.finishType}`}
+                            {v.finishOptions.length > 0 &&
+                              ` · ${t("printProducts.finishOptionsCount", { n: v.finishOptions.length })}`}
                             {!v.enabled && t("printProducts.inactiveSuffix")}
                           </span>
                         </span>
@@ -503,6 +507,14 @@ function VariantDialog({
       : [{ minQty: "1", maxQty: "", priceEuros: "" }]
   );
   const [enabled, setEnabled] = useState(existing?.enabled ?? true);
+  const [finishRows, setFinishRows] = useState<FinishRow[]>(
+    () =>
+      existing?.finishOptions.map((fo) => ({
+        name: fo.name,
+        sku: fo.sku ?? "",
+        priceDeltaEuros: (fo.priceDeltaCents / 100).toFixed(2),
+      })) ?? []
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -515,6 +527,17 @@ function VariantDialog({
   }
   function updateTierRow(idx: number, field: keyof TierRow, value: string) {
     setTierRows(tierRows.map((r, i) => (i === idx ? { ...r, [field]: value } : r)));
+  }
+
+  function addFinishRow() {
+    if (finishRows.length >= MAX_FINISH_OPTIONS) return;
+    setFinishRows([...finishRows, { name: "", sku: "", priceDeltaEuros: "0.00" }]);
+  }
+  function removeFinishRow(idx: number) {
+    setFinishRows(finishRows.filter((_, i) => i !== idx));
+  }
+  function updateFinishRow(idx: number, field: keyof FinishRow, value: string) {
+    setFinishRows(finishRows.map((r, i) => (i === idx ? { ...r, [field]: value } : r)));
   }
 
   async function submit(e: React.FormEvent) {
@@ -548,6 +571,9 @@ function VariantDialog({
         priceCents = price;
       }
 
+      const finishResult = validateFinishRows(finishRows);
+      if (!finishResult.ok) throw new Error(finishOptionErrorMessage(t, finishResult.error));
+
       const payload: PrintVariantCreateInput = {
         name: name.trim(),
         widthMm: w,
@@ -558,6 +584,7 @@ function VariantDialog({
         costCents: cost,
         enabled,
         priceTiers,
+        finishOptions: finishResult.finishOptions,
       };
       if (existing) {
         await api.updatePrintVariant(existing.id, payload);
@@ -717,6 +744,58 @@ function VariantDialog({
             </Button>
           </div>
         )}
+
+        <div className="space-y-2 pt-1 border-t border-line-subtle">
+          <span className="block text-xs text-ink-tertiary pt-2">
+            {t("printProducts.finishOptionsLabel")}
+          </span>
+          <span className="block text-xs text-ink-tertiary -mt-1">
+            {t("printProducts.finishOptionsHint")}
+          </span>
+          {finishRows.map((row, idx) => (
+            <div key={idx} className="grid grid-cols-[1.2fr_1fr_0.8fr_auto] gap-2 items-end">
+              <FormRow label={t("printProducts.finishName")}>
+                <Input
+                  type="text"
+                  value={row.name}
+                  onChange={(e) => updateFinishRow(idx, "name", e.target.value)}
+                  placeholder={t("printProducts.finishNamePlaceholder")}
+                />
+              </FormRow>
+              <FormRow label={t("printProducts.finishSku")}>
+                <Input
+                  type="text"
+                  value={row.sku}
+                  onChange={(e) => updateFinishRow(idx, "sku", e.target.value)}
+                />
+              </FormRow>
+              <FormRow label={t("printProducts.finishPriceDelta")}>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={row.priceDeltaEuros}
+                  onChange={(e) => updateFinishRow(idx, "priceDeltaEuros", e.target.value)}
+                />
+              </FormRow>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => removeFinishRow(idx)}
+              >✕</Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={addFinishRow}
+            disabled={finishRows.length >= MAX_FINISH_OPTIONS}
+          >
+            {t("printProducts.addFinishOption")}
+          </Button>
+        </div>
+
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -808,6 +887,55 @@ function tierLadderErrorMessage(t: ReturnType<typeof useT>, code: TierLadderErro
       return t("printProducts.tierLadderErrorEnd");
     case "gap_or_overlap_between_tiers":
       return t("printProducts.tierLadderErrorGap");
+  }
+}
+
+interface FinishRow {
+  name: string;
+  sku: string;
+  priceDeltaEuros: string;
+}
+
+type FinishOptionErrorCode = "missing_name" | "duplicate_name" | "invalid_price_delta";
+
+/** Client-side mirror of the server's finish-option validation
+ *  (duplicate name / invalid price delta), for immediate feedback
+ *  before submit — the server re-validates authoritatively. Empty rows
+ *  are fine: [] just means "no selectable finishes", same as absent. */
+function validateFinishRows(
+  rows: FinishRow[]
+):
+  | { ok: true; finishOptions: Array<{ name: string; sku: string | null; priceDeltaCents: number }> }
+  | { ok: false; error: FinishOptionErrorCode } {
+  const seen = new Set<string>();
+  const finishOptions: Array<{ name: string; sku: string | null; priceDeltaCents: number }> = [];
+  for (const r of rows) {
+    const name = r.name.trim();
+    if (!name) return { ok: false, error: "missing_name" };
+    if (seen.has(name)) return { ok: false, error: "duplicate_name" };
+    seen.add(name);
+    const priceDeltaCents = r.priceDeltaEuros.trim()
+      ? Math.round(parseFloat(r.priceDeltaEuros) * 100)
+      : 0;
+    if (!Number.isFinite(priceDeltaCents)) {
+      return { ok: false, error: "invalid_price_delta" };
+    }
+    finishOptions.push({ name, sku: r.sku.trim() || null, priceDeltaCents });
+  }
+  return { ok: true, finishOptions };
+}
+
+function finishOptionErrorMessage(
+  t: ReturnType<typeof useT>,
+  code: FinishOptionErrorCode
+): string {
+  switch (code) {
+    case "missing_name":
+      return t("printProducts.finishOptionErrorMissingName");
+    case "duplicate_name":
+      return t("printProducts.finishOptionErrorDuplicateName");
+    case "invalid_price_delta":
+      return t("printProducts.finishOptionErrorPriceDelta");
   }
 }
 

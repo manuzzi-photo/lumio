@@ -104,6 +104,13 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
                   select: { minQty: true, maxQty: true, unitPriceCents: true },
                   orderBy: { minQty: "asc" },
                 },
+                // SKU stays internal (like providerVariantRef, also not
+                // exposed here) — only what the picker needs to display.
+                finishOptions: {
+                  where: { enabled: true },
+                  select: { id: true, name: true, priceDeltaCents: true },
+                  orderBy: { displayOrder: "asc" },
+                },
               },
             },
           },
@@ -145,6 +152,11 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
               minQty: t.minQty,
               maxQty: t.maxQty,
               unitPriceCents: t.unitPriceCents,
+            })),
+            finishOptions: v.finishOptions.map((f) => ({
+              id: f.id,
+              name: f.name,
+              priceDeltaCents: f.priceDeltaCents,
             })),
           })),
         }));
@@ -206,6 +218,10 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
             })
             .nullable()
             .optional(),
+          // Required when the variant has finish options, rejected
+          // otherwise — validated in priceCart()/resolveCartItemPricing(),
+          // not here (depends on the variant's DB state).
+          finishOptionId: z.string().uuid().nullable().optional(),
         })
       )
       .min(1),
@@ -230,6 +246,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
             fileId: i.fileId,
             quantity: i.quantity,
             crop: i.crop ?? null,
+            finishOptionId: i.finishOptionId ?? null,
           })),
           shippingMethodId: body.shippingMethodId,
         });
@@ -319,6 +336,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
             fileId: i.fileId,
             quantity: i.quantity,
             crop: i.crop ?? null,
+            finishOptionId: i.finishOptionId ?? null,
           })),
           shippingMethodId: body.shippingMethodId,
           guestName: body.guestName,
@@ -417,6 +435,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
           productName: i.printProductVariant.printProduct.name,
           widthMm: i.printProductVariant.widthMm,
           heightMm: i.printProductVariant.heightMm,
+          finishName: i.finishOptionName,
           totalPriceCents: i.totalPriceCents,
         })),
         shippingMethod: order.shippingMethod?.name ?? null,

@@ -12,11 +12,22 @@ const tieredVariant: VariantPricingInfo = {
     { minQty: 20, maxQty: 99, unitPriceCents: 30 },
     { minQty: 100, maxQty: null, unitPriceCents: 25 },
   ],
+  finishOptions: [],
 };
 
 const flatVariant: VariantPricingInfo = {
   priceCents: 500,
   priceTiers: [],
+  finishOptions: [],
+};
+
+const variantWithFinishes: VariantPricingInfo = {
+  priceCents: 500,
+  priceTiers: [],
+  finishOptions: [
+    { id: "black", name: "Cornice nera", sku: "FRAME-BLACK", priceDeltaCents: 1200 },
+    { id: "white", name: "Cornice bianca", sku: null, priceDeltaCents: 0 },
+  ],
 };
 
 function item(overrides: Partial<CartItemInput>): CartItemInput {
@@ -68,6 +79,7 @@ describe("resolveCartItemPricing", () => {
               { minQty: 1, maxQty: 9, unitPriceCents: 99 },
               { minQty: 10, maxQty: null, unitPriceCents: 80 },
             ],
+            finishOptions: [],
           },
         ],
       ])
@@ -109,5 +121,73 @@ describe("resolveCartItemPricing", () => {
     );
     expect(result[0].quantity).toBe(4);
     expect(result[0].crop).toEqual(crop);
+  });
+
+  it("adds the finish option's price delta on top of the resolved unit price", () => {
+    const result = resolveCartItemPricing(
+      [item({ fileId: "a", quantity: 2, finishOptionId: "black" })],
+      new Map([["v1", variantWithFinishes]])
+    );
+    expect(result[0].unitPriceCents).toBe(500 + 1200);
+    expect(result[0].totalPriceCents).toBe((500 + 1200) * 2);
+    expect(result[0].finishOptionId).toBe("black");
+    expect(result[0].finishOptionName).toBe("Cornice nera");
+    expect(result[0].finishOptionSku).toBe("FRAME-BLACK");
+  });
+
+  it("a zero-delta finish option still resolves with no surcharge and a null SKU snapshot", () => {
+    const result = resolveCartItemPricing(
+      [item({ fileId: "a", finishOptionId: "white" })],
+      new Map([["v1", variantWithFinishes]])
+    );
+    expect(result[0].unitPriceCents).toBe(500);
+    expect(result[0].finishOptionSku).toBeNull();
+  });
+
+  it("throws when a variant with finish options is ordered without one", () => {
+    expect(() =>
+      resolveCartItemPricing(
+        [item({ fileId: "a" })], // no finishOptionId
+        new Map([["v1", variantWithFinishes]])
+      )
+    ).toThrow();
+  });
+
+  it("throws when the given finishOptionId doesn't belong to the variant", () => {
+    expect(() =>
+      resolveCartItemPricing(
+        [item({ fileId: "a", finishOptionId: "not-a-real-option" })],
+        new Map([["v1", variantWithFinishes]])
+      )
+    ).toThrow();
+  });
+
+  it("throws when a finishOptionId is given for a variant with no finish options", () => {
+    expect(() =>
+      resolveCartItemPricing(
+        [item({ fileId: "a", finishOptionId: "black" })],
+        new Map([["v1", flatVariant]])
+      )
+    ).toThrow();
+  });
+
+  it("finish surcharge doesn't affect the quantity-tier aggregation, only the resulting price", () => {
+    // Two lines of the same variant, different finishes — still 30
+    // total prints of that FORMAT, so both hit the same tier; the
+    // finish only adds its own flat delta per line afterward.
+    const tieredWithFinishes: VariantPricingInfo = {
+      ...tieredVariant,
+      finishOptions: variantWithFinishes.finishOptions,
+    };
+    const result = resolveCartItemPricing(
+      [
+        item({ fileId: "a", quantity: 15, finishOptionId: "black" }),
+        item({ fileId: "b", quantity: 15, finishOptionId: "white" }),
+      ],
+      new Map([["v1", tieredWithFinishes]])
+    );
+    // 15+15=30 -> the 20-99 tier (30c), not the 1-19 tier (35c).
+    expect(result[0].unitPriceCents).toBe(30 + 1200);
+    expect(result[1].unitPriceCents).toBe(30 + 0);
   });
 });

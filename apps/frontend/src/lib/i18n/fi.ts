@@ -1137,6 +1137,9 @@ export const fi = {
     noProducts: "Tuotteita ei ole saatavilla.",
     product: "Tuote",
     variant: "Vaihtoehto",
+    finishOption: "Viimeistely",
+    finishOptionChoose: "Valitse viimeistely…",
+    finishOptionWithSurcharge: "{name} (+{price})",
     quantity: "Määrä",
     perUnitAtQuantity: "{quantity} kpl: {price}/kpl",
     fromPrice: "alkaen {price}",
@@ -1650,6 +1653,18 @@ export const fi = {
     tierLadderErrorGap:
       "Portaiden on jatkuttava saumattomasti toisistaan, ilman aukkoja tai päällekkäisyyksiä.",
     tieredBadge: "alkaen {price} · {n} porrasta",
+    finishOptionsCount: "{n} viimeistelyvaihtoehtoa",
+    finishOptionsLabel: "Viimeistelyvaihtoehdot (valinnainen)",
+    finishOptionsHint:
+      "Valittavia vaihtoehtoja, jotka eivät muuta kokoa, esim. kehyksen väri. Jos niitä on, asiakkaan on valittava yksi ennen ostoskoriin lisäämistä.",
+    finishName: "Nimi",
+    finishNamePlaceholder: "esim. Musta kehys",
+    finishSku: "SKU (valinnainen)",
+    finishPriceDelta: "Hintalisä (EUR)",
+    addFinishOption: "+ Viimeistelyvaihtoehto",
+    finishOptionErrorMissingName: "Jokaisella viimeistelyvaihtoehdolla on oltava nimi.",
+    finishOptionErrorDuplicateName: "Viimeistelyvaihtoehtojen nimien on oltava yksilöllisiä yhden vaihtoehdon sisällä.",
+    finishOptionErrorPriceDelta: "Virheellinen hintalisä.",
   },
 
   printImport: {

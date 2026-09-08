@@ -159,6 +159,68 @@ describe("planVariant", () => {
     expect(plan.action).toBe("create");
     expect(plan.data?.costCents).toBe(0);
   });
+
+  it("plans finish options with converted price deltas", () => {
+    const plan = planVariant(
+      {
+        ...baseVariant,
+        finishOptions: [
+          { name: "Cornice nera", sku: "FRAME-BLACK", priceDeltaEur: 12 },
+          { name: "Cornice bianca" },
+        ],
+      },
+      0,
+      emptyExisting,
+      new Set()
+    );
+    expect(plan.action).toBe("create");
+    expect(plan.data?.finishOptions).toEqual([
+      { name: "Cornice nera", sku: "FRAME-BLACK", priceDeltaCents: 1200 },
+      { name: "Cornice bianca", sku: null, priceDeltaCents: 0 },
+    ]);
+  });
+
+  it("skips the whole variant when a finish option name is empty", () => {
+    const plan = planVariant(
+      { ...baseVariant, finishOptions: [{ name: "  " }] },
+      0,
+      emptyExisting,
+      new Set()
+    );
+    expect(plan.action).toBe("skip");
+    expect(plan.errors).toContain("finish_option_missing_name");
+  });
+
+  it("skips the whole variant when two finish options share a name", () => {
+    const plan = planVariant(
+      {
+        ...baseVariant,
+        finishOptions: [{ name: "Nera" }, { name: "Nera" }],
+      },
+      0,
+      emptyExisting,
+      new Set()
+    );
+    expect(plan.action).toBe("skip");
+    expect(plan.errors).toContain("duplicate_finish_option_name:Nera");
+  });
+
+  it("flags an imprecise finish price delta as a warning without blocking the import", () => {
+    const plan = planVariant(
+      { ...baseVariant, finishOptions: [{ name: "Nera", priceDeltaEur: 0.123 }] },
+      0,
+      emptyExisting,
+      new Set()
+    );
+    expect(plan.action).toBe("create");
+    expect(plan.data?.finishOptions[0].priceDeltaCents).toBe(12);
+    expect(plan.warnings).toContain("finish_option_price_delta_rounded_to_nearest_cent");
+  });
+
+  it("a variant with no finishOptions field has an empty finishOptions plan (unaffected)", () => {
+    const plan = planVariant(baseVariant, 0, emptyExisting, new Set());
+    expect(plan.data?.finishOptions).toEqual([]);
+  });
 });
 
 describe("planProduct", () => {

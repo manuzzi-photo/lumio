@@ -9,6 +9,7 @@ function row(overrides: Partial<OrderExportRow> = {}): OrderExportRow {
     variantName: "10x15 cm",
     widthMm: 100,
     heightMm: 150,
+    finishName: null,
     sku: "PRINT-SILK-10x15",
     quantity: 3,
     unitPriceCents: 35,
@@ -33,6 +34,7 @@ describe("buildOrderItemsCsv", () => {
         "Filename",
         "Product",
         "Format",
+        "Finish",
         "Width (mm)",
         "Height (mm)",
         "SKU",
@@ -72,11 +74,24 @@ describe("buildOrderItemsCsv", () => {
     const csv = buildOrderItemsCsv("LP-20260908-0001", "EUR", [row({ sku: null })]);
     const lines = csv.replace(/^\uFEFF/, "").split("\r\n").filter(Boolean);
     expect(lines[1]).not.toContain("null");
-    // SKU is the 8th column — empty quoted cell between quantity's
+    // SKU is the 9th column (Order, File ID, Filename, Product, Format,
+    // Finish, Width, Height, SKU) — empty quoted cell between its
     // neighbours confirms it wasn't just omitted, shifting every
     // subsequent column left.
     const cells = lines[1].split(",");
-    expect(cells[7]).toBe('""');
+    expect(cells[8]).toBe('""');
+  });
+
+  it("renders the selected finish name when present, empty when absent", () => {
+    const withFinish = buildOrderItemsCsv("LP-1", "EUR", [
+      row({ finishName: "Cornice nera" }),
+    ]);
+    expect(withFinish).toContain('"Cornice nera"');
+
+    const withoutFinish = buildOrderItemsCsv("LP-1", "EUR", [row({ finishName: null })]);
+    const lines = withoutFinish.replace(/^\uFEFF/, "").split("\r\n").filter(Boolean);
+    const cells = lines[1].split(",");
+    expect(cells[5]).toBe('""'); // Finish is the 6th column
   });
 
   it("escapes embedded quotes and commas in filenames", () => {

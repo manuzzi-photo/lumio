@@ -42,6 +42,9 @@ export interface CartItemInput {
   quantity: number;
   crop?: { x: number; y: number; width: number; height: number } | null;
   fileId: string;
+  /** Required when the variant has enabled finish options, rejected
+   *  when it has none. */
+  finishOptionId?: string | null;
 }
 
 export interface PricingResult {
@@ -61,12 +64,23 @@ export interface PricingResult {
     unitPriceCents: number;
     totalPriceCents: number;
     crop: CartItemInput["crop"] | null;
+    finishOptionId: string | null;
+    finishOptionName: string | null;
+    finishOptionSku: string | null;
   }>;
+}
+
+export interface VariantFinishOptionInfo {
+  id: string;
+  name: string;
+  sku: string | null;
+  priceDeltaCents: number;
 }
 
 export interface VariantPricingInfo {
   priceCents: number;
   priceTiers: PriceTierInput[];
+  finishOptions: VariantFinishOptionInfo[];
 }
 
 /**
@@ -98,7 +112,21 @@ export function resolveCartItemPricing(
   return items.map((i) => {
     const v = variantInfo.get(i.variantId)!;
     const totalQtyForVariant = quantityByVariant.get(i.variantId)!;
-    const unit = resolveUnitPriceForQuantity(v.priceCents, v.priceTiers, totalQtyForVariant);
+    const tierUnit = resolveUnitPriceForQuantity(v.priceCents, v.priceTiers, totalQtyForVariant);
+
+    // Finish is required exactly when the variant offers any — no
+    // silent default, since a surcharge could otherwise be skipped.
+    let finishOption: VariantFinishOptionInfo | null = null;
+    if (v.finishOptions.length > 0) {
+      finishOption = v.finishOptions.find((f) => f.id === i.finishOptionId) ?? null;
+      if (!finishOption) {
+        throw new Error(`Finish option required for variant ${i.variantId}`);
+      }
+    } else if (i.finishOptionId) {
+      throw new Error(`Variant ${i.variantId} has no finish options`);
+    }
+    const unit = tierUnit + (finishOption?.priceDeltaCents ?? 0);
+
     return {
       variantId: i.variantId,
       fileId: i.fileId,
@@ -106,6 +134,9 @@ export function resolveCartItemPricing(
       unitPriceCents: unit,
       totalPriceCents: unit * i.quantity,
       crop: i.crop ?? null,
+      finishOptionId: finishOption?.id ?? null,
+      finishOptionName: finishOption?.name ?? null,
+      finishOptionSku: finishOption?.sku ?? null,
     };
   });
 }
@@ -148,6 +179,7 @@ export async function priceCart(opts: {
     include: {
       printProduct: { select: { vatBpsOverride: true } },
       priceTiers: { orderBy: { minQty: "asc" } },
+      finishOptions: { where: { enabled: true }, orderBy: { displayOrder: "asc" } },
     },
   });
   const variantMap = new Map(variants.map((v) => [v.id, v]));
@@ -186,7 +218,10 @@ export async function priceCart(opts: {
   const pricedItems = resolveCartItemPricing(
     opts.items,
     new Map(
-      variants.map((v) => [v.id, { priceCents: v.priceCents, priceTiers: v.priceTiers }])
+      variants.map((v) => [
+        v.id,
+        { priceCents: v.priceCents, priceTiers: v.priceTiers, finishOptions: v.finishOptions },
+      ])
     )
   );
   const subtotalCents = pricedItems.reduce((s, i) => s + i.totalPriceCents, 0);
@@ -298,6 +333,9 @@ export async function createOrder(input: CheckoutInput): Promise<{
           quantity: i.quantity,
           unitPriceCents: i.unitPriceCents,
           totalPriceCents: i.totalPriceCents,
+          finishOptionId: i.finishOptionId,
+          finishOptionName: i.finishOptionName,
+          finishOptionSku: i.finishOptionSku,
         })),
       },
       events: {

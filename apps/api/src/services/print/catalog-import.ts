@@ -47,6 +47,12 @@ export interface ImportVariantTierInput {
   unitPriceEur: number;
 }
 
+export interface ImportVariantFinishOptionInput {
+  name: string;
+  sku?: string | null;
+  priceDeltaEur?: number | null;
+}
+
 export interface ImportVariantInput {
   name: string;
   widthMm?: number | null;
@@ -56,6 +62,7 @@ export interface ImportVariantInput {
   priceEur?: number | null;
   costEur?: number | null;
   priceTiers?: ImportVariantTierInput[];
+  finishOptions?: ImportVariantFinishOptionInput[];
 }
 
 export interface ImportProductInput {
@@ -133,6 +140,7 @@ interface VariantWriteData {
   priceCents: number;
   costCents: number | null;
   tiers: PriceTierInput[]; // [] = flat pricing
+  finishOptions: Array<{ name: string; sku: string | null; priceDeltaCents: number }>; // [] = no selectable finishes
 }
 
 interface VariantPlan {
@@ -248,6 +256,38 @@ export function planVariant(
     return { rowIndex, sourceName: name, action: "skip", errors, warnings };
   }
 
+  // Finish options: a broken entry (empty/duplicate name) skips the
+  // WHOLE variant, same granularity as an invalid price-tier ladder —
+  // not worth a whole extra report level for a list capped at 20 rows
+  // that a studio reviews by hand before committing.
+  const finishOptions: VariantWriteData["finishOptions"] = [];
+  if (row.finishOptions && row.finishOptions.length > 0) {
+    const seenFinishNames = new Set<string>();
+    for (const fo of row.finishOptions) {
+      const foName = (fo.name ?? "").trim();
+      if (!foName) {
+        errors.push("finish_option_missing_name");
+        continue;
+      }
+      if (seenFinishNames.has(foName)) {
+        errors.push(`duplicate_finish_option_name:${foName}`);
+        continue;
+      }
+      seenFinishNames.add(foName);
+      let priceDeltaCents = 0;
+      if (fo.priceDeltaEur !== undefined && fo.priceDeltaEur !== null) {
+        const { cents, imprecise } = eurToCents(fo.priceDeltaEur);
+        if (imprecise) warnings.push("finish_option_price_delta_rounded_to_nearest_cent");
+        priceDeltaCents = cents;
+      }
+      finishOptions.push({ name: foName, sku: fo.sku?.trim() || null, priceDeltaCents });
+    }
+  }
+
+  if (errors.length > 0) {
+    return { rowIndex, sourceName: name, action: "skip", errors, warnings };
+  }
+
   const existing = sku ? existingBySku.get(sku) : undefined;
 
   return {
@@ -266,6 +306,7 @@ export function planVariant(
       priceCents,
       costCents,
       tiers,
+      finishOptions,
     },
   };
 }
@@ -371,6 +412,18 @@ function variantCreateFields(d: VariantWriteData) {
           },
         }
       : {}),
+    ...(d.finishOptions.length > 0
+      ? {
+          finishOptions: {
+            create: d.finishOptions.map((fo, idx) => ({
+              name: fo.name,
+              sku: fo.sku,
+              priceDeltaCents: fo.priceDeltaCents,
+              displayOrder: idx,
+            })),
+          },
+        }
+      : {}),
   };
 }
 
@@ -417,10 +470,13 @@ async function applyProductPlan(
         data: { printProductId: plan.existingId!, ...variantCreateFields(v.data!) },
       });
     } else {
-      // Tiers are replaced wholesale rather than diffed — simpler and
-      // matches "the file is the source of truth for this variant".
-      // deleteMany({}) clears every existing tier row for this variant
-      // in the same nested write as the scalar update.
+      // Tiers and finish options are replaced wholesale rather than
+      // diffed — simpler and matches "the file is the source of truth
+      // for this variant". deleteMany({}) clears every existing row in
+      // the same nested write as the scalar update. Re-created finish
+      // options get fresh ids each time (see the schema comment on
+      // PrintProductVariantFinishOption for why that's an accepted
+      // tradeoff, not a bug).
       await tx.printProductVariant.update({
         where: { id: v.existingId! },
         data: {
@@ -438,6 +494,19 @@ async function applyProductPlan(
                     minQty: t.minQty,
                     maxQty: t.maxQty,
                     unitPriceCents: t.unitPriceCents,
+                  })),
+                }
+              : {}),
+          },
+          finishOptions: {
+            deleteMany: {},
+            ...(v.data!.finishOptions.length > 0
+              ? {
+                  create: v.data!.finishOptions.map((fo, idx) => ({
+                    name: fo.name,
+                    sku: fo.sku,
+                    priceDeltaCents: fo.priceDeltaCents,
+                    displayOrder: idx,
                   })),
                 }
               : {}),
@@ -581,6 +650,8 @@ export function buildImportTemplate(): unknown {
         "priceEur is the price the end customer pays; costEur is optional and only used for margin display in the Studio, never shown to customers. Required unless priceTiers is set.",
       priceTiers:
         "Optional. Quantity-break pricing: the LOWER the quantity, the FIRST tier's price is what shows as the variant's reference price. Tiers must start at minQty 1, end with maxQty null (unbounded), and cover every quantity in between with no gaps or overlaps.",
+      finishOptions:
+        "Optional. Selectable options on the variant that don't change its size, e.g. a frame color — distinct from finishType, which is just a descriptive label (matte/gloss/...). If present, the customer must pick one before adding to cart. priceDeltaEur is added to the variant's price (0 = no surcharge); sku overrides the variant's own SKU on invoicing exports when that finish is selected.",
     },
     products: [
       {
@@ -609,6 +680,10 @@ export function buildImportTemplate(): unknown {
               { minQty: 20, maxQty: 99, unitPriceEur: 0.3 },
               { minQty: 100, maxQty: 399, unitPriceEur: 0.25 },
               { minQty: 400, maxQty: null, unitPriceEur: 0.16 },
+            ],
+            finishOptions: [
+              { name: "Cornice nera", sku: "PRINT-SILK-40x60-FRAME-BLACK", priceDeltaEur: 12.0 },
+              { name: "Cornice bianca", sku: "PRINT-SILK-40x60-FRAME-WHITE", priceDeltaEur: 12.0 },
             ],
           },
         ],
