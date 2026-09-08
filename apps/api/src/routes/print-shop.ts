@@ -652,10 +652,15 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
     trackingCarrier: z.string().max(100).optional(),
     trackingUrl: z.string().url().optional(),
     reason: z.string().max(500).optional(),
-    // Required by transitionOrder() when marking an offline_invoice
-    // order paid — validated there, not here, since it depends on the
-    // order's paymentMode.
-    paymentReference: z.string().min(1).max(200).optional(),
+    // Required (non-blank) by transitionOrder() when marking an
+    // offline_invoice order paid — validated there via
+    // isMissingRequiredPaymentReference(), not here, since it depends
+    // on the order's paymentMode. No .min(1) here: that would reject
+    // paymentReference: "" for every OTHER transition too (e.g. a
+    // stripe_connect mark_paid, or an unrelated cancel/refund that
+    // happens to include the field), not just the one case that
+    // actually needs a non-blank value.
+    paymentReference: z.string().max(200).optional(),
   });
   app.post<{ Params: { id: string } }>(
     "/print-shop/orders/:id/transitions",

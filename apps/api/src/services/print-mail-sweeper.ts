@@ -32,10 +32,12 @@ let _interval: NodeJS.Timeout | null = null;
  *  only Stripe-webhook-triggered ones, since every other path to 'paid'
  *  (transitionOrder()'s mark_paid branch) sets that marker itself. */
 async function runOnce(): Promise<void> {
-  // Zuerst Kandidaten finden: paid Orders OHNE mails_sent_paid Event
-  // und MIT mark_paid Event (was schon impliziert ist durch status=paid,
-  // aber Belt-and-suspenders). Wir limitieren auf wenige pro Tick um
-  // bei Backlog nicht zu fluten.
+  // Kandidaten: paid Orders ohne mails_sent_paid Event, innerhalb des
+  // 5s-24h-Fensters unten. Kein zusaetzlicher Filter auf ein
+  // mark_paid-Event noetig — status='paid' allein reicht schon als
+  // Kandidatenkriterium, das Marker-Event ist die einzige Bedingung,
+  // die eine Order hier ausschliesst. Wir limitieren auf wenige pro
+  // Tick um bei Backlog nicht zu fluten.
   const candidates = await prisma.printOrder.findMany({
     where: {
       status: "paid",

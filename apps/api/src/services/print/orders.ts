@@ -431,17 +431,35 @@ export async function transitionOrder(
     // Marker VOR dem Mail-Versand setzen (nicht danach) — sonst findet
     // der print-mail-sweeper (laeuft alle 30s) dieselbe Order noch
     // ohne Marker und verschickt die 'paid'-Mail ein zweites Mal.
-    await prisma.printOrderEvent.create({
-      data: {
-        printOrderId: orderId,
-        eventType: "mails_sent_paid",
-        actor: "system",
-        data: { trigger: "mark_paid_transition" } as never,
-      },
+    //
+    // Existence-check + create in einer Transaktion, gleiches Muster
+    // wie print-mail-sweeper.ts's runOnce() — verhindert, dass zwei
+    // (fast) gleichzeitige mark_paid-Aufrufe (Doppelklick, ein
+    // wiederholter Request) beide ihren eigenen Marker anlegen und
+    // beide die Mail verschicken. Nur wer den Marker tatsaechlich
+    // anlegt, verschickt auch — der Verlierer des Race sieht einen
+    // bereits existierenden Marker und ueberspringt den Versand.
+    const markerCreated = await prisma.$transaction(async (tx) => {
+      const existingMarker = await tx.printOrderEvent.findFirst({
+        where: { printOrderId: orderId, eventType: "mails_sent_paid" },
+        select: { id: true },
+      });
+      if (existingMarker) return false;
+      await tx.printOrderEvent.create({
+        data: {
+          printOrderId: orderId,
+          eventType: "mails_sent_paid",
+          actor: "system",
+          data: { trigger: "mark_paid_transition" } as never,
+        },
+      });
+      return true;
     });
-    void sendOrderMails(orderId, "paid").catch((err) =>
-      logger.warn({ err, orderId }, "print.order.mail_failed")
-    );
+    if (markerCreated) {
+      void sendOrderMails(orderId, "paid").catch((err) =>
+        logger.warn({ err, orderId }, "print.order.mail_failed")
+      );
+    }
   } else if (t.type === "mark_shipped") {
     void sendOrderMails(orderId, "shipped").catch((err) =>
       logger.warn({ err, orderId }, "print.order.mail_failed")
