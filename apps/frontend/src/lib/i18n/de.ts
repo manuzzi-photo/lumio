@@ -2152,6 +2152,7 @@ export const de: LocaleDict = {
     trackingUrl: "Tracking-URL",
     secItems: "Artikel ({n})",
     imageLabel: "Bild:",
+    downloadCsv: "CSV herunterladen",
     subtotal: "Zwischensumme",
     shipping: "Versand",
     vat: "MwSt",

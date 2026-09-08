@@ -30,7 +30,7 @@ import { useT, useFormat} from "@/lib/i18n";
 import { CropFrame, defaultCropForAspect, type Crop } from "@/components/print-shop/CropFrame";
 import type { Formatters } from "@/lib/i18n/format";
 import { useErrorText } from "@/lib/error-i18n";
-import { unitPriceForQuantity } from "@/lib/print-pricing";
+import { unitPriceForQuantity, aggregateQuantityForVariant } from "@/lib/print-pricing";
 
 // Deep quantity-break tiers (e.g. "400 and above") need a generous
 // ceiling — must match the server-side cap in print-shop-public.ts.
@@ -152,6 +152,7 @@ export default function GalleryPrintShopPage({
             slug={slug}
             file={picker}
             catalog={catalog}
+            cart={cart}
             onClose={() => setPicker(null)}
             onAdd={(item) => {
               setCart((prev) => [...prev, item]);
@@ -269,12 +270,14 @@ function BrowseStep({
 function PickerDialog({
   file,
   catalog,
+  cart,
   onClose,
   onAdd,
 }: {
   slug: string;
   file: PublicFile;
   catalog: Catalog;
+  cart: CartItem[];
   onClose: () => void;
   onAdd: (item: CartItem) => void;
 }) {
@@ -464,10 +467,17 @@ function PickerDialog({
                   {selectedVariant?.priceTiers && selectedVariant.priceTiers.length > 0 && (
                     <span className="block text-xs text-ink-tertiary mt-1">
                       {t("printShop.perUnitAtQuantity", {
-                        quantity,
+                        // Tier preview reflects what's already in the cart for
+                        // this format too, not just the quantity being typed
+                        // here — matches how the server aggregates at checkout.
+                        quantity:
+                          aggregateQuantityForVariant(cart, selectedVariant.id) + quantity,
                         price: formatPrice(
                           fmt,
-                          unitPriceForQuantity(selectedVariant, quantity),
+                          unitPriceForQuantity(
+                            selectedVariant,
+                            aggregateQuantityForVariant(cart, selectedVariant.id) + quantity
+                          ),
                           catalog.config.currency
                         ),
                       })}
@@ -487,7 +497,10 @@ function PickerDialog({
                     {formatPrice(
                       fmt,
                       selectedVariant
-                        ? unitPriceForQuantity(selectedVariant, quantity) * quantity
+                        ? unitPriceForQuantity(
+                            selectedVariant,
+                            aggregateQuantityForVariant(cart, selectedVariant.id) + quantity
+                          ) * quantity
                         : 0,
                       catalog.config.currency
                     )}
@@ -738,7 +751,12 @@ function CartStep({
               <div className="text-sm tabular-nums w-20 text-right">
                 {formatPrice(
                   fmt,
-                  unitPriceForQuantity(it.variant, it.quantity) * it.quantity,
+                  // Tier applies per format across the whole cart, not per
+                  // line — aggregate every line sharing this variant first.
+                  unitPriceForQuantity(
+                    it.variant,
+                    aggregateQuantityForVariant(cart, it.variantId)
+                  ) * it.quantity,
                   catalog.config.currency
                 )}
               </div>

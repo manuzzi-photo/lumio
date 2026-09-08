@@ -26,3 +26,21 @@ export function unitPriceForQuantity(
   );
   return match ? match.unitPriceCents : sorted[0].unitPriceCents;
 }
+
+/**
+ * Total quantity already in the cart for one variant (format) — mirrors
+ * the server's aggregation in resolveCartItemPricing(): a quantity-break
+ * tier applies per FORMAT across every photo ordered in it, not per
+ * individual cart line. Used to preview the tier a customer will
+ * actually land on, whether they're editing an existing cart line or
+ * about to add a new photo in a format they already have some of.
+ */
+export function aggregateQuantityForVariant(
+  cartItems: Array<{ variantId: string; quantity: number }>,
+  variantId: string
+): number {
+  return cartItems.reduce(
+    (sum, it) => (it.variantId === variantId ? sum + it.quantity : sum),
+    0
+  );
+}

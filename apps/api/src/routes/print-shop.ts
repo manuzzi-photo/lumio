@@ -54,6 +54,7 @@ import {
   getConnectStatus,
 } from "../services/print/stripe-connect.js";
 import { transitionOrder } from "../services/print/orders.js";
+import { buildOrderItemsCsv, type OrderExportRow } from "../services/print/order-export.js";
 import {
   validateTierLadder,
   deriveReferencePriceCents,
@@ -831,6 +832,68 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
       });
       if (!order) return reply.status(404).send({ error: "not_found" });
       return { order };
+    }
+  );
+
+  // GET /print-shop/orders/:id/export.csv
+  // One row per order item — photo, format, quantity, SKU, price — so
+  // a studio doesn't have to retype order details by hand for invoicing.
+  app.get<{ Params: { id: string } }>(
+    "/print-shop/orders/:id/export.csv",
+    async (req, reply) => {
+      const ctx = await guard(req, reply);
+      if (!ctx) return;
+      const order = await prisma.printOrder.findFirst({
+        where: { id: req.params.id, tenantId: ctx.tenantId },
+        select: {
+          orderNumber: true,
+          currency: true,
+          items: {
+            select: {
+              quantity: true,
+              unitPriceCents: true,
+              totalPriceCents: true,
+              printProductVariant: {
+                select: {
+                  name: true,
+                  widthMm: true,
+                  heightMm: true,
+                  providerVariantRef: true,
+                  printProduct: { select: { name: true, providerProductRef: true } },
+                },
+              },
+              file: { select: { id: true, originalFilename: true } },
+            },
+          },
+        },
+      });
+      if (!order) return reply.status(404).send({ error: "not_found" });
+
+      const rows: OrderExportRow[] = order.items.map((it) => ({
+        fileId: it.file.id,
+        filename: it.file.originalFilename,
+        productName: it.printProductVariant.printProduct.name,
+        variantName: it.printProductVariant.name,
+        widthMm: it.printProductVariant.widthMm,
+        heightMm: it.printProductVariant.heightMm,
+        // Variant SKU is the specific one; fall back to the product's
+        // SKU (e.g. a bulk-imported family sharing one provider ref).
+        sku:
+          it.printProductVariant.providerVariantRef ??
+          it.printProductVariant.printProduct.providerProductRef ??
+          null,
+        quantity: it.quantity,
+        unitPriceCents: it.unitPriceCents,
+        totalPriceCents: it.totalPriceCents,
+      }));
+
+      const csv = buildOrderItemsCsv(order.orderNumber, order.currency, rows);
+      reply.header("Content-Type", "text/csv; charset=utf-8");
+      reply.header(
+        "Content-Disposition",
+        `attachment; filename="${order.orderNumber}.csv"`
+      );
+      return reply.send(csv);
     }
   );
 
