@@ -137,10 +137,16 @@ puoi anche creare un **set di raccolte**:
    "Simple Gallery" — questo testo non è personalizzabile in modo
    selettivo dentro un set, vedi il commento su
    `titleForPublishedCollection` nel codice.)
-4. Elimina la raccolta → anche il capitolo corrispondente viene
-   eliminato su Lumio (le immagini restano e tornano nell'area senza
-   capitoli). Eliminare l'intero set/la galleria resta un'azione da
-   fare in Lumio Studio.
+4. Elimina la raccolta → Lightroom chiede cosa fare delle foto già
+   pubblicate. **Solo scegliendo "Delete"** (rimuovi le foto dal
+   servizio) il capitolo corrispondente viene eliminato anche su
+   Lumio — le immagini restano e tornano semplicemente nell'area
+   senza capitoli, viene rimossa solo l'associazione al capitolo.
+   Scegliendo **"Leave on Service"**, lato Lumio non succede nulla
+   (in questo caso Lightroom non richiama alcun hook) — sparisce solo
+   la raccolta locale, mentre il capitolo resta su Lumio e va
+   eliminato manualmente in Studio se necessario. Eliminare l'intero
+   set/la galleria resta un'azione da fare in Lumio Studio.
 
 Le raccolte pubblicate singole già esistenti (**Simple Gallery**)
 continuano a funzionare invariate — i capitoli sono facoltativi.
