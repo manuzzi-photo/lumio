@@ -973,6 +973,13 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
                 local current = exportContext.publishedCollection:getCollectionInfoSummary().collectionSettings or {}
                 current.sectionId = sectionId
                 exportContext.publishedCollection:setCollectionSettings(current)
+                -- Not read anywhere in this plug-in today, but it's the
+                -- SDK-standard place to record a remote ID for a published
+                -- collection (mirrors rendition:recordPublishedPhotoId at
+                -- photo level) -- costs nothing here and gives
+                -- info.remoteId "for free" in rename/delete callbacks,
+                -- verified working on a real install (@canja006).
+                exportContext.publishedCollection:setRemoteId(sectionId)
             end)
         end
     end
@@ -1178,9 +1185,14 @@ end
 -- table (only isDefaultCollection/name/parents/publishService/
 -- publishedCollection/remoteId/remoteUrl are) -- settings must be read
 -- back via info.publishedCollection:getCollectionInfoSummary(). Calling
--- that on a Set object would fail (Sets use getCollectionSetInfoSummary
--- instead, see getParentSetSettings above) -- caught by the pcall below,
--- which is exactly the desired no-op for a Set-level rename/delete.
+-- that on a Set object throws (Sets use getCollectionSetInfoSummary
+-- instead, see getParentSetSettings above) -- real-device-confirmed
+-- (@canja006, deleting a Set): "attempt to call method
+-- 'getCollectionInfoSummary' (a nil value)". Both functions below now
+-- check for that failure EXPLICITLY and return -- the desired no-op for a
+-- Set-level rename/delete happens on purpose now, not because the pcall
+-- happened to swallow an error that led to the same nil-collSettings
+-- no-op path as "not a chapter".
 -- info.publishedCollection is confirmed singular (one call per collection,
 -- not an array) even for a multi-select delete in the Publish Services
 -- panel.
@@ -1205,17 +1217,23 @@ end
 
 function exportServiceProvider.renamePublishedCollection(publishSettings, info)
     info = info or {}
-    local collSettings
-    if info.publishedCollection then
-        local okSummary, summary = LrTasks.pcall(function()
-            return info.publishedCollection:getCollectionInfoSummary()
-        end)
-        if okSummary and summary then collSettings = summary.collectionSettings end
+    if not info.publishedCollection then return end
+
+    local okSummary, summary = LrTasks.pcall(function()
+        return info.publishedCollection:getCollectionInfoSummary()
+    end)
+    if not okSummary then
+        -- info.publishedCollection is a LrPublishedCollectionSet (the Set
+        -- itself was renamed, not a chapter) -- getCollectionInfoSummary
+        -- only exists on plain collections. Deliberate no-op: a Set
+        -- rename must never touch the Lumio gallery (see the note at
+        -- disableRenamePublishedCollectionSet above).
+        return
     end
     -- info.name is documented as "the new name being assigned to this
     -- collection" -- reliable directly, no need to read it back off the
     -- object.
-    syncChapterRename(collSettings, info.name)
+    syncChapterRename(summary and summary.collectionSettings, info.name)
 end
 
 local function syncChapterDelete(collSettings)
@@ -1233,14 +1251,23 @@ end
 
 function exportServiceProvider.deletePublishedCollection(publishSettings, info)
     info = info or {}
-    local collSettings
-    if info.publishedCollection then
-        local okSummary, summary = LrTasks.pcall(function()
-            return info.publishedCollection:getCollectionInfoSummary()
-        end)
-        if okSummary and summary then collSettings = summary.collectionSettings end
+    if not info.publishedCollection then return end
+
+    local okSummary, summary = LrTasks.pcall(function()
+        return info.publishedCollection:getCollectionInfoSummary()
+    end)
+    if not okSummary then
+        -- info.publishedCollection is a LrPublishedCollectionSet (the Set
+        -- itself was deleted, not a chapter) -- getCollectionInfoSummary
+        -- only exists on plain collections. Deliberate no-op: deleting the
+        -- Set must never touch the Lumio gallery (see the note at
+        -- disableRenamePublishedCollectionSet above) -- real-device-
+        -- confirmed (@canja006): before this explicit check, the same
+        -- outcome only happened because the pcall above swallowed the
+        -- resulting error, which is fragile, not by design.
+        return
     end
-    syncChapterDelete(collSettings)
+    syncChapterDelete(summary and summary.collectionSettings)
 end
 
 -- ============================================================================
