@@ -1045,6 +1045,8 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
               quantity: true,
               unitPriceCents: true,
               totalPriceCents: true,
+              finishOptionName: true,
+              finishOptionSku: true,
               printProductVariant: {
                 select: {
                   name: true,
@@ -1068,7 +1070,11 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
         variantName: it.printProductVariant.name,
         widthMm: it.printProductVariant.widthMm,
         heightMm: it.printProductVariant.heightMm,
+        finishName: it.finishOptionName,
+        // Finish SKU (if the selected finish has its own) takes priority,
+        // same fallback chain as the CSV export.
         sku:
+          it.finishOptionSku ??
           it.printProductVariant.providerVariantRef ??
           it.printProductVariant.printProduct.providerProductRef ??
           null,
