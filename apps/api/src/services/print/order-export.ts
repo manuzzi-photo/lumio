@@ -91,6 +91,25 @@ export interface OrderSummaryAddress {
   phone?: string | null;
 }
 
+/**
+ * PrintOrder.shippingAddress is a Prisma Json column — nothing at the
+ * DB layer guarantees it still matches OrderSummaryAddress by the time
+ * this runs (a raw cast would let malformed JSON reach the string
+ * interpolation below and throw). Used by the export.md route instead
+ * of an unchecked `as` cast; an address that doesn't match is treated
+ * the same as no address (falls back to the pickup-style summary line).
+ */
+export function isOrderSummaryAddress(value: unknown): value is OrderSummaryAddress {
+  if (!value || typeof value !== "object") return false;
+  const a = value as Record<string, unknown>;
+  return (
+    typeof a.street === "string" &&
+    typeof a.postalCode === "string" &&
+    typeof a.city === "string" &&
+    typeof a.countryCode === "string"
+  );
+}
+
 export interface OrderSummaryHeader {
   orderNumber: string;
   status: string;

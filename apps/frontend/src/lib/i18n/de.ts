@@ -2137,6 +2137,7 @@ export const de: LocaleDict = {
     zipBuilding: "ZIP wird erstellt…",
     zipReady: "ZIP bereit — herunterladen",
     zipFailed: "ZIP fehlgeschlagen",
+    zipRetry: "erneut versuchen",
     subtotal: "Zwischensumme",
     shipping: "Versand",
     vat: "MwSt",

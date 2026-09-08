@@ -57,6 +57,7 @@ import { transitionOrder } from "../services/print/orders.js";
 import {
   buildOrderItemsCsv,
   buildOrderSummaryMarkdown,
+  isOrderSummaryAddress,
   type OrderExportRow,
 } from "../services/print/order-export.js";
 import { requestZipDownload } from "../services/zip.js";
@@ -981,7 +982,12 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
           taxCents: order.taxCents,
           totalCents: order.totalCents,
           shippingMethodName: order.shippingMethod?.name ?? null,
-          shippingAddress: order.shippingAddress as never,
+          // shippingAddress is a Json column — validated rather than
+          // blindly cast, so a malformed/unexpected shape degrades to
+          // "no address" instead of throwing inside the Markdown builder.
+          shippingAddress: isOrderSummaryAddress(order.shippingAddress)
+            ? order.shippingAddress
+            : null,
           trackingNumber: order.trackingNumber,
           trackingCarrier: order.trackingCarrier,
           trackingUrl: order.trackingUrl,

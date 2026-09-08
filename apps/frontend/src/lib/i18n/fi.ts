@@ -2126,6 +2126,7 @@ export const fi = {
     zipBuilding: "Luodaan ZIP-tiedostoa…",
     zipReady: "ZIP valmis — lataa",
     zipFailed: "ZIP epäonnistui",
+    zipRetry: "yritä uudelleen",
     subtotal: "Välisumma",
     shipping: "Toimituskulut",
     vat: "Alv",

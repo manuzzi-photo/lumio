@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildOrderItemsCsv,
   buildOrderSummaryMarkdown,
+  isOrderSummaryAddress,
   type OrderExportRow,
   type OrderSummaryHeader,
 } from "./order-export.js";
@@ -186,5 +187,29 @@ describe("buildOrderSummaryMarkdown", () => {
     const md = buildOrderSummaryMarkdown(header(), [row({ sku: null })]);
     expect(md).not.toContain("null");
     expect(md).toContain("| \u2014 |");
+  });
+});
+
+describe("isOrderSummaryAddress", () => {
+  it("accepts a well-formed address", () => {
+    expect(
+      isOrderSummaryAddress({
+        street: "Teststr. 1",
+        postalCode: "12345",
+        city: "Berlin",
+        countryCode: "DE",
+      })
+    ).toBe(true);
+  });
+
+  it("rejects null, non-objects, and objects missing required fields", () => {
+    expect(isOrderSummaryAddress(null)).toBe(false);
+    expect(isOrderSummaryAddress(undefined)).toBe(false);
+    expect(isOrderSummaryAddress("a string")).toBe(false);
+    expect(isOrderSummaryAddress({})).toBe(false);
+    expect(isOrderSummaryAddress({ street: "Teststr. 1" })).toBe(false);
+    expect(
+      isOrderSummaryAddress({ street: "x", postalCode: "1", city: "y" }) // no countryCode
+    ).toBe(false);
   });
 });

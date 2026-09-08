@@ -2124,6 +2124,7 @@ export const en = {
     zipBuilding: "Building ZIP…",
     zipReady: "ZIP ready — download",
     zipFailed: "ZIP failed",
+    zipRetry: "retry",
     subtotal: "Subtotal",
     shipping: "Shipping",
     vat: "VAT",

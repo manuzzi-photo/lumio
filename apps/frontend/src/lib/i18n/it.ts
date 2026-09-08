@@ -2133,6 +2133,7 @@ export const it: LocaleDict = {
     zipBuilding: "Creazione ZIP…",
     zipReady: "ZIP pronto — scarica",
     zipFailed: "Creazione ZIP fallita",
+    zipRetry: "riprova",
     subtotal: "Subtotale",
     shipping: "Spedizione",
     vat: "IVA",

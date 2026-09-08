@@ -372,9 +372,14 @@ export default function OrderDetailPage({
               </a>
             )}
             {zipJob && zipJob.status === "failed" && (
-              <span className="text-xs text-semantic-danger whitespace-nowrap">
-                {t("orderDetail.zipFailed")}
-              </span>
+              <button
+                type="button"
+                onClick={() => void requestZip()}
+                className="text-xs text-semantic-danger hover:underline whitespace-nowrap"
+                title={zipJob.error ?? undefined}
+              >
+                {t("orderDetail.zipFailed")} — {t("orderDetail.zipRetry")}
+              </button>
             )}
           </div>
         }
