@@ -40,15 +40,15 @@ echo "→ /VERSION"
 printf '%s\n' "$NEW_VERSION" > VERSION
 
 echo "→ apps/api/src/version.ts"
-sed -i -E "s/(BUILTIN_VERSION = \")[^\"]+(\";)/\1${NEW_VERSION}\2/" apps/api/src/version.ts
+perl -i -pe "s/(BUILTIN_VERSION = \")[^\"]+(\";)/\${1}${NEW_VERSION}\${2}/" apps/api/src/version.ts
 
 echo "→ apps/worker/version.py"
-sed -i -E "s/(_BUILTIN_VERSION = \")[^\"]+(\")/\1${NEW_VERSION}\2/" apps/worker/version.py
+perl -i -pe "s/(_BUILTIN_VERSION = \")[^\"]+(\")/\${1}${NEW_VERSION}\${2}/" apps/worker/version.py
 
 for pkg in apps/api/package.json apps/frontend/package.json packages/shared/package.json; do
   echo "→ $pkg"
   # ersetzt nur das erste "version"-Feld (das Paket selbst, nicht Dependencies)
-  sed -i -E "0,/(\"version\": \")[^\"]+(\")/s//\1${NEW_VERSION}\2/" "$pkg"
+  perl -i -pe "BEGIN{\$done=0} \$done ||= s/(\"version\": \")[^\"]+(\")/\${1}${NEW_VERSION}\${2}/" "$pkg"
 
   # Das zugehoerige Lockfile fuehrt die Version doppelt: einmal oben und
   # einmal unter packages[""]. Bleibt es zurueck, meldet `npm ci` einen

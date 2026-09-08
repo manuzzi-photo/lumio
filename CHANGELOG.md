@@ -29,11 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
-A pull + regular redeploy is enough for the server/worker -- no schema
-migration involved, the new hash reuses the existing (previously unused)
-`exif` JSON field. **Anyone using the Lightroom plug-in has to reinstall
-it:** the plug-in-side changes live only in the folder loaded into
-Lightroom, which is not updated along with the server. Re-add
+## [0.75.0] - 2026-09-08
+
+A pull + regular redeploy is enough for the server/worker — the print
+shop changes bring four additive schema migrations (new tables/columns
+only, nothing removed or made more restrictive), which apply
+automatically on start. **Anyone using the Lightroom plug-in has to
+reinstall it:** the plug-in-side changes live only in the folder loaded
+into Lightroom, which is not updated along with the server. Re-add
 `apps/lightroom-plugin/lumio.lrdevplugin` in Lightroom, and check that a
 `icon.png` now shows for the Lumio publish service where it used to be
 blank/broken.
@@ -63,6 +66,12 @@ blank/broken.
 ### Added
 
 - Galleries can now be permanently deleted. A gallery must be archived first, deletion respects studio roles (admins can delete any gallery they can see, owners only their own, members not at all), and any gallery with print orders is protected so order records are never lost.
+- Print shop: product variants can now define quantity-based price tiers (e.g. cheaper per print at 20+, cheaper still at 100+), and a studio's whole catalog — products, variants, tiers, finish options — can be imported/updated in bulk from a CSV or JSON file instead of being entered one variant at a time. The tier lookup aggregates quantity across every cart line ordering the same variant, not just the one line, so ordering the same format across several different photos still reaches the better price.
+- Print shop: customers can now select several photos at once in the gallery and add them to the cart in one step, instead of repeating the picker flow per photo. Product/variant/quantity apply to the whole selection; per-photo cropping isn't available in bulk mode, only for single-photo add.
+- Print shop: a variant can now offer several selectable finish options (e.g. a poster with or without a black/white frame), each with its own name, optional SKU and price surcharge on top of the tiered unit price. This is separate from the existing free-text `finishType` field, which stays a studio-only material label. A finish must be explicitly chosen when a variant has any — there's no silent default.
+- Print shop: an order paid outside Stripe (self-print/invoice) now starts as "awaiting payment" instead of being marked paid the instant it's created, and marking it paid requires entering a payment/invoice reference, which is then shown on the order and included in the exports. Stripe-paid orders are unaffected — they still resolve through the payment webhook.
+- Print shop: shipping methods can now be flagged as in-store pickup, which skips collecting a shipping address at checkout. The order's fulfillment checklist forks accordingly: courier orders go through "Shipped" with tracking, pickup orders go through "Ready for pickup" with a notification email to the customer; both paths converge on the same "Delivered/Picked up" terminal state.
+- Print shop: an order's photos can now be downloaded in one ZIP from the order detail page (reusing the existing async ZIP pipeline), and a human-readable Markdown order summary is available alongside the existing CSV export — both include each line's finish and SKU.
 
 ## [0.74.1] - 2026-08-27
 
