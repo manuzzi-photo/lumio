@@ -295,9 +295,10 @@ function PickerDialog({
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
     catalog.products[0]?.variants[0] ?? null
   );
-  const [selectedFinishOptionId, setSelectedFinishOptionId] = useState<string | null>(
-    catalog.products[0]?.variants[0]?.finishOptions[0]?.id ?? null
-  );
+  // Never pre-selected, even when the initial variant has finish
+  // options — the customer must explicitly choose one (finishSelectionMissing
+  // below enforces this before "add to cart" is allowed).
+  const [selectedFinishOptionId, setSelectedFinishOptionId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   // Crop-State: aktiv wenn die ausgewaehlte Variante eine fixed
   // aspectRatio hat UND wir die Bild-Pixel kennen (sonst koennten wir
@@ -333,9 +334,12 @@ function PickerDialog({
     } else {
       setCrop(null);
     }
-    // Finish options are per-variant — reset to the first one (or none)
-    // whenever the variant changes, same trigger as the crop reset.
-    setSelectedFinishOptionId(selectedVariant?.finishOptions[0]?.id ?? null);
+    // Finish options are per-variant — clear the selection whenever the
+    // variant changes (same trigger as the crop reset), never
+    // pre-select one. A silent default would let a surcharge (or the
+    // wrong finish entirely) through without the customer ever seeing
+    // the choice.
+    setSelectedFinishOptionId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVariant?.id, cropActive]);
 

@@ -217,6 +217,30 @@ describe("planVariant", () => {
     expect(plan.warnings).toContain("finish_option_price_delta_rounded_to_nearest_cent");
   });
 
+  it("skips the whole variant when there are more than 20 finish options", () => {
+    const finishOptions = Array.from({ length: 21 }, (_, i) => ({ name: `Finish ${i}` }));
+    const plan = planVariant(
+      { ...baseVariant, finishOptions },
+      0,
+      emptyExisting,
+      new Set()
+    );
+    expect(plan.action).toBe("skip");
+    expect(plan.errors).toContain("too_many_finish_options");
+  });
+
+  it("accepts exactly 20 finish options", () => {
+    const finishOptions = Array.from({ length: 20 }, (_, i) => ({ name: `Finish ${i}` }));
+    const plan = planVariant(
+      { ...baseVariant, finishOptions },
+      0,
+      emptyExisting,
+      new Set()
+    );
+    expect(plan.action).toBe("create");
+    expect(plan.data?.finishOptions).toHaveLength(20);
+  });
+
   it("a variant with no finishOptions field has an empty finishOptions plan (unaffected)", () => {
     const plan = planVariant(baseVariant, 0, emptyExisting, new Set());
     expect(plan.data?.finishOptions).toEqual([]);

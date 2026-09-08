@@ -256,12 +256,18 @@ export function planVariant(
     return { rowIndex, sourceName: name, action: "skip", errors, warnings };
   }
 
-  // Finish options: a broken entry (empty/duplicate name) skips the
-  // WHOLE variant, same granularity as an invalid price-tier ladder —
-  // not worth a whole extra report level for a list capped at 20 rows
-  // that a studio reviews by hand before committing.
+  // Finish options: a broken entry (empty/duplicate name, or more than
+  // 20 — the same cap the Studio editor and its zod schema enforce, see
+  // MAX_FINISH_OPTIONS in products/page.tsx) skips the WHOLE variant,
+  // same granularity as an invalid price-tier ladder — not worth a
+  // whole extra report level for a list a studio reviews by hand before
+  // committing. The HTTP route's zod schema already caps this at 20 for
+  // requests coming through it; checked again here too so a direct
+  // analyzeImport()/planVariant() caller can't bypass the limit.
   const finishOptions: VariantWriteData["finishOptions"] = [];
-  if (row.finishOptions && row.finishOptions.length > 0) {
+  if (row.finishOptions && row.finishOptions.length > 20) {
+    errors.push("too_many_finish_options");
+  } else if (row.finishOptions && row.finishOptions.length > 0) {
     const seenFinishNames = new Set<string>();
     for (const fo of row.finishOptions) {
       const foName = (fo.name ?? "").trim();

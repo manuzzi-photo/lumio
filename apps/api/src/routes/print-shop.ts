@@ -685,6 +685,14 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
     maxQty: z.number().int().nullable(),
     unitPriceEur: z.number(),
   });
+  // .max(20) matches the manual variant editor's cap (MAX_FINISH_OPTIONS
+  // in products/page.tsx) and priceTierInputSchema's own .max(20) below —
+  // an import can't create a variant the Studio editor couldn't then open.
+  const importFinishOptionSchema = z.object({
+    name: z.string(),
+    sku: z.string().nullable().optional(),
+    priceDeltaEur: z.number().nullable().optional(),
+  });
   const importVariantSchema = z.object({
     name: z.string(),
     widthMm: z.number().nullable().optional(),
@@ -694,6 +702,7 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
     priceEur: z.number().nullable().optional(),
     costEur: z.number().nullable().optional(),
     priceTiers: z.array(importTierSchema).optional(),
+    finishOptions: z.array(importFinishOptionSchema).max(20).optional(),
   });
   const importProductSchema = z.object({
     name: z.string(),
