@@ -497,17 +497,25 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
     return { methods };
   });
 
+  // No .default(...) on any field here: shippingUpdateSchema below
+  // derives from this via .partial(), and Zod applies a field's
+  // default whenever that key is ABSENT from the input — .partial()
+  // only makes the key optional, it doesn't suppress the default. A
+  // PUT that omits e.g. `enabled` would otherwise silently reset it to
+  // its default (re-enabling a method a studio deliberately disabled),
+  // and likewise for `isPickup`, `countries`, `displayOrder`. Defaults
+  // for creation are applied explicitly in the POST handler instead.
   const shippingCreateSchema = z.object({
     providerKey: z.string().min(1),
     name: z.string().min(1).max(200),
     priceCents: z.number().int().min(0),
     estimatedDaysMin: z.number().int().min(0).nullable().optional(),
     estimatedDaysMax: z.number().int().min(0).nullable().optional(),
-    countries: z.array(z.string().length(2).toUpperCase()).default([]),
+    countries: z.array(z.string().length(2).toUpperCase()).optional(),
     providerShippingRef: z.string().max(200).nullable().optional(),
-    isPickup: z.boolean().default(false),
-    enabled: z.boolean().default(true),
-    displayOrder: z.number().int().default(0),
+    isPickup: z.boolean().optional(),
+    enabled: z.boolean().optional(),
+    displayOrder: z.number().int().optional(),
   });
   app.post("/print-shop/shipping-methods", async (req, reply) => {
     const ctx = await guard(req, reply);
@@ -517,6 +525,10 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
       data: {
         tenantId: ctx.tenantId,
         ...body,
+        countries: body.countries ?? [],
+        isPickup: body.isPickup ?? false,
+        enabled: body.enabled ?? true,
+        displayOrder: body.displayOrder ?? 0,
       },
     });
     return { method };

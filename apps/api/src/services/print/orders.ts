@@ -13,6 +13,7 @@ import {
   tmplPrintOrderConfirmGuest,
   tmplPrintOrderNotifyStudio,
   tmplPrintOrderShippedGuest,
+  tmplPrintOrderReadyForPickupGuest,
 } from "../mail-print.js";
 import { config } from "../../config.js";
 import { studioNotifyEnabled } from "../notifications.js";
@@ -460,6 +461,10 @@ export async function transitionOrder(
     void sendOrderMails(orderId, "shipped").catch((err) =>
       logger.warn({ err, orderId }, "print.order.mail_failed")
     );
+  } else if (t.type === "mark_ready_for_pickup") {
+    void sendOrderMails(orderId, "ready_for_pickup").catch((err) =>
+      logger.warn({ err, orderId }, "print.order.mail_failed")
+    );
   }
 }
 
@@ -488,7 +493,7 @@ function extractEventData(t: Transition): Record<string, unknown> | null {
  */
 export async function sendOrderMails(
   orderId: string,
-  trigger: "paid" | "shipped"
+  trigger: "paid" | "shipped" | "ready_for_pickup"
 ): Promise<void> {
   const order = await prisma.printOrder.findUnique({
     where: { id: orderId },
@@ -568,6 +573,17 @@ export async function sendOrderMails(
     await sendMail({
       to: order.guestEmail,
       ...tmplPrintOrderShippedGuest({
+        branding: mailBranding,
+        studioName,
+        supportEmail,
+        order: orderForMail,
+        locale: guestLocale,
+      }),
+    });
+  } else if (trigger === "ready_for_pickup") {
+    await sendMail({
+      to: order.guestEmail,
+      ...tmplPrintOrderReadyForPickupGuest({
         branding: mailBranding,
         studioName,
         supportEmail,
