@@ -1184,15 +1184,19 @@ end
 -- info.collectionSettings is NOT a documented field on either hook's info
 -- table (only isDefaultCollection/name/parents/publishService/
 -- publishedCollection/remoteId/remoteUrl are) -- settings must be read
--- back via info.publishedCollection:getCollectionInfoSummary(). Calling
--- that on a Set object throws (Sets use getCollectionSetInfoSummary
--- instead, see getParentSetSettings above) -- real-device-confirmed
--- (@canja006, deleting a Set): "attempt to call method
--- 'getCollectionInfoSummary' (a nil value)". Both functions below now
--- check for that failure EXPLICITLY and return -- the desired no-op for a
--- Set-level rename/delete happens on purpose now, not because the pcall
--- happened to swallow an error that led to the same nil-collSettings
--- no-op path as "not a chapter".
+-- back via info.publishedCollection:getCollectionInfoSummary(), which only
+-- exists on a plain collection (Sets use getCollectionSetInfoSummary
+-- instead, see getParentSetSettings above). Both functions below check
+-- info.publishedCollection:type() FIRST (confirmed to return exactly
+-- "LrPublishedCollection" or "LrPublishedCollectionSet") and return early
+-- for a Set, rather than inferring "it's a Set" from
+-- getCollectionInfoSummary() throwing -- that used to conflate "this
+-- really is a Set" (fine) with "this is a chapter but the read genuinely
+-- failed for some other reason" under the same silent no-op; the latter
+-- now surfaces as a log:warn instead (@canja006, real-device-confirmed
+-- both the original throw on a Set -- "attempt to call method
+-- 'getCollectionInfoSummary' (a nil value)" -- and that the type() switch
+-- behaves identically for the three cases that matter).
 -- info.publishedCollection is confirmed singular (one call per collection,
 -- not an array) even for a multi-select delete in the Publish Services
 -- panel.
@@ -1215,19 +1219,34 @@ local function syncChapterRename(collSettings, newName)
     end
 end
 
+-- Explicit type check (LrPublishedCollection:type() / LrPublishedCollectionSet:type(),
+-- both confirmed against the official Lightroom Classic 15 SDK reference to
+-- return exactly these two strings) instead of inferring "it's a Set" from
+-- getCollectionInfoSummary() failing. The previous version conflated two
+-- different situations under one silent no-op: "this really is a Set" (fine,
+-- intentional) and "this is a chapter but the call genuinely failed for some
+-- other reason" (a real bug that deserves a log line). Suggested by
+-- @canja006 after confirming the Set no-op is otherwise correct.
+local function isPublishedCollectionSet(obj)
+    if not obj then return false end
+    local ok, objType = LrTasks.pcall(function() return obj:type() end)
+    return ok and objType == "LrPublishedCollectionSet"
+end
+
 function exportServiceProvider.renamePublishedCollection(publishSettings, info)
     info = info or {}
     if not info.publishedCollection then return end
+    if isPublishedCollectionSet(info.publishedCollection) then
+        -- A Set rename must never touch the Lumio gallery (see the note at
+        -- disableRenamePublishedCollectionSet above).
+        return
+    end
 
     local okSummary, summary = LrTasks.pcall(function()
         return info.publishedCollection:getCollectionInfoSummary()
     end)
     if not okSummary then
-        -- info.publishedCollection is a LrPublishedCollectionSet (the Set
-        -- itself was renamed, not a chapter) -- getCollectionInfoSummary
-        -- only exists on plain collections. Deliberate no-op: a Set
-        -- rename must never touch the Lumio gallery (see the note at
-        -- disableRenamePublishedCollectionSet above).
+        log:warn("renamePublishedCollection: could not read collection info: " .. tostring(summary))
         return
     end
     -- info.name is documented as "the new name being assigned to this
@@ -1252,19 +1271,17 @@ end
 function exportServiceProvider.deletePublishedCollection(publishSettings, info)
     info = info or {}
     if not info.publishedCollection then return end
+    if isPublishedCollectionSet(info.publishedCollection) then
+        -- Deleting the Set must never touch the Lumio gallery (see the
+        -- note at disableRenamePublishedCollectionSet above).
+        return
+    end
 
     local okSummary, summary = LrTasks.pcall(function()
         return info.publishedCollection:getCollectionInfoSummary()
     end)
     if not okSummary then
-        -- info.publishedCollection is a LrPublishedCollectionSet (the Set
-        -- itself was deleted, not a chapter) -- getCollectionInfoSummary
-        -- only exists on plain collections. Deliberate no-op: deleting the
-        -- Set must never touch the Lumio gallery (see the note at
-        -- disableRenamePublishedCollectionSet above) -- real-device-
-        -- confirmed (@canja006): before this explicit check, the same
-        -- outcome only happened because the pcall above swallowed the
-        -- resulting error, which is fragile, not by design.
+        log:warn("deletePublishedCollection: could not read collection info: " .. tostring(summary))
         return
     end
     syncChapterDelete(summary and summary.collectionSettings)
