@@ -44,3 +44,19 @@ export function aggregateQuantityForVariant(
     0
   );
 }
+
+/**
+ * Same aggregation as aggregateQuantityForVariant(), but for every
+ * variant in the cart at once (one O(n) pass instead of one per line).
+ * Use this instead of calling aggregateQuantityForVariant() inside a
+ * cart.map() — that would re-reduce the whole cart per line (O(n²)).
+ */
+export function buildQuantityByVariantMap(
+  cartItems: Array<{ variantId: string; quantity: number }>
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const it of cartItems) {
+    map.set(it.variantId, (map.get(it.variantId) ?? 0) + it.quantity);
+  }
+  return map;
+}
