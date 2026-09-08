@@ -203,6 +203,16 @@ describe("buildOrderSummaryMarkdown", () => {
     expect(md).not.toContain("null");
     expect(md).toContain("| \u2014 |");
   });
+
+  it("includes the selected finish name in the items table", () => {
+    const md = buildOrderSummaryMarkdown(header(), [row({ finishName: "Cornice nera" })]);
+    expect(md).toContain("Cornice nera");
+  });
+
+  it("renders a dash for a line with no finish option", () => {
+    const md = buildOrderSummaryMarkdown(header(), [row({ finishName: null })]);
+    expect(md).toContain("| \u2014 |");
+  });
 });
 
 describe("isOrderSummaryAddress", () => {

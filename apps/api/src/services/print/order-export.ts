@@ -192,11 +192,11 @@ export function buildOrderSummaryMarkdown(
   lines.push("");
   lines.push("## Items");
   lines.push("");
-  lines.push("| Photo | Product | Format | Qty | SKU | Unit price | Line total |");
-  lines.push("| --- | --- | --- | --- | --- | --- | --- |");
+  lines.push("| Photo | Product | Format | Finish | Qty | SKU | Unit price | Line total |");
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
   for (const r of rows) {
     lines.push(
-      `| ${mdEscape(r.filename)} | ${mdEscape(r.productName)} | ${mdEscape(r.variantName)} (${r.widthMm}×${r.heightMm} mm) | ${r.quantity} | ${r.sku ? mdEscape(r.sku) : "—"} | ${centsToAmount(r.unitPriceCents)} ${header.currency} | ${centsToAmount(r.totalPriceCents)} ${header.currency} |`
+      `| ${mdEscape(r.filename)} | ${mdEscape(r.productName)} | ${mdEscape(r.variantName)} (${r.widthMm}×${r.heightMm} mm) | ${r.finishName ? mdEscape(r.finishName) : "—"} | ${r.quantity} | ${r.sku ? mdEscape(r.sku) : "—"} | ${centsToAmount(r.unitPriceCents)} ${header.currency} | ${centsToAmount(r.totalPriceCents)} ${header.currency} |`
     );
   }
   lines.push("");
