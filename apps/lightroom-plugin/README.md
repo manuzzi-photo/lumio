@@ -131,10 +131,17 @@ Lumio-Service auch ein **Sammlungs-Set** anlegen:
    erstellen…", nicht „Simple Gallery" — dieser Text ist im
    Set nicht separat anpassbar, siehe Kommentar bei
    `titleForPublishedCollection` im Code.)
-4. Sammlung löschen → das zugehörige Kapitel wird auf Lumio ebenfalls
-   gelöscht (die Bilder bleiben erhalten und fallen in den
-   kapitellosen Bereich zurück). Das ganze Set bzw. die Galerie zu
-   löschen bleibt weiterhin eine Aktion im Lumio Studio.
+4. Sammlung löschen → Lightroom fragt dabei, was mit den bereits
+   veröffentlichten Fotos passieren soll. **Nur bei „Delete"** (Fotos
+   vom Dienst entfernen) wird das zugehörige Kapitel auf Lumio
+   ebenfalls gelöscht — die Bilder selbst bleiben dabei erhalten und
+   fallen nur in den kapitellosen Bereich zurück, gelöscht wird nur
+   die Kapitel-Zuordnung. Bei **„Leave on Service"** passiert auf
+   Lumio-Seite nichts (Lightroom ruft in diesem Fall keinen Hook auf)
+   — nur die lokale Sammlung verschwindet, das Kapitel bleibt auf
+   Lumio bestehen und muss bei Bedarf manuell im Studio gelöscht
+   werden. Das ganze Set bzw. die Galerie zu löschen bleibt weiterhin
+   eine Aktion im Lumio Studio.
 
 Bestehende einzelne Veröffentlichte Sammlungen (**Simple Gallery**)
 funktionieren unverändert weiter — Kapitel sind rein optional.

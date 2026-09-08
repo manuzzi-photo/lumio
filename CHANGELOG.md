@@ -35,6 +35,7 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ### Fixed
 
+- Lightroom plug-in: renaming or deleting a Collection Set (Chapters Gallery) only left the Lumio gallery untouched because the resulting error (calling a plain-collection-only method on a Set object) was silently swallowed — the intended no-op now happens via an explicit check instead of an incidental failure. Also, deleting a chapter collection only syncs to Lumio when "Delete" (not "Leave on Service") is chosen in Lightroom's own confirmation dialog — this is documented Lightroom SDK behavior, not something the plug-in can control, so the README now explains it instead of implying it always syncs. (Found via further real-device testing by [@canja006](https://github.com/canja006).)
 - Lightroom plug-in: several Chapters Gallery bugs found via real-device testing on 0.4.1 — the "Default" chapter collection could fail to be created (querying a just-created collection's info inside the same catalog write transaction that created it is not allowed), a chapter's parent gallery could fail to resolve on publish (a non-existent catalog method was being called), and "Show in Lumio" on the Set itself always errored (it only ever tried the plain-collection info method, not the Set one). All three are fixed; "Show in Lumio" on a Chapters Gallery now works.
 
 ## [0.82.0] - 2026-09-21
