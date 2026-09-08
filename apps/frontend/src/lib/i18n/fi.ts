@@ -2120,6 +2120,7 @@ export const fi = {
     trackingUrl: "Seurantalinkki",
     secItems: "Tuotteet ({n})",
     imageLabel: "Kuva:",
+    downloadCsv: "Lataa CSV",
     subtotal: "Välisumma",
     shipping: "Toimituskulut",
     vat: "Alv",

@@ -2118,6 +2118,7 @@ export const en = {
     trackingUrl: "Tracking URL",
     secItems: "Items ({n})",
     imageLabel: "Image:",
+    downloadCsv: "Download CSV",
     subtotal: "Subtotal",
     shipping: "Shipping",
     vat: "VAT",

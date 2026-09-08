@@ -2127,6 +2127,7 @@ export const it: LocaleDict = {
     trackingUrl: "URL di tracciamento",
     secItems: "Articoli ({n})",
     imageLabel: "Immagine:",
+    downloadCsv: "Scarica CSV",
     subtotal: "Subtotale",
     shipping: "Spedizione",
     vat: "IVA",

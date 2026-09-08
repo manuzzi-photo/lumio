@@ -1942,6 +1942,8 @@ export const api = {
   studioZipDownloadUrl: (galleryId: string, zipId: string) =>
     `${API_URL}/api/v1/galleries/${galleryId}/download/zip/${zipId}?download=1`,
 
+  studioFileDownloadUrl: (fileId: string) => `${API_URL}/api/v1/files/${fileId}/download`,
+
   getStudioZipShareUrl: (galleryId: string, zipId: string) =>
     request<{
       url: string;
@@ -3357,6 +3359,9 @@ export const api = {
     request<{
       order: PrintOrderDetail;
     }>(`/print-shop/orders/${id}`),
+
+  printOrderExportCsvUrl: (id: string) =>
+    `${API_URL}/api/v1/print-shop/orders/${id}/export.csv`,
 
   transitionPrintOrder: (
     id: string,
