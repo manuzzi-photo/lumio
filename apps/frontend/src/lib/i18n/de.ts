@@ -1168,6 +1168,9 @@ export const de: LocaleDict = {
     noProducts: "Keine Produkte verfügbar.",
     product: "Produkt",
     variant: "Variante",
+    finishOption: "Finitur",
+    finishOptionChoose: "Finitur wählen…",
+    finishOptionWithSurcharge: "{name} (+{price})",
     quantity: "Anzahl",
     quantityPerPhoto: "Anzahl (pro Foto)",
     perUnitAtQuantity: "bei {quantity} Stk.: {price}/Stk.",
@@ -1692,6 +1695,18 @@ export const de: LocaleDict = {
     tierLadderErrorGap:
       "Die Staffeln müssen lückenlos und ohne Überschneidung ineinander übergehen.",
     tieredBadge: "ab {price} · {n} Staffeln",
+    finishOptionsCount: "{n} Finiturarten",
+    finishOptionsLabel: "Finiturarten (optional)",
+    finishOptionsHint:
+      "Auswählbare Optionen, die die Größe nicht ändern, z. B. eine Rahmenfarbe. Falls vorhanden, muss der Kunde vor dem Hinzufügen zum Warenkorb eine auswählen.",
+    finishName: "Name",
+    finishNamePlaceholder: "z. B. Rahmen schwarz",
+    finishSku: "SKU (optional)",
+    finishPriceDelta: "Preisaufschlag (EUR)",
+    addFinishOption: "+ Finiturart",
+    finishOptionErrorMissingName: "Jede Finiturart braucht einen Namen.",
+    finishOptionErrorDuplicateName: "Namen von Finiturarten müssen innerhalb einer Variante eindeutig sein.",
+    finishOptionErrorPriceDelta: "Ungültiger Preisaufschlag.",
   },
 
   printImport: {

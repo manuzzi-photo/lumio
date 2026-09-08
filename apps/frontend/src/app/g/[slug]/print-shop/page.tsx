@@ -54,6 +54,8 @@ interface CartItem {
   variant: Variant;
   quantity: number;
   crop: { x: number; y: number; width: number; height: number } | null;
+  finishOptionId: string | null;
+  finishOptionName: string | null;
 }
 
 export default function GalleryPrintShopPage({
@@ -355,6 +357,10 @@ function PickerDialog({
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
     catalog.products[0]?.variants[0] ?? null
   );
+  // Never pre-selected, even when the initial variant has finish
+  // options — the customer must explicitly choose one (finishSelectionMissing
+  // below enforces this before "add to cart" is allowed).
+  const [selectedFinishOptionId, setSelectedFinishOptionId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   // Crop-State: aktiv wenn genau EIN Bild gewaehlt ist, die Variante
   // eine fixed aspectRatio hat UND wir die Bild-Pixel kennen (sonst
@@ -394,11 +400,26 @@ function PickerDialog({
     } else {
       setCrop(null);
     }
+    // Finish options are per-variant — clear the selection whenever the
+    // variant changes (same trigger as the crop reset), never
+    // pre-select one. A silent default would let a surcharge (or the
+    // wrong finish entirely) through without the customer ever seeing
+    // the choice.
+    setSelectedFinishOptionId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVariant?.id, cropActive]);
 
+  const selectedFinishOption = selectedVariant?.finishOptions.find(
+    (f) => f.id === selectedFinishOptionId
+  );
+  // A variant with finish options requires picking one before adding —
+  // no silent default, mirrors the server's own requirement.
+  const finishSelectionMissing =
+    !!selectedVariant?.finishOptions.length && !selectedFinishOption;
+
   function add() {
     if (!selectedProduct || !selectedVariant) return;
+    if (finishSelectionMissing) return;
     onAdd(
       files.map((f) => ({
         variantId: selectedVariant.id,
@@ -413,6 +434,8 @@ function PickerDialog({
         variant: selectedVariant,
         quantity,
         crop: cropActive ? crop : null,
+        finishOptionId: selectedFinishOption?.id ?? null,
+        finishOptionName: selectedFinishOption?.name ?? null,
       }))
     );
   }
@@ -547,6 +570,34 @@ function PickerDialog({
                     </label>
                   )}
 
+                {selectedVariant && selectedVariant.finishOptions.length > 0 && (
+                  <label className="block">
+                    <span className="block text-xs text-ink-tertiary mb-1">
+                      {t("printShop.finishOption")}
+                    </span>
+                    <select
+                      className="w-full rounded border border-line-subtle bg-surface-raised px-2 py-1.5 text-sm"
+                      value={selectedFinishOptionId ?? ""}
+                      onChange={(e) => setSelectedFinishOptionId(e.target.value || null)}
+                      required
+                    >
+                      <option value="" disabled>
+                        {t("printShop.finishOptionChoose")}
+                      </option>
+                      {selectedVariant.finishOptions.map((fo) => (
+                        <option key={fo.id} value={fo.id}>
+                          {fo.priceDeltaCents !== 0
+                            ? t("printShop.finishOptionWithSurcharge", {
+                                name: fo.name,
+                                price: formatPrice(fmt, fo.priceDeltaCents, catalog.config.currency),
+                              })
+                            : fo.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
                 <label className="block">
                   <span className="block text-xs text-ink-tertiary mb-1">
                     {bulk
@@ -575,10 +626,13 @@ function PickerDialog({
                         // this format too, not just the quantity being added
                         // here (quantity per photo × number of photos) —
                         // matches how the server aggregates at checkout.
+                        // The finish surcharge (if any) is added on top,
+                        // same order of operations as the server.
                         quantity: projectedQuantity,
                         price: formatPrice(
                           fmt,
-                          unitPriceForQuantity(selectedVariant, projectedQuantity),
+                          unitPriceForQuantity(selectedVariant, projectedQuantity) +
+                            (selectedFinishOption?.priceDeltaCents ?? 0),
                           catalog.config.currency
                         ),
                       })}
@@ -603,7 +657,8 @@ function PickerDialog({
                     {formatPrice(
                       fmt,
                       selectedVariant
-                        ? unitPriceForQuantity(selectedVariant, projectedQuantity) *
+                        ? (unitPriceForQuantity(selectedVariant, projectedQuantity) +
+                            (selectedFinishOption?.priceDeltaCents ?? 0)) *
                           quantity *
                           files.length
                         : 0,
@@ -625,7 +680,7 @@ function PickerDialog({
               <button
                 type="button"
                 onClick={add}
-                disabled={!selectedVariant}
+                disabled={!selectedVariant || finishSelectionMissing}
                 className="flex-1 px-3 py-2 text-sm rounded bg-accent text-white disabled:opacity-50"
               >
                 {t("printShop.toCart")}
@@ -712,6 +767,7 @@ function CartStep({
             fileId: c.fileId,
             quantity: c.quantity,
             crop: c.crop,
+            finishOptionId: c.finishOptionId,
           })),
           shippingMethodId: shippingMethodId || null,
         });
@@ -744,6 +800,7 @@ function CartStep({
           fileId: c.fileId,
           quantity: c.quantity,
           crop: c.crop,
+          finishOptionId: c.finishOptionId,
         })),
         shippingMethodId,
         guestName,
@@ -852,6 +909,7 @@ function CartStep({
                 </div>
                 <div className="text-xs text-ink-tertiary">
                   {it.variant.name} ({it.variant.widthMm}×{it.variant.heightMm} mm)
+                  {it.finishOptionName && ` · ${it.finishOptionName}`}
                 </div>
               </div>
               <input
@@ -868,10 +926,14 @@ function CartStep({
                   // Tier applies per format across the whole cart, not per
                   // line — look up the precomputed per-variant total
                   // instead of re-aggregating the whole cart per line.
-                  unitPriceForQuantity(
+                  // Finish surcharge (if any) is added on top per line.
+                  (unitPriceForQuantity(
                     it.variant,
                     quantityByVariant.get(it.variantId) ?? it.quantity
-                  ) * it.quantity,
+                  ) +
+                    (it.variant.finishOptions.find((f) => f.id === it.finishOptionId)
+                      ?.priceDeltaCents ?? 0)) *
+                    it.quantity,
                   catalog.config.currency
                 )}
               </div>

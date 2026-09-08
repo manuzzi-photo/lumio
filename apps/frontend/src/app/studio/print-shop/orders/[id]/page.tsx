@@ -319,6 +319,7 @@ export default function OrderDetailPage({
                   {it.printProductVariant.heightMm} mm
                   {it.printProductVariant.finishType &&
                     ` · ${it.printProductVariant.finishType}`}
+                  {it.finishOptionName && ` · ${it.finishOptionName}`}
                 </div>
                 <div className="text-xs text-ink-tertiary mt-0.5">
                   {t("orderDetail.imageLabel")}{" "}

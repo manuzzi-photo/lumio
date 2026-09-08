@@ -1166,6 +1166,9 @@ export const it: LocaleDict = {
     noProducts: "Nessun prodotto disponibile.",
     product: "Prodotto",
     variant: "Variante",
+    finishOption: "Finitura",
+    finishOptionChoose: "Scegli una finitura…",
+    finishOptionWithSurcharge: "{name} (+{price})",
     quantity: "Quantità",
     quantityPerPhoto: "Quantità (per foto)",
     perUnitAtQuantity: "a {quantity} pz.: {price}/pz.",
@@ -1689,6 +1692,18 @@ export const it: LocaleDict = {
     tierLadderErrorGap:
       "Gli scaglioni devono susseguirsi senza buchi né sovrapposizioni.",
     tieredBadge: "a partire da {price} · {n} scaglioni",
+    finishOptionsCount: "{n} finiture",
+    finishOptionsLabel: "Finiture (opzionale)",
+    finishOptionsHint:
+      "Opzioni selezionabili che non cambiano il formato, es. il colore della cornice. Se presenti, il cliente deve sceglierne una prima di aggiungere al carrello.",
+    finishName: "Nome",
+    finishNamePlaceholder: "es. Cornice nera",
+    finishSku: "SKU (opzionale)",
+    finishPriceDelta: "Sovrapprezzo (EUR)",
+    addFinishOption: "+ Finitura",
+    finishOptionErrorMissingName: "Ogni finitura deve avere un nome.",
+    finishOptionErrorDuplicateName: "I nomi delle finiture devono essere univoci all'interno di una variante.",
+    finishOptionErrorPriceDelta: "Sovrapprezzo non valido.",
   },
 
   printImport: {
