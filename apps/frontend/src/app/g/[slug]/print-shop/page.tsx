@@ -30,7 +30,11 @@ import { useT, useFormat} from "@/lib/i18n";
 import { CropFrame, defaultCropForAspect, type Crop } from "@/components/print-shop/CropFrame";
 import type { Formatters } from "@/lib/i18n/format";
 import { useErrorText } from "@/lib/error-i18n";
-import { unitPriceForQuantity, aggregateQuantityForVariant } from "@/lib/print-pricing";
+import {
+  unitPriceForQuantity,
+  aggregateQuantityForVariant,
+  buildQuantityByVariantMap,
+} from "@/lib/print-pricing";
 
 // Deep quantity-break tiers (e.g. "400 and above") need a generous
 // ceiling — must match the server-side cap in print-shop-public.ts.
@@ -345,6 +349,13 @@ function PickerDialog({
     });
   }
 
+  // What this variant's total cart quantity would be if this add went
+  // through — computed once and reused everywhere below instead of
+  // re-aggregating the cart on every reference.
+  const projectedQuantity = selectedVariant
+    ? aggregateQuantityForVariant(cart, selectedVariant.id) + quantity
+    : quantity;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
@@ -470,14 +481,10 @@ function PickerDialog({
                         // Tier preview reflects what's already in the cart for
                         // this format too, not just the quantity being typed
                         // here — matches how the server aggregates at checkout.
-                        quantity:
-                          aggregateQuantityForVariant(cart, selectedVariant.id) + quantity,
+                        quantity: projectedQuantity,
                         price: formatPrice(
                           fmt,
-                          unitPriceForQuantity(
-                            selectedVariant,
-                            aggregateQuantityForVariant(cart, selectedVariant.id) + quantity
-                          ),
+                          unitPriceForQuantity(selectedVariant, projectedQuantity),
                           catalog.config.currency
                         ),
                       })}
@@ -497,10 +504,7 @@ function PickerDialog({
                     {formatPrice(
                       fmt,
                       selectedVariant
-                        ? unitPriceForQuantity(
-                            selectedVariant,
-                            aggregateQuantityForVariant(cart, selectedVariant.id) + quantity
-                          ) * quantity
+                        ? unitPriceForQuantity(selectedVariant, projectedQuantity) * quantity
                         : 0,
                       catalog.config.currency
                     )}
@@ -555,6 +559,9 @@ function CartStep({
   const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
+  // Precomputed once per cart change instead of re-reducing the whole
+  // cart inside cart.map() below (was O(n²) for the per-line preview).
+  const quantityByVariant = useMemo(() => buildQuantityByVariantMap(cart), [cart]);
   const [shippingMethodId, setShippingMethodId] = useState<string>(
     catalog.shipping[0]?.id ?? ""
   );
@@ -752,10 +759,11 @@ function CartStep({
                 {formatPrice(
                   fmt,
                   // Tier applies per format across the whole cart, not per
-                  // line — aggregate every line sharing this variant first.
+                  // line — look up the precomputed per-variant total
+                  // instead of re-aggregating the whole cart per line.
                   unitPriceForQuantity(
                     it.variant,
-                    aggregateQuantityForVariant(cart, it.variantId)
+                    quantityByVariant.get(it.variantId) ?? it.quantity
                   ) * it.quantity,
                   catalog.config.currency
                 )}
