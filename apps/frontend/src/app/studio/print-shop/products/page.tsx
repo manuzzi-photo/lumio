@@ -828,14 +828,24 @@ type TierLadderErrorCode =
 
 /** Client-side mirror of apps/api's validateTierLadder(), for immediate
  *  feedback before submit — the server re-validates authoritatively. */
+/** parseInt() truncates/accepts non-integer input ("1.5" -> 1, silently
+ *  dropping the fraction). Tier quantities must be whole numbers, so
+ *  this rejects anything Number.isInteger() wouldn't accept instead of
+ *  quietly coercing it — NaN propagates to the invalid_min/max_qty
+ *  checks below the same way a parseInt() failure already did. */
+function parseIntStrict(s: string): number {
+  const n = Number(s);
+  return Number.isInteger(n) ? n : NaN;
+}
+
 function validateTierRows(
   rows: TierRow[]
 ): { ok: true; tiers: PrintPriceTier[] } | { ok: false; error: TierLadderErrorCode } {
   if (rows.length === 0) return { ok: false, error: "empty_ladder" };
 
   const parsed = rows.map((r) => ({
-    minQty: parseInt(r.minQty, 10),
-    maxQty: r.maxQty.trim() === "" ? null : parseInt(r.maxQty, 10),
+    minQty: parseIntStrict(r.minQty),
+    maxQty: r.maxQty.trim() === "" ? null : parseIntStrict(r.maxQty),
     unitPriceCents: Math.round(parseFloat(r.priceEuros) * 100),
   }));
 
