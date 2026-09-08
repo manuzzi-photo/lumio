@@ -505,6 +505,7 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
     estimatedDaysMax: z.number().int().min(0).nullable().optional(),
     countries: z.array(z.string().length(2).toUpperCase()).default([]),
     providerShippingRef: z.string().max(200).nullable().optional(),
+    isPickup: z.boolean().default(false),
     enabled: z.boolean().default(true),
     displayOrder: z.number().int().default(0),
   });
@@ -593,6 +594,7 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
         currency: true,
         status: true,
         paymentMode: true,
+        isPickupDelivery: true,
         providerKey: true,
         createdAt: true,
         paidAt: true,
@@ -644,6 +646,7 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
       "mark_paid",
       "mark_in_production",
       "mark_shipped",
+      "mark_ready_for_pickup",
       "mark_delivered",
       "cancel",
       "refund",
