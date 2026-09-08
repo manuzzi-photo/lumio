@@ -638,7 +638,7 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
   );
 
   // POST /print-shop/orders/:id/transitions
-  // Body: { type, trackingNumber?, trackingCarrier?, trackingUrl?, reason? }
+  // Body: { type, trackingNumber?, trackingCarrier?, trackingUrl?, reason?, paymentReference? }
   const transitionSchema = z.object({
     type: z.enum([
       "mark_paid",
@@ -652,6 +652,10 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
     trackingCarrier: z.string().max(100).optional(),
     trackingUrl: z.string().url().optional(),
     reason: z.string().max(500).optional(),
+    // Required by transitionOrder() when marking an offline_invoice
+    // order paid — validated there, not here, since it depends on the
+    // order's paymentMode.
+    paymentReference: z.string().min(1).max(200).optional(),
   });
   app.post<{ Params: { id: string } }>(
     "/print-shop/orders/:id/transitions",
@@ -678,6 +682,9 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
             : {}),
           ...(body.type === "cancel" || body.type === "refund"
             ? { reason: body.reason }
+            : {}),
+          ...(body.type === "mark_paid"
+            ? { paymentReference: body.paymentReference }
             : {}),
         });
         await logEvent({
