@@ -3370,6 +3370,20 @@ export const api = {
   printOrderExportCsvUrl: (id: string) =>
     `${API_URL}/api/v1/print-shop/orders/${id}/export.csv`,
 
+  printOrderExportMdUrl: (id: string) =>
+    `${API_URL}/api/v1/print-shop/orders/${id}/export.md`,
+
+  /** Zips every photo in the order — dedupe'd — reusing the same async
+   *  build pipeline as the gallery-wide Studio ZIP. Poll/download via
+   *  getStudioZipStatus/studioZipDownloadUrl with the returned galleryId. */
+  requestPrintOrderZip: (orderId: string) =>
+    request<{
+      id: string;
+      status: ZipStatus;
+      fileCount: number;
+      galleryId: string;
+    }>(`/print-shop/orders/${orderId}/export-zip`, { method: "POST" }),
+
   transitionPrintOrder: (
     id: string,
     body: {

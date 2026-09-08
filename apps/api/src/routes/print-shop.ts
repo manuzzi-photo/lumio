@@ -54,7 +54,13 @@ import {
   getConnectStatus,
 } from "../services/print/stripe-connect.js";
 import { transitionOrder } from "../services/print/orders.js";
-import { buildOrderItemsCsv, type OrderExportRow } from "../services/print/order-export.js";
+import {
+  buildOrderItemsCsv,
+  buildOrderSummaryMarkdown,
+  isOrderSummaryAddress,
+  type OrderExportRow,
+} from "../services/print/order-export.js";
+import { requestZipDownload } from "../services/zip.js";
 import {
   validateTierLadder,
   deriveReferencePriceCents,
@@ -1002,6 +1008,151 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
         `attachment; filename="${order.orderNumber}.csv"`
       );
       return reply.send(csv);
+    }
+  );
+
+  // GET /print-shop/orders/:id/export.md
+  // Human-readable summary (customer, address, status, items) for a
+  // studio's own records or to hand to a lab — same item data as the
+  // CSV, plus the order-level context a spreadsheet row can't carry.
+  app.get<{ Params: { id: string } }>(
+    "/print-shop/orders/:id/export.md",
+    async (req, reply) => {
+      const ctx = await guard(req, reply);
+      if (!ctx) return;
+      const order = await prisma.printOrder.findFirst({
+        where: { id: req.params.id, tenantId: ctx.tenantId },
+        select: {
+          orderNumber: true,
+          currency: true,
+          status: true,
+          guestName: true,
+          guestEmail: true,
+          paymentMode: true,
+          subtotalCents: true,
+          shippingCents: true,
+          taxCents: true,
+          totalCents: true,
+          shippingAddress: true,
+          trackingNumber: true,
+          trackingCarrier: true,
+          trackingUrl: true,
+          guestNote: true,
+          createdAt: true,
+          shippingMethod: { select: { name: true } },
+          items: {
+            select: {
+              quantity: true,
+              unitPriceCents: true,
+              totalPriceCents: true,
+              printProductVariant: {
+                select: {
+                  name: true,
+                  widthMm: true,
+                  heightMm: true,
+                  providerVariantRef: true,
+                  printProduct: { select: { name: true, providerProductRef: true } },
+                },
+              },
+              file: { select: { id: true, originalFilename: true } },
+            },
+          },
+        },
+      });
+      if (!order) return reply.status(404).send({ error: "not_found" });
+
+      const rows: OrderExportRow[] = order.items.map((it) => ({
+        fileId: it.file.id,
+        filename: it.file.originalFilename,
+        productName: it.printProductVariant.printProduct.name,
+        variantName: it.printProductVariant.name,
+        widthMm: it.printProductVariant.widthMm,
+        heightMm: it.printProductVariant.heightMm,
+        sku:
+          it.printProductVariant.providerVariantRef ??
+          it.printProductVariant.printProduct.providerProductRef ??
+          null,
+        quantity: it.quantity,
+        unitPriceCents: it.unitPriceCents,
+        totalPriceCents: it.totalPriceCents,
+      }));
+
+      const md = buildOrderSummaryMarkdown(
+        {
+          orderNumber: order.orderNumber,
+          status: order.status,
+          guestName: order.guestName,
+          guestEmail: order.guestEmail,
+          paymentMode: order.paymentMode,
+          currency: order.currency,
+          subtotalCents: order.subtotalCents,
+          shippingCents: order.shippingCents,
+          taxCents: order.taxCents,
+          totalCents: order.totalCents,
+          shippingMethodName: order.shippingMethod?.name ?? null,
+          // shippingAddress is a Json column — validated rather than
+          // blindly cast, so a malformed/unexpected shape degrades to
+          // "no address" instead of throwing inside the Markdown builder.
+          shippingAddress: isOrderSummaryAddress(order.shippingAddress)
+            ? order.shippingAddress
+            : null,
+          trackingNumber: order.trackingNumber,
+          trackingCarrier: order.trackingCarrier,
+          trackingUrl: order.trackingUrl,
+          guestNote: order.guestNote,
+          createdAt: order.createdAt.toISOString(),
+        },
+        rows
+      );
+      reply.header("Content-Type", "text/markdown; charset=utf-8");
+      reply.header(
+        "Content-Disposition",
+        `attachment; filename="${order.orderNumber}.md"`
+      );
+      return reply.send(md);
+    }
+  );
+
+  // POST /print-shop/orders/:id/export-zip
+  // Bundles every photo in the order into one ZIP, reusing the same
+  // async build/cache pipeline as the existing gallery-wide Studio ZIP
+  // (apps/api/src/services/zip.ts) — no separate download infra. The
+  // resulting zipId is polled/downloaded via the existing generic
+  // GET /galleries/:id/download/zip/:zipId route, which looks a ZIP up
+  // by (galleryId, zipId) alone, regardless of which endpoint created it.
+  app.post<{ Params: { id: string } }>(
+    "/print-shop/orders/:id/export-zip",
+    async (req, reply) => {
+      const ctx = await guard(req, reply);
+      if (!ctx) return;
+      const order = await prisma.printOrder.findFirst({
+        where: { id: req.params.id, tenantId: ctx.tenantId },
+        select: {
+          galleryId: true,
+          orderNumber: true,
+          items: { select: { fileId: true } },
+        },
+      });
+      if (!order) return reply.status(404).send({ error: "not_found" });
+
+      // Multiple lines can point at the same photo (different variants
+      // or, once finish options exist, different finishes) — dedupe so
+      // the ZIP doesn't contain the same file twice.
+      const fileIds = [...new Set(order.items.map((it) => it.fileId))];
+
+      const zipDownload = await requestZipDownload({
+        tenantId: ctx.tenantId,
+        galleryId: order.galleryId,
+        accessId: null,
+        fileIds,
+        label: `print_order_${order.orderNumber}`,
+      });
+      return reply.status(202).send({
+        id: zipDownload.id,
+        status: zipDownload.status,
+        fileCount: fileIds.length,
+        galleryId: order.galleryId,
+      });
     }
   );
 
