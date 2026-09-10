@@ -3,6 +3,7 @@ import {
   validateTierLadder,
   deriveReferencePriceCents,
   resolveUnitPriceForQuantity,
+  costTierConsistency,
   type PriceTierInput,
 } from "./pricing-tiers.js";
 
@@ -166,5 +167,28 @@ describe("resolveUnitPriceForQuantity", () => {
     expect(resolveUnitPriceForQuantity(0, ladder, 100)).toBe(25);
     expect(resolveUnitPriceForQuantity(0, ladder, 399)).toBe(25);
     expect(resolveUnitPriceForQuantity(0, ladder, 400)).toBe(16);
+  });
+});
+
+describe("costTierConsistency", () => {
+  it("returns 'none' when no tier carries a cost", () => {
+    expect(costTierConsistency(ladder)).toBe("none");
+  });
+
+  it("returns 'all' when every tier carries a cost", () => {
+    const withCost = ladder.map((t) => ({ ...t, unitCostCents: 10 }));
+    expect(costTierConsistency(withCost)).toBe("all");
+  });
+
+  it("returns 'partial' when only some tiers carry a cost", () => {
+    const mixed = ladder.map((t, i) =>
+      i === 0 ? { ...t, unitCostCents: 10 } : t
+    );
+    expect(costTierConsistency(mixed)).toBe("partial");
+  });
+
+  it("treats null the same as undefined (not carrying a cost)", () => {
+    const withNull = ladder.map((t) => ({ ...t, unitCostCents: null }));
+    expect(costTierConsistency(withNull)).toBe("none");
   });
 });

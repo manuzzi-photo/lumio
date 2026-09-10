@@ -1175,6 +1175,9 @@ export const en = {
     toCart: "Add to cart",
     cartEmpty: "Your cart is empty.",
     remove: "Remove",
+    tierDowngradeWarning:
+      "Removing this item raised the price of your {variant} prints from {oldPrice} to {newPrice} each — you're now below a quantity discount.",
+    dismissWarning: "Dismiss",
     shipping: "Shipping",
     shippingDays: "approx. {min}–{max} days",
     shippingAddress: "Shipping address",
@@ -1675,6 +1678,9 @@ export const en = {
     tierMaxQty: "To qty.",
     tierMaxQtyUnbounded: "and above",
     tierUnitPrice: "Price/pc. (EUR)",
+    tierUnitCost: "Cost/pc. (EUR)",
+    costTieredToggle: "Cost also varies by quantity (per-tier cost)",
+    errCost: "Invalid cost.",
     tierLadderErrorEmpty: "Add at least one price tier.",
     tierLadderErrorRange: "Tier quantities must be positive whole numbers.",
     tierLadderErrorStart: "The first tier must start at quantity 1.",
@@ -1694,6 +1700,7 @@ export const en = {
     finishOptionErrorMissingName: "Every finish option needs a name.",
     finishOptionErrorDuplicateName: "Finish option names must be unique within a variant.",
     finishOptionErrorPriceDelta: "Invalid price add-on.",
+    costTieredBadge: "from {price} · {n} tiers",
   },
 
   printImport: {

@@ -25,6 +25,7 @@ import { prisma } from "../../db.js";
 import {
   validateTierLadder,
   deriveReferencePriceCents,
+  costTierConsistency,
   type PriceTierInput,
 } from "./pricing-tiers.js";
 
@@ -45,6 +46,9 @@ export interface ImportVariantTierInput {
   minQty: number;
   maxQty: number | null;
   unitPriceEur: number;
+  /** Optional per-tier cost. All-or-nothing across a variant's ladder
+   *  — see costTierConsistency() in planVariant(). */
+  costEur?: number | null;
 }
 
 export interface ImportVariantFinishOptionInput {
@@ -212,20 +216,34 @@ export function planVariant(
   let priceCents = 0;
   let tiers: PriceTierInput[] = [];
   const hasTiers = !!row.priceTiers && row.priceTiers.length > 0;
+  let tiersCarryCost = false;
 
   if (hasTiers) {
     const converted: PriceTierInput[] = row.priceTiers!.map((t) => {
       const { cents, imprecise } = eurToCents(t.unitPriceEur);
       if (imprecise) warnings.push("tier_price_rounded_to_nearest_cent");
-      return { minQty: t.minQty, maxQty: t.maxQty, unitPriceCents: cents };
+      let unitCostCents: number | null | undefined;
+      if (t.costEur !== undefined && t.costEur !== null) {
+        const cost = eurToCents(t.costEur);
+        if (cost.imprecise) warnings.push("tier_cost_rounded_to_nearest_cent");
+        if (cost.cents < 0) errors.push("invalid_cost_eur");
+        unitCostCents = cost.cents;
+      }
+      return { minQty: t.minQty, maxQty: t.maxQty, unitPriceCents: cents, unitCostCents };
     });
     const validation = validateTierLadder(converted);
     if (!validation.ok) {
       errors.push(`invalid_price_tiers:${validation.error}`);
     } else {
-      warnings.push(...validation.warnings);
-      tiers = validation.sorted;
-      priceCents = deriveReferencePriceCents(validation.sorted);
+      const consistency = costTierConsistency(validation.sorted);
+      if (consistency === "partial") {
+        errors.push("invalid_price_tiers:partial_cost_tiers");
+      } else {
+        warnings.push(...validation.warnings);
+        tiers = validation.sorted;
+        priceCents = deriveReferencePriceCents(validation.sorted);
+        tiersCarryCost = consistency === "all";
+      }
     }
   } else if (row.priceEur === undefined || row.priceEur === null) {
     errors.push("missing_price_eur");
@@ -241,7 +259,9 @@ export function planVariant(
   }
 
   let costCents: number | null = null;
-  if (row.costEur !== undefined && row.costEur !== null) {
+  if (tiersCarryCost) {
+    costCents = tiers[0].unitCostCents ?? null;
+  } else if (row.costEur !== undefined && row.costEur !== null) {
     const { cents, imprecise } = eurToCents(row.costEur);
     if (imprecise) warnings.push("cost_rounded_to_nearest_cent");
     if (cents < 0) errors.push("invalid_cost_eur");
@@ -414,6 +434,7 @@ function variantCreateFields(d: VariantWriteData) {
               minQty: t.minQty,
               maxQty: t.maxQty,
               unitPriceCents: t.unitPriceCents,
+              unitCostCents: t.unitCostCents ?? null,
             })),
           },
         }
@@ -500,6 +521,7 @@ async function applyProductPlan(
                     minQty: t.minQty,
                     maxQty: t.maxQty,
                     unitPriceCents: t.unitPriceCents,
+                    unitCostCents: t.unitCostCents ?? null,
                   })),
                 }
               : {}),
@@ -658,6 +680,8 @@ export function buildImportTemplate(): unknown {
         "Optional. Quantity-break pricing: the LOWER the quantity, the FIRST tier's price is what shows as the variant's reference price. Tiers must start at minQty 1, end with maxQty null (unbounded), and cover every quantity in between with no gaps or overlaps.",
       finishOptions:
         "Optional. Selectable options on the variant that don't change its size, e.g. a frame color — distinct from finishType, which is just a descriptive label (matte/gloss/...). If present, the customer must pick one before adding to cart. priceDeltaEur is added to the variant's price (0 = no surcharge); sku overrides the variant's own SKU on invoicing exports when that finish is selected.",
+      "priceTiers[].costEur":
+        "Optional per-tier cost, for labs whose cost to you also drops in steps (e.g. PhotoSì-style volume pricing). All-or-nothing: either every tier in the ladder has a costEur, or none do — a partial set is rejected as one row error. When set, it replaces the variant-level costEur for margin display.",
     },
     products: [
       {
@@ -690,6 +714,17 @@ export function buildImportTemplate(): unknown {
             finishOptions: [
               { name: "Cornice nera", sku: "PRINT-SILK-40x60-FRAME-BLACK", priceDeltaEur: 12.0 },
               { name: "Cornice bianca", sku: "PRINT-SILK-40x60-FRAME-WHITE", priceDeltaEur: 12.0 },
+            ],
+          },
+          {
+            name: "20x30 cm (Staffelpreis + Staffelkosten)",
+            widthMm: 200,
+            heightMm: 300,
+            sku: "PRINT-SILK-20x30",
+            priceTiers: [
+              { minQty: 1, maxQty: 49, unitPriceEur: 0.99, costEur: 0.4 },
+              { minQty: 50, maxQty: 199, unitPriceEur: 0.79, costEur: 0.32 },
+              { minQty: 200, maxQty: null, unitPriceEur: 0.59, costEur: 0.24 },
             ],
           },
         ],

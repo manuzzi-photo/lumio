@@ -1186,6 +1186,9 @@ export const de: LocaleDict = {
     toCart: "Zum Warenkorb",
     cartEmpty: "Dein Warenkorb ist leer.",
     remove: "Entfernen",
+    tierDowngradeWarning:
+      "Das Entfernen dieses Artikels hat den Preis deiner {variant}-Abzüge von {oldPrice} auf {newPrice} pro Stück erhöht — du liegst jetzt unter einer Mengenstaffel.",
+    dismissWarning: "Schließen",
     shipping: "Versand",
     shippingDays: "ca. {min}–{max} Tage",
     shippingAddress: "Lieferadresse",
@@ -1688,6 +1691,9 @@ export const de: LocaleDict = {
     tierMaxQty: "Bis Menge",
     tierMaxQtyUnbounded: "und mehr",
     tierUnitPrice: "Preis/Stk. (EUR)",
+    tierUnitCost: "Kosten/Stk. (EUR)",
+    costTieredToggle: "Kosten variieren ebenfalls nach Menge (Kosten pro Staffel)",
+    errCost: "Ungültige Kosten.",
     tierLadderErrorEmpty: "Mindestens eine Preisstaffel hinzufügen.",
     tierLadderErrorRange: "Mengen in den Staffeln müssen positive ganze Zahlen sein.",
     tierLadderErrorStart: "Die erste Staffel muss bei Menge 1 beginnen.",
@@ -1707,6 +1713,7 @@ export const de: LocaleDict = {
     finishOptionErrorMissingName: "Jede Finiturart braucht einen Namen.",
     finishOptionErrorDuplicateName: "Namen von Finiturarten müssen innerhalb einer Variante eindeutig sein.",
     finishOptionErrorPriceDelta: "Ungültiger Preisaufschlag.",
+    costTieredBadge: "ab {price} · {n} Staffeln",
   },
 
   printImport: {

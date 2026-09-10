@@ -34,6 +34,7 @@ import {
   unitPriceForQuantity,
   aggregateQuantityForVariant,
   buildQuantityByVariantMap,
+  willDowngradeTier,
 } from "@/lib/print-pricing";
 
 // Deep quantity-break tiers (e.g. "400 and above") need a generous
@@ -756,6 +757,16 @@ function CartStep({
     currency: string;
   } | null>(null);
 
+  // Non-blocking notice: shrinking one line's quantity (or removing it)
+  // can push the remaining lines of the same format into a worse tier —
+  // see willDowngradeTier(). Purely informational; the authoritative
+  // price is always the priceGalleryCart() call above.
+  const [tierDowngrade, setTierDowngrade] = useState<{
+    variantName: string;
+    oldUnitPriceCents: number;
+    newUnitPriceCents: number;
+  } | null>(null);
+
   useEffect(() => {
     if (cart.length === 0) return;
     const ctrl = new AbortController();
@@ -779,14 +790,34 @@ function CartStep({
     return () => ctrl.abort();
   }, [cart, shippingMethodId, slug]);
 
+  // Always sets or clears the banner — a change that doesn't itself
+  // cause a downgrade must still clear a stale one from an earlier
+  // action, not leave it showing outdated numbers.
+  function checkTierDowngrade(variant: Variant, quantityBefore: number, quantityAfter: number) {
+    setTierDowngrade(
+      willDowngradeTier(variant, quantityBefore, quantityAfter)
+        ? {
+            variantName: variant.name,
+            oldUnitPriceCents: unitPriceForQuantity(variant, quantityBefore),
+            newUnitPriceCents: unitPriceForQuantity(variant, quantityAfter),
+          }
+        : null
+    );
+  }
+
   function removeItem(idx: number) {
+    const removed = cart[idx];
+    const qtyBefore = quantityByVariant.get(removed.variantId) ?? removed.quantity;
+    checkTierDowngrade(removed.variant, qtyBefore, qtyBefore - removed.quantity);
     onUpdateCart(cart.filter((_, i) => i !== idx));
   }
   function updateQty(idx: number, q: number) {
+    const it = cart[idx];
+    const clamped = Math.max(1, Math.min(MAX_CART_QUANTITY, q));
+    const qtyBefore = quantityByVariant.get(it.variantId) ?? it.quantity;
+    checkTierDowngrade(it.variant, qtyBefore, qtyBefore - (it.quantity - clamped));
     onUpdateCart(
-      cart.map((it, i) =>
-        i === idx ? { ...it, quantity: Math.max(1, Math.min(MAX_CART_QUANTITY, q)) } : it
-      )
+      cart.map((c, i) => (i === idx ? { ...c, quantity: clamped } : c))
     );
   }
 
@@ -887,6 +918,23 @@ function CartStep({
         <h2 className="text-sm font-semibold mb-3">
           {t("printShop.cart", { count: cart.length })}
         </h2>
+        {tierDowngrade && (
+          <div className="rounded-md border border-semantic-warning/30 bg-semantic-warning/8 px-3 py-2 mb-3 text-sm text-semantic-warning flex items-start justify-between gap-2">
+            <span>
+              {t("printShop.tierDowngradeWarning", {
+                variant: tierDowngrade.variantName,
+                oldPrice: formatPrice(fmt, tierDowngrade.oldUnitPriceCents, catalog.config.currency),
+                newPrice: formatPrice(fmt, tierDowngrade.newUnitPriceCents, catalog.config.currency),
+              })}
+            </span>
+            <button
+              type="button"
+              onClick={() => setTierDowngrade(null)}
+              className="shrink-0"
+              aria-label={t("printShop.dismissWarning")}
+            >✕</button>
+          </div>
+        )}
         <ul className="divide-y divide-line-subtle">
           {cart.map((it, idx) => (
             <li

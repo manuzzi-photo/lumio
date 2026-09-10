@@ -64,6 +64,7 @@ import { requestZipDownload } from "../services/zip.js";
 import {
   validateTierLadder,
   deriveReferencePriceCents,
+  costTierConsistency,
   type PriceTierInput,
 } from "../services/print/pricing-tiers.js";
 import {
@@ -433,6 +434,11 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
     minQty: z.number().int().min(1),
     maxQty: z.number().int().min(1).nullable(),
     unitPriceCents: z.number().int().min(0),
+    // Optional per-tier cost, all-or-nothing across the ladder — see
+    // costTierConsistency() in pricing-tiers.ts. Absent/null on every
+    // tier = flat variant.costCents applies throughout, unchanged from
+    // today's behavior.
+    unitCostCents: z.number().int().min(0).nullable().optional(),
   });
 
   // Selectable variant options (e.g. frame color) — distinct from the
@@ -496,6 +502,7 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
       const { priceTiers, finishOptions, ...rest } = body;
       let sortedTiers: PriceTierInput[] | null = null;
       let priceCents = rest.priceCents;
+      let costCents = rest.costCents;
       if (priceTiers && priceTiers.length > 0) {
         const validation = validateTierLadder(priceTiers);
         if (!validation.ok) {
@@ -503,8 +510,17 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
             .status(400)
             .send({ error: "invalid_price_tiers", message: validation.error });
         }
+        const consistency = costTierConsistency(validation.sorted);
+        if (consistency === "partial") {
+          return reply
+            .status(400)
+            .send({ error: "partial_cost_tiers", message: "partial_cost_tiers" });
+        }
         sortedTiers = validation.sorted;
         priceCents = deriveReferencePriceCents(validation.sorted);
+        if (consistency === "all") {
+          costCents = validation.sorted[0].unitCostCents ?? null;
+        }
       }
 
       if (finishOptions && finishOptions.length > 0) {
@@ -522,6 +538,7 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
           printProductId: req.params.id,
           ...rest,
           priceCents,
+          costCents,
           ...(sortedTiers
             ? {
                 priceTiers: {
@@ -529,6 +546,7 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
                     minQty: t.minQty,
                     maxQty: t.maxQty,
                     unitPriceCents: t.unitPriceCents,
+                    unitCostCents: t.unitCostCents ?? null,
                   })),
                 },
               }
@@ -604,13 +622,23 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
               .status(400)
               .send({ error: "invalid_price_tiers", message: validation.error });
           }
+          const consistency = costTierConsistency(validation.sorted);
+          if (consistency === "partial") {
+            return reply
+              .status(400)
+              .send({ error: "partial_cost_tiers", message: "partial_cost_tiers" });
+          }
           data.priceCents = deriveReferencePriceCents(validation.sorted);
+          if (consistency === "all") {
+            data.costCents = validation.sorted[0].unitCostCents ?? null;
+          }
           data.priceTiers = {
             deleteMany: {},
             create: validation.sorted.map((t) => ({
               minQty: t.minQty,
               maxQty: t.maxQty,
               unitPriceCents: t.unitPriceCents,
+              unitCostCents: t.unitCostCents ?? null,
             })),
           };
         } else {
@@ -690,6 +718,7 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
     minQty: z.number().int(),
     maxQty: z.number().int().nullable(),
     unitPriceEur: z.number(),
+    costEur: z.number().nullable().optional(),
   });
   // .max(20) matches the manual variant editor's cap (MAX_FINISH_OPTIONS
   // in products/page.tsx) and priceTierInputSchema's own .max(20) below —
