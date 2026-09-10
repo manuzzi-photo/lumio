@@ -1151,6 +1151,9 @@ export const it: LocaleDict = {
     toCart: "Aggiungi al carrello",
     cartEmpty: "Il tuo carrello è vuoto.",
     remove: "Rimuovi",
+    tierDowngradeWarning:
+      "Rimuovendo questo articolo il prezzo delle tue stampe {variant} è salito da {oldPrice} a {newPrice} l'una — sei sceso sotto uno sconto quantità.",
+    dismissWarning: "Chiudi",
     shipping: "Spedizione",
     shippingDays: "circa {min}–{max} giorni",
     shippingAddress: "Indirizzo di spedizione",
@@ -1649,6 +1652,9 @@ export const it: LocaleDict = {
     tierMaxQty: "A quantità",
     tierMaxQtyUnbounded: "e oltre",
     tierUnitPrice: "Prezzo/pz. (EUR)",
+    tierUnitCost: "Costo/pz. (EUR)",
+    costTieredToggle: "Il costo varia anche in base alla quantità (costo per scaglione)",
+    errCost: "Costo non valido.",
     tierLadderErrorEmpty: "Aggiungi almeno uno scaglione di prezzo.",
     tierLadderErrorRange: "Le quantità degli scaglioni devono essere numeri interi positivi.",
     tierLadderErrorStart: "Il primo scaglione deve iniziare dalla quantità 1.",
@@ -1657,6 +1663,7 @@ export const it: LocaleDict = {
     tierLadderErrorGap:
       "Gli scaglioni devono susseguirsi senza buchi né sovrapposizioni.",
     tieredBadge: "a partire da {price} · {n} scaglioni",
+    costTieredBadge: "a partire da {price} · {n} scaglioni",
   },
 
   printImport: {

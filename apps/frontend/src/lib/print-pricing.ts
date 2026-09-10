@@ -60,3 +60,25 @@ export function buildQuantityByVariantMap(
   }
   return map;
 }
+
+/**
+ * Whether shrinking one line's quantity for a format (removing an item
+ * entirely, or reducing how many of it) pushes the REMAINING lines of
+ * that same format into a worse (higher per-unit) tier. Per-format
+ * tiers apply across the whole cart, so removing one photo can raise
+ * the price of others silently — this lets the cart warn about it
+ * instead of leaving the customer to notice a total that went up.
+ * `quantityAfter <= 0` means no lines of this format remain, so there's
+ * nothing left to warn about.
+ */
+export function willDowngradeTier(
+  variant: { priceCents: number; priceTiers?: PrintPriceTierLike[] },
+  quantityBefore: number,
+  quantityAfter: number
+): boolean {
+  if (quantityAfter <= 0) return false;
+  return (
+    unitPriceForQuantity(variant, quantityAfter) >
+    unitPriceForQuantity(variant, quantityBefore)
+  );
+}

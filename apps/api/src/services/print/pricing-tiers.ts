@@ -16,6 +16,11 @@ export interface PriceTierInput {
   minQty: number;
   maxQty: number | null;
   unitPriceCents: number;
+  /** What the lab charges us for one unit within this tier, in cents.
+   *  Optional, all-or-nothing across the ladder — see
+   *  costTierConsistency(). Margin display only, never priced into
+   *  checkout, so validateTierLadder() doesn't look at it at all. */
+  unitCostCents?: number | null;
 }
 
 export type ValidateTierLadderResult =
@@ -125,4 +130,24 @@ export function resolveUnitPriceForQuantity(
     (t) => quantity >= t.minQty && (t.maxQty === null || quantity <= t.maxQty)
   );
   return match ? match.unitPriceCents : sorted[0].unitPriceCents;
+}
+
+/**
+ * Whether a ladder's tiers carry a cost alongside their price: "none"
+ * (flat costCents on the variant applies throughout, the common case),
+ * "all" (every tier has its own unitCostCents — costCents becomes a
+ * cached mirror of the first tier, same as price), or "partial" (some
+ * tiers have a cost and others don't — not a coherent ladder, callers
+ * must reject it rather than guess which unpriced tiers fall back to
+ * the flat cost).
+ */
+export function costTierConsistency(
+  tiers: PriceTierInput[]
+): "none" | "all" | "partial" {
+  const withCost = tiers.filter(
+    (t) => t.unitCostCents !== null && t.unitCostCents !== undefined
+  ).length;
+  if (withCost === 0) return "none";
+  if (withCost === tiers.length) return "all";
+  return "partial";
 }

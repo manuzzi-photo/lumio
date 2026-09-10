@@ -2130,6 +2130,12 @@ model PrintProductVariantPriceTier {
   maxQty                Int?
   /// Price per single unit within this tier, in cents.
   unitPriceCents        Int
+  /// What the LAB charges for one unit within this tier, in cents.
+  /// Optional, all-or-nothing across the ladder (see planVariant() /
+  /// costTierConsistency()) — margin display only, never priced into
+  /// checkout. null on every tier = flat PrintProductVariant.costCents
+  /// applies to any quantity instead.
+  unitCostCents         Int?
 
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt

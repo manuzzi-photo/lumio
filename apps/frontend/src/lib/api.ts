@@ -3809,6 +3809,10 @@ export interface PrintPriceTier {
   minQty: number;
   maxQty: number | null;
   unitPriceCents: number;
+  /** Optional per-tier cost, all-or-nothing across the ladder — see
+   *  costTierConsistency() in apps/api's pricing-tiers.ts. null/absent
+   *  on every tier = the flat variant.costCents applies throughout. */
+  unitCostCents?: number | null;
 }
 
 export interface PrintVariantCreateInput {

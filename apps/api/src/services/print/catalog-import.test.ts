@@ -159,6 +159,101 @@ describe("planVariant", () => {
     expect(plan.action).toBe("create");
     expect(plan.data?.costCents).toBe(0);
   });
+
+  it("derives costCents from the first tier when every tier carries a cost", () => {
+    const plan = planVariant(
+      {
+        name: "20x30 (tiered price + cost)",
+        widthMm: 200,
+        heightMm: 300,
+        priceTiers: [
+          { minQty: 1, maxQty: 49, unitPriceEur: 0.99, costEur: 0.4 },
+          { minQty: 50, maxQty: null, unitPriceEur: 0.79, costEur: 0.32 },
+        ],
+      },
+      0,
+      emptyExisting,
+      new Set()
+    );
+    expect(plan.action).toBe("create");
+    expect(plan.data?.costCents).toBe(40);
+    expect(plan.data?.tiers.map((t) => t.unitCostCents)).toEqual([40, 32]);
+  });
+
+  it("skips with an error when only some tiers carry a cost", () => {
+    const plan = planVariant(
+      {
+        name: "Partial cost ladder",
+        widthMm: 200,
+        heightMm: 300,
+        priceTiers: [
+          { minQty: 1, maxQty: 49, unitPriceEur: 0.99, costEur: 0.4 },
+          { minQty: 50, maxQty: null, unitPriceEur: 0.79 },
+        ],
+      },
+      0,
+      emptyExisting,
+      new Set()
+    );
+    expect(plan.action).toBe("skip");
+    expect(plan.errors).toContain("invalid_price_tiers:partial_cost_tiers");
+  });
+
+  it("skips with an error when a tier cost is negative", () => {
+    const plan = planVariant(
+      {
+        name: "Negative tier cost",
+        widthMm: 200,
+        heightMm: 300,
+        priceTiers: [
+          { minQty: 1, maxQty: null, unitPriceEur: 0.99, costEur: -0.1 },
+        ],
+      },
+      0,
+      emptyExisting,
+      new Set()
+    );
+    expect(plan.action).toBe("skip");
+    expect(plan.errors).toContain("invalid_cost_eur");
+  });
+
+  it("ignores a flat costEur when the ladder carries its own tiered cost", () => {
+    const plan = planVariant(
+      {
+        name: "Tiered cost overrides flat costEur",
+        widthMm: 200,
+        heightMm: 300,
+        costEur: 999, // should be ignored — tiers win, mirrors priceEur/priceTiers precedence
+        priceTiers: [
+          { minQty: 1, maxQty: null, unitPriceEur: 0.99, costEur: 0.4 },
+        ],
+      },
+      0,
+      emptyExisting,
+      new Set()
+    );
+    expect(plan.action).toBe("create");
+    expect(plan.data?.costCents).toBe(40);
+  });
+
+  it("leaves flat costEur untouched when tiers don't carry a cost", () => {
+    const plan = planVariant(
+      {
+        name: "Tiered price, flat cost",
+        widthMm: 200,
+        heightMm: 300,
+        costEur: 0.1,
+        priceTiers: [
+          { minQty: 1, maxQty: null, unitPriceEur: 0.99 },
+        ],
+      },
+      0,
+      emptyExisting,
+      new Set()
+    );
+    expect(plan.action).toBe("create");
+    expect(plan.data?.costCents).toBe(10);
+  });
 });
 
 describe("planProduct", () => {

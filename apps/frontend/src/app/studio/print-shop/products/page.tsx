@@ -267,10 +267,28 @@ export default function PrintProductsPage() {
                           ) : (
                             formatPrice(fmt, v.priceCents)
                           )}
-                          {v.costCents !== null && (
-                            <span className="text-ink-tertiary text-xs ml-1">
-                              {t("printProducts.costNote", { price: formatPrice(fmt, v.costCents) })}
+                          {v.priceTiers.some((tier) => tier.unitCostCents != null) ? (
+                            <span
+                              className="text-ink-tertiary text-xs ml-1"
+                              title={tierLadderSummary(
+                                fmt,
+                                v.priceTiers.map((tier) => ({
+                                  ...tier,
+                                  unitPriceCents: tier.unitCostCents ?? 0,
+                                }))
+                              )}
+                            >
+                              {t("printProducts.costTieredBadge", {
+                                price: formatPrice(fmt, v.priceTiers[0].unitCostCents ?? 0),
+                                n: v.priceTiers.length,
+                              })}
                             </span>
+                          ) : (
+                            v.costCents !== null && (
+                              <span className="text-ink-tertiary text-xs ml-1">
+                                {t("printProducts.costNote", { price: formatPrice(fmt, v.costCents) })}
+                              </span>
+                            )
                           )}
                         </span>
                         <Button
@@ -493,14 +511,18 @@ function VariantDialog({
   const [pricingMode, setPricingMode] = useState<"flat" | "tiered">(
     existing && existing.priceTiers.length > 0 ? "tiered" : "flat"
   );
+  const [costTiered, setCostTiered] = useState(
+    existing?.priceTiers.some((tier) => tier.unitCostCents != null) ?? false
+  );
   const [tierRows, setTierRows] = useState<TierRow[]>(() =>
     existing && existing.priceTiers.length > 0
       ? existing.priceTiers.map((tier) => ({
           minQty: String(tier.minQty),
           maxQty: tier.maxQty === null ? "" : String(tier.maxQty),
           priceEuros: (tier.unitPriceCents / 100).toFixed(2),
+          costEuros: tier.unitCostCents != null ? (tier.unitCostCents / 100).toFixed(2) : "",
         }))
-      : [{ minQty: "1", maxQty: "", priceEuros: "" }]
+      : [{ minQty: "1", maxQty: "", priceEuros: "", costEuros: "" }]
   );
   const [enabled, setEnabled] = useState(existing?.enabled ?? true);
   const [saving, setSaving] = useState(false);
@@ -508,7 +530,7 @@ function VariantDialog({
 
   function addTierRow() {
     if (tierRows.length >= MAX_PRICE_TIERS) return;
-    setTierRows([...tierRows, { minQty: "", maxQty: "", priceEuros: "" }]);
+    setTierRows([...tierRows, { minQty: "", maxQty: "", priceEuros: "", costEuros: "" }]);
   }
   function removeTierRow(idx: number) {
     setTierRows(tierRows.filter((_, i) => i !== idx));
@@ -532,14 +554,19 @@ function VariantDialog({
         : null;
 
       let priceCents: number;
+      let costCents = cost;
       let priceTiers: PrintPriceTier[] = [];
       if (pricingMode === "tiered") {
-        const result = validateTierRows(tierRows);
+        const result = validateTierRows(tierRows, costTiered);
         if (!result.ok) throw new Error(tierLadderErrorMessage(t, result.error));
         priceTiers = result.tiers;
         // Mirrors the server's own derivation (first tier = reference
         // price) — the server recomputes and overwrites this anyway.
         priceCents = priceTiers[0].unitPriceCents;
+        if (costTiered) {
+          // Same mirroring for cost: server derives its own copy too.
+          costCents = priceTiers[0].unitCostCents ?? null;
+        }
       } else {
         const price = Math.round(parseFloat(priceEuros) * 100);
         if (!Number.isFinite(price) || price < 0) {
@@ -555,7 +582,7 @@ function VariantDialog({
         aspectRatio: aspectMode === "fixed" ? w / h : null,
         finishType: finishType.trim() || null,
         priceCents,
-        costCents: cost,
+        costCents,
         enabled,
         priceTiers,
       };
@@ -656,21 +683,36 @@ function VariantDialog({
           </div>
         ) : (
           <div className="space-y-2">
-            <FormRow label={t("printProducts.costEur")}>
-              <Input
-                type="number"
-                step="0.01"
-                value={costEuros}
-                onChange={(e) => setCostEuros(e.target.value)}
-                min={0}
-                placeholder={t("printProducts.costPlaceholder")}
-              />
-            </FormRow>
+            {!costTiered && (
+              <FormRow label={t("printProducts.costEur")}>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={costEuros}
+                  onChange={(e) => setCostEuros(e.target.value)}
+                  min={0}
+                  placeholder={t("printProducts.costPlaceholder")}
+                />
+              </FormRow>
+            )}
+            <label className="flex items-center gap-2 text-xs text-ink-tertiary">
+              <input
+                type="checkbox"
+                checked={costTiered}
+                onChange={(e) => setCostTiered(e.target.checked)}
+              />{t("printProducts.costTieredToggle")}</label>
             <span className="block text-xs text-ink-tertiary">
               {t("printProducts.priceTiersLabel")}
             </span>
             {tierRows.map((row, idx) => (
-              <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
+              <div
+                key={idx}
+                className={
+                  costTiered
+                    ? "grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-end"
+                    : "grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end"
+                }
+              >
                 <FormRow label={t("printProducts.tierMinQty")}>
                   <Input
                     type="number"
@@ -697,6 +739,17 @@ function VariantDialog({
                     onChange={(e) => updateTierRow(idx, "priceEuros", e.target.value)}
                   />
                 </FormRow>
+                {costTiered && (
+                  <FormRow label={t("printProducts.tierUnitCost")}>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={row.costEuros}
+                      onChange={(e) => updateTierRow(idx, "costEuros", e.target.value)}
+                    />
+                  </FormRow>
+                )}
                 <Button
                   type="button"
                   variant="secondary"
@@ -735,6 +788,7 @@ interface TierRow {
   minQty: string;
   maxQty: string;
   priceEuros: string;
+  costEuros: string;
 }
 
 type TierLadderErrorCode =
@@ -742,6 +796,7 @@ type TierLadderErrorCode =
   | "invalid_min_qty"
   | "invalid_max_qty"
   | "invalid_unit_price"
+  | "invalid_unit_cost"
   | "first_tier_must_start_at_1"
   | "last_tier_must_be_unbounded"
   | "only_last_tier_may_be_unbounded"
@@ -760,7 +815,8 @@ function parseIntStrict(s: string): number {
 }
 
 function validateTierRows(
-  rows: TierRow[]
+  rows: TierRow[],
+  costTiered = false
 ): { ok: true; tiers: PrintPriceTier[] } | { ok: false; error: TierLadderErrorCode } {
   if (rows.length === 0) return { ok: false, error: "empty_ladder" };
 
@@ -768,6 +824,7 @@ function validateTierRows(
     minQty: parseIntStrict(r.minQty),
     maxQty: r.maxQty.trim() === "" ? null : parseIntStrict(r.maxQty),
     unitPriceCents: Math.round(parseFloat(r.priceEuros) * 100),
+    unitCostCents: costTiered ? Math.round(parseFloat(r.costEuros) * 100) : null,
   }));
 
   for (const p of parsed) {
@@ -779,6 +836,9 @@ function validateTierRows(
     }
     if (!Number.isFinite(p.unitPriceCents) || p.unitPriceCents < 0) {
       return { ok: false, error: "invalid_unit_price" };
+    }
+    if (costTiered && (!Number.isFinite(p.unitCostCents!) || p.unitCostCents! < 0)) {
+      return { ok: false, error: "invalid_unit_cost" };
     }
   }
 
@@ -811,6 +871,8 @@ function tierLadderErrorMessage(t: ReturnType<typeof useT>, code: TierLadderErro
       return t("printProducts.tierLadderErrorRange");
     case "invalid_unit_price":
       return t("printProducts.errPrice");
+    case "invalid_unit_cost":
+      return t("printProducts.errCost");
     case "first_tier_must_start_at_1":
       return t("printProducts.tierLadderErrorStart");
     case "last_tier_must_be_unbounded":

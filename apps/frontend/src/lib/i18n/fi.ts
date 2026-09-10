@@ -1144,6 +1144,9 @@ export const fi = {
     toCart: "Lisää ostoskoriin",
     cartEmpty: "Ostoskorisi on tyhjä.",
     remove: "Poista",
+    tierDowngradeWarning:
+      "Tämän tuotteen poistaminen nosti muiden {variant}-tulosteidesi hinnan {oldPrice} → {newPrice}/kpl — määräalennuksen raja alittui.",
+    dismissWarning: "Sulje",
     shipping: "Toimitus",
     shippingDays: "noin {min}–{max} päivää",
     shippingAddress: "Toimitusosoite",
@@ -1642,6 +1645,9 @@ export const fi = {
     tierMaxQty: "Määrään asti",
     tierMaxQtyUnbounded: "ja enemmän",
     tierUnitPrice: "Hinta/kpl (EUR)",
+    tierUnitCost: "Kustannus/kpl (EUR)",
+    costTieredToggle: "Kustannus vaihtelee myös määrän mukaan (kustannus per porras)",
+    errCost: "Virheellinen kustannus.",
     tierLadderErrorEmpty: "Lisää vähintään yksi hintaporras.",
     tierLadderErrorRange: "Portaiden määrien on oltava positiivisia kokonaislukuja.",
     tierLadderErrorStart: "Ensimmäisen portaan on alettava määrästä 1.",
@@ -1650,6 +1656,7 @@ export const fi = {
     tierLadderErrorGap:
       "Portaiden on jatkuttava saumattomasti toisistaan, ilman aukkoja tai päällekkäisyyksiä.",
     tieredBadge: "alkaen {price} · {n} porrasta",
+    costTieredBadge: "alkaen {price} · {n} porrasta",
   },
 
   printImport: {
