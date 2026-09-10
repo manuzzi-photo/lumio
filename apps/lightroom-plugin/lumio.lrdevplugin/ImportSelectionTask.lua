@@ -296,7 +296,12 @@ function M.run(opts)
             -- this turns "read every RAW in the catalog" into "stat every
             -- RAW, fully read only the handful worth checking" -- identity
             -- is still always confirmed by the real hash, never by size
-            -- alone.
+            -- alone. A target with no known originalSize (embedded by an
+            -- older plug-in version, before this field existed) can't be
+            -- pre-filtered by size at all -- sizelessRemaining below makes
+            -- the size check fall through to "hash it anyway" for as long
+            -- as any such target is still outstanding, instead of silently
+            -- never finding it.
             local resolvedByHashCount = 0
             local missing = {}
             if not canceled and opts.matchByHash then
@@ -319,12 +324,22 @@ function M.run(opts)
                 -- Every byte size we might still need to fully hash for --
                 -- built from whichever missing files actually carry one.
                 local sizesToCheck = {}
+                -- Targets whose originalMd5 has no originalSize alongside
+                -- it -- the size pre-filter can't rule candidates out for
+                -- these, so they keep every candidate eligible for a full
+                -- hash until found (see sizelessRemaining below).
+                local sizelessHashes = {}
+                local sizelessRemaining = 0
                 for _, file in ipairs(missingCandidates) do
                     if file.originalMd5 then
+                        local isNewHash = targets[file.originalMd5] == nil
                         targets[file.originalMd5] = targets[file.originalMd5] or {}
                         table.insert(targets[file.originalMd5], file)
                         if file.originalSize then
                             sizesToCheck[file.originalSize] = true
+                        elseif isNewHash then
+                            sizelessHashes[file.originalMd5] = true
+                            sizelessRemaining = sizelessRemaining + 1
                         end
                     end
                 end
@@ -340,8 +355,11 @@ function M.run(opts)
                                 local size = attrs and attrs.fileSize
                                 -- Cheap pre-filter (see PERFORMANCE above):
                                 -- only hash candidates whose size could
-                                -- possibly match a hash we're still after.
-                                if size and sizesToCheck[size] then
+                                -- possibly match a hash we're still after --
+                                -- unless a size-less target is still
+                                -- outstanding, in which case size can't
+                                -- rule anything out yet.
+                                if size and (sizesToCheck[size] or sizelessRemaining > 0) then
                                     local okHash, hash = LrTasks.pcall(fileMd5, path)
                                     if okHash and hash and targets[hash] then
                                         -- Every file sharing this hash resolves
@@ -353,6 +371,9 @@ function M.run(opts)
                                         for _, file in ipairs(targets[hash]) do
                                             resolved[file] = { photo }
                                             resolvedByHashCount = resolvedByHashCount + 1
+                                        end
+                                        if sizelessHashes[hash] then
+                                            sizelessRemaining = sizelessRemaining - 1
                                         end
                                         targets[hash] = nil
                                         if not next(targets) then break end  -- all found, stop scanning

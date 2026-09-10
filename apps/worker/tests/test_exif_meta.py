@@ -89,7 +89,8 @@ def _stamp_original_md5(path, md5_hex, size=None):
     )
     payload = xmp_header + packet
     segment = bytes([0xFF, 0xE1]) + (len(payload) + 2).to_bytes(2, "big") + payload
-    data = open(path, "rb").read()
+    with open(path, "rb") as f:
+        data = f.read()
     with open(path, "wb") as f:
         f.write(data[:2] + segment + data[2:])
     return str(path)
