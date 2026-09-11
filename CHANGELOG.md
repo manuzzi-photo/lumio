@@ -29,7 +29,7 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
-## [0.75.0] - 2026-09-08
+## [0.75.5] - 2026-09-11
 
 A pull + regular redeploy is enough for the server/worker — the print
 shop changes bring four additive schema migrations (new tables/columns
@@ -72,6 +72,71 @@ blank/broken.
 - Print shop: an order paid outside Stripe (self-print/invoice) now starts as "awaiting payment" instead of being marked paid the instant it's created, and marking it paid requires entering a payment/invoice reference, which is then shown on the order and included in the exports. Stripe-paid orders are unaffected — they still resolve through the payment webhook.
 - Print shop: shipping methods can now be flagged as in-store pickup, which skips collecting a shipping address at checkout. The order's fulfillment checklist forks accordingly: courier orders go through "Shipped" with tracking, pickup orders go through "Ready for pickup" with a notification email to the customer; both paths converge on the same "Delivered/Picked up" terminal state.
 - Print shop: an order's photos can now be downloaded in one ZIP from the order detail page (reusing the existing async ZIP pipeline), and a human-readable Markdown order summary is available alongside the existing CSV export — both include each line's finish and SKU.
+
+## [0.75.4] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- The title and link preview of a client gallery fell back to a generic "Gallery · Lumio" on every standard installation. When a gallery link was shared on WhatsApp, Slack or iMessage, the preview showed neither the gallery title nor the hero image. The cause: the server-side render asked the API through a relative address, which works in a browser but not in Node, where it fails outright. The address now defaults to the API inside the Docker network. If you run frontend and API separately, set `INTERNAL_API_URL` to an absolute URL — it is now listed in `docker-compose.yml` and documented in the example env file.
+- Images in link previews were built as relative paths when `NEXT_PUBLIC_API_URL` was empty, which is the default. They are now built from the host of the incoming request, so they are correct per studio even when several studios share one installation under different domains.
+- A failing metadata fetch is now logged instead of silently swallowed. The generic title was the only visible symptom, which is why this went unnoticed for so long.
+
+## [0.75.3] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- A client gallery always showed the normal logo, never the light variant, so a dark logo on a dark branding colour was barely visible — even with a light version uploaded. The gallery now picks the variant that matches the background, the same way text colour has always been chosen. The branding editor's preview was already showing the light one, which is why the preview and the real gallery disagreed. If no light variant is uploaded, the normal logo is used as before.
+
+## [0.75.2] - 2026-09-11
+
+Documentation only. A pull is enough; nothing needs restarting for the change itself.
+
+### Changed
+
+- `DEVELOPMENT.md` presented the maintainer's container registry as if it were the reader's own — "if your Forgejo registry is private" followed by our hostname, which meant anyone following it would log in to ours. The hostname is now labelled as the upstream project's, and the login example uses a placeholder. The section was already marked maintainer-internal; this removes the remaining ambiguity inside it.
+
+## [0.75.1] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- The "latest version" check pointed at the development repository, which isn't publicly readable — so on every installation other than ours it returned a 404 and the check sat permanently on "not reachable". It now uses the public GitHub mirror, which carries the same releases and needs no token. If you point `LUMIO_UPDATE_REPO_URL` at your own mirror, nothing changes for you.
+
+### Security
+
+- A token in `LUMIO_UPDATE_REPO_TOKEN` is now only sent when `LUMIO_UPDATE_REPO_URL` is set as well. Previously it was attached to whatever host the check happened to be using, so a token stored for your own private repository would have been sent to the default host as soon as that address changed — which is exactly what this release does. A token belongs to the repository you named yourself.
+
+## [0.75.0] - 2026-09-11
+
+A pull is enough — no changes to `.env` or the compose command. The database migrates automatically on start. **Both the main server and any worker nodes need to be updated**, since the worker learned to optimise the new asset.
+
+### Added
+
+- A studio-wide favicon, set under Appearance next to the logos. It applies everywhere the studio shows up: the studio interface itself, the login page and client galleries.
+- A branding profile's favicon now overrides the studio one for the galleries that use it, so a gallery can be given a themed icon without changing the studio default. The order is branding, then studio, then the Lumio icon — an empty favicon field in a branding profile no longer falls straight back to Lumio.
+
+### Fixed
+
+- The title of a client gallery showed the name of the branding *profile* — an internal label like "Standard" or "Wedding style" — rather than the studio. It now uses the public studio name from the studio settings. This was visible in the browser tab and in every link preview on WhatsApp, Slack and similar.
+
+## [0.74.2] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- A branding favicon was never actually applied to a client gallery. The layout declares three icon links (an SVG plus 32px and 16px PNGs) and only the first was being rewritten, keeping its `image/svg+xml` type while the two sized PNGs still pointed at the Lumio default — which is the one browsers prefer. All icon links are now replaced by a single one pointing at the branding favicon. Thanks to @lisachev for the report, including everything that had already been ruled out.
+- The self-hosting guides told you to start with `docker compose ... up -d`, without `--build`. Since `docker-compose.prod.yml` names images in a registry that isn't publicly readable, that call fails with a 401 instead of starting anything. Both the standard and the Synology guide now use `--build` and explain why. Reported by @lisachev.
+
+### Changed
+
+- The studio interface no longer says "tenant" anywhere. A tenant and a studio are the same thing — the word belongs to administration (creating, suspending, billing) and shows up in the Super-Admin area, not in the UI a photographer works in. Renamed "Tenant default" to "Studio default" and adjusted the branding, watermark and audit-log wording to match. The Finnish translation already did this correctly.
+- `MULTI_TENANT.md` now states up front that a tenant and a studio are the same row, and when each word is used. `SELFHOSTING.md` notes that in single mode the one auto-created tenant is your studio and the term won't come up again. `KONZEPT.md` marks the two marketing repositories and the container registry as private, so the references there don't look like broken links.
 
 ## [0.74.1] - 2026-08-27
 

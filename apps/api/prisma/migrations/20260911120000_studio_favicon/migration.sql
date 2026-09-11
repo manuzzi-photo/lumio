@@ -1,0 +1,22 @@
+-- Studio-weites Favicon (Prisma: Tenant.studioFaviconKey).
+--
+-- Bisher gab es ein Favicon nur am Branding-Profil, also pro Galerie.
+-- Ein Studio ohne gesetztes Branding-Favicon fiel damit sofort auf das
+-- Lumio-Icon zurueck, auch im eigenen Backend und auf der Login-Seite.
+--
+-- Aufloesung ab jetzt: Branding.faviconUrl -> Tenant.studioFaviconKey
+-- -> Lumio-Default. Damit ist ein Studio-Standard moeglich, den eine
+-- einzelne Galerie thematisch ueberschreiben kann.
+--
+-- Wie die anderen Appearance-Assets ein S3-Key im Schema
+-- t/<tenantId>/appearance/<kind>.<ext>, kein Bild-Blob in der DB.
+--
+-- Nullable ohne Default -> kein Table-Rewrite, kein Backfill. Bestehende
+-- Studios haben kein Favicon und verhalten sich unveraendert, bis jemand
+-- eines hochlaedt.
+--
+-- NB: TABELLE ist per @@map snake_case ('tenants'), SPALTEN nicht — das
+-- Schema nutzt kein @map auf Feldebene, die Spalte heisst also genau wie
+-- das Prisma-Feld in camelCase und muss gequotet werden.
+ALTER TABLE "tenants"
+  ADD COLUMN "studioFaviconKey" TEXT;

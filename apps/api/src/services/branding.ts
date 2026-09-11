@@ -79,7 +79,7 @@ export async function resolveGalleryBranding(opts: {
     name: branding.name,
     logoUrl: await maybePresign(branding.logoUrl),
     logoLightUrl: await maybePresign(branding.logoLightUrl),
-    faviconUrl: await maybePresign(branding.faviconUrl),
+    faviconUrl: await resolveFaviconUrl(opts.tenantId, branding.faviconUrl),
     primaryColor: branding.primaryColor,
     accentColor: branding.accentColor,
     fontFamily: branding.fontFamily,
@@ -87,6 +87,31 @@ export async function resolveGalleryBranding(opts: {
     footerText: branding.footerText,
     customCss: branding.customCss,
   };
+}
+
+
+/**
+ * Favicon-Aufloesung: Branding -> Studio -> null (Frontend nimmt dann
+ * das Lumio-Default).
+ *
+ * Eigene Funktion statt inline in den Resolvern, weil sie auch greifen
+ * muss, wenn ueberhaupt KEIN Branding-Profil existiert — dann liefert
+ * resolveGalleryBranding null, und ein Studio, das nie ein Branding
+ * angelegt hat (typischer Self-Hoster), haette sonst nie ein eigenes
+ * Favicon, obwohl es eins hochgeladen hat.
+ */
+export async function resolveFaviconUrl(
+  tenantId: string,
+  brandingFaviconUrl: string | null | undefined
+): Promise<string | null> {
+  if (brandingFaviconUrl) return maybePresign(brandingFaviconUrl);
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { studioFaviconKey: true },
+  });
+  return tenant?.studioFaviconKey
+    ? maybePresign(tenant.studioFaviconKey)
+    : null;
 }
 
 /**
@@ -114,7 +139,7 @@ export async function resolveTenantBranding(
     name: branding.name,
     logoUrl: await maybePresign(branding.logoUrl),
     logoLightUrl: await maybePresign(branding.logoLightUrl),
-    faviconUrl: await maybePresign(branding.faviconUrl),
+    faviconUrl: await resolveFaviconUrl(tenantId, branding.faviconUrl),
     primaryColor: branding.primaryColor,
     accentColor: branding.accentColor,
     fontFamily: branding.fontFamily,

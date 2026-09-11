@@ -1515,6 +1515,9 @@ export const fi = {
     logoLight: "Logo (vaalea tila)",
     logoLightHint:
       "Valinnainen. Tumma versio vaaleaa perussävyä varten. Tyhjä = tavallinen logo.",
+    favicon: "Favicon",
+    faviconHint:
+      "Näkyy selaimen välilehdellä — studiossa, kirjautumissivulla ja asiakasgallerioissa. Ilmeprofiili voi korvata sen yksittäisille gallerioille. PNG, SVG tai ICO, neliö.",
     loginPage: "Kirjautumissivu",
     layout: "Asettelu",
     loginLayoutHint:

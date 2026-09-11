@@ -501,7 +501,7 @@ The stack is run via **several composable Compose files**. The base (`docker-com
 | File | Purpose |
 | ----- | ----- |
 | `docker-compose.yml` | Base: caddy, frontend, api, worker, postgres, redis, minio (local build) |
-| `docker-compose.prod.yml` | Replaces the `build:` blocks with prebuilt images from the **Forgejo container registry** (`forgejo.thiel.tools/thiel/lumio-{api,frontend,worker}:${LUMIO_TAG}`) |
+| `docker-compose.prod.yml` | Replaces the `build:` blocks with prebuilt images from the **Forgejo container registry** (`forgejo.thiel.tools/thiel/lumio-{api,frontend,worker}:${LUMIO_TAG}`). That registry is private — self-hosters run the same file with `--build`, which builds locally and tags under those names |
 | `docker-compose.ml.yml` | An additional ML worker for AI tagging (CPU) |
 | `docker-compose.gpu.yml` | GPU acceleration (NVIDIA) for transcoding/ML |
 | `docker-compose.worker.yml` | A pure worker node for horizontal scaling (own server) |
@@ -558,7 +558,7 @@ Where Picdrop feels "fast" — and how we replicate it:
 ## 12. Repo, release & license
 
 - **Repo structure**: monorepo (pnpm workspaces) — `apps/frontend`, `apps/api`, `apps/worker` (Python/Celery), `apps/lightroom-plugin`, `apps/capture-one-plugin`, `packages/shared` (shared types).
-- **Three repositories**: app code (`lumio.git`) plus two Astro marketing sites — `lumio-cloud-de.git` (SaaS + sign-up + Stripe) and `lumio-app-de.git` (the self-host pitch).
+- **Three repositories**: app code (`lumio.git`) plus two Astro marketing sites — `lumio-cloud-de.git` (SaaS + sign-up + Stripe) and `lumio-app-de.git` (the self-host pitch). Only the app code is public; the two marketing repos are internal and not reachable from outside.
 - **Hosting**: **Forgejo** (`forgejo.thiel.tools/thiel/*`) is primary; **GitHub** serves as the public push mirror.
 - **License**: **FSL-1.1-ALv2** (Functional Source License) — source-available. Forbids competing SaaS hosting (*Competing Use*), but automatically converts to Apache 2.0 two years after each release. A commercial license for hosted/competing offerings on request.
 - **Images/CI**: container images live in the **Forgejo container registry**; deployment via `git pull` + `docker compose … up -d --build`.

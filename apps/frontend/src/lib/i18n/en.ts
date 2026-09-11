@@ -332,7 +332,7 @@ export const en = {
       "When on, clients can download the original files. When off, only the reduced web versions (~2560px JPEG) are available.",
     settingWatermark: "Watermark on previews",
     settingWatermarkDesc:
-      "Generated automatically. Configure the watermark text in tenant settings.",
+      "Generated automatically. Configure the watermark text in studio settings.",
     settingComments: "Comments enabled",
     settingSelectionLimit: "Selection limit",
     settingSelectionLimitDesc:
@@ -426,12 +426,12 @@ export const en = {
       "Thanks for your trust!\\n\\n— Studio Smith\\nstudio@example.com\\n[Instagram](https://...)",
     galleryColors: "Gallery colors",
     galleryColorsHint:
-      "Override the tenant branding's colors just for this gallery. Text color is automatically computed for contrast.",
+      "Override the studio branding's colors just for this gallery. Text color is automatically computed for contrast.",
     colorBackground: "Background",
     colorAccent: "Accent",
     galleryFonts: "Gallery fonts",
     galleryFontsHint:
-      "Override the tenant branding's font just for this gallery. Fonts are loaded GDPR-friendly via Bunny Fonts CDN.",
+      "Override the studio branding's font just for this gallery. Fonts are loaded GDPR-friendly via Bunny Fonts CDN.",
     fontHeading: "Headings",
     fontBody: "Body text",
     fontDefault: "— Branding default —",
@@ -458,7 +458,7 @@ export const en = {
     confirmDeleteMany: "Delete {count} files?",
 
     branding: "Branding:",
-    brandingTenantDefault: "Tenant default",
+    brandingTenantDefault: "Studio default",
     brandingNoneYet: "No branding profiles —",
     brandingCreateNow: "create now",
 
@@ -519,7 +519,7 @@ export const en = {
       maxFilesField: "Max number of files (optional)",
       maxGBField: "Max GB total (optional)",
       maxPerFileField: "Max MB per file (optional)",
-      maxPerFilePlaceholder: "empty = tenant default",
+      maxPerFilePlaceholder: "empty = studio default",
       expiresField: "Expiry date (optional)",
       create: "Create link",
       creating: "Creating…",
@@ -835,7 +835,7 @@ export const en = {
     zoomReset: "Reset zoom",
     comments: "Comments",
     days: "days",
-    tenantDefault: "Tenant default",
+    tenantDefault: "Studio default",
     commentsLoading: "Loading…",
     commentsEmpty: "No comments yet.",
     commentPlaceholder: "Write a comment…",
@@ -1514,6 +1514,9 @@ export const en = {
     logoLight: "Logo (light mode)",
     logoLightHint:
       "Optional. A dark variant for the light base tone. Empty = the normal logo.",
+    favicon: "Favicon",
+    faviconHint:
+      "Shown in the browser tab — in the studio, on the login page and in client galleries. A branding profile can override it for individual galleries. PNG, SVG or ICO, square.",
     loginPage: "Login page",
     layout: "Layout",
     loginLayoutHint:
@@ -1895,7 +1898,7 @@ export const en = {
     breadcrumb: "Audit",
     title: "Audit log",
     description:
-      "Logins, gallery changes, client activity. Read-only, filtered to your tenant.",
+      "Logins, gallery changes, client activity. Read-only, filtered to your studio.",
     exportCsv: "Export CSV ({n})",
     gallery: "Gallery",
     action: "Action",
@@ -2012,7 +2015,7 @@ export const en = {
     breadcrumbStudio: "Studio",
     breadcrumb: "Branding",
     defaultDesc:
-      "Tenant default — used for galleries without explicit branding",
+      "Studio default — used for galleries without explicit branding",
     makeDefault: "Set as default",
     confirmDelete:
       "Delete this branding profile? Galleries using it fall back to the default.",

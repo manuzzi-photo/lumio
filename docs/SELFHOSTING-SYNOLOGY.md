@@ -168,8 +168,13 @@ fuss on a NAS.
 ### 6. Start
 
 ```bash
-sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
+
+> The images in `docker-compose.prod.yml` point at a private registry that
+> is not publicly readable, so `--build` is required: it builds the images
+> locally and tags them with those names. A plain `up -d` without `--build`
+> fails with a 401 from the registry.
 
 The first run builds the images (see Performance — be patient). Watch progress:
 

@@ -30,6 +30,11 @@ const LOGO_ACCEPT =
 const PHOTO_ACCEPT =
   LOGO_ACCEPT +
   ",image/tiff,.tif,.tiff,.bmp,.jpf,.jpx,.cr2,.cr3,.nef,.nrw,.arw,.sr2,.srf,.dng,.raf,.orf,.rw2,.pef,.srw,.raw,.3fr,.erf,.kdc,.mos,.mrw,.x3f";
+// Favicon: bewusst enger als LOGO_ACCEPT. Kein RAW, kein HEIC — und
+// .ico dazu, weil das nach wie vor das ist, was Leute als Favicon
+// vorliegen haben.
+const FAVICON_ACCEPT =
+  "image/png,image/svg+xml,image/webp,image/x-icon,image/vnd.microsoft.icon,.ico";
 const hexRe = /^#[0-9a-fA-F]{6}$/;
 
 // Aktuelle (signierte) URL eines Asset-Typs aus der Appearance ziehen.
@@ -42,6 +47,8 @@ function assetUrlForKind(
       return a.studioLogoUrl;
     case "studioLogoLight":
       return a.studioLogoLightUrl;
+    case "studioFavicon":
+      return a.studioFaviconUrl;
     case "loginLogo":
       return a.loginLogoUrl;
     case "loginBackground":
@@ -353,6 +360,7 @@ export default function AppearancePage() {
 
   const studioLogoRef = useRef<HTMLInputElement | null>(null);
   const studioLogoLightRef = useRef<HTMLInputElement | null>(null);
+  const studioFaviconRef = useRef<HTMLInputElement | null>(null);
   const loginLogoRef = useRef<HTMLInputElement | null>(null);
   const loginBgRef = useRef<HTMLInputElement | null>(null);
   const emailLogoRef = useRef<HTMLInputElement | null>(null);
@@ -609,6 +617,17 @@ export default function AppearancePage() {
                   onFile={(f) => uploadAsset("studioLogoLight", f)}
                   onRemove={() => removeAsset("studioLogoLight")}
                   previewTone="light"
+                />
+                <AssetField
+                  label={t("appearance.favicon")}
+                  imageUrl={appearance.studioFaviconUrl}
+                  accept={FAVICON_ACCEPT}
+                  hint={t("appearance.faviconHint")}
+                  uploading={uploadingKind === "studioFavicon"}
+                  inputRef={studioFaviconRef}
+                  onPick={() => studioFaviconRef.current?.click()}
+                  onFile={(f) => uploadAsset("studioFavicon", f)}
+                  onRemove={() => removeAsset("studioFavicon")}
                 />
               </div>
             </Section>

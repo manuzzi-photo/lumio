@@ -312,6 +312,13 @@ export interface PublicGalleryMeta {
   publicAccess: boolean;
   unlocked: boolean;
   branding: Branding | null;
+  /** Fertig aufgeloestes Favicon: Branding -> Studio -> null.
+   *  Separat von branding, weil branding null ist, wenn das Studio gar
+   *  kein Profil angelegt hat — das Studio-Favicon gilt trotzdem. */
+  faviconUrl: string | null;
+  /** Oeffentlicher Studio-Name (Tenant.displayName, sonst .name).
+   *  NICHT branding.name — das ist die interne Profilbezeichnung. */
+  studioName: string | null;
   header: {
     /** Hero-Layout-Variante: bestimmt wie der Header gerendert wird. */
     layout: "minimal" | "splash" | "side_by_side" | "centered";
@@ -377,6 +384,7 @@ export interface Branding {
 export type AppearanceAssetKind =
   | "studioLogo"
   | "studioLogoLight"
+  | "studioFavicon"
   | "loginLogo"
   | "loginBackground"
   | "emailLogo";
@@ -384,6 +392,9 @@ export type AppearanceAssetKind =
 export interface Appearance {
   studioLogoUrl: string | null;
   studioLogoLightUrl: string | null;
+  /** Studio-weites Favicon. Wird von Branding.faviconUrl pro Galerie
+   *  ueberschrieben; ohne beides greift das Lumio-Default. */
+  studioFaviconUrl: string | null;
   studioAccentColor: string | null;
   studioTheme: "dark" | "light";
   loginLogoUrl: string | null;
@@ -570,6 +581,7 @@ export const api = {
       studioTheme: "dark" | "light";
       studioLogoUrl: string | null;
       studioLogoLightUrl: string | null;
+      studioFaviconUrl: string | null;
       /** Aktive Feature-Flag-Keys fuer diesen Tenant. Frontend prueft
        *  z.B. features.includes('print_shop') bevor es Print-Shop-
        *  Eintraege rendert. */

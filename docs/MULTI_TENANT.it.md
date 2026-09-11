@@ -4,6 +4,12 @@
 
 > ⚠️ **Nota sulla licenza:** Far girare Lumio in multi-tenant per **la tua organizzazione o un'agenzia** (più brand/clienti che gestisci tu stesso) non è soggetto a restrizioni. Offrire Lumio come **SaaS commerciale a terzi** che compete con il servizio ospitato del maintainer è *Competing Use* e **non** è consentito liberamente sotto la FSL-1.1-ALv2 — per questo serve una licenza commerciale. Vedi [LICENSE](../LICENSE).
 
+> **Tenant o studio?** Sono la stessa cosa. Una riga, due parole: diciamo
+> *tenant* quando si parla di amministrazione e isolamento (creare, sospendere,
+> archiviare, fatturare, instradare) e *studio* quando si parla delle persone
+> che ci lavorano. L'area Super-Admin parla quindi di tenant, l'interfaccia
+> dello studio mai.
+
 Lumio può gestire più tenant (studi/clienti fotografi) sulla stessa installazione. Questo documento descrive come un nuovo tenant diventa raggiungibile — il DB + l'UI lo creano, ma perché l'URL giusto arrivi al tenant giusto ti serve uno dei tre metodi di routing qui sotto.
 
 Se stai costruendo un SaaS e hai meno di 20 clienti, il **metodo B (domini personalizzati per cliente)** è il percorso consigliato. I wildcard ripagano solo una volta che modificare il Caddyfile manualmente per ogni cliente diventa tedioso.

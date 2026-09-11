@@ -85,6 +85,12 @@ services:
       # also durch Caddy. Bei Split-Deployment kann NEXT_PUBLIC_API_URL gesetzt
       # werden (z.B. https://api.example.com).
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-}
+      # API-Adresse fuer serverseitige Renders (Metadaten/Open-Graph).
+      # NICHT dasselbe wie NEXT_PUBLIC_API_URL: das darf leer sein
+      # (same-origin im Browser), hier braucht Node aber eine absolute
+      # URL — ein relativer Pfad wirft "Failed to parse URL". Default im
+      # Code ist der Container-Name; nur bei Split-Deployment aendern.
+      - INTERNAL_API_URL=${INTERNAL_API_URL:-}
       - NEXT_PUBLIC_DEPLOYMENT_MODE=${DEPLOYMENT_MODE:-single}
       # Im Multi-Mode: Basis-Domain des Cloud-Setups (z.B. lumio-cloud.de).
       # Wird vom Frontend genutzt um Apex- von Tenant-Subdomain zu

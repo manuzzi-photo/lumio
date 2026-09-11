@@ -26,6 +26,7 @@ const ASSET_TTL_SECONDS = 3600;
 const FIELD_MAP = {
   studioLogo: "studioLogoKey",
   studioLogoLight: "studioLogoLightKey",
+  studioFavicon: "studioFaviconKey",
   loginLogo: "loginLogoKey",
   loginBackground: "loginBackgroundKey",
   emailLogo: "emailLogoKey",
@@ -63,6 +64,9 @@ const MAX_BYTES_BY_KIND: Record<string, number> = {
   studioLogoLight: 15 * 1024 * 1024,
   loginLogo: 15 * 1024 * 1024,
   emailLogo: 15 * 1024 * 1024,
+  // Favicons sind winzig; ein grosszuegiges Limit wuerde nur erlauben,
+  // versehentlich ein 40-MB-Foto als Favicon hochzuladen.
+  studioFavicon: 2 * 1024 * 1024,
   loginBackground: 60 * 1024 * 1024,
 };
 
@@ -71,6 +75,7 @@ const initAssetSchema = z
     kind: z.enum([
       "studioLogo",
       "studioLogoLight",
+      "studioFavicon",
       "loginLogo",
       "loginBackground",
       "emailLogo",
@@ -110,6 +115,7 @@ const completeAssetSchema = z.object({
   kind: z.enum([
     "studioLogo",
     "studioLogoLight",
+    "studioFavicon",
     "loginLogo",
     "loginBackground",
     "emailLogo",
@@ -156,6 +162,7 @@ async function presignKey(value: string | null): Promise<string | null> {
 
 type TenantAppearanceRow = {
   studioLogoKey: string | null;
+  studioFaviconKey: string | null;
   studioLogoLightKey: string | null;
   studioAccentColor: string | null;
   studioTheme: string | null;
@@ -172,17 +179,25 @@ type TenantAppearanceRow = {
 };
 
 async function serializeAppearance(t: TenantAppearanceRow) {
-  const [studioLogoUrl, studioLogoLightUrl, loginLogoUrl, loginBackgroundUrl, emailLogoUrl] =
-    await Promise.all([
-      presignKey(t.studioLogoKey),
-      presignKey(t.studioLogoLightKey),
-      presignKey(t.loginLogoKey),
-      presignKey(t.loginBackgroundKey),
-      presignKey(t.emailLogoKey),
-    ]);
+  const [
+    studioLogoUrl,
+    studioLogoLightUrl,
+    studioFaviconUrl,
+    loginLogoUrl,
+    loginBackgroundUrl,
+    emailLogoUrl,
+  ] = await Promise.all([
+    presignKey(t.studioLogoKey),
+    presignKey(t.studioLogoLightKey),
+    presignKey(t.studioFaviconKey),
+    presignKey(t.loginLogoKey),
+    presignKey(t.loginBackgroundKey),
+    presignKey(t.emailLogoKey),
+  ]);
   return {
     studioLogoUrl,
     studioLogoLightUrl,
+    studioFaviconUrl,
     studioAccentColor: t.studioAccentColor,
     studioTheme: (t.studioTheme as "dark" | "light" | null) ?? "dark",
     loginLogoUrl,
@@ -213,6 +228,7 @@ async function serializeAppearance(t: TenantAppearanceRow) {
 
 const APPEARANCE_SELECT = {
   studioLogoKey: true,
+  studioFaviconKey: true,
   studioLogoLightKey: true,
   studioAccentColor: true,
   studioTheme: true,

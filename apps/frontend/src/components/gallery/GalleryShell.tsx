@@ -48,10 +48,15 @@ function isLightColor(hex: string): boolean {
 
 export function GalleryShell({
   branding,
+  faviconUrl,
   overrides,
   children,
 }: {
   branding: Branding | null;
+  /** Fertig aufgeloestes Favicon (Branding -> Studio -> null). Kommt
+   *  aus der Gallery-Meta und nicht aus branding, weil ein Studio ohne
+   *  Branding-Profil trotzdem sein eigenes Favicon haben darf. */
+  faviconUrl?: string | null;
   /** Galerie-spezifische Overrides — überschreiben gleichnamige
    *  Branding-Werte für diese eine Galerie. Wenn die Galerie noch
    *  nicht geladen ist (Unlock-Screen vor Meta-Laden), reichen die
@@ -71,17 +76,31 @@ export function GalleryShell({
 }) {
   const t = useT();
   const { locale, setLocale, supported } = useLocale();
-  // Favicon dynamisch setzen
+  // Favicon dynamisch setzen.
+  //
+  // Wichtig: layout.tsx deklariert DREI Icons (SVG, PNG 32, PNG 16), Next
+  // rendert daraus drei <link rel="icon">. Frueher wurde per
+  // querySelector nur das ERSTE (das SVG) umgebogen — dessen
+  // type="image/svg+xml" blieb stehen, und die beiden groessenannotierten
+  // PNGs zeigten weiter auf das Lumio-Standardicon. Browser bevorzugen
+  // genau die, also gewann das Branding nie. Darum: alle Icon-Links
+  // entfernen und genau einen neuen setzen, ohne type (der Browser
+  // erkennt das Format selbst, und ein falscher type laesst ihn das
+  // Icon verwerfen).
   useEffect(() => {
-    if (!branding?.faviconUrl) return;
-    const existing = document.querySelector<HTMLLinkElement>(
-      'link[rel="icon"]'
-    );
-    const link =
-      existing ?? Object.assign(document.createElement("link"), { rel: "icon" });
-    link.href = branding.faviconUrl;
-    if (!existing) document.head.appendChild(link);
-  }, [branding?.faviconUrl]);
+    if (!faviconUrl) return;
+    const selector = 'link[rel="icon"], link[rel="shortcut icon"]';
+    document
+      .querySelectorAll<HTMLLinkElement>(selector)
+      .forEach((el) => el.remove());
+    const link = document.createElement("link");
+    link.rel = "icon";
+    link.href = faviconUrl;
+    document.head.appendChild(link);
+    return () => {
+      link.remove();
+    };
+  }, [faviconUrl]);
 
   // Rechtliche Links des Betreibers (Impressum/Datenschutz) aus der
   // Instanz-Config. Bei Self-Hostern ohne Config bleibt es leer.
@@ -108,6 +127,24 @@ export function GalleryShell({
   const accent = overrides?.colorAccent ?? branding?.accentColor ?? "#FF4D2E";
   const accentRgb = hexToRgbTriple(accent);
   const light = isLightColor(primary);
+  // Logo-Variante passend zum Hintergrund. Bisher wurde hier immer
+  // logoUrl gerendert — ein schwarzes Logo auf einem dunklen Branding
+  // (z.B. #2d002e) verschwand damit fast vollstaendig, obwohl eine
+  // helle Variante hochgeladen war. Die Editor-Vorschau zeigte sie
+  // sogar, die echte Galerie nicht; das war der sichtbare Widerspruch.
+  //
+  // Basis ist bewusst `primary` und nicht der Hero: diese Logo-Leiste
+  // ist ein eigener Streifen ueber dem Hero und liegt auf der
+  // Hintergrundfarbe, nicht auf dem Bild. (hideHeaderLogo haengt am
+  // Event-Logo, nicht am Hero — ein Hero-Bild unterdrueckt diese Leiste
+  // also nicht.)
+  //
+  // Fehlt die helle Variante, bleibt es beim normalen Logo — genau der
+  // Fallback, den der Schema-Kommentar an Branding.logoLightUrl
+  // beschreibt.
+  const headerLogo = light
+    ? branding?.logoUrl ?? null
+    : branding?.logoLightUrl ?? branding?.logoUrl ?? null;
   // Wie der Text-auf-Akzent aussehen muss: bei hellen Akzenten (Amber,
   // Yellow, Lime) schwarz, bei dunklen (Magenta, Dark Blue, Forest
   // Green) weiß. Wir nutzen die gleiche Luma-Logik wie für den
@@ -237,14 +274,14 @@ export function GalleryShell({
         />
       ) : null}
 
-      {branding?.logoUrl && !overrides?.hideHeaderLogo ? (
+      {headerLogo && !overrides?.hideHeaderLogo ? (
         <header
           className="p-6 border-b"
           style={{ borderColor }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={branding.logoUrl}
+            src={headerLogo}
             alt=""
             className="h-8 w-auto"
           />
