@@ -29,6 +29,20 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.74.2] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- A branding favicon was never actually applied to a client gallery. The layout declares three icon links (an SVG plus 32px and 16px PNGs) and only the first was being rewritten, keeping its `image/svg+xml` type while the two sized PNGs still pointed at the Lumio default — which is the one browsers prefer. All icon links are now replaced by a single one pointing at the branding favicon. Thanks to @lisachev for the report, including everything that had already been ruled out.
+- The self-hosting guides told you to start with `docker compose ... up -d`, without `--build`. Since `docker-compose.prod.yml` names images in a registry that isn't publicly readable, that call fails with a 401 instead of starting anything. Both the standard and the Synology guide now use `--build` and explain why. Reported by @lisachev.
+
+### Changed
+
+- The studio interface no longer says "tenant" anywhere. A tenant and a studio are the same thing — the word belongs to administration (creating, suspending, billing) and shows up in the Super-Admin area, not in the UI a photographer works in. Renamed "Tenant default" to "Studio default" and adjusted the branding, watermark and audit-log wording to match. The Finnish translation already did this correctly.
+- `MULTI_TENANT.md` now states up front that a tenant and a studio are the same row, and when each word is used. `SELFHOSTING.md` notes that in single mode the one auto-created tenant is your studio and the term won't come up again. `KONZEPT.md` marks the two marketing repositories and the container registry as private, so the references there don't look like broken links.
+
 ## [0.74.1] - 2026-08-27
 
 A pull is enough. Only the main server is affected.
