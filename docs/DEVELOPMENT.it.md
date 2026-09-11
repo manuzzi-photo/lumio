@@ -259,6 +259,7 @@ Senza questi passaggi di setup funziona solo `software`; `auto` lo rileva e ripi
 La CI compila tre immagini container a ogni push su `main` e le pubblica sulla Forgejo container registry:
 
 ```
+# registry del progetto upstream — un fork inserisce qui il proprio host
 forgejo.thiel.tools/thiel/lumio-api:<tag>
 forgejo.thiel.tools/thiel/lumio-frontend:<tag>
 forgejo.thiel.tools/thiel/lumio-worker:<tag>
@@ -296,10 +297,10 @@ LUMIO_TAG=v0.2.0 docker compose \
     up -d
 ```
 
-Se la tua registry Forgejo è privata (il default per repository non pubblici), serve un login di pull sul server:
+La registry è privata (il default per repository non pubblici), quindi il server ha bisogno di un login di pull. `forgejo.thiel.tools` qui sotto è la registry del progetto upstream — un fork indica qui il proprio host:
 
 ```bash
-docker login forgejo.thiel.tools
+docker login <il-tuo-host-forgejo>
 # Username: your Forgejo name
 # Password: Forgejo personal access token with scope `read:package`
 ```
