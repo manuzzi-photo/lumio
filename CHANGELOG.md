@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.75.2] - 2026-09-11
+
+Documentation only. A pull is enough; nothing needs restarting for the change itself.
+
+### Changed
+
+- `DEVELOPMENT.md` presented the maintainer's container registry as if it were the reader's own — "if your Forgejo registry is private" followed by our hostname, which meant anyone following it would log in to ours. The hostname is now labelled as the upstream project's, and the login example uses a placeholder. The section was already marked maintainer-internal; this removes the remaining ambiguity inside it.
+
 ## [0.75.1] - 2026-09-11
 
 A pull is enough. Only the main server is affected.
