@@ -29,6 +29,18 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.75.1] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- The "latest version" check pointed at the development repository, which isn't publicly readable — so on every installation other than ours it returned a 404 and the check sat permanently on "not reachable". It now uses the public GitHub mirror, which carries the same releases and needs no token. If you point `LUMIO_UPDATE_REPO_URL` at your own mirror, nothing changes for you.
+
+### Security
+
+- A token in `LUMIO_UPDATE_REPO_TOKEN` is now only sent when `LUMIO_UPDATE_REPO_URL` is set as well. Previously it was attached to whatever host the check happened to be using, so a token stored for your own private repository would have been sent to the default host as soon as that address changed — which is exactly what this release does. A token belongs to the repository you named yourself.
+
 ## [0.75.0] - 2026-09-11
 
 A pull is enough — no changes to `.env` or the compose command. The database migrates automatically on start. **Both the main server and any worker nodes need to be updated**, since the worker learned to optimise the new asset.
