@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.75.3] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- A client gallery always showed the normal logo, never the light variant, so a dark logo on a dark branding colour was barely visible — even with a light version uploaded. The gallery now picks the variant that matches the background, the same way text colour has always been chosen. The branding editor's preview was already showing the light one, which is why the preview and the real gallery disagreed. If no light variant is uploaded, the normal logo is used as before.
+
 ## [0.75.2] - 2026-09-11
 
 Documentation only. A pull is enough; nothing needs restarting for the change itself.
