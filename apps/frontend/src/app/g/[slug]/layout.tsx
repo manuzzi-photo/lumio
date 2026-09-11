@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 
-import { fetchPublicGallery, fetchAssetAbsolute } from "@/lib/api-server";
+import {
+  fetchPublicGallery,
+  fetchAssetAbsolute,
+  publicOrigin,
+} from "@/lib/api-server";
 
 /**
  * Server-side metadata für /g/[slug].
@@ -39,10 +43,13 @@ export async function generateMetadata({
   // OG-Image-Priorität: Hero-Bild > Event-Logo > nichts. Hero ist der
   // bestmögliche Eindruck im Share-Preview, das Event-Logo ist
   // Fallback (z.B. wenn der Fotograf noch kein Hero-Bild gesetzt hat).
+  // Origin aus dem Request, nicht aus einer Env — im Multi-Tenant-Betrieb
+  // unterscheidet sie sich pro Studio (Subdomain oder Custom-Domain).
+  const origin = await publicOrigin();
   const ogImageUrl = g.header?.heroImageUrl
-    ? fetchAssetAbsolute(g.header.heroImageUrl)
+    ? fetchAssetAbsolute(g.header.heroImageUrl, origin)
     : g.header?.eventLogoUrl
-    ? fetchAssetAbsolute(g.header.eventLogoUrl)
+    ? fetchAssetAbsolute(g.header.eventLogoUrl, origin)
     : null;
 
   return {
