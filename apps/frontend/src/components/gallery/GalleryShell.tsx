@@ -48,10 +48,15 @@ function isLightColor(hex: string): boolean {
 
 export function GalleryShell({
   branding,
+  faviconUrl,
   overrides,
   children,
 }: {
   branding: Branding | null;
+  /** Fertig aufgeloestes Favicon (Branding -> Studio -> null). Kommt
+   *  aus der Gallery-Meta und nicht aus branding, weil ein Studio ohne
+   *  Branding-Profil trotzdem sein eigenes Favicon haben darf. */
+  faviconUrl?: string | null;
   /** Galerie-spezifische Overrides — überschreiben gleichnamige
    *  Branding-Werte für diese eine Galerie. Wenn die Galerie noch
    *  nicht geladen ist (Unlock-Screen vor Meta-Laden), reichen die
@@ -83,19 +88,19 @@ export function GalleryShell({
   // erkennt das Format selbst, und ein falscher type laesst ihn das
   // Icon verwerfen).
   useEffect(() => {
-    if (!branding?.faviconUrl) return;
+    if (!faviconUrl) return;
     const selector = 'link[rel="icon"], link[rel="shortcut icon"]';
     document
       .querySelectorAll<HTMLLinkElement>(selector)
       .forEach((el) => el.remove());
     const link = document.createElement("link");
     link.rel = "icon";
-    link.href = branding.faviconUrl;
+    link.href = faviconUrl;
     document.head.appendChild(link);
     return () => {
       link.remove();
     };
-  }, [branding?.faviconUrl]);
+  }, [faviconUrl]);
 
   // Rechtliche Links des Betreibers (Impressum/Datenschutz) aus der
   // Instanz-Config. Bei Self-Hostern ohne Config bleibt es leer.

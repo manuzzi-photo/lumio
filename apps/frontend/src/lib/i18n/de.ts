@@ -1487,6 +1487,9 @@ export const de: LocaleDict = {
     logoLight: "Logo (heller Modus)",
     logoLightHint:
       "Optional. Dunkle Variante für den hellen Grundton. Leer = das normale Logo.",
+    favicon: "Favicon",
+    faviconHint:
+      "Erscheint im Browser-Tab — im Studio, auf der Login-Seite und in Kundengalerien. Ein Branding-Profil kann es für einzelne Galerien überschreiben. PNG, SVG oder ICO, quadratisch.",
     loginPage: "Login-Seite",
     layout: "Layout",
     loginLayoutHint:

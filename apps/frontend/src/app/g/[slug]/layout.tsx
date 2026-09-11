@@ -26,8 +26,13 @@ export async function generateMetadata({
   }
   const g = data.gallery;
 
+  // Studio-Name, nicht branding.name: letzteres ist die INTERNE
+  // Profilbezeichnung ("Standard", "Hochzeit-Style") und stand damit
+  // im Browser-Tab und in jeder Share-Vorschau. Der oeffentliche Name
+  // des Studios ist Tenant.displayName (Fallback .name), gepflegt in
+  // den Studio-Einstellungen.
   const titleParts = [g.title];
-  if (g.branding?.name) titleParts.push(g.branding.name);
+  if (g.studioName) titleParts.push(g.studioName);
   const title = titleParts.join(" · ");
   const description = g.description ?? undefined;
 

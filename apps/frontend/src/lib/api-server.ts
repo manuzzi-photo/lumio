@@ -19,6 +19,10 @@ export interface ServerGalleryMeta {
   title: string;
   description: string | null;
   branding?: { name: string } | null;
+  /** Oeffentlicher Studio-Name. Nicht branding.name — das ist die
+   *  interne Profilbezeichnung ("Standard", "Hochzeit-Style"). */
+  studioName?: string | null;
+  faviconUrl?: string | null;
   header?: {
     heroImageUrl: string | null;
     eventLogoUrl: string | null;

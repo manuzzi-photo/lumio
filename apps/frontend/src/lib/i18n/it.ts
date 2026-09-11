@@ -1483,6 +1483,9 @@ export const it: LocaleDict = {
     logoLight: "Logo (modalità chiara)",
     logoLightHint:
       "Opzionale. Una variante scura per il tono base chiaro. Vuoto = il logo normale.",
+    favicon: "Favicon",
+    faviconHint:
+      "Compare nella scheda del browser — nello studio, nella pagina di login e nelle gallerie cliente. Un profilo di branding può sovrascriverla per singole gallerie. PNG, SVG o ICO, quadrata.",
     loginPage: "Pagina di accesso",
     layout: "Layout",
     loginLayoutHint:

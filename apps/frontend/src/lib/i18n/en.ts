@@ -1475,6 +1475,9 @@ export const en = {
     logoLight: "Logo (light mode)",
     logoLightHint:
       "Optional. A dark variant for the light base tone. Empty = the normal logo.",
+    favicon: "Favicon",
+    faviconHint:
+      "Shown in the browser tab — in the studio, on the login page and in client galleries. A branding profile can override it for individual galleries. PNG, SVG or ICO, square.",
     loginPage: "Login page",
     layout: "Layout",
     loginLayoutHint:

@@ -84,6 +84,13 @@ model Tenant {
   // ---------------------------------------------------------------------------
   studioLogoKey      String?  // Logo in der Sidebar (fuer dunklen Grund)
   studioLogoLightKey String?  // helle Variante (bei hellem Grundton)
+  // Favicon des Studios. Gilt ueberall, wo dieses Studio auftritt:
+  // Studio-Backend, Login-Seite und Kundengalerien. Ein Branding-Profil
+  // kann es pro Galerie ueberschreiben (Branding.faviconUrl) — die
+  // Aufloesung ist Branding -> Studio -> Lumio-Default, damit eine
+  // thematisch gebrandete Galerie moeglich ist, ohne dass ein leeres
+  // Branding-Feld gleich auf das Lumio-Icon zurueckfaellt.
+  studioFaviconKey   String?
   studioAccentColor  String?
   studioTheme        String?  @default("dark") // "dark" | "light"
   loginLogoKey       String?

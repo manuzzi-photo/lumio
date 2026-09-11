@@ -78,6 +78,7 @@ export type FileProcessingJob =
       kind:
         | "studioLogo"
         | "studioLogoLight"
+        | "studioFavicon"
         | "loginLogo"
         | "loginBackground"
         | "emailLogo";
