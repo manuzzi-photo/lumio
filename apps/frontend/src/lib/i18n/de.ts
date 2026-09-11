@@ -325,7 +325,7 @@ export const de: LocaleDict = {
       "Wenn aktiv, können Kunden die Original-Dateien herunterladen. Wenn aus, gibt es nur die reduzierten Web-Versionen (~2560px JPEG, gut für Online-Posts).",
     settingWatermark: "Wasserzeichen auf Vorschaubildern",
     settingWatermarkDesc:
-      "Wird automatisch generiert. Studio-Watermark-Text in den Tenant-Settings festlegen.",
+      "Wird automatisch generiert. Studio-Watermark-Text in den Studio-Einstellungen festlegen.",
     settingComments: "Kommentare aktivieren",
     settingSelectionLimit: "Auswahllimit",
     settingSelectionLimitDesc:
@@ -419,12 +419,12 @@ export const de: LocaleDict = {
       "Danke für euer Vertrauen!\\n\\n— Studio Müller\\nstudio@example.de\\n[Instagram](https://...)",
     galleryColors: "Galerie-Farben",
     galleryColorsHint:
-      "Überschreiben die Farben des Tenant-Brandings nur für diese Galerie. Textfarbe wird automatisch passend zum Hintergrund berechnet.",
+      "Überschreiben die Farben des Studio-Brandings nur für diese Galerie. Textfarbe wird automatisch passend zum Hintergrund berechnet.",
     colorBackground: "Hintergrund",
     colorAccent: "Akzent",
     galleryFonts: "Galerie-Schriftarten",
     galleryFontsHint:
-      "Überschreiben die Schriftart des Tenant-Brandings nur für diese Galerie. Schriften werden DSGVO-konform über Bunny Fonts CDN geladen.",
+      "Überschreiben die Schriftart des Studio-Brandings nur für diese Galerie. Schriften werden DSGVO-konform über Bunny Fonts CDN geladen.",
     fontHeading: "Überschriften",
     fontBody: "Fließtext",
     fontDefault: "— Branding-Default —",
@@ -451,7 +451,7 @@ export const de: LocaleDict = {
     confirmDeleteMany: "{count} Dateien löschen?",
 
     branding: "Branding:",
-    brandingTenantDefault: "Tenant-Default",
+    brandingTenantDefault: "Studio-Default",
     brandingNoneYet: "Noch keine Branding-Profile —",
     brandingCreateNow: "jetzt anlegen",
 
@@ -512,7 +512,7 @@ export const de: LocaleDict = {
       maxFilesField: "Max. Anzahl Files (optional)",
       maxGBField: "Max. GB total (optional)",
       maxPerFileField: "Max. MB pro Datei (optional)",
-      maxPerFilePlaceholder: "leer = Tenant-Default",
+      maxPerFilePlaceholder: "leer = Studio-Default",
       expiresField: "Ablauf-Datum (optional)",
       create: "Link erstellen",
       creating: "Erstellt…",
@@ -815,7 +815,7 @@ export const de: LocaleDict = {
     zoomReset: "Zoom zurücksetzen",
     comments: "Kommentare",
     days: "Tage",
-    tenantDefault: "Tenant-Default",
+    tenantDefault: "Studio-Default",
     commentsLoading: "Lädt…",
     commentsEmpty: "Noch keine Kommentare.",
     commentPlaceholder: "Kommentar schreiben…",
@@ -1808,7 +1808,7 @@ export const de: LocaleDict = {
     breadcrumb: "Audit",
     title: "Audit-Log",
     description:
-      "Logins, Galerie-Änderungen, Kunden-Aktivität. Read-only, gefiltert nach deinem Tenant.",
+      "Logins, Galerie-Änderungen, Kunden-Aktivität. Read-only, gefiltert nach deinem Studio.",
     exportCsv: "CSV exportieren ({n})",
     gallery: "Galerie",
     action: "Aktion",
@@ -1925,7 +1925,7 @@ export const de: LocaleDict = {
     breadcrumbStudio: "Studio",
     breadcrumb: "Branding",
     defaultDesc:
-      "Tenant-Default — wird für Galerien ohne explizites Branding verwendet",
+      "Studio-Default — wird für Galerien ohne explizites Branding verwendet",
     makeDefault: "Als Default",
     confirmDelete:
       "Dieses Branding-Profil löschen? Galerien, die es nutzen, fallen auf das Default zurück.",

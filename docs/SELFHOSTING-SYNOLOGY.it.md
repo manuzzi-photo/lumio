@@ -177,8 +177,13 @@ del Reverse Proxy DSM sopra è di solito meno complicato su un NAS.
 ### 6. Avvia
 
 ```bash
-sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
+
+> Le immagini in `docker-compose.prod.yml` puntano a un registry privato che
+> non è leggibile pubblicamente, quindi `--build` è necessario: costruisce le
+> immagini localmente e le etichetta con quei nomi. Un `up -d` senza `--build`
+> fallisce con un 401 del registry.
 
 Il primo avvio compila le immagini (vedi Prestazioni — abbi pazienza).
 Osserva il progresso:

@@ -325,7 +325,7 @@ export const it: LocaleDict = {
       "Se attivo, i clienti possono scaricare i file originali. Se disattivo, sono disponibili solo le versioni web ridotte (~2560px JPEG).",
     settingWatermark: "Filigrana sulle anteprime",
     settingWatermarkDesc:
-      "Generata automaticamente. Configura il testo della filigrana nelle impostazioni del tenant.",
+      "Generata automaticamente. Configura il testo della filigrana nelle impostazioni dello studio.",
     settingComments: "Commenti abilitati",
     settingSelectionLimit: "Limite di selezione",
     settingSelectionLimitDesc:
@@ -419,12 +419,12 @@ export const it: LocaleDict = {
       "Grazie per la fiducia!\\n\\n— Studio Rossi\\nstudio@esempio.it\\n[Instagram](https://...)",
     galleryColors: "Colori della galleria",
     galleryColorsHint:
-      "Sovrascrive i colori del branding del tenant solo per questa galleria. Il colore del testo viene calcolato automaticamente per il contrasto.",
+      "Sovrascrive i colori del branding dello studio solo per questa galleria. Il colore del testo viene calcolato automaticamente per il contrasto.",
     colorBackground: "Sfondo",
     colorAccent: "Accento",
     galleryFonts: "Font della galleria",
     galleryFontsHint:
-      "Sovrascrive il font del branding del tenant solo per questa galleria. I font vengono caricati nel rispetto della privacy tramite Bunny Fonts CDN.",
+      "Sovrascrive il font del branding dello studio solo per questa galleria. I font vengono caricati nel rispetto della privacy tramite Bunny Fonts CDN.",
     fontHeading: "Titoli",
     fontBody: "Testo",
     fontDefault: "— Predefinito del branding —",
@@ -451,7 +451,7 @@ export const it: LocaleDict = {
     confirmDeleteMany: "Eliminare {count} file?",
 
     branding: "Branding:",
-    brandingTenantDefault: "Predefinito del tenant",
+    brandingTenantDefault: "Predefinito dello studio",
     brandingNoneYet: "Nessun profilo di branding —",
     brandingCreateNow: "creane uno ora",
 
@@ -512,7 +512,7 @@ export const it: LocaleDict = {
       maxFilesField: "Numero massimo di file (opzionale)",
       maxGBField: "GB massimi totali (opzionale)",
       maxPerFileField: "MB massimi per file (opzionale)",
-      maxPerFilePlaceholder: "vuoto = predefinito del tenant",
+      maxPerFilePlaceholder: "vuoto = predefinito dello studio",
       expiresField: "Data di scadenza (opzionale)",
       create: "Crea link",
       creating: "Creazione…",
@@ -814,7 +814,7 @@ export const it: LocaleDict = {
     zoomReset: "Reimposta zoom",
     comments: "Commenti",
     days: "giorni",
-    tenantDefault: "Predefinito del tenant",
+    tenantDefault: "Predefinito dello studio",
     commentsLoading: "Caricamento…",
     commentsEmpty: "Ancora nessun commento.",
     commentPlaceholder: "Scrivi un commento…",
@@ -1804,7 +1804,7 @@ export const it: LocaleDict = {
     breadcrumb: "Audit",
     title: "Registro di audit",
     description:
-      "Accessi, modifiche alle gallerie, attività dei clienti. Sola lettura, filtrato per il tuo tenant.",
+      "Accessi, modifiche alle gallerie, attività dei clienti. Sola lettura, filtrato per il tuo studio.",
     exportCsv: "Esporta CSV ({n})",
     gallery: "Galleria",
     action: "Azione",

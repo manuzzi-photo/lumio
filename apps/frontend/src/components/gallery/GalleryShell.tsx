@@ -71,16 +71,30 @@ export function GalleryShell({
 }) {
   const t = useT();
   const { locale, setLocale, supported } = useLocale();
-  // Favicon dynamisch setzen
+  // Favicon dynamisch setzen.
+  //
+  // Wichtig: layout.tsx deklariert DREI Icons (SVG, PNG 32, PNG 16), Next
+  // rendert daraus drei <link rel="icon">. Frueher wurde per
+  // querySelector nur das ERSTE (das SVG) umgebogen — dessen
+  // type="image/svg+xml" blieb stehen, und die beiden groessenannotierten
+  // PNGs zeigten weiter auf das Lumio-Standardicon. Browser bevorzugen
+  // genau die, also gewann das Branding nie. Darum: alle Icon-Links
+  // entfernen und genau einen neuen setzen, ohne type (der Browser
+  // erkennt das Format selbst, und ein falscher type laesst ihn das
+  // Icon verwerfen).
   useEffect(() => {
     if (!branding?.faviconUrl) return;
-    const existing = document.querySelector<HTMLLinkElement>(
-      'link[rel="icon"]'
-    );
-    const link =
-      existing ?? Object.assign(document.createElement("link"), { rel: "icon" });
+    const selector = 'link[rel="icon"], link[rel="shortcut icon"]';
+    document
+      .querySelectorAll<HTMLLinkElement>(selector)
+      .forEach((el) => el.remove());
+    const link = document.createElement("link");
+    link.rel = "icon";
     link.href = branding.faviconUrl;
-    if (!existing) document.head.appendChild(link);
+    document.head.appendChild(link);
+    return () => {
+      link.remove();
+    };
   }, [branding?.faviconUrl]);
 
   // Rechtliche Links des Betreibers (Impressum/Datenschutz) aus der
