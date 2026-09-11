@@ -29,6 +29,19 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.75.0] - 2026-09-11
+
+A pull is enough — no changes to `.env` or the compose command. The database migrates automatically on start. **Both the main server and any worker nodes need to be updated**, since the worker learned to optimise the new asset.
+
+### Added
+
+- A studio-wide favicon, set under Appearance next to the logos. It applies everywhere the studio shows up: the studio interface itself, the login page and client galleries.
+- A branding profile's favicon now overrides the studio one for the galleries that use it, so a gallery can be given a themed icon without changing the studio default. The order is branding, then studio, then the Lumio icon — an empty favicon field in a branding profile no longer falls straight back to Lumio.
+
+### Fixed
+
+- The title of a client gallery showed the name of the branding *profile* — an internal label like "Standard" or "Wedding style" — rather than the studio. It now uses the public studio name from the studio settings. This was visible in the browser tab and in every link preview on WhatsApp, Slack and similar.
+
 ## [0.74.2] - 2026-09-11
 
 A pull is enough. Only the main server is affected.
