@@ -29,6 +29,16 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.75.4] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- The title and link preview of a client gallery fell back to a generic "Gallery · Lumio" on every standard installation. When a gallery link was shared on WhatsApp, Slack or iMessage, the preview showed neither the gallery title nor the hero image. The cause: the server-side render asked the API through a relative address, which works in a browser but not in Node, where it fails outright. The address now defaults to the API inside the Docker network. If you run frontend and API separately, set `INTERNAL_API_URL` to an absolute URL — it is now listed in `docker-compose.yml` and documented in the example env file.
+- Images in link previews were built as relative paths when `NEXT_PUBLIC_API_URL` was empty, which is the default. They are now built from the host of the incoming request, so they are correct per studio even when several studios share one installation under different domains.
+- A failing metadata fetch is now logged instead of silently swallowed. The generic title was the only visible symptom, which is why this went unnoticed for so long.
+
 ## [0.75.3] - 2026-09-11
 
 A pull is enough. Only the main server is affected.
