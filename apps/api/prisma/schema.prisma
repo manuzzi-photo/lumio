@@ -709,18 +709,26 @@ model ZipDownload {
   // Wer hat ihn angefordert? Null = öffentlich (alle Files der Galerie).
   // Wenn gesetzt: spezifisch zur Auswahl dieses Access-Tokens.
   accessId    String?  @db.Uuid
-  
+
+  // Wer hat den Build ausgelöst? "customer" = über einen /g/:slug-
+  // Endpoint (dort gelten downloadEnabled/downloadOriginalsEnabled).
+  // "studio" = über einen authentifizierten Studio-Endpoint (Tag-Export,
+  // Print-Order-Bundle) — internes Artefakt, das die Kunden-Route
+  // (GET /g/:slug/download/zip/:zipId) nie zurückgeben darf, unabhängig
+  // von accessId/variant. Siehe #45.
+  source      String   @default("customer")
+
   // Wenn diese ZIP nur eine Untermenge der Files enthält (z.B. die
   // gepickten), hashen wir die fileId-Liste, um Cache-Hits zu erkennen.
   // NULL = "alle Files der Galerie".
   fileIdsHash String?
   fileCount   Int
-  
+
   // "original" oder "web" — bestimmt, welche Bytes in die ZIP gepackt
   // werden. Default "original" für Rückwärtskompatibilität — der Worker
   // bzw. ältere Einträge ohne explizite Wahl liefern Originals.
   variant     String   @default("original")
-  
+
   status      String   @default("pending") // pending | building | ready | failed
   // Einzel-ZIP: storageKey/sizeBytes gesetzt, partCount = 0 (Normalfall,
   // rückwärtskompatibel). Mehrteilig: partCount >= 2, storageKey = NULL,
@@ -740,7 +748,14 @@ model ZipDownload {
   updatedAt   DateTime @updatedAt
   
   @@index([galleryId, expiresAt])
-  @@unique([galleryId, accessId, fileIdsHash, variant])
+  // source ist Teil des Cache-Schlüssels: sonst könnten ein Kunden-Export
+  // und ein Studio-Export mit identischem accessId (beide null, z.B. in
+  // öffentlichen Gallerien) auf denselben Dateien landen und sich
+  // gegenseitig den source-Wert "stehlen" — mit dem Effekt, dass ein
+  // legitimer Kunden-Request die (weiterhin als "studio" markierte)
+  // vorhandene Zeile zurückbekommt und dann von der eigenen Kunden-Route
+  // abgelehnt wird.
+  @@unique([galleryId, accessId, source, fileIdsHash, variant])
   @@map("zip_downloads")
 }
 
