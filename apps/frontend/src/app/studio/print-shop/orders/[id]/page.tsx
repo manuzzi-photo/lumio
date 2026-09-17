@@ -710,6 +710,15 @@ type LinearTransition =
   | "mark_ready_for_pickup"
   | "mark_delivered";
 
+const STATUS_RANK: Record<string, number> = {
+  pending_payment: 0,
+  paid: 1,
+  in_production: 2,
+  shipped: 3,
+  ready_for_pickup: 3,
+  delivered: 4,
+};
+
 /** Read-at-a-glance progress through the linear part of the order
  *  lifecycle (cancel/refund are side-exits, shown separately). Each
  *  step's status is derived from order.status, not tracked
@@ -746,21 +755,19 @@ function FulfillmentChecklist({
         : t("orderDetail.checklistDelivered"),
     },
   ];
-  const rank = [
-    "pending_payment",
-    "paid",
-    "in_production",
-    order.isPickupDelivery ? "ready_for_pickup" : "shipped",
-    "delivered",
-  ];
-  const currentRank = rank.indexOf(order.status);
+  // shipped and ready_for_pickup share a rank: allowedTransitionsFor()
+  // already tolerates order.status/isPickupDelivery disagreeing (a stale
+  // flag never dead-ends an order), so this checklist shouldn't vanish
+  // over the same mismatch — a plain array keyed on isPickupDelivery
+  // would return -1 for whichever status it didn't include.
+  const currentRank = STATUS_RANK[order.status] ?? -1;
   if (currentRank < 0) return null; // draft or an unknown status
 
   return (
     <Section title={t("orderDetail.secChecklist")}>
       <ul className="space-y-2">
         {steps.map((s, i) => {
-          const stepRank = rank.indexOf(s.status);
+          const stepRank = STATUS_RANK[s.status];
           const done = currentRank >= stepRank;
           const isNext = nextTransition === s.type;
           return (
