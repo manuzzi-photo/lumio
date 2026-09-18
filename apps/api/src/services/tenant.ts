@@ -81,13 +81,12 @@ interface TenantWithDomain {
  * PUBLIC_URL. Der letzte Fall ist fuer Single-Mode/Self-Host ohne
  * Subdomain-Routing gedacht, wo ohnehin nur ein Tenant existiert.
  *
- * Schema wie bei tenantReturnOrigin() (routes/billing.ts): kein
- * Request da, also kein X-Forwarded-Proto zum Auslesen — Fallback auf
- * NODE_ENV. Sonst wuerden Custom-Domain/Subdomain-Links im Dev/Self-Host
- * ohne TLS-Terminierung auf https zeigen, obwohl PUBLIC_URL http ist.
+ * Schema: aus PUBLIC_URL uebernommen (das ist bereits als URL validiert,
+ * also eine zuverlaessigere Quelle als NODE_ENV — ein Self-Host kann
+ * production ohne TLS-Terminierung fahren, dann waere NODE_ENV falsch).
  */
 export function tenantPublicOrigin(tenant: TenantWithDomain): string {
-  const proto = config.NODE_ENV === "production" ? "https" : "http";
+  const proto = new URL(config.PUBLIC_URL).protocol.replace(":", "");
   if (tenant.customDomain) return `${proto}://${tenant.customDomain}`;
   const base = config.LUMIO_DOMAIN_BASE?.trim().toLowerCase();
   if (base) return `${proto}://${tenant.slug}.${base}`;
