@@ -11,6 +11,7 @@
  * name zurueck — Tenants ohne gesetzten oeffentlichen Namen
  * verhalten sich exakt wie vorher.
  */
+import { config } from "../config.js";
 
 interface TenantWithNames {
   name: string;
@@ -64,4 +65,25 @@ export function isTenantPubliclyVisible(
   status: string | null | undefined
 ): boolean {
   return status === "active";
+}
+
+interface TenantWithDomain {
+  slug: string;
+  customDomain: string | null;
+}
+
+/**
+ * Oeffentlicher Origin eines Tenants fuer Links die AUSSERHALB eines
+ * Requests gebaut werden (Mails, Webhooks) — wo es keinen Host-Header
+ * gibt, den man wie bei resolveTenant() einfach durchreichen koennte.
+ *
+ * Prioritaet: Custom Domain > Subdomain unter LUMIO_DOMAIN_BASE >
+ * PUBLIC_URL. Der letzte Fall ist fuer Single-Mode/Self-Host ohne
+ * Subdomain-Routing gedacht, wo ohnehin nur ein Tenant existiert.
+ */
+export function tenantPublicOrigin(tenant: TenantWithDomain): string {
+  if (tenant.customDomain) return `https://${tenant.customDomain}`;
+  const base = config.LUMIO_DOMAIN_BASE?.toLowerCase();
+  if (base) return `https://${tenant.slug}.${base}`;
+  return config.PUBLIC_URL;
 }
