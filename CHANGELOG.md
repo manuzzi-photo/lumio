@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.80.1] - 2026-09-19
+
+A pull is enough. Affects the port-check script only — nothing in the running application.
+
+### Changed
+
+- `lumio-check-ports.sh` now offers a free port instead of only asking for one. On a conflict it scans upward from the busy port and proposes the first one that is actually free, checked the same way the script checks everything else; Enter accepts it, `r` rechecks the original, `s` keeps it as before. This matters on a host running several stacks side by side, where one run can hit conflicts on several ports and each one previously meant going off to find a free port yourself. Requested by @manuzzi (#18).
+
 ## [0.80.0] - 2026-09-18
 
 A pull is enough — the database migrates automatically on start. Only the main server is affected.
