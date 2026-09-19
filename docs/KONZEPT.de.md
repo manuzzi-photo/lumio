@@ -501,7 +501,7 @@ Der Stack wird über **mehrere zusammensetzbare Compose-Dateien** betrieben. Die
 | Datei | Zweck |
 | ----- | ----- |
 | `docker-compose.yml` | Basis: caddy, frontend, api, worker, postgres, redis, minio (lokaler Build) |
-| `docker-compose.prod.yml` | Ersetzt die `build:`-Blöcke durch fertige Images aus der **Forgejo Container Registry** (`forgejo.thiel.tools/thiel/lumio-{api,frontend,worker}:${LUMIO_TAG}`) |
+| `docker-compose.prod.yml` | Ersetzt die `build:`-Blöcke durch fertige Images aus der **Forgejo Container Registry** (`forgejo.thiel.tools/thiel/lumio-{api,frontend,worker}:${LUMIO_TAG}`). Diese Registry ist privat — Self-Hoster nutzen dieselbe Datei mit `--build`, was lokal baut und unter diesen Namen taggt |
 | `docker-compose.ml.yml` | Zusätzlicher ML-Worker für KI-Tagging (CPU) |
 | `docker-compose.gpu.yml` | GPU-Beschleunigung (NVIDIA) für Transcoding/ML |
 | `docker-compose.worker.yml` | Reine Worker-Node für horizontale Skalierung (eigener Server) |
@@ -558,7 +558,7 @@ Wo Picdrop sich "schnell" anfühlt — und wie wir das nachbauen:
 ## 12. Repo, Release & Lizenz
 
 - **Repo-Struktur**: Monorepo (pnpm workspaces) — `apps/frontend`, `apps/api`, `apps/worker` (Python/Celery), `apps/lightroom-plugin`, `apps/capture-one-plugin`, `packages/shared` (geteilte Types).
-- **Drei Repositories**: App-Code (`lumio.git`) plus zwei Astro-Marketing-Sites — `lumio-cloud-de.git` (SaaS + Sign-up + Stripe) und `lumio-app-de.git` (Self-Host-Pitch).
+- **Drei Repositories**: App-Code (`lumio.git`) plus zwei Astro-Marketing-Sites — `lumio-cloud-de.git` (SaaS + Sign-up + Stripe) und `lumio-app-de.git` (Self-Host-Pitch). Öffentlich ist nur der App-Code; die beiden Marketing-Repos sind intern und von außen nicht erreichbar.
 - **Hosting**: **Forgejo** (`forgejo.thiel.tools/thiel/*`) ist primär; **GitHub** dient als öffentlicher Push-Mirror.
 - **Lizenz**: **FSL-1.1-ALv2** (Functional Source License) — source-available. Verbietet konkurrierendes SaaS-Hosting (*Competing Use*), konvertiert aber 2 Jahre nach jedem Release automatisch zu Apache 2.0. Kommerzielle Lizenz für gehostete/konkurrierende Angebote auf Anfrage.
 - **Images/CI**: Container-Images liegen in der **Forgejo Container Registry**; Deployment per `git pull` + `docker compose … up -d --build`.

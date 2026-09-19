@@ -501,7 +501,7 @@ Lo stack viene eseguito tramite **più file Compose componibili**. La base (`doc
 | File | Scopo |
 | ----- | ----- |
 | `docker-compose.yml` | Base: caddy, frontend, api, worker, postgres, redis, minio (build locale) |
-| `docker-compose.prod.yml` | Sostituisce i blocchi `build:` con immagini precompilate dalla **Forgejo container registry** (`forgejo.thiel.tools/thiel/lumio-{api,frontend,worker}:${LUMIO_TAG}`) |
+| `docker-compose.prod.yml` | Sostituisce i blocchi `build:` con immagini precompilate dalla **Forgejo container registry** (`forgejo.thiel.tools/thiel/lumio-{api,frontend,worker}:${LUMIO_TAG}`). Questo registry è privato — chi fa self-hosting usa lo stesso file con `--build`, che costruisce localmente ed etichetta con quei nomi |
 | `docker-compose.ml.yml` | Un worker ML aggiuntivo per il tagging AI (CPU) |
 | `docker-compose.gpu.yml` | Accelerazione GPU (NVIDIA) per transcoding/ML |
 | `docker-compose.worker.yml` | Un nodo worker puro per la scalabilità orizzontale (server proprio) |
@@ -558,7 +558,7 @@ Dove Picdrop sembra "veloce" — e come lo riproduciamo:
 ## 12. Repo, release & licenza
 
 - **Struttura del repo**: monorepo (pnpm workspaces) — `apps/frontend`, `apps/api`, `apps/worker` (Python/Celery), `apps/lightroom-plugin`, `apps/capture-one-plugin`, `packages/shared` (tipi condivisi).
-- **Tre repository**: codice dell'app (`lumio.git`) più due siti marketing in Astro — `lumio-cloud-de.git` (SaaS + sign-up + Stripe) e `lumio-app-de.git` (il pitch per il self-host).
+- **Tre repository**: codice dell'app (`lumio.git`) più due siti marketing in Astro — `lumio-cloud-de.git` (SaaS + sign-up + Stripe) e `lumio-app-de.git` (il pitch per il self-host). È pubblico solo il codice dell'app; i due repository marketing sono interni e non raggiungibili dall'esterno.
 - **Hosting**: **Forgejo** (`forgejo.thiel.tools/thiel/*`) è primario; **GitHub** funge da mirror pubblico in push.
 - **Licenza**: **FSL-1.1-ALv2** (Functional Source License) — source-available. Vieta l'hosting SaaS concorrente (*Competing Use*), ma si converte automaticamente in Apache 2.0 due anni dopo ogni release. Licenza commerciale per offerte hosted/concorrenti su richiesta.
 - **Immagini/CI**: le immagini container vivono nella **Forgejo container registry**; deployment tramite `git pull` + `docker compose … up -d --build`.

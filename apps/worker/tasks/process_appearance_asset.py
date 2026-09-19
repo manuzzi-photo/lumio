@@ -44,6 +44,7 @@ WEBP_QUALITY = 85
 FIELDS = {
     "studioLogo": "studioLogoKey",
     "studioLogoLight": "studioLogoLightKey",
+    "studioFavicon": "studioFaviconKey",
     "loginLogo": "loginLogoKey",
     "loginBackground": "loginBackgroundKey",
     "emailLogo": "emailLogoKey",
@@ -55,6 +56,9 @@ FIELDS = {
 MAX_EDGE_BY_KIND = {
     "studioLogo": 512,
     "studioLogoLight": 512,
+    # Favicon wird bei 16-64px dargestellt; 256 ist reichlich fuer
+    # Retina und haelt die Datei winzig.
+    "studioFavicon": 256,
     "loginLogo": 512,
     "emailLogo": 512,
     "loginBackground": 2400,

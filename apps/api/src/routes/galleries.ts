@@ -23,7 +23,10 @@ import { presignGet, presignPut, getObjectStream } from "../services/storage.js"
 import { verifyPassword, hashPassword } from "../services/auth.js";
 import { isTenantPubliclyVisible } from "../services/tenant.js";
 import { enqueue, Queues } from "../services/queue.js";
-import { resolveGalleryBranding } from "../services/branding.js";
+import {
+  resolveGalleryBranding,
+  resolveFaviconUrl,
+} from "../services/branding.js";
 import { logEvent } from "../services/audit.js";
 import { checkActiveGalleriesLimit, checkFeatureAvailable } from "../services/usage.js";
 import { publishEvent } from "../services/webhooks.js";
@@ -174,6 +177,13 @@ const HEX_RGB_OR_RGBA = /^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
 const updateGallerySchema = createGallerySchema.partial().extend({
   status: z.enum(["draft", "live", "archived"]).optional(),
+  // Nullable only on update, where null means "remove the expiry date".
+  // The update mapping below has always written `body.expiresAt ? … : null`,
+  // so clearing was the intended behaviour; the schema inherited from
+  // createGallerySchema just never allowed null through, which made an expiry
+  // date impossible to remove once set. Left non-nullable on create, where
+  // null and omitted would mean the same thing anyway.
+  expiresAt: z.string().datetime().nullable().optional(),
   // Passwortschutz: String = setzen, null = entfernen, weglassen =
   // unverändert. Wird serverseitig gehasht.
   password: z.string().min(1).max(200).nullable().optional(),
@@ -1784,6 +1794,15 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
       galleryBrandingId: gallery.brandingId,
       tenantId: gallery.tenantId,
     });
+    const faviconUrl = await resolveFaviconUrl(
+      gallery.tenantId,
+      branding?.faviconUrl ?? null
+    );
+    const tenantRow = await prisma.tenant.findUnique({
+      where: { id: gallery.tenantId },
+      select: { displayName: true, name: true },
+    });
+    const studioName = tenantRow?.displayName ?? tenantRow?.name ?? null;
 
     // Hero-File auflösen: wenn heroFileId gesetzt, geben wir einen
     // Presigned-URL zur Web-Rendition zurück. Bevorzugt web_jpeg
@@ -1914,6 +1933,17 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         publicAccess: gallery.publicAccess,
         unlocked,
         branding,
+        // Favicon der Galerie, fertig aufgeloest: Branding-Profil ->
+        // Studio -> null. Bewusst NEBEN branding und nicht darin, weil
+        // branding null ist, wenn das Studio gar kein Profil angelegt
+        // hat — ein Self-Hoster mit Studio-Favicon aber ohne Branding
+        // bekaeme sonst nie sein eigenes Icon.
+        faviconUrl,
+        // Oeffentlicher Studio-Name fuer Titel und Share-Vorschau.
+        // NICHT branding.name: das ist die interne Profilbezeichnung
+        // ("Standard", "Hochzeit-Style") und hat im Browser-Tab nichts
+        // zu suchen.
+        studioName,
         // Header-Customization durchreichen
         header: {
           // Render-Variante: minimal | splash | side_by_side | centered

@@ -98,6 +98,7 @@ def build_zip(
     label: str,
     variant: str = "original",
     part_max_bytes: int | None = None,
+    print_order_id: str | None = None,
 ) -> dict:
     log.info("build_zip.start",
              zip_id=zip_download_id, gallery=gallery_id,
@@ -115,6 +116,7 @@ def build_zip(
             label=label,
             variant=variant,
             part_max_bytes=part_max_bytes,
+            print_order_id=print_order_id,
         )
         return {"zip_id": zip_download_id, "status": "ready", **result}
     except Exception as err:
@@ -134,12 +136,13 @@ def build_zip(
 def _build(*, zip_download_id: str, tenant_id: str, gallery_id: str,
            file_ids: list[str] | None, label: str,
            variant: str = "original",
-           part_max_bytes: int | None = None) -> dict:
+           part_max_bytes: int | None = None,
+           print_order_id: str | None = None) -> dict:
     s3 = get_s3_client()
     bucket = get_bucket()
 
     # Files aus der DB ziehen — original_filename + storage_key + size_bytes.
-    files = _fetch_files(gallery_id, file_ids, variant)
+    files = _fetch_files(gallery_id, file_ids, variant, print_order_id)
     if not files:
         raise ValueError("no files to zip")
 
@@ -461,7 +464,8 @@ def _dedupe_name(name: str, seen: set[str]) -> str:
 # ---------------------------------------------------------------------------
 def _fetch_files(gallery_id: str,
                  file_ids: list[str] | None,
-                 variant: str = "original") -> list[dict]:
+                 variant: str = "original",
+                 print_order_id: str | None = None) -> list[dict]:
     """Lädt Files aus der DB.
 
     Bei variant="web" bevorzugen wir je nach file.kind:
@@ -479,6 +483,65 @@ def _fetch_files(gallery_id: str,
     nach Rendition-Format (mp4, jpg, webp).
     """
     with get_conn() as conn:
+        if variant == "print":
+            # Druck-Export einer Bestellung (#55): eine Datei PRO
+            # BESTELLZEILE, nicht pro File — dieselbe Datei kann in zwei
+            # Zeilen mit verschiedenem Crop liegen. Die gerenderte Crop-
+            # Datei (printFileKey), wenn vorhanden; sonst das Original,
+            # damit eine fehlgeschlagene oder crop-lose Zeile nicht aus
+            # dem ZIP faellt. Der Studio-Export darf hier auch versteckte
+            # Files enthalten — die Kundin hat sie bestellt.
+            if not print_order_id:
+                return []
+            rows = conn.execute(
+                'SELECT i.id AS item_id, i."printFileKey" AS print_key, '
+                '  i.quantity, '
+                '  f.id, f."originalFilename" AS original_filename, '
+                '  f."storageKey" AS orig_key, f."sizeBytes" AS orig_size, '
+                '  v.name AS variant_name '
+                'FROM print_order_items i '
+                'JOIN files f ON f.id = i."fileId" '
+                'JOIN print_product_variants v ON v.id = i."printProductVariantId" '
+                'WHERE i."printOrderId" = %s '
+                'ORDER BY f."sortIndex", f."originalFilename", i.id',
+                (print_order_id,),
+            ).fetchall()
+            files: list[dict] = []
+            seen: dict[str, int] = {}
+            for r in rows:
+                fn = r["original_filename"]
+                dot = fn.rfind(".")
+                stem = fn[:dot] if dot > 0 else fn
+                # Variantenname in den Dateinamen, damit der Fotograf
+                # "10x15" von "20x30" derselben Aufnahme unterscheiden
+                # kann; Zaehler nur bei echter Namenskollision.
+                safe_variant = "".join(ch if ch.isalnum() else "-" for ch in (r["variant_name"] or "")).strip("-")
+                base = f"{stem}_print_{safe_variant}" if safe_variant else f"{stem}_print"
+                n = seen.get(base, 0) + 1
+                seen[base] = n
+                suffix = f"-{n}" if n > 1 else ""
+                if r["print_key"]:
+                    files.append({
+                        "id": r["item_id"],
+                        "original_filename": f"{base}{suffix}.jpg",
+                        "storage_key": r["print_key"],
+                        # Groesse unbekannt (nicht in der DB); der Packer
+                        # holt sie per HEAD, die Teilung ueberschaetzt
+                        # dann nicht — Druck-ZIPs einer Bestellung sind
+                        # ohnehin klein.
+                        "size_bytes": 0,
+                    })
+                else:
+                    # Nicht gerendert (kein Crop, oder Rendering fehlgeschlagen):
+                    # Original mit Hinweis im Namen, dass der Crop fehlt.
+                    files.append({
+                        "id": r["item_id"],
+                        "original_filename": f"{base}{suffix}_UNCROPPED{fn[dot:] if dot > 0 else ''}",
+                        "storage_key": r["orig_key"],
+                        "size_bytes": r["orig_size"],
+                    })
+            return files
+
         if variant == "web":
             # DISTINCT ON pro File-ID, mit ORDER-BY-Präferenz die beim
             # picken die "richtige" Rendition zieht: video_mp4 für

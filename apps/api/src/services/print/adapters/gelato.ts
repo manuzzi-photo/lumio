@@ -23,10 +23,14 @@
  * productUid beim Produkt-Anlegen als providerVariantRef ein (aus dem
  * Gelato-Dashboard). Dynamischer Katalog-Import: spätere Ausbaustufe.
  *
- * Crop-Hinweis: Gelato erwartet druckfertige Dateien. Ein vom Kunden
- * gesetzter freier Crop wird hier nicht angewendet — falls vorhanden,
- * sollte serverseitig vorab eine zugeschnittene Rendition erzeugt und
- * deren URL übergeben werden (spätere Ausbaustufe).
+ * Crop-Hinweis: Gelato erwartet druckfertige Dateien. Seit #55 (v0.78)
+ * rendert der Worker beim Uebergang nach `paid` fuer jede Zeile mit Crop
+ * genau so eine Datei; ihr S3-Key steht in PrintOrderItem.printFileKey.
+ * Wer submitOrder() an eine Route haengt, signiert imageUrl aus diesem
+ * Key (presignGet, TTL grosszuegig — Gelato zieht asynchron) und faellt
+ * nur bei printFileKey === null auf das Original zurueck. Heute ruft
+ * keine Route submitOrder() auf; manual_self_print und der ZIP-Export
+ * sind die aktiven Pfade und nutzen die gerenderte Datei bereits.
  */
 import type {
   PrintAdapter,

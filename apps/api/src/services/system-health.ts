@@ -237,7 +237,7 @@ export async function checkSystemHealth(): Promise<SystemHealth> {
 export interface UpdateInfo {
   /** Aktuelle Version aus package.json */
   currentVersion: string;
-  /** Latest-Tag aus Forgejo (null wenn check disabled oder failed) */
+  /** Latest-Tag aus dem Release-Repo (null wenn check disabled oder failed) */
   latestVersion: string | null;
   /** True wenn lokal < latest (Semver-Compare) */
   updateAvailable: boolean;
@@ -279,6 +279,34 @@ function semverGreater(a: string, b: string): boolean {
   return false;
 }
 
+
+/** Default-Quelle fuer den Update-Check: der oeffentliche GitHub-Spiegel. */
+export const DEFAULT_UPDATE_REPO =
+  "https://api.github.com/repos/markusthiel/lumio";
+
+/**
+ * Entscheidet, gegen welches Repo der Update-Check laeuft und ob dabei
+ * ein Token mitgeht.
+ *
+ * Als eigene, reine Funktion, weil hier eine Sicherheitsregel steckt,
+ * die man beim naechsten Anfassen sonst versehentlich wieder verliert:
+ * Der Token wird NUR mitgeschickt, wenn auch die URL gesetzt wurde.
+ * Andernfalls koennte ein Token, den jemand fuer sein eigenes privates
+ * Repo hinterlegt hat, an den Default-Host gehen, sobald sich dessen
+ * Adresse aendert — genau das waere beim Wechsel Forgejo -> GitHub
+ * passiert. Ein Token gehoert zu dem Repo, das man selbst angegeben hat.
+ */
+export function resolveUpdateSource(env: {
+  LUMIO_UPDATE_REPO_URL?: string;
+  LUMIO_UPDATE_REPO_TOKEN?: string;
+}): { repoBase: string; repoToken: string | undefined } {
+  const override = env.LUMIO_UPDATE_REPO_URL?.trim();
+  return {
+    repoBase: override || DEFAULT_UPDATE_REPO,
+    repoToken: override ? env.LUMIO_UPDATE_REPO_TOKEN?.trim() : undefined,
+  };
+}
+
 export async function checkForUpdate(force = false): Promise<UpdateInfo> {
   const disabledReason = process.env.DISABLE_UPDATE_CHECK
     ? "Update-Check via DISABLE_UPDATE_CHECK deaktiviert."
@@ -300,15 +328,23 @@ export async function checkForUpdate(force = false): Promise<UpdateInfo> {
     return _updateCache.data;
   }
 
-  // Default: das kanonische Lumio-Repo auf Forgejo. Die Forgejo-Release-API
-  // ist GitHub-kompatibel (tag_name/name/body/html_url/published_at). Da das
-  // Repo derzeit privat ist, braucht der Check ein Token — optional via
-  // LUMIO_UPDATE_REPO_TOKEN (Read-only-Token genügt). Ohne Token liefert
-  // Forgejo 404 und der Check zeigt sich als "nicht erreichbar".
-  const repoBase =
-    process.env.LUMIO_UPDATE_REPO_URL?.trim() ||
-    "https://forgejo.thiel.tools/api/v1/repos/thiel/lumio";
-  const repoToken = process.env.LUMIO_UPDATE_REPO_TOKEN?.trim();
+  // Default: der oeffentliche GitHub-Spiegel. Frueher zeigte das auf das
+  // Forgejo-Repo — das ist die Entwicklungsquelle, aber privat, also kam
+  // bei jeder fremden Instanz 404 und der Check stand dauerhaft auf
+  // "nicht erreichbar". GitHub traegt dieselben Releases inkl. Notes und
+  // ist ohne Token lesbar.
+  //
+  // Das Antwortformat ist identisch (tag_name/name/body/html_url/
+  // published_at) — Forgejos API ist GitHub-kompatibel, nicht umgekehrt,
+  // der Parser unten passt also auf beide.
+  //
+  // Rate-Limit: GitHub erlaubt anonym 60 Requests/Stunde je IP. Bei einem
+  // Cache-TTL von einer Stunde braucht eine Instanz genau einen.
+  //
+  // Wer auf einen eigenen Spiegel zeigen will (oder auf Forgejo, mit
+  // Token), setzt LUMIO_UPDATE_REPO_URL + optional
+  // LUMIO_UPDATE_REPO_TOKEN. Ganz abschalten: DISABLE_UPDATE_CHECK.
+  const { repoBase, repoToken } = resolveUpdateSource(process.env);
 
   try {
     const headers: Record<string, string> = { Accept: "application/json" };

@@ -36,7 +36,7 @@ I container di Lumio stesso (nome `lumio_*`) che occupano già la loro porta di 
 
 ## Cosa succede in caso di conflitto
 
-- **Porte con una variabile `.env` dedicata** (le sei elencate sopra): lo script chiede interattivamente una porta alternativa e la scrive direttamente in `.env`. Invio ricontrolla la stessa porta (utile se si è appena fermato il processo in conflitto), `s` mantiene comunque il default e prosegue.
+- **Porte con una variabile `.env` dedicata** (le sei elencate sopra): lo script chiede interattivamente una porta alternativa e la scrive direttamente in `.env`. Cerca a partire dalla porta in conflitto la prima libera e la propone — Invio accetta il suggerimento. Utile su host dove convivono più stack e una sola esecuzione incontra conflitti su più porte. `r` ricontrolla invece la stessa porta (utile se si è appena fermato il processo in conflitto), `s` mantiene comunque il default e prosegue. Se in 200 tentativi non trova una porta libera, Invio ricontrolla come prima.
 - **Porte senza variabile** (Postgres, Redis, acme-dns): sono fisse nel `docker-compose.yml` stesso. Lo script non modifica mai automaticamente un file tracciato da git: mostra invece la riga esatta da cambiare e dove trovarla.
 
 La scrittura in `.env` passa da un file temporaneo (`mktemp` + `mv`), il che come effetto collaterale restringe i permessi del file a `600` se erano più permissivi — un `644` leggibile da chiunque diventa ad esempio riservato al solo proprietario. È voluto, dato che `.env` contiene la password del database e altri segreti, ma avviene silenziosamente — utile saperlo se qualcosa fuori dal repo si aspetta un modo specifico su quel file.

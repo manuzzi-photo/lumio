@@ -9,12 +9,15 @@
 import { prisma } from "../../db.js";
 import { logger } from "../../logger.js";
 import { sendMail } from "../mail.js";
+import { resolveUnitPriceForQuantity, type PriceTierInput } from "./pricing-tiers.js";
 import {
   tmplPrintOrderConfirmGuest,
   tmplPrintOrderNotifyStudio,
   tmplPrintOrderShippedGuest,
+  tmplPrintOrderReadyForPickupGuest,
 } from "../mail-print.js";
 import { config } from "../../config.js";
+import { enqueue, Queues } from "../queue.js";
 import { studioNotifyEnabled } from "../notifications.js";
 import { tenantMailBranding } from "../notifier.js";
 import {
@@ -41,6 +44,9 @@ export interface CartItemInput {
   quantity: number;
   crop?: { x: number; y: number; width: number; height: number } | null;
   fileId: string;
+  /** Required when the variant has enabled finish options, rejected
+   *  when it has none. */
+  finishOptionId?: string | null;
 }
 
 export interface PricingResult {
@@ -52,6 +58,9 @@ export interface PricingResult {
   currency: string;
   vatBps: number;
   vatHandling: "inclusive" | "exclusive";
+  /** Snapshot of the chosen shipping method's isPickup flag. false when
+   *  no shippingMethodId was given (price-preview without a choice yet). */
+  isPickupDelivery: boolean;
   /** Pro-Item-Aufschluesselung fuer Reporting / Order-Storage */
   items: Array<{
     variantId: string;
@@ -60,7 +69,81 @@ export interface PricingResult {
     unitPriceCents: number;
     totalPriceCents: number;
     crop: CartItemInput["crop"] | null;
+    finishOptionId: string | null;
+    finishOptionName: string | null;
+    finishOptionSku: string | null;
   }>;
+}
+
+export interface VariantFinishOptionInfo {
+  id: string;
+  name: string;
+  sku: string | null;
+  priceDeltaCents: number;
+}
+
+export interface VariantPricingInfo {
+  priceCents: number;
+  priceTiers: PriceTierInput[];
+  finishOptions: VariantFinishOptionInfo[];
+}
+
+/**
+ * Resolves the per-unit and line-total price for every cart line.
+ *
+ * Quantity-break tiers apply per FORMAT, not per photo: a customer
+ * ordering 15 different photos as one "10x15" print each has 15 units
+ * of that variant, not 15 separate lines that each individually only
+ * "see" a quantity of 1. So the tier lookup uses the quantity SUMMED
+ * across every cart line sharing the same variantId — each line's own
+ * `quantity` still only determines that line's own total.
+ *
+ * Pure and DB-free on purpose: priceCart() is just this plus the
+ * Prisma I/O (loading variants, verifying ownership) around it, kept
+ * separate so the pricing math itself is directly unit-testable.
+ */
+export function resolveCartItemPricing(
+  items: CartItemInput[],
+  variantInfo: Map<string, VariantPricingInfo>
+): PricingResult["items"] {
+  const quantityByVariant = new Map<string, number>();
+  for (const i of items) {
+    quantityByVariant.set(
+      i.variantId,
+      (quantityByVariant.get(i.variantId) ?? 0) + i.quantity
+    );
+  }
+
+  return items.map((i) => {
+    const v = variantInfo.get(i.variantId)!;
+    const totalQtyForVariant = quantityByVariant.get(i.variantId)!;
+    const tierUnit = resolveUnitPriceForQuantity(v.priceCents, v.priceTiers, totalQtyForVariant);
+
+    // Finish is required exactly when the variant offers any — no
+    // silent default, since a surcharge could otherwise be skipped.
+    let finishOption: VariantFinishOptionInfo | null = null;
+    if (v.finishOptions.length > 0) {
+      finishOption = v.finishOptions.find((f) => f.id === i.finishOptionId) ?? null;
+      if (!finishOption) {
+        throw new Error(`Finish option required for variant ${i.variantId}`);
+      }
+    } else if (i.finishOptionId) {
+      throw new Error(`Variant ${i.variantId} has no finish options`);
+    }
+    const unit = tierUnit + (finishOption?.priceDeltaCents ?? 0);
+
+    return {
+      variantId: i.variantId,
+      fileId: i.fileId,
+      quantity: i.quantity,
+      unitPriceCents: unit,
+      totalPriceCents: unit * i.quantity,
+      crop: i.crop ?? null,
+      finishOptionId: finishOption?.id ?? null,
+      finishOptionName: finishOption?.name ?? null,
+      finishOptionSku: finishOption?.sku ?? null,
+    };
+  });
 }
 
 export async function priceCart(opts: {
@@ -98,7 +181,11 @@ export async function priceCart(opts: {
       enabled: true,
       printProduct: { tenantId: opts.tenantId, enabled: true },
     },
-    include: { printProduct: { select: { vatBpsOverride: true } } },
+    include: {
+      printProduct: { select: { vatBpsOverride: true } },
+      priceTiers: { orderBy: { minQty: "asc" } },
+      finishOptions: { where: { enabled: true }, orderBy: { displayOrder: "asc" } },
+    },
   });
   const variantMap = new Map(variants.map((v) => [v.id, v]));
   if (variantMap.size !== new Set(variantIds).size) {
@@ -120,6 +207,7 @@ export async function priceCart(opts: {
 
   // Shipping
   let shippingCents = 0;
+  let isPickupDelivery = false;
   if (opts.shippingMethodId) {
     const sm = await prisma.shippingMethod.findFirst({
       where: {
@@ -130,22 +218,19 @@ export async function priceCart(opts: {
     });
     if (!sm) throw new Error("Versandmethode unbekannt");
     shippingCents = sm.priceCents;
+    isPickupDelivery = sm.isPickup;
   }
 
-  // Subtotal pro Item
-  const pricedItems = opts.items.map((i) => {
-    const v = variantMap.get(i.variantId)!;
-    const unit = v.priceCents;
-    const lineTotal = unit * i.quantity;
-    return {
-      variantId: i.variantId,
-      fileId: i.fileId,
-      quantity: i.quantity,
-      unitPriceCents: unit,
-      totalPriceCents: lineTotal,
-      crop: i.crop ?? null,
-    };
-  });
+  // Subtotal pro Item (Staffelpreis-Aufloesung: siehe resolveCartItemPricing)
+  const pricedItems = resolveCartItemPricing(
+    opts.items,
+    new Map(
+      variants.map((v) => [
+        v.id,
+        { priceCents: v.priceCents, priceTiers: v.priceTiers, finishOptions: v.finishOptions },
+      ])
+    )
+  );
   const subtotalCents = pricedItems.reduce((s, i) => s + i.totalPriceCents, 0);
 
   // Tax: vereinfacht — gemeinsamer VAT-Bps (Mischsteuern muessten pro Variante
@@ -179,6 +264,7 @@ export async function priceCart(opts: {
     currency: cfg.currency,
     vatBps,
     vatHandling: cfg.vatHandling as "inclusive" | "exclusive",
+    isPickupDelivery,
     items: pricedItems,
   };
 }
@@ -193,14 +279,18 @@ export interface CheckoutInput {
   shippingMethodId: string;
   guestEmail: string;
   guestName: string;
-  shippingAddress: Record<string, unknown>;
+  /** Null only allowed when the resolved shipping method is a pickup
+   *  method — enforced below, after priceCart() resolves it. */
+  shippingAddress: Record<string, unknown> | null;
   billingAddress?: Record<string, unknown> | null;
   paymentMode: "stripe_connect" | "offline_invoice";
   guestNote?: string | null;
 }
 
-/** Erstellt eine Order im Status 'pending_payment' (stripe_connect)
- *  oder 'paid' (offline_invoice, da kein Online-Payment nötig). */
+/** Creates an order, always starting in 'pending_payment'. stripe_connect
+ *  orders move to 'paid' once the payment succeeds; offline_invoice
+ *  orders require a studio staff member to confirm payment manually via
+ *  the 'mark_paid' transition (with a payment reference). */
 export async function createOrder(input: CheckoutInput): Promise<{
   orderId: string;
   orderNumber: string;
@@ -212,6 +302,9 @@ export async function createOrder(input: CheckoutInput): Promise<{
     items: input.items,
     shippingMethodId: input.shippingMethodId,
   });
+  if (!totals.isPickupDelivery && !input.shippingAddress) {
+    throw new Error("Lieferadresse erforderlich fuer diese Versandmethode");
+  }
 
   // Provider-Resolve: erste Variante reicht — alle Items eines Carts
   // muessen denselben Provider haben (sonst splitten wir spaeter).
@@ -223,8 +316,6 @@ export async function createOrder(input: CheckoutInput): Promise<{
   const providerKey = firstVariant.printProduct.providerKey;
 
   const orderNumber = generateOrderNumber();
-  const initialStatus =
-    input.paymentMode === "offline_invoice" ? "paid" : "pending_payment";
 
   const order = await prisma.printOrder.create({
     data: {
@@ -242,11 +333,11 @@ export async function createOrder(input: CheckoutInput): Promise<{
       totalCents: totals.totalCents,
       applicationFeeCents: totals.applicationFeeCents,
       currency: totals.currency,
-      status: initialStatus,
+      status: "pending_payment",
       providerKey,
       shippingMethodId: input.shippingMethodId,
+      isPickupDelivery: totals.isPickupDelivery,
       guestNote: input.guestNote ?? null,
-      paidAt: input.paymentMode === "offline_invoice" ? new Date() : null,
       items: {
         create: totals.items.map((i) => ({
           printProductVariantId: i.variantId,
@@ -255,6 +346,9 @@ export async function createOrder(input: CheckoutInput): Promise<{
           quantity: i.quantity,
           unitPriceCents: i.unitPriceCents,
           totalPriceCents: i.totalPriceCents,
+          finishOptionId: i.finishOptionId,
+          finishOptionName: i.finishOptionName,
+          finishOptionSku: i.finishOptionSku,
         })),
       },
       events: {
@@ -267,25 +361,6 @@ export async function createOrder(input: CheckoutInput): Promise<{
     },
   });
 
-  // Bei offline_invoice direkt Mails feuern (Endkunde + Studio).
-  // Plus: 'mails_sent_paid'-Marker setzen damit der print-mail-sweeper
-  // diese Order NICHT nochmal versucht (er sucht paid-Orders ohne
-  // Marker). Bei stripe_connect kommt das erst nach
-  // payment_intent.succeeded + Sweeper.
-  if (input.paymentMode === "offline_invoice") {
-    void sendOrderMails(order.id, "paid").catch((err) =>
-      logger.warn({ err, orderId: order.id }, "print.order.mail_failed")
-    );
-    await prisma.printOrderEvent.create({
-      data: {
-        printOrderId: order.id,
-        eventType: "mails_sent_paid",
-        actor: "system",
-        data: { trigger: "offline_invoice_inline" } as never,
-      },
-    });
-  }
-
   return {
     orderId: order.id,
     orderNumber,
@@ -297,7 +372,12 @@ export async function createOrder(input: CheckoutInput): Promise<{
 // State-Transitions
 // =============================================================================
 type Transition =
-  | { type: "mark_paid"; actor: "system" | "studio"; actorUserId?: string }
+  | {
+      type: "mark_paid";
+      actor: "system" | "studio";
+      actorUserId?: string;
+      paymentReference?: string;
+    }
   | { type: "mark_in_production"; actor: "studio" | "system"; actorUserId?: string }
   | {
       type: "mark_shipped";
@@ -307,9 +387,82 @@ type Transition =
       trackingCarrier?: string;
       trackingUrl?: string;
     }
+  | {
+      type: "mark_ready_for_pickup";
+      actor: "studio" | "system";
+      actorUserId?: string;
+    }
   | { type: "mark_delivered"; actor: "studio" | "system"; actorUserId?: string }
   | { type: "cancel"; actor: "studio" | "system" | "guest"; actorUserId?: string; reason?: string }
   | { type: "refund"; actor: "studio" | "system"; actorUserId?: string; reason?: string };
+
+/**
+ * Druckfertige Crop-Dateien fuer eine Bestellung rendern lassen (#55).
+ *
+ * Wird beim Uebergang nach `paid` angestossen — nicht schon bei
+ * Erstellung, weil eine per Stripe abgebrochene Bestellung sonst Dateien
+ * im Storage hinterliesse, die nie jemand braucht. Auch offline_invoice-
+ * Orders starten jetzt in `pending_payment` und werden erst per
+ * mark_paid-Transition (Zahlungsreferenz durchs Studio) zu `paid` — der
+ * Render-Enqueue laeuft also fuer beide Payment-Modes ausschliesslich
+ * hier.
+ *
+ * Fire-and-forget wie die Mails daneben: schlaegt der Enqueue fehl, geht
+ * die Bestellung trotzdem durch — das Studio hat dann das Original plus
+ * die Crop-Werte aus der Bestellansicht, wie vor Stufe 2.
+ */
+function enqueuePrintRenders(orderId: string): void {
+  void enqueue(Queues.FILE_PROCESSING, {
+    type: "render_print_item",
+    orderId,
+  }).catch((err) =>
+    logger.warn({ err, orderId }, "print.order.render_enqueue_failed")
+  );
+}
+
+/** True when a 'mark_paid' transition on an offline_invoice order is
+ *  missing the payment reference it requires. stripe_connect orders
+ *  never require one — stripeChargeId already is their reference. */
+export function isMissingRequiredPaymentReference(
+  transitionType: Transition["type"],
+  paymentMode: string,
+  paymentReference: string | undefined
+): boolean {
+  return (
+    transitionType === "mark_paid" &&
+    paymentMode === "offline_invoice" &&
+    !paymentReference?.trim()
+  );
+}
+
+/** Allowed next transitions from a given status. The 'in_production'
+ *  step forks on isPickupDelivery: courier orders move to 'shipped',
+ *  pickup orders to 'ready_for_pickup' — both converge back on the
+ *  shared 'delivered' terminal status. */
+export function allowedTransitionsFor(
+  status: string,
+  isPickupDelivery: boolean
+): Transition["type"][] {
+  switch (status) {
+    case "draft":
+      return ["cancel"];
+    case "pending_payment":
+      return ["mark_paid", "cancel"];
+    case "paid":
+      return ["mark_in_production", "cancel", "refund"];
+    case "in_production":
+      return isPickupDelivery
+        ? ["mark_ready_for_pickup", "cancel", "refund"]
+        : ["mark_shipped", "cancel", "refund"];
+    case "shipped":
+    case "ready_for_pickup":
+      return ["mark_delivered", "refund"];
+    case "delivered":
+      return ["refund"];
+    default:
+      return [];
+  }
+}
 
 export async function transitionOrder(
   orderId: string,
@@ -320,21 +473,21 @@ export async function transitionOrder(
   });
   if (!order) throw new Error("Order nicht gefunden");
 
-  // Erlaubte Transitions je Quellzustand
-  const allowed: Record<string, Transition["type"][]> = {
-    draft: ["cancel"],
-    pending_payment: ["mark_paid", "cancel"],
-    paid: ["mark_in_production", "cancel", "refund"],
-    in_production: ["mark_shipped", "cancel", "refund"],
-    shipped: ["mark_delivered", "refund"],
-    delivered: ["refund"],
-    cancelled: [],
-    refunded: [],
-  };
-  const allowedHere = allowed[order.status] ?? [];
+  const allowedHere = allowedTransitionsFor(order.status, order.isPickupDelivery);
   if (!allowedHere.includes(t.type)) {
     throw new Error(
       `Transition ${t.type} aus Status ${order.status} nicht erlaubt`
+    );
+  }
+  if (
+    isMissingRequiredPaymentReference(
+      t.type,
+      order.paymentMode,
+      t.type === "mark_paid" ? t.paymentReference : undefined
+    )
+  ) {
+    throw new Error(
+      "paymentReference erforderlich, um eine offline_invoice-Bestellung als bezahlt zu markieren"
     );
   }
 
@@ -344,6 +497,9 @@ export async function transitionOrder(
     case "mark_paid":
       updates.status = "paid";
       updates.paidAt = now;
+      if (t.paymentReference?.trim()) {
+        updates.paymentReference = t.paymentReference.trim();
+      }
       break;
     case "mark_in_production":
       updates.status = "in_production";
@@ -355,6 +511,10 @@ export async function transitionOrder(
       if (t.trackingNumber) updates.trackingNumber = t.trackingNumber;
       if (t.trackingCarrier) updates.trackingCarrier = t.trackingCarrier;
       if (t.trackingUrl) updates.trackingUrl = t.trackingUrl;
+      break;
+    case "mark_ready_for_pickup":
+      updates.status = "ready_for_pickup";
+      updates.readyForPickupAt = now;
       break;
     case "mark_delivered":
       updates.status = "delivered";
@@ -414,11 +574,45 @@ export async function transitionOrder(
 
   // Mail-Trigger
   if (t.type === "mark_paid") {
-    void sendOrderMails(orderId, "paid").catch((err) =>
-      logger.warn({ err, orderId }, "print.order.mail_failed")
-    );
+    // Marker VOR dem Mail-Versand setzen (nicht danach) — sonst findet
+    // der print-mail-sweeper (laeuft alle 30s) dieselbe Order noch
+    // ohne Marker und verschickt die 'paid'-Mail ein zweites Mal.
+    //
+    // Existence-check + create in einer Transaktion, gleiches Muster
+    // wie print-mail-sweeper.ts's runOnce() — verhindert, dass zwei
+    // (fast) gleichzeitige mark_paid-Aufrufe (Doppelklick, ein
+    // wiederholter Request) beide ihren eigenen Marker anlegen und
+    // beide die Mail verschicken. Nur wer den Marker tatsaechlich
+    // anlegt, verschickt auch — der Verlierer des Race sieht einen
+    // bereits existierenden Marker und ueberspringt den Versand.
+    const markerCreated = await prisma.$transaction(async (tx) => {
+      const existingMarker = await tx.printOrderEvent.findFirst({
+        where: { printOrderId: orderId, eventType: "mails_sent_paid" },
+        select: { id: true },
+      });
+      if (existingMarker) return false;
+      await tx.printOrderEvent.create({
+        data: {
+          printOrderId: orderId,
+          eventType: "mails_sent_paid",
+          actor: "system",
+          data: { trigger: "mark_paid_transition" } as never,
+        },
+      });
+      return true;
+    });
+    if (markerCreated) {
+      void sendOrderMails(orderId, "paid").catch((err) =>
+        logger.warn({ err, orderId }, "print.order.mail_failed")
+      );
+      enqueuePrintRenders(orderId);
+    }
   } else if (t.type === "mark_shipped") {
     void sendOrderMails(orderId, "shipped").catch((err) =>
+      logger.warn({ err, orderId }, "print.order.mail_failed")
+    );
+  } else if (t.type === "mark_ready_for_pickup") {
+    void sendOrderMails(orderId, "ready_for_pickup").catch((err) =>
       logger.warn({ err, orderId }, "print.order.mail_failed")
     );
   }
@@ -449,7 +643,7 @@ function extractEventData(t: Transition): Record<string, unknown> | null {
  */
 export async function sendOrderMails(
   orderId: string,
-  trigger: "paid" | "shipped"
+  trigger: "paid" | "shipped" | "ready_for_pickup"
 ): Promise<void> {
   const order = await prisma.printOrder.findUnique({
     where: { id: orderId },
@@ -529,6 +723,17 @@ export async function sendOrderMails(
     await sendMail({
       to: order.guestEmail,
       ...tmplPrintOrderShippedGuest({
+        branding: mailBranding,
+        studioName,
+        supportEmail,
+        order: orderForMail,
+        locale: guestLocale,
+      }),
+    });
+  } else if (trigger === "ready_for_pickup") {
+    await sendMail({
+      to: order.guestEmail,
+      ...tmplPrintOrderReadyForPickupGuest({
         branding: mailBranding,
         studioName,
         supportEmail,

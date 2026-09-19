@@ -9,6 +9,8 @@ import cors from "@fastify/cors";
 import sensible from "@fastify/sensible";
 import rateLimit from "@fastify/rate-limit";
 
+import { ZodError } from "zod";
+
 import { config } from "./config.js";
 import { logger, loggerOptions } from "./logger.js";
 import { bootstrap } from "./bootstrap.js";
@@ -142,6 +144,50 @@ async function buildServer() {
   await app.register(authPlugin);
   await app.register(superAdminPlugin);
 
+  // Error handler.
+  //
+  // ORDER MATTERS, and it is the reason this sits above the route
+  // registrations rather than below them. A Fastify error handler is
+  // inherited by child contexts that are created AFTER it is set. This was
+  // previously registered below the /api/v1 register() call, so that scope —
+  // which is every API route — never inherited it and fell through to
+  // Fastify's default handler instead. Nothing in here ran for an API
+  // request, including the err.validation branch.
+  app.setErrorHandler((err, _req, reply) => {
+    // Zod throws on schema.parse(). A ZodError carries neither
+    // err.validation (that is Fastify's own schema validation) nor a
+    // statusCode, so without this branch it reaches the catch-all below and
+    // a caller's typo is reported as a server fault. Worse, the default
+    // handler put the raw issue array in the response message.
+    if (err instanceof ZodError) {
+      return reply.status(400).send({
+        error: "validation_failed",
+        message: "request validation failed",
+        // Flattened deliberately: the raw ZodIssue carries internals that a
+        // caller has no use for, and the shape changes between zod versions.
+        details: err.issues.map((issue) => ({
+          path: issue.path.join("."),
+          code: issue.code,
+          message: issue.message,
+        })),
+      });
+    }
+
+    app.log.error({ err }, "request failed");
+    if (err.validation) {
+      return reply.status(400).send({
+        error: "validation_failed",
+        message: err.message,
+        details: err.validation,
+      });
+    }
+    const status = err.statusCode ?? 500;
+    return reply.status(status).send({
+      error: status >= 500 ? "internal_error" : err.name,
+      message: status >= 500 ? "Internal server error" : err.message,
+    });
+  });
+
   // Routen
   await registerHealthRoute(app);
   await app.register(
@@ -228,22 +274,6 @@ async function buildServer() {
   // Block /ws/* (siehe infra/caddy/Caddyfile) direkt durchroutet ohne
   // Path-Rewrite.
   await registerWsRoutes(app);
-
-  app.setErrorHandler((err, _req, reply) => {
-    app.log.error({ err }, "request failed");
-    if (err.validation) {
-      return reply.status(400).send({
-        error: "validation_failed",
-        message: err.message,
-        details: err.validation,
-      });
-    }
-    const status = err.statusCode ?? 500;
-    return reply.status(status).send({
-      error: status >= 500 ? "internal_error" : err.name,
-      message: status >= 500 ? "Internal server error" : err.message,
-    });
-  });
 
   return app;
 }

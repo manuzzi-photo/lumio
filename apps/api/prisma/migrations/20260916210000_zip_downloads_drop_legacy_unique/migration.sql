@@ -1,0 +1,32 @@
+-- =============================================================================
+-- zip_downloads: liegengebliebenen Unique-Index von 2026-05-20 entfernen
+-- =============================================================================
+-- 20260520100000_watermark_zip legte an:
+--     CREATE UNIQUE INDEX "zip_downloads_galleryId_accessId_fileIdsHash_key"
+-- also einen INDEX, kein Table-Constraint (so generiert Prisma @@unique).
+--
+-- 20260529100000_download_variants wollte ihn durch eine Variante mit
+-- `variant` ersetzen und schrieb dafuer:
+--     ALTER TABLE ... DROP CONSTRAINT IF EXISTS "..._fileIdsHash_key";
+-- Ein Index hat aber keinen Eintrag in pg_constraint. DROP CONSTRAINT findet
+-- ihn nicht, und das IF EXISTS schluckt genau den Fehler, der darauf
+-- hingewiesen haette. Der Index ist seitdem still liegen geblieben.
+--
+-- Folge: auf jeder Instanz, die 20260529 mitgemacht hat, gilt weiterhin
+-- Eindeutigkeit ueber (galleryId, accessId, fileIdsHash) OHNE variant — und
+-- ohne source. Zwei legitime Zeilen, die sich nur in variant oder source
+-- unterscheiden (original vs. web; Kunden- vs. Studio-Export derselben
+-- Auswahl in einer oeffentlichen Galerie mit accessId=null), laufen damit in
+-- eine Unique-Verletzung statt nebeneinander zu existieren.
+--
+-- Das ist auch der Grund, warum die source-Trennung aus 20260915120000 sonst
+-- unvollstaendig bliebe: der neue Constraint ist richtig, aber der alte Index
+-- haette weiter dagegengehalten.
+--
+-- Dieselbe Verwechslung gab es schon einmal bei renditions; dort wurde sie in
+-- 20260629110000_pdf_pages_drop_legacy_unique korrekt per DROP INDEX
+-- aufgeloest. Hier dasselbe.
+--
+-- Idempotent und ungefaehrlich: auf Instanzen, die frueher aufgeraeumt haben
+-- oder frisch aufgesetzt wurden, ist es ein No-Op.
+DROP INDEX IF EXISTS "zip_downloads_galleryId_accessId_fileIdsHash_key";
