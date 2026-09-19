@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.80.0] - 2026-09-18
+
+A pull is enough — the database migrates automatically on start. Only the main server is affected.
+
+### Added
+
+- Print shop: collection in store. A shipping method can be marked as pickup, and an order placed with it asks for no delivery address at all. Such an order runs through "ready for collection" instead of "shipped" — the customer gets a mail when it can be picked up — and both paths end in "delivered". The studio's order list and detail view show which kind of order they are looking at. Thanks to @manuzzi (#37/#38).
+
 ## [0.79.0] - 2026-09-17
 
 A pull is enough — the database migrates automatically on start. Only the main server is affected. **One workflow change if you use offline invoicing** — see below.
