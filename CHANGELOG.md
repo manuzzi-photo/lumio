@@ -29,6 +29,8 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.81.0] - 2026-09-19
+
 A pull + regular redeploy is enough for the server/worker -- no schema
 migration involved, the new hash reuses the existing (previously unused)
 `exif` JSON field. **Anyone using the Lightroom plug-in has to reinstall
