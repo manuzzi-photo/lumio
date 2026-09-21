@@ -29,6 +29,14 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.82.0] - 2026-09-21
+
+A pull is enough. Only the main server is affected. Nothing changes on a single-studio installation.
+
+### Fixed
+
+- On an installation hosting several studios, the links in notification mails — the gallery invitation and the "your download is ready" mail — were built from one instance-wide address for everyone, so they did not point at the studio the gallery belongs to. They now use that studio's own custom domain or subdomain, falling back to the instance address where neither applies. A single-studio installation has exactly one address anyway and is unaffected, including when `LUMIO_DOMAIN_BASE` happens to be set. Thanks to @manuzzi (#30, #56).
+
 ## [0.81.0] - 2026-09-19
 
 A pull + regular redeploy is enough for the server/worker -- no schema
