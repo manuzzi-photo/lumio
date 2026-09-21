@@ -6,8 +6,10 @@
  * its path resolves the gallery through resolveGalleryBySlug(), so the
  * tenant rule lives in one place.
  *
- * A visitor has no session and sends no X-Lumio-Tenant header, so the tenant
- * comes from the request host (custom domain or subdomain) via resolveTenant().
+ * req.tenantId is whatever resolveTenant() returned for the request: a session,
+ * an X-Lumio-Tenant header, a custom domain, a subdomain or the single-mode
+ * default, in that order. For an anonymous visitor, i.e. a studio's client, it
+ * is derived from the request host.
  */
 import type { Prisma } from "@prisma/client";
 
@@ -17,19 +19,21 @@ import { prisma } from "../db.js";
 /**
  * Resolves a gallery by its public slug.
  *
- * - Multi mode and the request host maps to a tenant: exact lookup on
+ * - Multi mode and a tenant was resolved (tenantId is set): exact lookup on
  *   (tenantId, slug). A miss is final. A gallery of another tenant is never
- *   served under this tenant's host.
+ *   served for this tenant.
  * - Otherwise a slug-only lookup that serves the gallery only if exactly one
  *   matches, and refuses to guess (null) if several tenants use that slug.
  *   This covers a multi-tenant self-host without per-tenant subdomains or
  *   custom domains (tenantId is ""), where every gallery link used to work
  *   because the lookup was global.
- * - Single mode always takes the slug-only path. It has one tenant, so a slug
- *   is unique instance-wide and the result is identical to the old global
- *   lookup. This also keeps working if a second tenant was added to a
- *   single-mode install: getDefaultTenantId() pins every visitor to the oldest
- *   tenant, which would otherwise 404 the other tenant's galleries.
+ * - Single mode always takes the slug-only path. With its one tenant a slug is
+ *   unique instance-wide, so the result is identical to the old global lookup.
+ *   It also keeps working if a second tenant was added to a single-mode
+ *   install: getDefaultTenantId() pins every visitor to the oldest tenant,
+ *   which would otherwise 404 the other tenant's galleries. Only if two
+ *   tenants use the same slug does the lookup return null, as in the case
+ *   above.
  *
  * One query in every case: this runs on every file, ZIP and HLS request.
  */

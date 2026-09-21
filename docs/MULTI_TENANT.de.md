@@ -38,11 +38,12 @@ Sobald du den zweiten Tenant anlegst, fällt Schritt 5 weg — du musst
 
 **Galerie-Links.** Galerie-Slugs sind pro Studio eindeutig, nicht pro
 Installation — zwei Studios können also denselben lesbaren Slug nutzen. Ein
-Galerie-Link (`/g/<slug>`) wird gegen das Studio aufgelöst, auf das der Host
-zeigt (Schritte 3 und 4); eine Galerie öffnet sich also nur auf der Domain
-ihres eigenen Studios. Lässt sich aus dem Host kein Studio bestimmen — etwa bei
-einer Multi-Tenant-Installation ohne Subdomains oder Custom-Domains pro Studio
-—, wird der Slug über alle Studios gesucht, und die Galerie öffnet sich nur,
+Galerie-Link (`/g/<slug>`) wird gegen das Studio aufgelöst, das die
+Tenant-Auflösung liefert. Bei einem anonymen Besucher, also einem Kunden des
+Studios, kommt das aus dem Host (Schritte 3 und 4); eine Galerie öffnet sich
+also auf der Domain ihres eigenen Studios. Lässt sich kein Studio bestimmen —
+etwa bei einer Multi-Tenant-Installation ohne Subdomains oder Custom-Domains
+pro Studio —, wird der Slug über alle Studios gesucht, und die Galerie öffnet sich nur,
 wenn genau eine ihn hat; sind es mehrere, liefert der Link 404. Slugs sind
 heute zufällig, das Thema entsteht also erst, wenn Studios ihren Slug selbst
 wählen können und zwei denselben wählen. Eine Single-Studio-Installation sucht

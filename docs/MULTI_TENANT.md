@@ -26,7 +26,7 @@ When an API request comes in, tenant resolution runs in this order (see `apps/ap
 
 As soon as you create the second tenant, step 5 drops out — you have to use 2, 3 or 4.
 
-**Gallery links.** Gallery slugs are unique per studio, not per installation, so two studios can both use the same readable slug. A gallery link (`/g/<slug>`) is resolved against the studio its host maps to (steps 3 and 4), so a gallery only opens on its own studio's domain. If no studio can be resolved from the host — for example a multi-tenant installation without per-studio subdomains or custom domains — the slug is looked up across all studios and the gallery opens only if exactly one has it; if several do, the link returns 404. Slugs are random today, so this only comes up once studios can pick their own slug and two of them pick the same one. A single-studio installation always looks slugs up across the whole installation.
+**Gallery links.** Gallery slugs are unique per studio, not per installation, so two studios can both use the same readable slug. A gallery link (`/g/<slug>`) is resolved against the studio that tenant resolution returns. For an anonymous visitor, which is what a studio's clients are, that comes from the host (steps 3 and 4), so a gallery opens on its own studio's domain. If no studio can be resolved — for example a multi-tenant installation without per-studio subdomains or custom domains — the slug is looked up across all studios and the gallery opens only if exactly one has it; if several do, the link returns 404. Slugs are random today, so this only comes up once studios can pick their own slug and two of them pick the same one. A single-studio installation always looks slugs up across the whole installation.
 
 ---
 
