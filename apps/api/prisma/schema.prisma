@@ -427,7 +427,9 @@ model Gallery {
   brandingId      String?  @db.Uuid
   branding        Branding? @relation(fields: [brandingId], references: [id])
   
-  slug            String   @unique // kryptografisch zufällig, z.B. 12 chars
+  // Random by default (e.g. 12 chars). Unique per tenant, not per instance:
+  // see @@unique([tenantId, slug]) below and services/gallery-lookup.ts.
+  slug            String
   title           String
   description     String?
   
@@ -616,8 +618,10 @@ model Gallery {
   updatedAt       DateTime @updatedAt
   
   collaborators   GalleryCollaborator[]
+  @@unique([tenantId, slug])
   @@index([tenantId])
   @@index([ownerId])
+  // Not redundant: serves the slug-only fallback in resolveGalleryBySlug().
   @@index([slug])
   @@map("galleries")
 }

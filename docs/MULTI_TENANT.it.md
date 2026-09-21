@@ -26,6 +26,8 @@ Quando arriva una richiesta API, la risoluzione del tenant gira in questo ordine
 
 Non appena crei il secondo tenant, il passaggio 5 decade — devi usare 2, 3 o 4.
 
+**Link delle gallerie.** Gli slug delle gallerie sono univoci per studio, non per installazione, quindi due studi possono usare lo stesso slug leggibile. Un link di galleria (`/g/<slug>`) viene risolto rispetto allo studio a cui punta l'host (passaggi 3 e 4), per cui una galleria si apre solo sul dominio del proprio studio. Se dall'host non si riesce a determinare nessuno studio — per esempio in un'installazione multi-tenant senza sottodomini o domini personalizzati per studio — lo slug viene cercato tra tutti gli studi e la galleria si apre solo se ce n'è esattamente una; se ce ne sono più di una, il link restituisce 404. Oggi gli slug sono casuali, quindi il caso si presenta solo quando gli studi potranno scegliere il proprio slug e due sceglieranno lo stesso. Un'installazione con un solo studio cerca sempre gli slug su tutta l'installazione.
+
 ---
 
 ## Metodo B: domini personalizzati per cliente (consigliato per i primi clienti)
@@ -122,6 +124,6 @@ Il primo tenant, creato tramite `npm run create-admin`, ha slug=`default`. Se ge
 | 20+ clienti, non vuoi più modificare Caddy per cliente | A (wildcard) |
 | App mobile                       | C (header)                           |
 | Studio nel browser                   | risolto automaticamente via cookie dopo il primo login |
-| Link della galleria per il cliente           | funziona su qualsiasi dominio tenant |
+| Link della galleria per il cliente           | funziona sul dominio dello studio proprietario della galleria |
 
 I metodi sono combinabili — un tenant può avere contemporaneamente un dominio personalizzato E un sottodominio wildcard E un header mobile.
