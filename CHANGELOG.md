@@ -29,6 +29,8 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+A pull is enough for the server and the worker — nothing changes on their side. **Anyone using the Lightroom plug-in has to reinstall it:** the plug-in-side changes live only in the folder loaded into Lightroom, which is not updated along with the server. Re-add `apps/lightroom-plugin/lumio.lrdevplugin` in Lightroom (the plug-in then shows version 0.4.2).
+
 ### Added
 
 - Lightroom plug-in (v0.4.2): a published collection can now be a Collection Set, which becomes a "Chapters Gallery" — saving it immediately creates a "Default" child collection (photos published there land in the gallery's normal unsectioned bucket, same as today), and every additional child collection you add becomes a real Chapter (`GallerySection`) on Lumio, with its uploaded photos assigned to that chapter automatically. A new gallery's or chapter's title is always the Lightroom collection's own name — there's no separate title field to fill in twice. Nested Collection Sets are blocked. Renaming or deleting a chapter collection in Lightroom syncs to the corresponding chapter on Lumio, and "Show in Lumio" now also works on the Set itself, not just its chapters. A plain collection directly under the publish service keeps working exactly as before. No server-side changes were needed for this — reuses the existing Studio Section API. (Lightroom's own "Create Published Collection"/"Create Published Smart Collection" menu entries keep their generic Lightroom wording rather than a Lumio-branded one, since that text can't be varied depending on whether you're creating at the top level or inside a Chapters Gallery, and Smart Collections have no SDK-level way to be hidden at all.)
