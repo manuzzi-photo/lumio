@@ -29,6 +29,234 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.83.0] - 2026-09-21
+
+A pull is enough for the server and the worker — nothing changes on their side. **Anyone using the Lightroom plug-in has to reinstall it:** the plug-in-side changes live only in the folder loaded into Lightroom, which is not updated along with the server. Re-add `apps/lightroom-plugin/lumio.lrdevplugin` in Lightroom (the plug-in then shows version 0.4.2).
+
+### Added
+
+- Lightroom plug-in (v0.4.2): a published collection can now be a Collection Set, which becomes a "Chapters Gallery" — saving it immediately creates a "Default" child collection (photos published there land in the gallery's normal unsectioned bucket, same as today), and every additional child collection you add becomes a real Chapter (`GallerySection`) on Lumio, with its uploaded photos assigned to that chapter automatically. A new gallery's or chapter's title is always the Lightroom collection's own name — there's no separate title field to fill in twice. Nested Collection Sets are blocked. Renaming or deleting a chapter collection in Lightroom syncs to the corresponding chapter on Lumio, and "Show in Lumio" now also works on the Set itself, not just its chapters. A plain collection directly under the publish service keeps working exactly as before. No server-side changes were needed for this — reuses the existing Studio Section API. (Lightroom's own "Create Published Collection"/"Create Published Smart Collection" menu entries keep their generic Lightroom wording rather than a Lumio-branded one, since that text can't be varied depending on whether you're creating at the top level or inside a Chapters Gallery, and Smart Collections have no SDK-level way to be hidden at all.)
+
+### Fixed
+
+- Lightroom plug-in: renaming or deleting a Collection Set (Chapters Gallery) only left the Lumio gallery untouched because the resulting error (calling a plain-collection-only method on a Set object) was silently swallowed — the intended no-op now happens via an explicit check instead of an incidental failure. Also, deleting a chapter collection only syncs to Lumio when "Delete" (not "Leave on Service") is chosen in Lightroom's own confirmation dialog — this is documented Lightroom SDK behavior, not something the plug-in can control, so the README now explains it instead of implying it always syncs. (Found via further real-device testing by [@canja006](https://github.com/canja006).)
+- Lightroom plug-in: several Chapters Gallery bugs found via real-device testing on 0.4.1 — the "Default" chapter collection could fail to be created (querying a just-created collection's info inside the same catalog write transaction that created it is not allowed), a chapter's parent gallery could fail to resolve on publish (a non-existent catalog method was being called), and "Show in Lumio" on the Set itself always errored (it only ever tried the plain-collection info method, not the Set one). All three are fixed; "Show in Lumio" on a Chapters Gallery now works.
+
+## [0.82.0] - 2026-09-21
+
+A pull is enough. Only the main server is affected. Nothing changes on a single-studio installation.
+
+### Fixed
+
+- On an installation hosting several studios, the links in notification mails — the gallery invitation and the "your download is ready" mail — were built from one instance-wide address for everyone, so they did not point at the studio the gallery belongs to. They now use that studio's own custom domain or subdomain, falling back to the instance address where neither applies. A single-studio installation has exactly one address anyway and is unaffected, including when `LUMIO_DOMAIN_BASE` happens to be set. Thanks to @manuzzi (#30, #56).
+
+## [0.81.0] - 2026-09-19
+
+A pull + regular redeploy is enough for the server/worker -- no schema
+migration involved, the new hash reuses the existing (previously unused)
+`exif` JSON field. **Anyone using the Lightroom plug-in has to reinstall
+it:** the plug-in-side changes live only in the folder loaded into
+Lightroom, which is not updated along with the server. Re-add
+`apps/lightroom-plugin/lumio.lrdevplugin` in Lightroom, and check that a
+`icon.png` now shows for the Lumio publish service where it used to be
+blank/broken.
+
+### Added
+
+- Lightroom plug-in: the Publish-Service now embeds the MD5 hash of the original master file into a custom XMP field of the uploaded JPEG, and the Selection-Import side uses it to automatically resolve ambiguous filename matches (e.g. the same shot published as both `.NEF` and `.DNG`) and, with a new opt-in option, to recover files that were renamed in Lightroom after publishing. Only available for files published from this plug-in version onward.
+
+### Changed
+
+- Lightroom plug-in: "Show in Lumio" (right-click a published collection) now opens the gallery's Studio management view instead of the public customer-facing gallery link. A new per-photo "Show public gallery" entry (right-click a published photo) covers the case where you do want the customer's view.
+
+### Fixed
+
+- Lightroom plug-in: the publish service's icon was referenced but never shipped, so it showed up blank/broken in Lightroom's Publishing Services panel.
+- Lightroom plug-in: re-publishing a photo (after an edit, or via "Republish") uploaded a new file without ever removing the previous one, so the online gallery accumulated several versions of the same photo. The plug-in now deletes the old remote file before uploading the new one.
+- Lightroom plug-in: the embedded original-file hash could land before a leading JFIF (APP0) segment in the uploaded JPEG, which some strict readers (print lab intake, some third-party tools) don't tolerate. It's now inserted after APP0 when one is present.
+- Lightroom plug-in: the renamed-file recovery pass could silently skip files when several Lumio uploads shared the same original-file hash (e.g. virtual copies of one master) — only one of them was ever attempted. All of them are now resolved.
+- Worker: processing a file with no original-file hash to report (i.e. almost every file, since only the Lightroom plug-in ever produces one) was quietly turning `exif` from `NULL` into `{}`. The `exif` column is now left untouched when there's nothing to write into it.
+- Lightroom plug-in: the per-photo "Show public gallery" entry always failed ("Gallery slug or host is missing"), because the collection info Lightroom actually hands to that hook has no `collectionSettings` field to read from. Fixed by fetching the collection's settings through the photo instead (credit: [@canja006](https://github.com/canja006), tested against a real Lightroom Classic install).
+- Lightroom plug-in: a published collection bound to an *existing* Lumio gallery (picked from the dropdown, rather than created from the plug-in) never had its gallery slug saved, leaving the public-gallery link dependent on a cache that goes stale as soon as the gallery is edited in Studio. It now self-heals on the next publish.
+- Lightroom plug-in: recovering renamed files by content hash took over 4 minutes on a 2774-photo catalog (the default search scope), with Lightroom visibly sluggish throughout — measured on real hardware. The pass now stops as soon as every renamed file has been found, skips photos already matched by filename, and, most importantly, embeds the original file's byte size alongside its hash so most catalog photos can be ruled out with a plain file-size check instead of being fully read into memory just to be hashed.
+- Lightroom plug-in: the log-file location documented for macOS was wrong for current Lightroom Classic versions (confirmed on 15.5: `~/Library/Logs/Adobe/Lightroom/LrClassicLogs/Lumio.log`, not `~/Documents/LrClassicLogs/`).
+
+## [0.80.1] - 2026-09-19
+
+A pull is enough. Affects the port-check script only — nothing in the running application.
+
+### Changed
+
+- `lumio-check-ports.sh` now offers a free port instead of only asking for one. On a conflict it scans upward from the busy port and proposes the first one that is actually free, checked the same way the script checks everything else; Enter accepts it, `r` rechecks the original, `s` keeps it as before. This matters on a host running several stacks side by side, where one run can hit conflicts on several ports and each one previously meant going off to find a free port yourself. Requested by @manuzzi (#18).
+
+## [0.80.0] - 2026-09-18
+
+A pull is enough — the database migrates automatically on start. Only the main server is affected.
+
+### Added
+
+- Print shop: collection in store. A shipping method can be marked as pickup, and an order placed with it asks for no delivery address at all. Such an order runs through "ready for collection" instead of "shipped" — the customer gets a mail when it can be picked up — and both paths end in "delivered". The studio's order list and detail view show which kind of order they are looking at. Thanks to @manuzzi (#37/#38).
+
+## [0.79.0] - 2026-09-17
+
+A pull is enough — the database migrates automatically on start. Only the main server is affected. **One workflow change if you use offline invoicing** — see below.
+
+### Added
+
+- Orders paid by invoice now wait for confirmation instead of counting as paid the moment they are placed. Somebody at the studio marks them paid once the money has actually arrived, and records a reference — an invoice or receipt number — which is kept on the order and shown in its history. Until then the order sits in "pending payment", the same as an unpaid card order. Thanks to @manuzzi (#35/#36).
+
+### ⚠️ Upgrade notes
+
+- **Invoice orders no longer start as paid.** Previously an order placed with "pay by invoice" was created in the paid state immediately, and the customer and studio mails went out at once. From now on it starts as pending, and the confirmation mails follow when a staff member confirms payment — which also requires entering a reference. Orders already in your database are unaffected; only newly placed ones behave this way. If your studio relies on the old behaviour, note that print files are now rendered at confirmation rather than at order time.
+
+## [0.78.1] - 2026-09-17
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- Adding several photos to the cart at once produced order lines with no crop, while adding one at a time always recorded one. Since v0.78.0 renders only lines that carry a crop, a single order could end up with some files cropped and some not — the ZIP mixed print-ready files with `_UNCROPPED` originals. Bulk lines now get the same centred default the single-photo dialog starts from, computed from each photo's own dimensions. The dialog says so, and points out that ordering a photo on its own is the way to choose the crop yourself. Closes #53.
+
+## [0.78.0] - 2026-09-17
+
+A pull is enough — the database migrates automatically on start. **Both the main server and the worker nodes need this one, main server first.** Without the worker, paid orders log an unknown job type and print ZIPs contain only `_UNCROPPED` originals.
+
+### Added
+
+- The crop a customer chooses in the print shop is now applied. When an order becomes paid, the worker renders one cropped, print-ready JPEG per order line — full resolution, converted to sRGB where the original carries a colour profile, transparency flattened to white. The studio's order page links to it next to the crop values, and the order ZIP contains these files instead of the originals, one per line, named after the photo and the print format. Lines without a rendered file (no crop chosen, or rendering failed) are still included as originals with an `_UNCROPPED` suffix, so nothing goes missing quietly. Closes #55 (reported by @manuzzi).
+- Rendering happens at payment rather than at order creation, so an order abandoned at Stripe leaves nothing behind. Offline-invoice orders are paid from the start and render immediately.
+
+### Changed
+
+- The order ZIP for a print order is now built per order line rather than per distinct photo. The same photo ordered twice with different crops yields two files.
+- The lab adapters (Prodigi, Gelato) document where the rendered file lives. They are not wired to any route yet — nothing submits orders to a lab automatically — so this is a note for whoever does that, not a behaviour change.
+
+## [0.77.2] - 2026-09-17
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- The crop a customer chooses in the print shop was stored but never shown to anyone. The studio's order page now draws the chosen region over a preview of each photo and states it in pixels, and both the CSV and the Markdown export carry a `Crop` column with the same values. Until the crop is applied to the file itself (next release), it is marked as such right next to the download — the file behind that link is still the untouched original, and the studio crops to the stated values before printing. Reported by @manuzzi (#55).
+
+## [0.77.1] - 2026-09-17
+
+A pull is enough. Only the main server is affected. **One visible change:** the shape of error bodies from `/api/v1` — see the note below.
+
+### Fixed
+
+- Sending a value the API rejects — a title over the length limit, an unknown status, a malformed date — answered **500 Internal Server Error** instead of 400, and put the raw validation output in the response message. It now answers 400 with the field, the reason and a stable shape. Anything written against those endpoints could not previously tell a bad request from a broken server.
+- The cause was wider than the status code. The error handler sat below the route registrations in `server.ts`, and a Fastify error handler is only inherited by parts of the app created after it is set, so **nothing in it ran for any `/api/v1` request** — including the validation branch that was already there. It is now set before the routes, so it applies. Thanks to @bradley-varol (#54).
+
+### Security
+
+- Because the handler never ran, genuine server faults were answered with Fastify's default body, which includes the exception's own message. Database and library errors can carry table names, column names and file paths, and those went to the client. Faults now answer with a fixed "Internal server error" and nothing else, as the handler always intended.
+
+### ⚠️ Upgrade notes
+
+- **Error responses from `/api/v1` change shape.** They were being formatted by Fastify's default, which included a `statusCode` field in the body. They now use the intended format: `{"error": ..., "message": ...}`, plus `details` for validation failures. HTTP status codes are unchanged, and were always the reliable signal. If you have written anything that reads `statusCode` out of an error *body*, read the HTTP status instead. The `error` field also now carries the exception name, so for example an unauthorised request reports `UnauthorizedError` rather than `Unauthorized`. The Lumio frontend itself is unaffected — it matches on its own application codes, which don't pass through this handler.
+
+## [0.77.0] - 2026-09-17
+
+A pull is enough — the database migrates automatically on start. Only the main server is affected.
+
+### Added
+
+- Print shop: selectable finish options per variant, such as a frame colour. Each option can carry its own SKU and a surcharge, which is added on top of the quantity-break price rather than folded into it — ten black frames and five white ones are still fifteen prints of that format. The chosen option is stored on the order line as a snapshot, so renaming or removing it later doesn't change what a past order says. Imported alongside the catalog, managed on the product page, and shown in the CSV and Markdown exports. Thanks to @manuzzi (#41/#42).
+
+## [0.76.1] - 2026-09-16
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- A client gallery containing exactly one file said "1 FILES" in the header. The count now picks the singular or plural wording, the way the rest of the interface already does. The German wording for it was also still the English "Files", and the Finnish was in a form that does not follow a number, so both are corrected. Thanks to @bradley-varol (#51).
+- An expiry date on a gallery could not be removed once set — `PATCH` with `expiresAt: null` was rejected before the handler ran, although clearing was always what the handler intended. Nullable on update now; create is unchanged. Thanks to @bradley-varol (#50).
+
+## [0.76.0] - 2026-09-16
+
+A pull is enough — the database migrates automatically on start. Only the main server is affected.
+
+### Added
+
+- Print shop: bulk catalog import with tiered pricing. A lab's price list can be imported in one go, including quantity breaks, and the cost side carries its own tiers so the margin shown to the studio stays right at volume. Thanks to @manuzzi (#33/#34).
+- Print shop: select several photos at once and add them to the cart in one step, with the tier preview reflecting the whole selection. Thanks to @manuzzi (#39/#40).
+- Print shop: download all photos of an order as a ZIP, plus a Markdown order summary alongside the existing CSV. Thanks to @manuzzi (#43/#44).
+
+### Fixed
+
+- **A fresh install could not start.** `docker compose up` pulled MinIO from Docker Hub, and MinIO has since closed anonymous access to `minio/minio` and `minio/mc` there — the pull now fails with a 401, before anything else runs. Both images now come from `quay.io/minio/…`, where MinIO keeps `latest` maintained and which has no Docker Hub rate limit to hit. Existing installations keep running on their cached images either way; a pull picks up the new source. If you run your own S3 (Hetzner, R2, …) and have the MinIO service commented out, nothing changes for you.
+
+### Security
+
+- A ZIP built by the studio (tag export, print-order bundle) could be fetched through the customer route, because both kinds of record looked identical once the gallery was public. This included original files in a gallery where original downloads are switched off for customers. ZIP records now record who built them, and the customer route serves only customer-built ones. It also re-checks the gallery's current download settings when serving, not just when building. Reported as #45, fixed by @manuzzi (#52).
+- Removed a unique index on `zip_downloads` that has been sitting there unused since May. It was meant to be replaced back then, but the migration tried to drop it as a table constraint while it had been created as an index, so the drop silently did nothing. Left in place it would have kept enforcing uniqueness without `variant` or `source` — two legitimate ZIPs differing only in those would have collided instead of coexisting.
+
+## [0.75.4] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- The title and link preview of a client gallery fell back to a generic "Gallery · Lumio" on every standard installation. When a gallery link was shared on WhatsApp, Slack or iMessage, the preview showed neither the gallery title nor the hero image. The cause: the server-side render asked the API through a relative address, which works in a browser but not in Node, where it fails outright. The address now defaults to the API inside the Docker network. If you run frontend and API separately, set `INTERNAL_API_URL` to an absolute URL — it is now listed in `docker-compose.yml` and documented in the example env file.
+- Images in link previews were built as relative paths when `NEXT_PUBLIC_API_URL` was empty, which is the default. They are now built from the host of the incoming request, so they are correct per studio even when several studios share one installation under different domains.
+- A failing metadata fetch is now logged instead of silently swallowed. The generic title was the only visible symptom, which is why this went unnoticed for so long.
+
+## [0.75.3] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- A client gallery always showed the normal logo, never the light variant, so a dark logo on a dark branding colour was barely visible — even with a light version uploaded. The gallery now picks the variant that matches the background, the same way text colour has always been chosen. The branding editor's preview was already showing the light one, which is why the preview and the real gallery disagreed. If no light variant is uploaded, the normal logo is used as before.
+
+## [0.75.2] - 2026-09-11
+
+Documentation only. A pull is enough; nothing needs restarting for the change itself.
+
+### Changed
+
+- `DEVELOPMENT.md` presented the maintainer's container registry as if it were the reader's own — "if your Forgejo registry is private" followed by our hostname, which meant anyone following it would log in to ours. The hostname is now labelled as the upstream project's, and the login example uses a placeholder. The section was already marked maintainer-internal; this removes the remaining ambiguity inside it.
+
+## [0.75.1] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- The "latest version" check pointed at the development repository, which isn't publicly readable — so on every installation other than ours it returned a 404 and the check sat permanently on "not reachable". It now uses the public GitHub mirror, which carries the same releases and needs no token. If you point `LUMIO_UPDATE_REPO_URL` at your own mirror, nothing changes for you.
+
+### Security
+
+- A token in `LUMIO_UPDATE_REPO_TOKEN` is now only sent when `LUMIO_UPDATE_REPO_URL` is set as well. Previously it was attached to whatever host the check happened to be using, so a token stored for your own private repository would have been sent to the default host as soon as that address changed — which is exactly what this release does. A token belongs to the repository you named yourself.
+
+## [0.75.0] - 2026-09-11
+
+A pull is enough — no changes to `.env` or the compose command. The database migrates automatically on start. **Both the main server and any worker nodes need to be updated**, since the worker learned to optimise the new asset.
+
+### Added
+
+- A studio-wide favicon, set under Appearance next to the logos. It applies everywhere the studio shows up: the studio interface itself, the login page and client galleries.
+- A branding profile's favicon now overrides the studio one for the galleries that use it, so a gallery can be given a themed icon without changing the studio default. The order is branding, then studio, then the Lumio icon — an empty favicon field in a branding profile no longer falls straight back to Lumio.
+
+### Fixed
+
+- The title of a client gallery showed the name of the branding *profile* — an internal label like "Standard" or "Wedding style" — rather than the studio. It now uses the public studio name from the studio settings. This was visible in the browser tab and in every link preview on WhatsApp, Slack and similar.
+
+## [0.74.2] - 2026-09-11
+
+A pull is enough. Only the main server is affected.
+
+### Fixed
+
+- A branding favicon was never actually applied to a client gallery. The layout declares three icon links (an SVG plus 32px and 16px PNGs) and only the first was being rewritten, keeping its `image/svg+xml` type while the two sized PNGs still pointed at the Lumio default — which is the one browsers prefer. All icon links are now replaced by a single one pointing at the branding favicon. Thanks to @lisachev for the report, including everything that had already been ruled out.
+- The self-hosting guides told you to start with `docker compose ... up -d`, without `--build`. Since `docker-compose.prod.yml` names images in a registry that isn't publicly readable, that call fails with a 401 instead of starting anything. Both the standard and the Synology guide now use `--build` and explain why. Reported by @lisachev.
+
+### Changed
+
+- The studio interface no longer says "tenant" anywhere. A tenant and a studio are the same thing — the word belongs to administration (creating, suspending, billing) and shows up in the Super-Admin area, not in the UI a photographer works in. Renamed "Tenant default" to "Studio default" and adjusted the branding, watermark and audit-log wording to match. The Finnish translation already did this correctly.
+- `MULTI_TENANT.md` now states up front that a tenant and a studio are the same row, and when each word is used. `SELFHOSTING.md` notes that in single mode the one auto-created tenant is your studio and the term won't come up again. `KONZEPT.md` marks the two marketing repositories and the container registry as private, so the references there don't look like broken links.
+
 ## [0.74.1] - 2026-08-27
 
 A pull is enough. Only the main server is affected.

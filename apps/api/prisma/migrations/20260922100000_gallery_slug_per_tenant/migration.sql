@@ -1,0 +1,25 @@
+-- =============================================================================
+-- galleries: make the slug unique per tenant instead of per instance
+-- =============================================================================
+-- Until now `slug` carried its own UNIQUE INDEX ("galleries_slug_key"), so two
+-- studios on the same instance could not both use a readable slug, and a gallery
+-- of studio B resolved under studio A's host. The schema now declares
+-- @@unique([tenantId, slug]).
+--
+-- Prisma turns @@unique into a UNIQUE INDEX, not a table constraint. That is why
+-- the old key is removed with DROP INDEX: ALTER TABLE ... DROP CONSTRAINT would
+-- not find it in pg_constraint, and IF EXISTS would hide exactly that (the same
+-- trap described in 20260916210000_zip_downloads_drop_legacy_unique).
+--
+-- Order matters only for safety: the new index is created first, so slug
+-- uniqueness is never absent. It cannot fail on existing data, because the old
+-- key was strictly stricter (globally unique implies unique per tenant). No
+-- backfill: existing random slugs stay valid under the composite key.
+--
+-- "galleries_slug_idx" (plain index on slug) is deliberately kept: the public
+-- lookup falls back to a slug-only query when no tenant can be resolved from the
+-- request host.
+--
+-- Idempotent: a no-op on instances where either step already happened.
+CREATE UNIQUE INDEX IF NOT EXISTS "galleries_tenantId_slug_key" ON "galleries"("tenantId", "slug");
+DROP INDEX IF EXISTS "galleries_slug_key";

@@ -20,11 +20,15 @@ import { prisma } from "../db.js";
 import { config } from "../config.js";
 import { generateGallerySlug } from "../services/ids.js";
 import { validateGallerySlugFormat, GALLERY_SLUG_MAX_LENGTH } from "../services/slugs.js";
+import { resolveGalleryBySlug } from "../services/gallery-lookup.js";
 import { presignGet, presignPut, getObjectStream } from "../services/storage.js";
 import { verifyPassword, hashPassword } from "../services/auth.js";
 import { isTenantPubliclyVisible } from "../services/tenant.js";
 import { enqueue, Queues } from "../services/queue.js";
-import { resolveGalleryBranding } from "../services/branding.js";
+import {
+  resolveGalleryBranding,
+  resolveFaviconUrl,
+} from "../services/branding.js";
 import { logEvent } from "../services/audit.js";
 import { checkActiveGalleriesLimit, checkFeatureAvailable } from "../services/usage.js";
 import { publishEvent } from "../services/webhooks.js";
@@ -181,6 +185,13 @@ const updateGallerySchema = createGallerySchema.partial().extend({
   // handler via validateGallerySlugFormat, same pattern as the tenant
   // slug in routes/settings.ts.
   slug: z.string().max(GALLERY_SLUG_MAX_LENGTH).optional(),
+  // Nullable only on update, where null means "remove the expiry date".
+  // The update mapping below has always written `body.expiresAt ? … : null`,
+  // so clearing was the intended behaviour; the schema inherited from
+  // createGallerySchema just never allowed null through, which made an expiry
+  // date impossible to remove once set. Left non-nullable on create, where
+  // null and omitted would mean the same thing anyway.
+  expiresAt: z.string().datetime().nullable().optional(),
   // Passwortschutz: String = setzen, null = entfernen, weglassen =
   // unverändert. Wird serverseitig gehasht.
   password: z.string().min(1).max(200).nullable().optional(),
@@ -266,8 +277,7 @@ export async function loadVisitor(
 ): Promise<{ galleryId: string; accessId: string | null } | null> {
   // Wir holen die Galerie über den Slug, damit wir wissen, welches
   // Cookie zu prüfen ist.
-  const gallery = await prisma.gallery.findUnique({
-    where: { slug: req.params.slug },
+  const gallery = await resolveGalleryBySlug(req, req.params.slug, {
     select: {
       id: true,
       status: true,
@@ -598,12 +608,13 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         : null,
     };
 
-    // Slug ist global eindeutig (User klickt einen Share-Link, der den Tenant
-    // nicht im Pfad mitführt). Wir versuchen ein paar Mal bei Kollision.
+    // Slugs are unique per tenant (@@unique([tenantId, slug])); the share link
+    // does not carry the tenant in its path, the host does. Retry a few times
+    // on a collision within this tenant.
     let slug = generateGallerySlug();
     for (let attempt = 0; attempt < 5; attempt++) {
       const exists = await prisma.gallery.findUnique({
-        where: { slug },
+        where: { tenantId_slug: { tenantId: req.tenantId, slug } },
         select: { id: true },
       });
       if (!exists) break;
@@ -904,11 +915,15 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
           });
         }
         if (candidate !== existing.slug) {
-          // Global uniqueness, no tenantId filter — slugs are shared
-          // across all tenants (see the create-flow comment above on
-          // generateGallerySlug's collision-retry loop).
+          // Tenant-scoped uniqueness (@@unique([tenantId, slug])), same as
+          // the create-flow retry loop above — two studios can share a
+          // slug, so the check must not leak across tenants.
           const taken = await prisma.gallery.findFirst({
-            where: { slug: candidate, NOT: { id: existing.id } },
+            where: {
+              tenantId: req.tenantId,
+              slug: candidate,
+              NOT: { id: existing.id },
+            },
             select: { id: true },
           });
           if (taken) {
@@ -1744,8 +1759,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
     Params: { slug: string };
     Querystring: { t?: string };
   }>("/g/:slug", async (req, reply) => {
-    const gallery = await prisma.gallery.findUnique({
-      where: { slug: req.params.slug },
+    const gallery = await resolveGalleryBySlug(req, req.params.slug, {
       select: {
         id: true,
         slug: true,
@@ -1856,6 +1870,15 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
       galleryBrandingId: gallery.brandingId,
       tenantId: gallery.tenantId,
     });
+    const faviconUrl = await resolveFaviconUrl(
+      gallery.tenantId,
+      branding?.faviconUrl ?? null
+    );
+    const tenantRow = await prisma.tenant.findUnique({
+      where: { id: gallery.tenantId },
+      select: { displayName: true, name: true },
+    });
+    const studioName = tenantRow?.displayName ?? tenantRow?.name ?? null;
 
     // Hero-File auflösen: wenn heroFileId gesetzt, geben wir einen
     // Presigned-URL zur Web-Rendition zurück. Bevorzugt web_jpeg
@@ -1986,6 +2009,17 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         publicAccess: gallery.publicAccess,
         unlocked,
         branding,
+        // Favicon der Galerie, fertig aufgeloest: Branding-Profil ->
+        // Studio -> null. Bewusst NEBEN branding und nicht darin, weil
+        // branding null ist, wenn das Studio gar kein Profil angelegt
+        // hat — ein Self-Hoster mit Studio-Favicon aber ohne Branding
+        // bekaeme sonst nie sein eigenes Icon.
+        faviconUrl,
+        // Oeffentlicher Studio-Name fuer Titel und Share-Vorschau.
+        // NICHT branding.name: das ist die interne Profilbezeichnung
+        // ("Standard", "Hochzeit-Style") und hat im Browser-Tab nichts
+        // zu suchen.
+        studioName,
         // Header-Customization durchreichen
         header: {
           // Render-Variante: minimal | splash | side_by_side | centered
@@ -2033,8 +2067,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
     },
     async (req, reply) => {
       const body = unlockSchema.parse(req.body);
-      const gallery = await prisma.gallery.findUnique({
-        where: { slug: req.params.slug },
+      const gallery = await resolveGalleryBySlug(req, req.params.slug, {
         select: {
           id: true,
           tenantId: true,
@@ -2731,8 +2764,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
   app.get<{ Params: { slug: string; kind: "logo" | "hero" | "audio" } }>(
     "/g/:slug/assets/:kind",
     async (req, reply) => {
-      const gallery = await prisma.gallery.findUnique({
-        where: { slug: req.params.slug },
+      const gallery = await resolveGalleryBySlug(req, req.params.slug, {
         select: {
           status: true,
           eventLogoUrl: true,

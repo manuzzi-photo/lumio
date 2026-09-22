@@ -24,19 +24,22 @@ import { z } from "zod";
 import { prisma } from "../db.js";
 import { config } from "../config.js";
 import { isFeatureEnabled } from "../services/feature-flags.js";
+import { resolveGalleryBySlug } from "../services/gallery-lookup.js";
 import { loadVisitor } from "./galleries.js";
 import { createOrder, priceCart } from "../services/print/orders.js";
 import { createPaymentIntentForOrder } from "../services/print/payment.js";
 import { getPrintProvider } from "../services/print/providers.js";
 
 /** Prueft Sichtbarkeit + liefert tenantId/galleryId zurueck. */
-async function resolveGalleryForPrintShop(slug: string): Promise<{
+async function resolveGalleryForPrintShop(req: {
+  tenantId: string;
+  params: { slug: string };
+}): Promise<{
   tenantId: string;
   galleryId: string;
   galleryTitle: string;
 } | null> {
-  const gallery = await prisma.gallery.findUnique({
-    where: { slug },
+  const gallery = await resolveGalleryBySlug(req, req.params.slug, {
     select: {
       id: true,
       title: true,
@@ -76,7 +79,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
   app.get<{ Params: { slug: string } }>(
     "/g/:slug/print-shop/catalog",
     async (req, reply) => {
-      const gal = await resolveGalleryForPrintShop(req.params.slug);
+      const gal = await resolveGalleryForPrintShop(req);
       if (!gal) return reply.status(404).send({ error: "not_found" });
       const visitor = await loadVisitor(
         req as Parameters<typeof loadVisitor>[0]
@@ -97,6 +100,21 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
             variants: {
               where: { enabled: true },
               orderBy: [{ displayOrder: "asc" }, { widthMm: "asc" }],
+              include: {
+                // Price only, never cost — same deliberate split as the
+                // response mapping below for the flat priceCents field.
+                priceTiers: {
+                  select: { minQty: true, maxQty: true, unitPriceCents: true },
+                  orderBy: { minQty: "asc" },
+                },
+                // SKU stays internal (like providerVariantRef, also not
+                // exposed here) — only what the picker needs to display.
+                finishOptions: {
+                  where: { enabled: true },
+                  select: { id: true, name: true, priceDeltaCents: true },
+                  orderBy: { displayOrder: "asc" },
+                },
+              },
             },
           },
         }),
@@ -133,6 +151,16 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
             aspectRatio: v.aspectRatio,
             finishType: v.finishType,
             priceCents: v.priceCents,
+            priceTiers: v.priceTiers.map((t) => ({
+              minQty: t.minQty,
+              maxQty: t.maxQty,
+              unitPriceCents: t.unitPriceCents,
+            })),
+            finishOptions: v.finishOptions.map((f) => ({
+              id: f.id,
+              name: f.name,
+              priceDeltaCents: f.priceDeltaCents,
+            })),
           })),
         }));
 
@@ -165,6 +193,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
           estimatedDaysMin: s.estimatedDaysMin,
           estimatedDaysMax: s.estimatedDaysMax,
           countries: s.countries,
+          isPickup: s.isPickup,
         })),
       };
     }
@@ -181,7 +210,9 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
         z.object({
           variantId: z.string().uuid(),
           fileId: z.string().uuid(),
-          quantity: z.number().int().min(1).max(99),
+          // Deep quantity-break tiers (e.g. "400 and above") need a
+          // generous ceiling — 99 was too low to ever reach them.
+          quantity: z.number().int().min(1).max(999),
           crop: z
             .object({
               x: z.number().min(0).max(1),
@@ -191,6 +222,10 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
             })
             .nullable()
             .optional(),
+          // Required when the variant has finish options, rejected
+          // otherwise — validated in priceCart()/resolveCartItemPricing(),
+          // not here (depends on the variant's DB state).
+          finishOptionId: z.string().uuid().nullable().optional(),
         })
       )
       .min(1),
@@ -199,7 +234,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
   app.post<{ Params: { slug: string } }>(
     "/g/:slug/print-shop/price",
     async (req, reply) => {
-      const gal = await resolveGalleryForPrintShop(req.params.slug);
+      const gal = await resolveGalleryForPrintShop(req);
       if (!gal) return reply.status(404).send({ error: "not_found" });
       const visitor = await loadVisitor(
         req as Parameters<typeof loadVisitor>[0]
@@ -215,6 +250,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
             fileId: i.fileId,
             quantity: i.quantity,
             crop: i.crop ?? null,
+            finishOptionId: i.finishOptionId ?? null,
           })),
           shippingMethodId: body.shippingMethodId,
         });
@@ -238,15 +274,20 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
     shippingMethodId: z.string().uuid(),
     guestName: z.string().min(1).max(200),
     guestEmail: z.string().email().max(200),
-    shippingAddress: z.object({
-      street: z.string().min(1).max(200),
-      street2: z.string().max(200).optional(),
-      postalCode: z.string().min(1).max(20),
-      city: z.string().min(1).max(100),
-      region: z.string().max(100).optional(),
-      countryCode: z.string().length(2).toUpperCase(),
-      phone: z.string().max(50).optional(),
-    }),
+    // Required unless the chosen shipping method is a pickup method —
+    // that depends on a DB lookup, so it's enforced in createOrder(),
+    // not here.
+    shippingAddress: z
+      .object({
+        street: z.string().min(1).max(200),
+        street2: z.string().max(200).optional(),
+        postalCode: z.string().min(1).max(20),
+        city: z.string().min(1).max(100),
+        region: z.string().max(100).optional(),
+        countryCode: z.string().length(2).toUpperCase(),
+        phone: z.string().max(50).optional(),
+      })
+      .optional(),
     billingAddress: z
       .object({
         street: z.string().min(1).max(200),
@@ -267,7 +308,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
   app.post<{ Params: { slug: string } }>(
     "/g/:slug/print-shop/checkout",
     async (req, reply) => {
-      const gal = await resolveGalleryForPrintShop(req.params.slug);
+      const gal = await resolveGalleryForPrintShop(req);
       if (!gal) return reply.status(404).send({ error: "not_found" });
       const visitor = await loadVisitor(
         req as Parameters<typeof loadVisitor>[0]
@@ -304,11 +345,12 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
             fileId: i.fileId,
             quantity: i.quantity,
             crop: i.crop ?? null,
+            finishOptionId: i.finishOptionId ?? null,
           })),
           shippingMethodId: body.shippingMethodId,
           guestName: body.guestName,
           guestEmail: body.guestEmail,
-          shippingAddress: body.shippingAddress,
+          shippingAddress: body.shippingAddress ?? null,
           billingAddress: body.billingAddress ?? null,
           paymentMode: body.paymentMode,
           guestNote: body.guestNote ?? null,
@@ -352,7 +394,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
   app.get<{ Params: { slug: string; orderNumber: string } }>(
     "/g/:slug/print-shop/order/:orderNumber",
     async (req, reply) => {
-      const gal = await resolveGalleryForPrintShop(req.params.slug);
+      const gal = await resolveGalleryForPrintShop(req);
       if (!gal) return reply.status(404).send({ error: "not_found" });
       const visitor = await loadVisitor(
         req as Parameters<typeof loadVisitor>[0]
@@ -402,6 +444,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
           productName: i.printProductVariant.printProduct.name,
           widthMm: i.printProductVariant.widthMm,
           heightMm: i.printProductVariant.heightMm,
+          finishName: i.finishOptionName,
           totalPriceCents: i.totalPriceCents,
         })),
         shippingMethod: order.shippingMethod?.name ?? null,

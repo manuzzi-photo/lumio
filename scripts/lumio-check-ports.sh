@@ -238,6 +238,38 @@ describe_conflict() {
   [ -n "$CONFLICT_REASON" ]
 }
 
+
+# Sucht ab $1 aufwaerts den naechsten Port, der fuer ALLE Protokolle in $2
+# frei ist. Nutzt dieselbe describe_conflict()-Pruefung wie der Hauptlauf —
+# ein Vorschlag, der mit einer zweiten, eigenen Logik ermittelt waere,
+# koennte einen Port empfehlen, den der Check danach ablehnt (#18).
+#
+# Bewusst begrenzt: 200 Versuche, und nichts oberhalb von 65535. Wer auf
+# einem Host 200 belegte Ports in Folge hat, hat ein anderes Problem als
+# diesen Vorschlag, und eine Endlosschleife im interaktiven Prompt waere
+# das schlechteste Ergebnis.
+#
+# Ueberspringt privilegierte Ports (<1024) beim Hochzaehlen nicht extra —
+# wer 80 belegt hat, bekommt 81 vorgeschlagen, und das ist als Default
+# hinter einem Reverse-Proxy meist genau richtig.
+#
+# CONFLICT_REASON wird von describe_conflict ueberschrieben; der Aufrufer
+# hat seine Meldung zu dem Zeitpunkt schon ausgegeben.
+suggest_free_port() {
+  start="$1"; protos="$2"
+  candidate_try=$((start + 1))
+  attempts=0
+  while [ "$attempts" -lt 200 ] && [ "$candidate_try" -le 65535 ]; do
+    if ! describe_conflict "$candidate_try" "$protos"; then
+      printf '%s' "$candidate_try"
+      return 0
+    fi
+    candidate_try=$((candidate_try + 1))
+    attempts=$((attempts + 1))
+  done
+  return 1
+}
+
 set_env_var() {
   file="$1"; key="$2"; value="$3"
   touch "$file"
@@ -285,11 +317,28 @@ while [ "$i" -lt "$n" ]; do
         status="manual"
         break
       fi
-      printf "  Alternative port to use instead of %s [enter = recheck, 's' = keep %s and continue]: " "$candidate" "$candidate"
+      # Freien Port vorschlagen, damit der Operator nicht erst selbst
+      # einen suchen muss (#18). Auf einem Host mit mehreren Stacks
+      # nebeneinander kollidieren schnell mehrere Ports auf einmal.
+      # CONFLICT_REASON ist oben schon ausgegeben und darf jetzt
+      # ueberschrieben werden.
+      suggested="$(suggest_free_port "$candidate" "$protos" || true)"
+      if [ -n "$suggested" ]; then
+        printf "  Alternative port to use instead of %s [enter = use %s, 'r' = recheck, 's' = keep %s and continue]: " "$candidate" "$suggested" "$candidate"
+      else
+        printf "  Alternative port to use instead of %s [enter = recheck, 's' = keep %s and continue]: " "$candidate" "$candidate"
+      fi
       read -r answer || answer="s"
       case "$answer" in
         s|S) status="conflict_ignored"; break ;;
-        "") continue ;;
+        r|R) continue ;;
+        "")
+          # Ohne Vorschlag bleibt Enter das alte Verhalten (recheck).
+          if [ -n "$suggested" ]; then
+            candidate="$suggested"
+          fi
+          continue
+          ;;
         *)
           if is_valid_port "$answer"; then
             candidate="$answer"

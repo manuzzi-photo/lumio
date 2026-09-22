@@ -308,6 +308,13 @@ export interface PublicGalleryMeta {
   publicAccess: boolean;
   unlocked: boolean;
   branding: Branding | null;
+  /** Fertig aufgeloestes Favicon: Branding -> Studio -> null.
+   *  Separat von branding, weil branding null ist, wenn das Studio gar
+   *  kein Profil angelegt hat — das Studio-Favicon gilt trotzdem. */
+  faviconUrl: string | null;
+  /** Oeffentlicher Studio-Name (Tenant.displayName, sonst .name).
+   *  NICHT branding.name — das ist die interne Profilbezeichnung. */
+  studioName: string | null;
   header: {
     /** Hero-Layout-Variante: bestimmt wie der Header gerendert wird. */
     layout: "minimal" | "splash" | "side_by_side" | "centered";
@@ -373,6 +380,7 @@ export interface Branding {
 export type AppearanceAssetKind =
   | "studioLogo"
   | "studioLogoLight"
+  | "studioFavicon"
   | "loginLogo"
   | "loginBackground"
   | "emailLogo";
@@ -380,6 +388,9 @@ export type AppearanceAssetKind =
 export interface Appearance {
   studioLogoUrl: string | null;
   studioLogoLightUrl: string | null;
+  /** Studio-weites Favicon. Wird von Branding.faviconUrl pro Galerie
+   *  ueberschrieben; ohne beides greift das Lumio-Default. */
+  studioFaviconUrl: string | null;
   studioAccentColor: string | null;
   studioTheme: "dark" | "light";
   loginLogoUrl: string | null;
@@ -566,6 +577,7 @@ export const api = {
       studioTheme: "dark" | "light";
       studioLogoUrl: string | null;
       studioLogoLightUrl: string | null;
+      studioFaviconUrl: string | null;
       /** Aktive Feature-Flag-Keys fuer diesen Tenant. Frontend prueft
        *  z.B. features.includes('print_shop') bevor es Print-Shop-
        *  Eintraege rendert. */
@@ -1942,6 +1954,11 @@ export const api = {
   studioZipDownloadUrl: (galleryId: string, zipId: string) =>
     `${API_URL}/api/v1/galleries/${galleryId}/download/zip/${zipId}?download=1`,
 
+  studioFileDownloadUrl: (fileId: string) => `${API_URL}/api/v1/files/${fileId}/download`,
+  /** Gerenderte Druckdatei einer Bestellzeile (Redirect auf S3). */
+  studioPrintFileUrl: (orderId: string, itemId: string) =>
+    `${API_URL}/api/v1/print-shop/orders/${orderId}/items/${itemId}/print-file`,
+
   getStudioZipShareUrl: (galleryId: string, zipId: string) =>
     request<{
       url: string;
@@ -3235,6 +3252,8 @@ export const api = {
           costCents: number | null;
           displayOrder: number;
           enabled: boolean;
+          priceTiers: PrintPriceTier[];
+          finishOptions: PrintFinishOption[];
         }>;
       }>;
     }>("/print-shop/products"),
@@ -3269,6 +3288,20 @@ export const api = {
   deletePrintVariant: (id: string) =>
     request<{ ok: true }>(`/print-shop/variants/${id}`, { method: "DELETE" }),
 
+  printImportTemplateUrl: () => `${API_URL}/api/v1/print-shop/import/template`,
+
+  previewPrintImport: (input: PrintImportRequest) =>
+    request<{ report: PrintImportReport }>("/print-shop/import/preview", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+
+  commitPrintImport: (input: PrintImportRequest) =>
+    request<{ report: PrintImportReport }>("/print-shop/import/commit", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+
   listShippingMethods: () =>
     request<{
       methods: Array<{
@@ -3280,6 +3313,7 @@ export const api = {
         estimatedDaysMax: number | null;
         countries: string[];
         providerShippingRef: string | null;
+        isPickup: boolean;
         enabled: boolean;
         displayOrder: number;
       }>;
@@ -3328,6 +3362,7 @@ export const api = {
         currency: string;
         status: string;
         paymentMode: string;
+        isPickupDelivery: boolean;
         providerKey: string;
         createdAt: string;
         paidAt: string | null;
@@ -3343,6 +3378,23 @@ export const api = {
       order: PrintOrderDetail;
     }>(`/print-shop/orders/${id}`),
 
+  printOrderExportCsvUrl: (id: string) =>
+    `${API_URL}/api/v1/print-shop/orders/${id}/export.csv`,
+
+  printOrderExportMdUrl: (id: string) =>
+    `${API_URL}/api/v1/print-shop/orders/${id}/export.md`,
+
+  /** Zips every photo in the order — dedupe'd — reusing the same async
+   *  build pipeline as the gallery-wide Studio ZIP. Poll/download via
+   *  getStudioZipStatus/studioZipDownloadUrl with the returned galleryId. */
+  requestPrintOrderZip: (orderId: string) =>
+    request<{
+      id: string;
+      status: ZipStatus;
+      fileCount: number;
+      galleryId: string;
+    }>(`/print-shop/orders/${orderId}/export-zip`, { method: "POST" }),
+
   transitionPrintOrder: (
     id: string,
     body: {
@@ -3350,6 +3402,7 @@ export const api = {
         | "mark_paid"
         | "mark_in_production"
         | "mark_shipped"
+        | "mark_ready_for_pickup"
         | "mark_delivered"
         | "cancel"
         | "refund";
@@ -3357,6 +3410,7 @@ export const api = {
       trackingCarrier?: string;
       trackingUrl?: string;
       reason?: string;
+      paymentReference?: string;
     }
   ) =>
     request<{ ok: true }>(`/print-shop/orders/${id}/transitions`, {
@@ -3405,6 +3459,8 @@ export const api = {
           aspectRatio: number | null;
           finishType: string | null;
           priceCents: number;
+          priceTiers: PrintPriceTier[];
+          finishOptions: Array<{ id: string; name: string; priceDeltaCents: number }>;
         }>;
       }>;
       shipping: Array<{
@@ -3414,6 +3470,7 @@ export const api = {
         estimatedDaysMin: number | null;
         estimatedDaysMax: number | null;
         countries: string[];
+        isPickup: boolean;
       }>;
     }>(`/g/${slug}/print-shop/catalog`),
 
@@ -3425,6 +3482,7 @@ export const api = {
         fileId: string;
         quantity: number;
         crop?: { x: number; y: number; width: number; height: number } | null;
+        finishOptionId?: string | null;
       }>;
       shippingMethodId: string | null;
     }
@@ -3437,6 +3495,7 @@ export const api = {
       currency: string;
       vatBps: number;
       vatHandling: "inclusive" | "exclusive";
+      isPickupDelivery: boolean;
     }>(`/g/${slug}/print-shop/price`, {
       method: "POST",
       body: JSON.stringify(input),
@@ -3450,11 +3509,13 @@ export const api = {
         fileId: string;
         quantity: number;
         crop?: { x: number; y: number; width: number; height: number } | null;
+        finishOptionId?: string | null;
       }>;
       shippingMethodId: string;
       guestName: string;
       guestEmail: string;
-      shippingAddress: {
+      /** Omit for a pickup shipping method — no address is collected. */
+      shippingAddress?: {
         street: string;
         street2?: string;
         postalCode: string;
@@ -3463,7 +3524,7 @@ export const api = {
         countryCode: string;
         phone?: string;
       };
-      billingAddress?: typeof input.shippingAddress | null;
+      billingAddress?: NonNullable<typeof input.shippingAddress> | null;
       paymentMode: "stripe_connect" | "offline_invoice";
       guestNote?: string;
       acceptedTerms: boolean;
@@ -3506,6 +3567,7 @@ export const api = {
         productName: string;
         widthMm: number;
         heightMm: number;
+        finishName: string | null;
         totalPriceCents: number;
       }>;
       shippingMethod: string | null;
@@ -3705,11 +3767,13 @@ export interface PrintOrderDetail {
   orderNumber: string;
   guestName: string;
   guestEmail: string;
-  shippingAddress: Record<string, string>;
+  shippingAddress: Record<string, string> | null;
   billingAddress: Record<string, string> | null;
+  isPickupDelivery: boolean;
   paymentMode: string;
   stripePaymentIntentId: string | null;
   stripeChargeId: string | null;
+  paymentReference: string | null;
   subtotalCents: number;
   shippingCents: number;
   taxCents: number;
@@ -3727,6 +3791,7 @@ export interface PrintOrderDetail {
   paidAt: string | null;
   productionStartedAt: string | null;
   shippedAt: string | null;
+  readyForPickupAt: string | null;
   deliveredAt: string | null;
   cancelledAt: string | null;
   refundedAt: string | null;
@@ -3737,6 +3802,16 @@ export interface PrintOrderDetail {
     unitPriceCents: number;
     totalPriceCents: number;
     crop: { x: number; y: number; width: number; height: number } | null;
+    finishOptionId: string | null;
+    finishOptionName: string | null;
+    finishOptionSku: string | null;
+    /** S3-Key der gerenderten, zugeschnittenen Druckdatei (#55). null =
+     *  noch nicht gerendert, kein Crop, oder Rendering fehlgeschlagen
+     *  (dann steht der Grund in printFileError). Das Frontend braucht den
+     *  Key nur als Ja/Nein — der Download laeuft ueber
+     *  studioPrintFileUrl(). */
+    printFileKey: string | null;
+    printFileError: string | null;
     printProductVariant: {
       name: string;
       widthMm: number;
@@ -3744,7 +3819,18 @@ export interface PrintOrderDetail {
       finishType: string | null;
       printProduct: { name: string };
     };
-    file: { id: string; originalFilename: string; sha256: string | null };
+    file: {
+      id: string;
+      originalFilename: string;
+      sha256: string | null;
+      /** Pixelmasse des Originals — fuer die Umrechnung des normierten
+       *  Crops in Pixel. null bei Dateien ohne Bild-Metadaten. */
+      width: number | null;
+      height: number | null;
+      /** Signierte URL der web/preview-Rendition, um das Crop-Rechteck
+       *  darueber zu zeichnen. null wenn noch keine Rendition existiert. */
+      previewUrl: string | null;
+    };
   }>;
   shippingMethod: { name: string; priceCents: number } | null;
   events: Array<{
@@ -3780,6 +3866,32 @@ export interface PrintProductCreateInput {
   enabled?: boolean;
 }
 
+/** One quantity-break price tier. See apps/api's pricing-tiers.ts for
+ *  the ladder rules (first tier minQty=1, last tier maxQty=null,
+ *  contiguous, no gaps/overlaps) — enforced server-side, mirrored
+ *  client-side in lib/print-pricing.ts for live previews. */
+export interface PrintPriceTier {
+  minQty: number;
+  maxQty: number | null;
+  unitPriceCents: number;
+  /** Optional per-tier cost, all-or-nothing across the ladder — see
+   *  costTierConsistency() in apps/api's pricing-tiers.ts. null/absent
+   *  on every tier = the flat variant.costCents applies throughout. */
+  unitCostCents?: number | null;
+}
+
+/** Selectable variant option (e.g. frame color) — distinct from the
+ *  scalar finishType field, which is just a descriptive material
+ *  label. sku is Studio-only (not exposed on the public catalog). */
+export interface PrintFinishOption {
+  id: string;
+  name: string;
+  sku: string | null;
+  priceDeltaCents: number;
+  displayOrder: number;
+  enabled: boolean;
+}
+
 export interface PrintVariantCreateInput {
   name: string;
   widthMm: number;
@@ -3791,6 +3903,95 @@ export interface PrintVariantCreateInput {
   costCents?: number | null;
   displayOrder?: number;
   enabled?: boolean;
+  /** Absent = flat pricing (priceCents applies to any quantity).
+   *  Present (even []) on an update = explicitly setting the ladder;
+   *  [] switches the variant back to flat pricing. */
+  priceTiers?: PrintPriceTier[];
+  /** Absent = no selectable finishes. Present (even []) on an update =
+   *  explicitly setting the finish-option list. */
+  finishOptions?: Array<{ name: string; sku?: string | null; priceDeltaCents: number }>;
+}
+
+// =============================================================================
+// Print catalog import
+// =============================================================================
+
+export interface PrintImportVariantTier {
+  minQty: number;
+  maxQty: number | null;
+  unitPriceEur: number;
+}
+
+export interface PrintImportVariantFinishOption {
+  name: string;
+  sku?: string | null;
+  priceDeltaEur?: number | null;
+}
+
+export interface PrintImportVariant {
+  name: string;
+  widthMm?: number | null;
+  heightMm?: number | null;
+  finishType?: string | null;
+  sku?: string | null;
+  priceEur?: number | null;
+  costEur?: number | null;
+  priceTiers?: PrintImportVariantTier[];
+  finishOptions?: PrintImportVariantFinishOption[];
+}
+
+export interface PrintImportProduct {
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  sku?: string | null;
+  variants: PrintImportVariant[];
+}
+
+export interface PrintImportRequest {
+  providerKey: string;
+  products: PrintImportProduct[];
+}
+
+export type PrintImportRowStatus =
+  | "created"
+  | "updated"
+  | "would_create"
+  | "would_update"
+  | "skipped_error";
+
+export interface PrintImportVariantResult {
+  rowIndex: number;
+  name: string;
+  status: PrintImportRowStatus;
+  matchedExistingId?: string;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface PrintImportProductResult {
+  rowIndex: number;
+  name: string;
+  status: PrintImportRowStatus;
+  matchedExistingId?: string;
+  errors: string[];
+  warnings: string[];
+  variants: PrintImportVariantResult[];
+}
+
+export interface PrintImportReport {
+  summary: {
+    totalProducts: number;
+    totalVariants: number;
+    productsCreated: number;
+    productsUpdated: number;
+    productsSkipped: number;
+    variantsCreated: number;
+    variantsUpdated: number;
+    variantsSkipped: number;
+    warnings: number;
+  };
+  products: PrintImportProductResult[];
 }
 
 export interface ShippingMethodCreateInput {
@@ -3801,6 +4002,7 @@ export interface ShippingMethodCreateInput {
   estimatedDaysMax?: number | null;
   countries?: string[];
   providerShippingRef?: string | null;
+  isPickup?: boolean;
   enabled?: boolean;
   displayOrder?: number;
 }

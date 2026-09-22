@@ -66,6 +66,7 @@ app = Celery(
         "tasks.webhook_delivery",
         "tasks.auto_tag",
         "tasks.process_appearance_asset",
+        "tasks.render_print_item",
     ],
 )
 

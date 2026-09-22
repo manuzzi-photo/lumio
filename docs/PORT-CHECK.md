@@ -55,9 +55,13 @@ already running, not something to reassign around.
 
 - **Ports with a dedicated `.env` variable** (the six listed above): the
   script asks interactively for an alternative port, then writes it straight
-  to `.env`. Press Enter to recheck the same port (useful if you just
-  stopped the conflicting process), or `s` to keep the default anyway and
-  move on.
+  to `.env`. It scans upward from the conflicting port and offers the first
+  free one, so Enter accepts that suggestion — handy on a host running
+  several stacks side by side, where a single run can hit conflicts on
+  several ports at once. Use `r` to recheck the same port instead (useful if
+  you just stopped the conflicting process), or `s` to keep the default
+  anyway and move on. If no free port is found within 200 tries, Enter falls
+  back to rechecking.
 - **Ports without a variable** (Postgres, Redis, acme-dns): these are fixed
   in `docker-compose.yml` itself. The script never edits a git-tracked file
   automatically, so instead it prints the exact line to change and where.

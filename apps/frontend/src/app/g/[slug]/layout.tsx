@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 
-import { fetchPublicGallery, fetchAssetAbsolute } from "@/lib/api-server";
+import {
+  fetchPublicGallery,
+  fetchAssetAbsolute,
+  publicOrigin,
+} from "@/lib/api-server";
 
 /**
  * Server-side metadata für /g/[slug].
@@ -26,18 +30,26 @@ export async function generateMetadata({
   }
   const g = data.gallery;
 
+  // Studio-Name, nicht branding.name: letzteres ist die INTERNE
+  // Profilbezeichnung ("Standard", "Hochzeit-Style") und stand damit
+  // im Browser-Tab und in jeder Share-Vorschau. Der oeffentliche Name
+  // des Studios ist Tenant.displayName (Fallback .name), gepflegt in
+  // den Studio-Einstellungen.
   const titleParts = [g.title];
-  if (g.branding?.name) titleParts.push(g.branding.name);
+  if (g.studioName) titleParts.push(g.studioName);
   const title = titleParts.join(" · ");
   const description = g.description ?? undefined;
 
   // OG-Image-Priorität: Hero-Bild > Event-Logo > nichts. Hero ist der
   // bestmögliche Eindruck im Share-Preview, das Event-Logo ist
   // Fallback (z.B. wenn der Fotograf noch kein Hero-Bild gesetzt hat).
+  // Origin aus dem Request, nicht aus einer Env — im Multi-Tenant-Betrieb
+  // unterscheidet sie sich pro Studio (Subdomain oder Custom-Domain).
+  const origin = await publicOrigin();
   const ogImageUrl = g.header?.heroImageUrl
-    ? fetchAssetAbsolute(g.header.heroImageUrl)
+    ? fetchAssetAbsolute(g.header.heroImageUrl, origin)
     : g.header?.eventLogoUrl
-    ? fetchAssetAbsolute(g.header.eventLogoUrl)
+    ? fetchAssetAbsolute(g.header.eventLogoUrl, origin)
     : null;
 
   return {

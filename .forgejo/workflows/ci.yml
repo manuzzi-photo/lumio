@@ -132,7 +132,7 @@ jobs:
           POSTGRES_PASSWORD: lumio
           POSTGRES_DB: lumio_test
       minio:
-        image: minio/minio:latest
+        image: quay.io/minio/minio:latest
         env:
           MINIO_ROOT_USER: minio
           MINIO_ROOT_PASSWORD: minio123

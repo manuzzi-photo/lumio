@@ -22,10 +22,17 @@
  * dynamischer Katalog-Import ist als spätere Ausbaustufe vorgesehen.
  *
  * Crop-Hinweis: Wir senden sizing="fillPrintArea" — das Lab zentriert und
- * beschneidet aufs Druck-Seitenverhältnis. Ein vom Kunden gesetzter freier
- * Crop (order.items[].crop) wird hier NICHT ans Lab übergeben; falls ein
- * Crop vorliegt, sollte serverseitig vorab eine zugeschnittene Rendition
- * erzeugt und deren URL übergeben werden (spätere Ausbaustufe).
+ * beschneidet aufs Druck-Seitenverhältnis. Das ist der FALLBACK fuer
+ * Zeilen ohne Crop.
+ *
+ * Seit #55 (v0.78) rendert der Worker beim Uebergang nach `paid` fuer jede
+ * Zeile mit Crop eine zugeschnittene JPEG-Datei; ihr S3-Key steht in
+ * PrintOrderItem.printFileKey. Wer submitOrder() an eine Route haengt,
+ * muss dort imageUrl aus diesem Key signieren (presignGet, TTL grosszuegig
+ * — das Lab zieht asynchron) und nur bei printFileKey === null auf das
+ * Original zurueckfallen. Heute ruft keine Route submitOrder() auf;
+ * manual_self_print und der ZIP-Export sind die aktiven Pfade, beide
+ * nutzen die gerenderte Datei bereits.
  */
 import type {
   PrintAdapter,

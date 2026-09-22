@@ -28,15 +28,31 @@ export function hashFileIds(fileIds: string[] | null): string | null {
     .slice(0, 32);
 }
 
-export type DownloadVariant = "original" | "web";
+/** "print" = Druck-Export einer Bestellung (#55): eine Datei pro
+ *  Bestellzeile, gerenderter Crop statt Original. Nur ueber die
+ *  Studio-Route erreichbar — die Kundenroute mappt hart auf original|web. */
+export type DownloadVariant = "original" | "web" | "print";
+
+// "customer" = über einen /g/:slug-Endpoint, dort gelten
+// downloadEnabled/downloadOriginalsEnabled. "studio" = über einen
+// authentifizierten Studio-Endpoint — internes Artefakt, das die
+// Kunden-Route (GET /g/:slug/download/zip/:zipId) nie zurückgeben darf.
+// Kein Default: jeder Aufrufer muss das bewusst setzen (siehe #45).
+export type ZipDownloadSource = "customer" | "studio";
 
 export interface RequestZipOptions {
   tenantId: string;
   galleryId: string;
   accessId: string | null;
+  source: ZipDownloadSource;
   fileIds: string[] | null;
   label: string; // "all" | "selection_<accessId>" | ...
   variant?: DownloadVariant; // default "original"
+  /** Pflicht bei variant "print": die Bestellung, deren Zeilen gepackt
+   *  werden. fileIds wird dann ignoriert — der Worker liest die Zeilen
+   *  selbst, weil dieselbe Datei mehrfach mit verschiedenem Crop
+   *  vorkommen kann. */
+  printOrderId?: string;
 }
 
 /**
@@ -52,7 +68,13 @@ export interface RequestZipOptions {
  */
 export async function requestZipDownload(opts: RequestZipOptions) {
   const variant: DownloadVariant = opts.variant ?? "original";
-  const fileIdsHash = hashFileIds(opts.fileIds);
+  // Cache-Schluessel: bei "print" bestimmt die BESTELLUNG den Inhalt, nicht
+  // die Dateiliste — zwei Bestellungen derselben Fotos mit anderem Crop
+  // sind verschiedene ZIPs. Also die orderId hashen statt der fileIds.
+  const fileIdsHash =
+    variant === "print" && opts.printOrderId
+      ? createHash("sha256").update(`print:${opts.printOrderId}`).digest("hex").slice(0, 32)
+      : hashFileIds(opts.fileIds);
   const fileCount = opts.fileIds?.length ?? 0; // 0 = "alle" (wird in Worker resolved)
 
   // Bestehenden Eintrag suchen — wir nutzen findFirst, weil
@@ -64,6 +86,7 @@ export async function requestZipDownload(opts: RequestZipOptions) {
     where: {
       galleryId: opts.galleryId,
       accessId: opts.accessId,
+      source: opts.source,
       fileIdsHash,
       variant,
     },
@@ -108,6 +131,7 @@ export async function requestZipDownload(opts: RequestZipOptions) {
         data: {
           galleryId: opts.galleryId,
           accessId: opts.accessId,
+          source: opts.source,
           fileIdsHash,
           fileCount,
           variant,
@@ -133,6 +157,7 @@ export async function requestZipDownload(opts: RequestZipOptions) {
     zipDownloadId: record.id,
     variant,
     partMaxBytes,
+    printOrderId: variant === "print" ? opts.printOrderId : undefined,
   });
 
   return record;

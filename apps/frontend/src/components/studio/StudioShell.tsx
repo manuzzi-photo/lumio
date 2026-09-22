@@ -205,6 +205,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
           url: r.studioLogoUrl ?? null,
           lightUrl: r.studioLogoLightUrl ?? null,
         });
+        applyFavicon(r.studioFaviconUrl ?? null);
       } catch {
         setUserRole("member");
       }
@@ -582,4 +583,29 @@ function SidebarFooter({
       <AppVersion className="px-3 pb-0.5" />
     </div>
   );
+}
+
+/**
+ * Setzt das Studio-Favicon im Backend-Tab.
+ *
+ * Wie in GalleryShell: layout.tsx deklariert MEHRERE <link rel="icon">
+ * (SVG plus zwei PNG-Groessen). Nur den ersten umzubiegen reicht nicht —
+ * Browser bevorzugen die groessenannotierten PNGs, das Lumio-Icon wuerde
+ * gewinnen. Also alle entfernen und genau einen setzen.
+ *
+ * Kein type-Attribut: der Browser erkennt das Format selbst, und ein
+ * falsch gesetzter type laesst ihn das Icon verwerfen.
+ */
+function applyFavicon(url: string | null) {
+  if (typeof document === "undefined") return;
+  if (!url) return;
+  document
+    .querySelectorAll<HTMLLinkElement>(
+      'link[rel="icon"], link[rel="shortcut icon"]'
+    )
+    .forEach((el) => el.remove());
+  const link = document.createElement("link");
+  link.rel = "icon";
+  link.href = url;
+  document.head.appendChild(link);
 }

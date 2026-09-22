@@ -13,6 +13,7 @@ import { Button, Input } from "@/components/ui";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
 import { useErrorText } from "@/lib/error-i18n";
+import { useCatalogText } from "@/lib/catalog-i18n";
 import { useConfirm } from "@/components/ui/dialogs";
 
 type Method = Awaited<
@@ -27,6 +28,7 @@ export default function ShippingMethodsPage() {
   const errText = useErrorText();
   const fmt = useFormat();
   const t = useT();
+  const ct = useCatalogText();
   const [methods, setMethods] = useState<Method[] | null>(null);
   const [providers, setProviders] = useState<ProviderMine[] | null>(null);
   const [editing, setEditing] = useState<Method | "new" | null>(null);
@@ -121,6 +123,9 @@ export default function ShippingMethodsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-0.5">
                   <strong className="text-sm">{m.name}</strong>
+                  {m.isPickup && (
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-accent/10 text-accent">{t("shipping.pickupBadge")}</span>
+                  )}
                   {!m.enabled && (
                     <span className="text-xs px-1.5 py-0.5 rounded bg-surface-sunken text-ink-tertiary">{t("shipping.inactive")}</span>
                   )}
@@ -137,8 +142,12 @@ export default function ShippingMethodsPage() {
                   )}
                   {m.countries.length > 0 && ` · ${m.countries.join(", ")}`}
                   {" · "}
-                  {providers.find((p) => p.providerKey === m.providerKey)
-                    ?.providerLabel ?? m.providerKey}
+                  {(() => {
+                    const pr = providers.find((p) => p.providerKey === m.providerKey);
+                    return pr
+                      ? ct("Provider", pr.providerKey, "Label", pr.providerLabel)
+                      : m.providerKey;
+                  })()}
                 </div>
               </div>
               <Button
@@ -191,6 +200,7 @@ function ShippingDialog({
 }) {
   const errText = useErrorText();
   const t = useT();
+  const ct = useCatalogText();
   const [name, setName] = useState(existing?.name ?? "DHL Standard");
   const [providerKey, setProviderKey] = useState(
     existing?.providerKey ?? enabledProviders[0]?.providerKey ?? ""
@@ -207,6 +217,7 @@ function ShippingDialog({
   const [countries, setCountries] = useState(
     existing ? existing.countries.join(", ") : "DE, AT, CH"
   );
+  const [isPickup, setIsPickup] = useState(existing?.isPickup ?? false);
   const [enabled, setEnabled] = useState(existing?.enabled ?? true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -235,6 +246,7 @@ function ShippingDialog({
           ? parseInt(daysMax, 10)
           : null,
         countries: countryList,
+        isPickup,
         enabled,
       };
       if (existing) {
@@ -283,7 +295,7 @@ function ShippingDialog({
             >
               {enabledProviders.map((p) => (
                 <option key={p.providerKey} value={p.providerKey}>
-                  {p.providerLabel}
+                  {ct("Provider", p.providerKey, "Label", p.providerLabel)}
                 </option>
               ))}
             </select>
@@ -329,6 +341,13 @@ function ShippingDialog({
             />
             <span className="block text-xs text-ink-tertiary mt-0.5">{t("shipping.countriesHint")}</span>
           </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isPickup}
+              onChange={(e) => setIsPickup(e.target.checked)}
+            />{t("shipping.isPickupLabel")}</label>
+          <span className="block text-xs text-ink-tertiary -mt-2">{t("shipping.isPickupHint")}</span>
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"

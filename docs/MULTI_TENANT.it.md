@@ -4,6 +4,12 @@
 
 > ⚠️ **Nota sulla licenza:** Far girare Lumio in multi-tenant per **la tua organizzazione o un'agenzia** (più brand/clienti che gestisci tu stesso) non è soggetto a restrizioni. Offrire Lumio come **SaaS commerciale a terzi** che compete con il servizio ospitato del maintainer è *Competing Use* e **non** è consentito liberamente sotto la FSL-1.1-ALv2 — per questo serve una licenza commerciale. Vedi [LICENSE](../LICENSE).
 
+> **Tenant o studio?** Sono la stessa cosa. Una riga, due parole: diciamo
+> *tenant* quando si parla di amministrazione e isolamento (creare, sospendere,
+> archiviare, fatturare, instradare) e *studio* quando si parla delle persone
+> che ci lavorano. L'area Super-Admin parla quindi di tenant, l'interfaccia
+> dello studio mai.
+
 Lumio può gestire più tenant (studi/clienti fotografi) sulla stessa installazione. Questo documento descrive come un nuovo tenant diventa raggiungibile — il DB + l'UI lo creano, ma perché l'URL giusto arrivi al tenant giusto ti serve uno dei tre metodi di routing qui sotto.
 
 Se stai costruendo un SaaS e hai meno di 20 clienti, il **metodo B (domini personalizzati per cliente)** è il percorso consigliato. I wildcard ripagano solo una volta che modificare il Caddyfile manualmente per ogni cliente diventa tedioso.
@@ -19,6 +25,8 @@ Quando arriva una richiesta API, la risoluzione del tenant gira in questo ordine
 5. **Fallback single-mode** — se esiste solo un tenant, viene usato quello
 
 Non appena crei il secondo tenant, il passaggio 5 decade — devi usare 2, 3 o 4.
+
+**Link delle gallerie.** Gli slug delle gallerie sono univoci per studio, non per installazione, quindi due studi possono usare lo stesso slug leggibile. Un link di galleria (`/g/<slug>`) viene risolto rispetto allo studio restituito dalla risoluzione del tenant. Per un visitatore anonimo, cioè un cliente dello studio, questo deriva dall'host (passaggi 3 e 4), per cui una galleria si apre sul dominio del proprio studio. Se non si riesce a determinare nessuno studio — per esempio in un'installazione multi-tenant senza sottodomini o domini personalizzati per studio — lo slug viene cercato tra tutti gli studi e la galleria si apre solo se ce n'è esattamente una; se ce ne sono più di una, il link restituisce 404. Oggi gli slug sono casuali, quindi il caso si presenta solo quando gli studi potranno scegliere il proprio slug e due sceglieranno lo stesso. Un'installazione con un solo studio cerca sempre gli slug su tutta l'installazione.
 
 ---
 
@@ -126,6 +134,6 @@ L'interfaccia dello studio mostra un avviso nell'editor dello slug ogni volta ch
 | 20+ clienti, non vuoi più modificare Caddy per cliente | A (wildcard) |
 | App mobile                       | C (header)                           |
 | Studio nel browser                   | risolto automaticamente via cookie dopo il primo login |
-| Link della galleria per il cliente           | funziona su qualsiasi dominio tenant |
+| Link della galleria per il cliente           | funziona sul dominio dello studio proprietario della galleria |
 
 I metodi sono combinabili — un tenant può avere contemporaneamente un dominio personalizzato E un sottodominio wildcard E un header mobile.

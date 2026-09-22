@@ -733,6 +733,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         studioTheme: true,
         studioLogoKey: true,
         studioLogoLightKey: true,
+        studioFaviconKey: true,
       },
     });
     const tenant = tenantRow
@@ -749,10 +750,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       if (key.startsWith("http://") || key.startsWith("https://")) return key;
       return presignGet({ key, ttlSeconds: 3600 });
     };
-    const [studioLogoUrl, studioLogoLightUrl] = await Promise.all([
-      signAsset(tenantRow?.studioLogoKey),
-      signAsset(tenantRow?.studioLogoLightKey),
-    ]);
+    const [studioLogoUrl, studioLogoLightUrl, studioFaviconUrl] =
+      await Promise.all([
+        signAsset(tenantRow?.studioLogoKey),
+        signAsset(tenantRow?.studioLogoLightKey),
+        // Favicon des Studios — gilt auch im Backend-Tab, nicht nur in
+        // Kundengalerien.
+        signAsset(tenantRow?.studioFaviconKey),
+      ]);
     const studioAccent = tenantRow?.studioAccentColor ?? null;
     const studioTheme =
       (tenantRow?.studioTheme as "dark" | "light" | null) ?? "dark";
@@ -802,6 +807,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       studioAccent,
       studioTheme,
       studioLogoUrl,
+      studioFaviconUrl,
       studioLogoLightUrl,
       impersonation,
       features: activeFeatures,

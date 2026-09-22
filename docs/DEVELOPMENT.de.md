@@ -272,6 +272,7 @@ Die CI baut bei jedem Push auf `main` drei Container-Images und schiebt
 sie in die Forgejo Container Registry:
 
 ```
+# Registry des Upstream-Projekts — ein Fork setzt hier seinen Host ein
 forgejo.thiel.tools/thiel/lumio-api:<tag>
 forgejo.thiel.tools/thiel/lumio-frontend:<tag>
 forgejo.thiel.tools/thiel/lumio-worker:<tag>
@@ -310,11 +311,13 @@ LUMIO_TAG=v0.2.0 docker compose \
     up -d
 ```
 
-Wenn deine Forgejo-Registry private ist (Default für nicht-public Repos),
-brauchst du einen Pull-Login auf dem Server:
+Die Registry ist privat (Default für nicht-public Repos), der Server
+braucht also einen Pull-Login. `forgejo.thiel.tools` unten ist die
+Registry des Upstream-Projekts — ein Fork trägt hier seinen eigenen
+Host ein:
 
 ```bash
-docker login forgejo.thiel.tools
+docker login <dein-forgejo-host>
 # Username: dein Forgejo-Name
 # Password: Forgejo Personal Access Token mit Scope `read:package`
 ```

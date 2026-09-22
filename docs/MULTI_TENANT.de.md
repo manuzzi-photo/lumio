@@ -4,6 +4,11 @@
 
 > ⚠️ **Lizenzhinweis:** Lumio multi-tenant für die **eigene Organisation oder eine Agentur** zu betreiben (mehrere selbst betriebene Marken/Kunden) ist uneingeschränkt erlaubt. Lumio als **kommerziellen SaaS-Dienst für Dritte** anzubieten, der mit dem gehosteten Angebot des Herstellers konkurriert, ist *Competing Use* und unter der FSL-1.1-ALv2 **nicht** ohne Weiteres gestattet — dafür ist eine kommerzielle Lizenz nötig. Siehe [LICENSE](../LICENSE).
 
+> **Tenant oder Studio?** Dasselbe. Eine Zeile, zwei Wörter: *Tenant* sagen wir,
+> wenn es um Verwaltung und Isolation geht (anlegen, sperren, archivieren,
+> abrechnen, routen), *Studio*, wenn es um die Menschen darin geht. Der
+> Super-Admin-Bereich spricht deshalb von Tenants, die Studio-Oberfläche nie.
+
 Lumio kann mehrere Tenants (Studios/Foto-Kunden) auf derselben
 Installation betreiben. Dieses Dokument beschreibt, wie ein neuer
 Tenant erreichbar wird — DB + UI legen ihn an, aber damit die richtige
@@ -30,6 +35,19 @@ Reihenfolge ab (siehe `apps/api/src/plugins/auth.ts:resolveTenant`):
 
 Sobald du den zweiten Tenant anlegst, fällt Schritt 5 weg — du musst
 2, 3 oder 4 nutzen.
+
+**Galerie-Links.** Galerie-Slugs sind pro Studio eindeutig, nicht pro
+Installation — zwei Studios können also denselben lesbaren Slug nutzen. Ein
+Galerie-Link (`/g/<slug>`) wird gegen das Studio aufgelöst, das die
+Tenant-Auflösung liefert. Bei einem anonymen Besucher, also einem Kunden des
+Studios, kommt das aus dem Host (Schritte 3 und 4); eine Galerie öffnet sich
+also auf der Domain ihres eigenen Studios. Lässt sich kein Studio bestimmen —
+etwa bei einer Multi-Tenant-Installation ohne Subdomains oder Custom-Domains
+pro Studio —, wird der Slug über alle Studios gesucht, und die Galerie öffnet sich nur,
+wenn genau eine ihn hat; sind es mehrere, liefert der Link 404. Slugs sind
+heute zufällig, das Thema entsteht also erst, wenn Studios ihren Slug selbst
+wählen können und zwei denselben wählen. Eine Single-Studio-Installation sucht
+Slugs immer über die ganze Installation.
 
 ---
 
@@ -194,7 +212,7 @@ baut, sollte denselben Hinweis beibehalten statt ihn wegzulassen.
 | 20+ Kunden, willst nicht mehr pro Kunde Caddy editieren | A (Wildcard) |
 | Mobile-App                       | C (Header)                           |
 | Browser-Studio                   | wird automatisch resolved via Cookie nach erstem Login |
-| Customer-Galerie-Links           | funktioniert auf jeder Tenant-Domain |
+| Customer-Galerie-Links           | funktioniert auf der Domain des Studios, dem die Galerie gehört |
 
 Verfahren sind kombinierbar — ein Tenant kann gleichzeitig eine
 Custom-Domain UND eine Wildcard-Subdomain UND Mobile-Header haben.

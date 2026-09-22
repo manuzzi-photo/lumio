@@ -11,7 +11,7 @@
  *  - Status-Transition-Buttons je nach aktuellem Status
  *  - Studio-Note (editierbar)
  */
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import type { PrintOrderDetail } from "@/lib/api";
@@ -40,6 +40,72 @@ export default function OrderDetailPage({
   const [busy, setBusy] = useState(false);
   const [shippingDialog, setShippingDialog] = useState(false);
   const [noteValue, setNoteValue] = useState("");
+  const [zipJob, setZipJob] = useState<{
+    zipId: string;
+    galleryId: string;
+    status: string;
+    fileCount: number | null;
+    url: string | null;
+    error: string | null;
+  } | null>(null);
+  const zipPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (zipPollRef.current) clearInterval(zipPollRef.current);
+    };
+  }, []);
+
+  async function requestZip() {
+    try {
+      const res = await api.requestPrintOrderZip(id);
+      setZipJob({
+        zipId: res.id,
+        galleryId: res.galleryId,
+        status: res.status,
+        fileCount: res.fileCount,
+        url: null,
+        error: null,
+      });
+      if (zipPollRef.current) clearInterval(zipPollRef.current);
+      zipPollRef.current = setInterval(async () => {
+        try {
+          const st = await api.getStudioZipStatus(res.galleryId, res.id);
+          setZipJob((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: st.status,
+                  fileCount: st.fileCount,
+                  error: st.errorMessage,
+                  url:
+                    st.status === "ready"
+                      ? api.studioZipDownloadUrl(res.galleryId, res.id)
+                      : null,
+                }
+              : prev
+          );
+          if (st.status === "ready" || st.status === "failed") {
+            if (zipPollRef.current) {
+              clearInterval(zipPollRef.current);
+              zipPollRef.current = null;
+            }
+          }
+        } catch (err) {
+          console.error("print order zip status poll failed:", err);
+        }
+      }, 2000);
+    } catch (err) {
+      setZipJob({
+        zipId: "",
+        galleryId: "",
+        status: "failed",
+        fileCount: null,
+        url: null,
+        error: errText(err, t("common.error")),
+      });
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -60,6 +126,7 @@ export default function OrderDetailPage({
       | "mark_paid"
       | "mark_in_production"
       | "mark_shipped"
+      | "mark_ready_for_pickup"
       | "mark_delivered"
       | "cancel"
       | "refund",
@@ -68,6 +135,7 @@ export default function OrderDetailPage({
       trackingCarrier?: string;
       trackingUrl?: string;
       reason?: string;
+      paymentReference?: string;
     }
   ) {
     setBusy(true);
@@ -84,6 +152,47 @@ export default function OrderDetailPage({
     } finally {
       setBusy(false);
     }
+  }
+
+  /** Single place that knows which transitions need extra input before
+   *  firing — used by both the action-button row and the fulfillment
+   *  checklist, so the two never drift apart on what a click does. */
+  async function runTransition(
+    tr:
+      | "mark_paid"
+      | "mark_in_production"
+      | "mark_shipped"
+      | "mark_ready_for_pickup"
+      | "mark_delivered"
+      | "cancel"
+      | "refund"
+  ) {
+    if (tr === "mark_shipped") {
+      setShippingDialog(true);
+      return;
+    }
+    if (tr === "mark_paid" && order?.paymentMode === "offline_invoice") {
+      const paymentReference = await ask({
+        message: t("orderDetail.paymentReferencePrompt"),
+        placeholder: t("orderDetail.paymentReferencePlaceholder"),
+        required: true,
+      });
+      if (paymentReference === null) return; // dialog dismissed
+      void transition(tr, { paymentReference });
+      return;
+    }
+    if (tr === "cancel" || tr === "refund") {
+      const verb =
+        tr === "cancel" ? t("orderDetail.verbCancel") : t("orderDetail.verbRefund");
+      const reason = await ask({
+        message: t("orderDetail.reasonPrompt", { verb }),
+        required: false,
+      });
+      if (reason === null) return; // dialog dismissed
+      void transition(tr, { reason });
+      return;
+    }
+    void transition(tr);
   }
 
   async function saveNote() {
@@ -114,7 +223,10 @@ export default function OrderDetailPage({
   }
 
   // Status-spezifische Buttons
-  const availableTransitions = transitionsForStatus(order.status);
+  const availableTransitions = transitionsForStatus(
+    order.status,
+    order.isPickupDelivery
+  );
 
   return (
     <div className="space-y-5">
@@ -143,7 +255,7 @@ export default function OrderDetailPage({
               <h1 className="text-lg font-semibold font-mono">
                 {order.orderNumber}
               </h1>
-              <StatusBadge status={order.status} />
+              <StatusBadge status={order.status} isPickupDelivery={order.isPickupDelivery} />
             </div>
             <div className="text-sm text-ink-secondary">
               {order.guestName} &lt;{order.guestEmail}&gt;
@@ -169,66 +281,47 @@ export default function OrderDetailPage({
                 ? t("orderDetail.paymentOnline")
                 : t("orderDetail.paymentOffline")}
             </div>
+            {order.paymentReference && (
+              <div className="text-xs text-ink-tertiary font-mono">
+                {t("orderDetail.paymentReferenceLabel")}: {order.paymentReference}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Action-Buttons */}
-        {availableTransitions.length > 0 && (
+        {/* Cancel/Refund — side-exits, not part of the linear fulfillment
+            checklist below. The linear steps (mark_paid..mark_delivered)
+            are driven from the checklist instead. */}
+        {availableTransitions.some((tr) => tr === "cancel" || tr === "refund") && (
           <div className="flex flex-wrap gap-2 pt-3 border-t border-line-subtle">
-            {availableTransitions.map((tr) => {
-              if (tr === "mark_shipped") {
-                return (
-                  <Button
-                    key={tr}
-                    size="sm"
-                    onClick={() => setShippingDialog(true)}
-                    disabled={busy}
-                  >
-                    {t("orderDetail.actShipped")}
-                  </Button>
-                );
-              }
-              if (tr === "cancel" || tr === "refund") {
-                return (
-                  <Button
-                    key={tr}
-                    size="sm"
-                    variant="secondary"
-                    onClick={async () => {
-                      const verb =
-                        tr === "cancel"
-                          ? t("orderDetail.verbCancel")
-                          : t("orderDetail.verbRefund");
-                      const reason = await ask({
-                        message: t("orderDetail.reasonPrompt", { verb }),
-                        required: false,
-                      });
-                      if (reason === null) return; // dialog dismissed
-                      void transition(tr, { reason });
-                    }}
-                    disabled={busy}
-                  >
-                    {tr === "cancel"
-                      ? t("orderDetail.actCancel")
-                      : t("orderDetail.actRefund")}
-                  </Button>
-                );
-              }
-              return (
+            {availableTransitions
+              .filter((tr) => tr === "cancel" || tr === "refund")
+              .map((tr) => (
                 <Button
                   key={tr}
                   size="sm"
-                  variant={tr === "mark_paid" ? "primary" : "secondary"}
-                  onClick={() => void transition(tr)}
+                  variant="secondary"
+                  onClick={() => void runTransition(tr)}
                   disabled={busy}
                 >
-                  {t(transitionLabel(tr))}
+                  {t(transitionLabel(tr, order.isPickupDelivery))}
                 </Button>
-              );
-            })}
+              ))}
           </div>
         )}
       </div>
+
+      {/* Fulfillment-Checklist */}
+      {order.status !== "cancelled" && order.status !== "refunded" && (
+        <FulfillmentChecklist
+          order={order}
+          nextTransition={availableTransitions.find(
+            (tr) => tr !== "cancel" && tr !== "refund"
+          )}
+          onAdvance={(tr) => void runTransition(tr)}
+          busy={busy}
+        />
+      )}
 
       {/* Tracking-Info wenn schon vorhanden */}
       {(order.trackingNumber || order.trackingUrl) && (
@@ -266,10 +359,83 @@ export default function OrderDetailPage({
       )}
 
       {/* Items */}
-      <Section title={t("orderDetail.secItems", { n: order.items.length })}>
+      <Section
+        title={t("orderDetail.secItems", { n: order.items.length })}
+        action={
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            <a
+              href={api.printOrderExportCsvUrl(id)}
+              className="text-xs text-accent hover:underline whitespace-nowrap"
+            >
+              {t("orderDetail.downloadCsv")}
+            </a>
+            <a
+              href={api.printOrderExportMdUrl(id)}
+              className="text-xs text-accent hover:underline whitespace-nowrap"
+            >
+              {t("orderDetail.downloadMd")}
+            </a>
+            {!zipJob && (
+              <button
+                type="button"
+                onClick={() => void requestZip()}
+                className="text-xs text-accent hover:underline whitespace-nowrap"
+              >
+                {t("orderDetail.downloadZip")}
+              </button>
+            )}
+            {zipJob && zipJob.status !== "ready" && zipJob.status !== "failed" && (
+              <span className="text-xs text-ink-secondary flex items-center gap-1.5 whitespace-nowrap">
+                <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />
+                {t("orderDetail.zipBuilding")}
+              </span>
+            )}
+            {zipJob && zipJob.status === "ready" && zipJob.url && (
+              <a
+                href={zipJob.url}
+                className="text-xs text-semantic-success hover:underline font-medium whitespace-nowrap"
+              >
+                {t("orderDetail.zipReady")}
+              </a>
+            )}
+            {zipJob && zipJob.status === "failed" && (
+              <button
+                type="button"
+                onClick={() => void requestZip()}
+                className="text-xs text-semantic-danger hover:underline whitespace-nowrap"
+                title={zipJob.error ?? undefined}
+              >
+                {t("orderDetail.zipFailed")} — {t("orderDetail.zipRetry")}
+              </button>
+            )}
+          </div>
+        }
+      >
         <ul className="divide-y divide-line-subtle">
           {order.items.map((it) => (
             <li key={it.id} className="py-2 flex items-center gap-3 flex-wrap">
+              {/* Vorschau mit dem vom Kunden gewaehlten Ausschnitt (#55).
+                  Bis eine zugeschnittene Datei erzeugt wird, ist das der
+                  einzige Ort, an dem das Studio den Crop ueberhaupt sieht —
+                  vorher war er gespeichert, aber nirgends sichtbar, und
+                  der Download darunter liefert das ungeschnittene Original. */}
+              {it.file.previewUrl && (
+                <div className="relative shrink-0 w-24 h-24 bg-surface-sunken rounded-xs overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={it.file.previewUrl}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
+                  {it.crop && (
+                    <CropOverlay
+                      crop={it.crop}
+                      imageWidth={it.file.width}
+                      imageHeight={it.file.height}
+                    />
+                  )}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="text-sm">
                   <strong>
@@ -282,10 +448,50 @@ export default function OrderDetailPage({
                   {it.printProductVariant.heightMm} mm
                   {it.printProductVariant.finishType &&
                     ` · ${it.printProductVariant.finishType}`}
+                  {it.finishOptionName && ` · ${it.finishOptionName}`}
                 </div>
                 <div className="text-xs text-ink-tertiary mt-0.5">
-                  {t("orderDetail.imageLabel")} {it.file.originalFilename}
+                  {t("orderDetail.imageLabel")}{" "}
+                  <a
+                    href={api.studioFileDownloadUrl(it.file.id)}
+                    className="text-accent hover:underline"
+                  >
+                    {it.file.originalFilename}
+                  </a>
                 </div>
+                {it.crop && (
+                  <div className="text-xs text-ink-tertiary mt-0.5">
+                    {t("orderDetail.cropLabel")}{" "}
+                    <span className="font-mono">
+                      {formatCropText(it.crop, it.file.width, it.file.height)}
+                    </span>
+                    {" · "}
+                    {it.printFileKey ? (
+                      // Gerendert: der Link liefert die geschnittene Datei.
+                      <a
+                        href={api.studioPrintFileUrl(order.id, it.id)}
+                        className="text-accent hover:underline"
+                      >
+                        {t("orderDetail.cropDownload")}
+                      </a>
+                    ) : it.printFileError ? (
+                      // Rendering ist gescheitert — das Studio muss selbst
+                      // schneiden und soll wissen, warum.
+                      <span
+                        className="text-semantic-danger"
+                        title={it.printFileError}
+                      >
+                        {t("orderDetail.cropRenderFailed")}
+                      </span>
+                    ) : (
+                      // Noch nicht gerendert: vor `paid`, oder der Worker
+                      // ist noch nicht durch.
+                      <span className="text-semantic-warning">
+                        {t("orderDetail.cropNotApplied")}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="text-sm tabular-nums">
                 {formatPrice(fmt, it.totalPriceCents, order.currency)}
@@ -334,7 +540,11 @@ export default function OrderDetailPage({
 
       {/* Adressen */}
       <Section title={t("orderDetail.secShippingAddr")}>
-        <AddressBlock addr={order.shippingAddress} />
+        {order.shippingAddress ? (
+          <AddressBlock addr={order.shippingAddress} />
+        ) : (
+          <p className="text-sm text-ink-tertiary">{t("orderDetail.pickupNoAddress")}</p>
+        )}
       </Section>
 
       {order.billingAddress && (
@@ -376,7 +586,7 @@ export default function OrderDetailPage({
                 {new Date(e.createdAt).toLocaleString(fmt.bcp47)}
               </span>
               <span className="flex-1 min-w-0">
-                <strong>{t(eventLabel(e.eventType))}</strong>
+                <strong>{t(eventLabel(e.eventType, order.isPickupDelivery))}</strong>
                 <span className="text-ink-tertiary">
                   {" · "}
                   {t(actorLabel(e.actor))}
@@ -493,16 +703,121 @@ function ShippingDialog({
   );
 }
 
+type LinearTransition =
+  | "mark_paid"
+  | "mark_in_production"
+  | "mark_shipped"
+  | "mark_ready_for_pickup"
+  | "mark_delivered";
+
+const STATUS_RANK: Record<string, number> = {
+  pending_payment: 0,
+  paid: 1,
+  in_production: 2,
+  shipped: 3,
+  ready_for_pickup: 3,
+  delivered: 4,
+};
+
+/** Read-at-a-glance progress through the linear part of the order
+ *  lifecycle (cancel/refund are side-exits, shown separately). Each
+ *  step's status is derived from order.status, not tracked
+ *  independently — clicking the current step fires the same
+ *  transition as the equivalent action button (via onAdvance), so
+ *  the checklist can never drift from the real state machine. */
+function FulfillmentChecklist({
+  order,
+  nextTransition,
+  onAdvance,
+  busy,
+}: {
+  order: PrintOrderDetail;
+  nextTransition: LinearTransition | "cancel" | "refund" | undefined;
+  onAdvance: (tr: LinearTransition) => void;
+  busy: boolean;
+}) {
+  const t = useT();
+  const steps: Array<{ status: string; type: LinearTransition; title: string }> = [
+    { status: "paid", type: "mark_paid", title: t("orderDetail.checklistOrdered") },
+    { status: "in_production", type: "mark_in_production", title: t("orderDetail.checklistPrinting") },
+    order.isPickupDelivery
+      ? {
+          status: "ready_for_pickup",
+          type: "mark_ready_for_pickup",
+          title: t("orderDetail.checklistReadyForPickup"),
+        }
+      : { status: "shipped", type: "mark_shipped", title: t("orderDetail.checklistShipped") },
+    {
+      status: "delivered",
+      type: "mark_delivered",
+      title: order.isPickupDelivery
+        ? t("orderDetail.checklistPickedUp")
+        : t("orderDetail.checklistDelivered"),
+    },
+  ];
+  // shipped and ready_for_pickup share a rank: allowedTransitionsFor()
+  // already tolerates order.status/isPickupDelivery disagreeing (a stale
+  // flag never dead-ends an order), so this checklist shouldn't vanish
+  // over the same mismatch — a plain array keyed on isPickupDelivery
+  // would return -1 for whichever status it didn't include.
+  const currentRank = STATUS_RANK[order.status] ?? -1;
+  if (currentRank < 0) return null; // draft or an unknown status
+
+  return (
+    <Section title={t("orderDetail.secChecklist")}>
+      <ul className="space-y-2">
+        {steps.map((s, i) => {
+          const stepRank = STATUS_RANK[s.status];
+          const done = currentRank >= stepRank;
+          const isNext = nextTransition === s.type;
+          return (
+            <li
+              key={s.status}
+              className="flex items-center gap-3 rounded-md border border-line-subtle p-2.5"
+            >
+              <span
+                className={
+                  done
+                    ? "shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-semantic-success/15 text-semantic-success text-sm"
+                    : "shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-surface-sunken text-ink-tertiary text-sm"
+                }
+              >
+                {done ? "✓" : i + 1}
+              </span>
+              <span className="flex-1 text-sm font-medium">{s.title}</span>
+              {isNext && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() => onAdvance(s.type)}
+                >
+                  {t("orderDetail.checklistMark")}
+                </Button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  );
+}
+
 function Section({
   title,
+  action,
   children,
 }: {
   title: string;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section className="rounded-md border border-line-subtle bg-surface-raised p-4">
-      <h2 className="text-sm font-semibold mb-2">{title}</h2>
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <h2 className="text-sm font-semibold">{title}</h2>
+        {action}
+      </div>
       {children}
     </section>
   );
@@ -531,10 +846,16 @@ function formatPrice(fmt: Formatters, cents: number, currency = "EUR"): string {
   return fmt.currencyFromMinor(cents, currency);
 }
 
-function transitionsForStatus(status: string): Array<
+/** Mirrors allowedTransitionsFor() in apps/api/src/services/print/orders.ts —
+ *  the 'in_production' step forks on isPickupDelivery. */
+function transitionsForStatus(
+  status: string,
+  isPickupDelivery: boolean
+): Array<
   | "mark_paid"
   | "mark_in_production"
   | "mark_shipped"
+  | "mark_ready_for_pickup"
   | "mark_delivered"
   | "cancel"
   | "refund"
@@ -545,8 +866,11 @@ function transitionsForStatus(status: string): Array<
     case "paid":
       return ["mark_in_production", "cancel", "refund"];
     case "in_production":
-      return ["mark_shipped", "cancel", "refund"];
+      return isPickupDelivery
+        ? ["mark_ready_for_pickup", "cancel", "refund"]
+        : ["mark_shipped", "cancel", "refund"];
     case "shipped":
+    case "ready_for_pickup":
       return ["mark_delivered", "refund"];
     case "delivered":
       return ["refund"];
@@ -555,7 +879,7 @@ function transitionsForStatus(status: string): Array<
   }
 }
 
-function transitionLabel(t: string): string {
+function transitionLabel(t: string, isPickupDelivery: boolean): string {
   switch (t) {
     case "mark_paid":
       return "orderDetail.actMarkPaid";
@@ -563,8 +887,12 @@ function transitionLabel(t: string): string {
       return "orderDetail.actInProduction";
     case "mark_shipped":
       return "orderDetail.actShipped";
+    case "mark_ready_for_pickup":
+      return "orderDetail.actReadyForPickup";
     case "mark_delivered":
-      return "orderDetail.actDelivered";
+      return isPickupDelivery
+        ? "orderDetail.actPickedUp"
+        : "orderDetail.actDelivered";
     case "cancel":
       return "orderDetail.actCancel";
     case "refund":
@@ -574,7 +902,7 @@ function transitionLabel(t: string): string {
   }
 }
 
-function eventLabel(t: string): string {
+function eventLabel(t: string, isPickupDelivery: boolean): string {
   switch (t) {
     case "created":
       return "orderDetail.evCreated";
@@ -584,8 +912,10 @@ function eventLabel(t: string): string {
       return "orderDetail.evInProduction";
     case "mark_shipped":
       return "orderDetail.evShipped";
+    case "mark_ready_for_pickup":
+      return "orderDetail.evReadyForPickup";
     case "mark_delivered":
-      return "orderDetail.evDelivered";
+      return isPickupDelivery ? "orderDetail.evPickedUp" : "orderDetail.evDelivered";
     case "cancel":
       return "orderDetail.evCancel";
     case "refund":
@@ -612,4 +942,70 @@ function actorLabel(a: string): string {
     default:
       return a;
   }
+}
+
+
+/**
+ * Zeichnet das Crop-Rechteck ueber ein object-contain-Bild. Die Crop-
+ * Werte sind auf das BILD normiert, das Bild fuellt den Container aber
+ * nur in einer Achse — darum erst die Letterbox-Offsets berechnen und
+ * dann das Rechteck in den tatsaechlichen Bildbereich legen. Ohne das
+ * saesse das Rechteck bei einem Hochformat-Foto im leeren Rand.
+ */
+function CropOverlay({
+  crop,
+  imageWidth,
+  imageHeight,
+}: {
+  crop: { x: number; y: number; width: number; height: number };
+  imageWidth: number | null;
+  imageHeight: number | null;
+}) {
+  // Ohne Bildmasse kennen wir das Letterboxing nicht — dann lieber das
+  // Rechteck relativ zum Container zeigen als gar nichts.
+  let left = crop.x, top = crop.y, w = crop.width, h = crop.height;
+  if (imageWidth && imageHeight) {
+    const ratio = imageWidth / imageHeight;
+    // Container ist quadratisch (w-24 h-24).
+    const drawnW = ratio >= 1 ? 1 : ratio;
+    const drawnH = ratio >= 1 ? 1 / ratio : 1;
+    const offX = (1 - drawnW) / 2;
+    const offY = (1 - drawnH) / 2;
+    left = offX + crop.x * drawnW;
+    top = offY + crop.y * drawnH;
+    w = crop.width * drawnW;
+    h = crop.height * drawnH;
+  }
+  return (
+    <div
+      aria-hidden="true"
+      className="absolute border-2 border-accent pointer-events-none"
+      style={{
+        left: `${left * 100}%`,
+        top: `${top * 100}%`,
+        width: `${w * 100}%`,
+        height: `${h * 100}%`,
+        boxShadow: "0 0 0 9999px rgba(0,0,0,0.45)",
+      }}
+    />
+  );
+}
+
+/** Crop als Text — Pixel wenn die Bildmasse bekannt sind, sonst Prozent.
+ *  Spiegelt formatCrop() im API-Export, damit Bildschirm und PDF/MD
+ *  dieselben Zahlen zeigen. */
+function formatCropText(
+  crop: { x: number; y: number; width: number; height: number },
+  imageWidth: number | null,
+  imageHeight: number | null
+): string {
+  if (imageWidth && imageHeight) {
+    const x = Math.round(crop.x * imageWidth);
+    const y = Math.round(crop.y * imageHeight);
+    const w = Math.round(crop.width * imageWidth);
+    const h = Math.round(crop.height * imageHeight);
+    return `${w}×${h} px @ ${x},${y}`;
+  }
+  const p = (v: number) => `${Math.round(v * 100)}%`;
+  return `${p(crop.width)}×${p(crop.height)} @ ${p(crop.x)},${p(crop.y)}`;
 }

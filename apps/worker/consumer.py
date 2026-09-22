@@ -124,6 +124,7 @@ def _dispatch(stream: str, payload: dict) -> None:
                 payload.get("label", "all"),
                 payload.get("variant", "original"),
                 payload.get("partMaxBytes"),
+                payload.get("printOrderId"),
             ],
         )
     elif job_type == "webhook_delivery":
@@ -206,6 +207,14 @@ def _dispatch(stream: str, payload: dict) -> None:
         app.send_task(
             "tasks.process_appearance_asset.optimize",
             args=[payload.get("tenantId"), payload.get("kind")],
+        )
+    elif job_type == "render_print_item":
+        # Druckfertige Crop-Datei pro Bestellzeile (#55). Getriggert von
+        # der API beim Uebergang einer Print-Order nach `paid`. Ein Job
+        # pro Bestellung; der Task iteriert die Zeilen selbst.
+        app.send_task(
+            "tasks.render_print_item.render_order",
+            args=[payload.get("orderId")],
         )
     else:
         log.warning("consumer.unknown_job_type",

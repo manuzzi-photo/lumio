@@ -84,6 +84,13 @@ model Tenant {
   // ---------------------------------------------------------------------------
   studioLogoKey      String?  // Logo in der Sidebar (fuer dunklen Grund)
   studioLogoLightKey String?  // helle Variante (bei hellem Grundton)
+  // Favicon des Studios. Gilt ueberall, wo dieses Studio auftritt:
+  // Studio-Backend, Login-Seite und Kundengalerien. Ein Branding-Profil
+  // kann es pro Galerie ueberschreiben (Branding.faviconUrl) — die
+  // Aufloesung ist Branding -> Studio -> Lumio-Default, damit eine
+  // thematisch gebrandete Galerie moeglich ist, ohne dass ein leeres
+  // Branding-Feld gleich auf das Lumio-Icon zurueckfaellt.
+  studioFaviconKey   String?
   studioAccentColor  String?
   studioTheme        String?  @default("dark") // "dark" | "light"
   loginLogoKey       String?
@@ -420,7 +427,9 @@ model Gallery {
   brandingId      String?  @db.Uuid
   branding        Branding? @relation(fields: [brandingId], references: [id])
   
-  slug            String   @unique // kryptografisch zufällig, z.B. 12 chars
+  // Random by default (e.g. 12 chars). Unique per tenant, not per instance:
+  // see @@unique([tenantId, slug]) below and services/gallery-lookup.ts.
+  slug            String
   title           String
   description     String?
   
@@ -609,8 +618,10 @@ model Gallery {
   updatedAt       DateTime @updatedAt
   
   collaborators   GalleryCollaborator[]
+  @@unique([tenantId, slug])
   @@index([tenantId])
   @@index([ownerId])
+  // Not redundant: serves the slug-only fallback in resolveGalleryBySlug().
   @@index([slug])
   @@map("galleries")
 }
@@ -702,18 +713,26 @@ model ZipDownload {
   // Wer hat ihn angefordert? Null = öffentlich (alle Files der Galerie).
   // Wenn gesetzt: spezifisch zur Auswahl dieses Access-Tokens.
   accessId    String?  @db.Uuid
-  
+
+  // Wer hat den Build ausgelöst? "customer" = über einen /g/:slug-
+  // Endpoint (dort gelten downloadEnabled/downloadOriginalsEnabled).
+  // "studio" = über einen authentifizierten Studio-Endpoint (Tag-Export,
+  // Print-Order-Bundle) — internes Artefakt, das die Kunden-Route
+  // (GET /g/:slug/download/zip/:zipId) nie zurückgeben darf, unabhängig
+  // von accessId/variant. Siehe #45.
+  source      String   @default("customer")
+
   // Wenn diese ZIP nur eine Untermenge der Files enthält (z.B. die
   // gepickten), hashen wir die fileId-Liste, um Cache-Hits zu erkennen.
   // NULL = "alle Files der Galerie".
   fileIdsHash String?
   fileCount   Int
-  
+
   // "original" oder "web" — bestimmt, welche Bytes in die ZIP gepackt
   // werden. Default "original" für Rückwärtskompatibilität — der Worker
   // bzw. ältere Einträge ohne explizite Wahl liefern Originals.
   variant     String   @default("original")
-  
+
   status      String   @default("pending") // pending | building | ready | failed
   // Einzel-ZIP: storageKey/sizeBytes gesetzt, partCount = 0 (Normalfall,
   // rückwärtskompatibel). Mehrteilig: partCount >= 2, storageKey = NULL,
@@ -733,7 +752,14 @@ model ZipDownload {
   updatedAt   DateTime @updatedAt
   
   @@index([galleryId, expiresAt])
-  @@unique([galleryId, accessId, fileIdsHash, variant])
+  // source ist Teil des Cache-Schlüssels: sonst könnten ein Kunden-Export
+  // und ein Studio-Export mit identischem accessId (beide null, z.B. in
+  // öffentlichen Gallerien) auf denselben Dateien landen und sich
+  // gegenseitig den source-Wert "stehlen" — mit dem Effekt, dass ein
+  // legitimer Kunden-Request die (weiterhin als "studio" markierte)
+  // vorhandene Zeile zurückbekommt und dann von der eigenen Kunden-Route
+  // abgelehnt wird.
+  @@unique([galleryId, accessId, source, fileIdsHash, variant])
   @@map("zip_downloads")
 }
 
@@ -885,7 +911,7 @@ model File {
   mimeType        String
   sizeBytes       BigInt
   sha256          String?
-  
+
   width           Int?
   height          Int?
   durationMs      Int?     // bei Videos
@@ -894,7 +920,16 @@ model File {
   // Kategorisierung
   kind            String   // image | raw | video | other
   
-  // EXIF / Metadaten flexibel
+  // EXIF / Metadaten flexibel. Genutzt u.a. fuer
+  // exif.lumio.originalMd5 -- MD5 des ORIGINAL-Master-Files (RAW/JPEG in
+  // Lightroom), eingebettet vom Lightroom-Publish-Service-Plugin als
+  // custom XMP-Feld im hochgeladenen JPEG (siehe
+  // apps/lightroom-plugin/.../JpegXmp.lua) und vom Worker ausgelesen.
+  // Nicht zu verwechseln mit sha256 oben, der die hochgeladenen/
+  // gerenderten Bytes hasht (Dup-Detection) -- originalMd5 identifiziert
+  // stattdessen das Original-Foto unabhaengig vom aktuellen Dateinamen,
+  // fuer den Selection-Import (ImportSelectionTask.lua). Nur gesetzt fuer
+  // ueber das Plugin veroeffentlichte Files; sonst nicht vorhanden.
   exif            Json?
   takenAt         DateTime?
   
@@ -2099,12 +2134,88 @@ model PrintProductVariant {
   enabled         Boolean  @default(true)
 
   orderItems      PrintOrderItem[]
+  priceTiers      PrintProductVariantPriceTier[]
+  finishOptions   PrintProductVariantFinishOption[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([printProductId, enabled])
   @@map("print_product_variants")
+}
+
+/// Quantity-break pricing tiers for a variant. Empty = flat pricing
+/// (PrintProductVariant.priceCents applies to any quantity). When
+/// tiers exist, priceCents is a DERIVED, CACHED mirror of the first
+/// tier's (minQty=1) unit price — kept in sync only by the write paths
+/// that go through services/print/pricing-tiers.ts (manual variant
+/// CRUD, catalog import). Not a DB-enforced invariant.
+///
+/// Ladder shape enforced at the service layer (not by the DB): sorted
+/// by minQty ascending, first tier minQty=1, last tier maxQty=null
+/// (unbounded), contiguous with no gaps or overlaps.
+model PrintProductVariantPriceTier {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  printProductVariantId String   @db.Uuid
+  printProductVariant   PrintProductVariant @relation(fields: [printProductVariantId], references: [id], onDelete: Cascade)
+
+  /// Inclusive lower bound. First tier of a ladder must be 1.
+  minQty                Int
+  /// Inclusive upper bound. null = unbounded ("and above") — only
+  /// allowed on the last tier of a ladder.
+  maxQty                Int?
+  /// Price per single unit within this tier, in cents.
+  unitPriceCents        Int
+  /// What the LAB charges for one unit within this tier, in cents.
+  /// Optional, all-or-nothing across the ladder (see planVariant() /
+  /// costTierConsistency()) — margin display only, never priced into
+  /// checkout. null on every tier = flat PrintProductVariant.costCents
+  /// applies to any quantity instead.
+  unitCostCents         Int?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([printProductVariantId, minQty])
+  @@index([printProductVariantId])
+  @@map("print_product_variant_price_tiers")
+}
+
+/// Customer-selectable options on a variant that don't change its size
+/// (e.g. "black frame" / "white frame"). Distinct from the scalar
+/// finishType field above, which is a studio-facing material label
+/// (matte/gloss/...), not something a customer picks. Optional and
+/// additive: a variant with no rows here behaves exactly as before.
+/// A quantity-break tier ladder still resolves per variant across all
+/// finishes — priceDeltaCents is added to that resolved unit price, not
+/// folded into the tier lookup itself, since the finish doesn't change
+/// how many physical prints of that FORMAT were ordered.
+model PrintProductVariantFinishOption {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  printProductVariantId String   @db.Uuid
+  printProductVariant   PrintProductVariant @relation(fields: [printProductVariantId], references: [id], onDelete: Cascade)
+
+  name                  String
+  /// Overrides the variant's own SKU on order-item exports when this
+  /// finish is selected, e.g. for invoicing a differently-stocked frame
+  /// color under its own line. Falls back to the variant/product SKU
+  /// chain when null.
+  sku                   String?
+  /// Added to the tier-resolved unit price. 0 = same price as the
+  /// variant's base finish (e.g. a color choice with no surcharge).
+  priceDeltaCents       Int      @default(0)
+
+  displayOrder          Int      @default(0)
+  enabled               Boolean  @default(true)
+
+  orderItems            PrintOrderItem[]
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([printProductVariantId, name])
+  @@index([printProductVariantId])
+  @@map("print_product_variant_finish_options")
 }
 
 /// Versandmethoden pro Tenant. Bei API-Lab-Providern oft vom Lab
@@ -2130,6 +2241,11 @@ model ShippingMethod {
 
   /// Provider-spezifische Referenz (z.B. WhiteWall-Shipping-Method-ID).
   providerShippingRef String?
+
+  /// In-store pickup instead of a courier delivery. No shipping address
+  /// is collected at checkout for these; the order's fulfillment
+  /// checklist shows "ready for pickup" instead of "shipped".
+  isPickup      Boolean  @default(false)
 
   enabled       Boolean  @default(true)
   displayOrder  Int      @default(0)
@@ -2174,9 +2290,16 @@ model PrintOrder {
   /// Wir speichern als JSON statt Spalten, weil Adress-Schemas
   /// laenderspezifisch sind und sich aendern. Plus: Audit-Snapshot —
   /// wenn der Endkunde spaeter umzieht, soll die Order-Adresse
-  /// historisch bleiben.
-  shippingAddress Json
+  /// historisch bleiben. Null bei isPickupDelivery — dort wird keine
+  /// Adresse erhoben.
+  shippingAddress Json?
   billingAddress  Json?
+
+  /// Snapshot von shippingMethod.isPickup zum Bestellzeitpunkt (nicht
+  /// live nachgeschlagen — dieselbe Audit-Snapshot-Begruendung wie bei
+  /// shippingAddress). Bestimmt, ob der Fulfillment-Ablauf ueber
+  /// 'ready_for_pickup' oder 'shipped' laeuft.
+  isPickupDelivery Boolean @default(false)
 
   /// Bezahlmodus. 'stripe_connect' = online via Stripe Connect,
   /// 'offline_invoice' = Fotograf rechnet selbst ab.
@@ -2185,6 +2308,12 @@ model PrintOrder {
   /// Stripe-Referenzen (nur bei stripe_connect).
   stripePaymentIntentId String?  @unique
   stripeChargeId        String?
+
+  /// Receipt/invoice reference for a manually confirmed offline_invoice
+  /// payment (e.g. an invoice number). Required by the 'mark_paid'
+  /// transition for offline_invoice orders; stripe_connect orders use
+  /// stripeChargeId as their reference instead.
+  paymentReference      String?
 
   /// Geld-Beträge. Alle in kleinster Waehrungseinheit.
   subtotalCents   Int
@@ -2199,13 +2328,20 @@ model PrintOrder {
   /// Lebenszyklus. Linear ausser bei Cancel/Refund die alle
   /// Zwischenzustaende ueberspringen.
   /// 'draft'      = User im Checkout, noch nicht bezahlt
-  /// 'pending_payment' = Stripe-Payment-Intent erstellt, warten auf Zahlung
+  /// 'pending_payment' = Order erstellt, warten auf Zahlung — bei
+  ///                stripe_connect: Payment-Intent erstellt; bei
+  ///                offline_invoice: wartet auf manuelle Bestaetigung
   /// 'paid'       = Zahlung eingegangen (bei stripe_connect) oder
   ///                vom Fotograf manuell als bezahlt markiert
+  ///                (offline_invoice erfordert dabei paymentReference)
   /// 'in_production' = An Lab uebergeben (api) oder Fotograf hat
   ///                'in Druck'-Status gesetzt
-  /// 'shipped'    = Tracking-Nummer gesetzt
-  /// 'delivered'  = Aus Carrier-Webhook oder manuell vom Fotograf
+  /// Danach forkt der Ablauf je nach isPickupDelivery:
+  /// 'shipped'    = (Kurier) Tracking-Nummer gesetzt
+  /// 'ready_for_pickup' = (Abholung) im Geschaeft abholbereit
+  /// 'delivered'  = Terminal fuer beide Pfade — Kurier: aus Carrier-
+  ///                Webhook oder manuell; Abholung: vom Fotograf beim
+  ///                Abholen markiert
   /// 'cancelled'  = Bestellung storniert (vor Production)
   /// 'refunded'   = Zahlung an Endkunde zurueckgegeben
   status          String   @default("draft")
@@ -2233,6 +2369,7 @@ model PrintOrder {
   paidAt          DateTime?
   productionStartedAt DateTime?
   shippedAt       DateTime?
+  readyForPickupAt DateTime?
   deliveredAt     DateTime?
   cancelledAt     DateTime?
   refundedAt      DateTime?
@@ -2265,6 +2402,32 @@ model PrintOrderItem {
   ///   { x, y, width, height } in [0..1] Bild-Koordinaten
   /// null = ganzes Bild
   crop                  Json?
+
+  /// Selected finish option (e.g. frame color), if the variant offers
+  /// any. finishOptionName/finishOptionSku are a snapshot at order time
+  /// — kept even if the option is later renamed or removed, same
+  /// reasoning as the rest of this row being a priced snapshot.
+  finishOptionId        String?  @db.Uuid
+  finishOption          PrintProductVariantFinishOption? @relation(fields: [finishOptionId], references: [id], onDelete: SetNull)
+  finishOptionName      String?
+  finishOptionSku       String?
+
+  /// Zugeschnittene, druckfertige Datei fuer diese Zeile (#55). Wird vom
+  /// Worker beim Uebergang nach `paid` erzeugt, wenn `crop` gesetzt ist:
+  /// Original -> Crop in Pixeln -> JPEG in voller Aufloesung, sRGB.
+  /// S3-Key t/<tenant>/print/<orderId>/<itemId>.jpg.
+  ///
+  /// Bewusst HIER und nicht als Rendition: eine Rendition haengt an der
+  /// Datei, ein Crop an der Bestellzeile — dieselbe Datei kann in zwei
+  /// Bestellungen zwei verschiedene Ausschnitte haben.
+  ///
+  /// null = noch nicht gerendert oder kein Crop. export-zip und die
+  /// Lab-Adapter nehmen diese Datei, wenn vorhanden, sonst das Original.
+  printFileKey          String?
+  /// Fehlermeldung, falls das Rendering scheiterte. Dann bleibt
+  /// printFileKey null und das Studio bekommt weiter das Original plus
+  /// die Crop-Werte aus der Bestellansicht.
+  printFileError        String?
 
   quantity              Int      @default(1)
   unitPriceCents        Int

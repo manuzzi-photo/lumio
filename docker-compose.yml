@@ -85,6 +85,12 @@ services:
       # also durch Caddy. Bei Split-Deployment kann NEXT_PUBLIC_API_URL gesetzt
       # werden (z.B. https://api.example.com).
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-}
+      # API-Adresse fuer serverseitige Renders (Metadaten/Open-Graph).
+      # NICHT dasselbe wie NEXT_PUBLIC_API_URL: das darf leer sein
+      # (same-origin im Browser), hier braucht Node aber eine absolute
+      # URL — ein relativer Pfad wirft "Failed to parse URL". Default im
+      # Code ist der Container-Name; nur bei Split-Deployment aendern.
+      - INTERNAL_API_URL=${INTERNAL_API_URL:-}
       - NEXT_PUBLIC_DEPLOYMENT_MODE=${DEPLOYMENT_MODE:-single}
       # Im Multi-Mode: Basis-Domain des Cloud-Setups (z.B. lumio-cloud.de).
       # Wird vom Frontend genutzt um Apex- von Tenant-Subdomain zu
@@ -296,7 +302,13 @@ services:
   # Im Cloud-Modus (R2/AWS S3/B2/...) kannst du diesen Service auskommentieren
   # und stattdessen die externen S3-Credentials in der .env hinterlegen.
   minio:
-    image: minio/minio:latest
+    # quay.io statt Docker Hub: MinIO hat die Community-Images auf Docker Hub
+    # dichtgemacht — anonyme Pulls von minio/minio und minio/mc geben seit
+    # September 2026 401, auch mit korrektem Pull-Token. Auf quay.io
+    # pflegt MinIO `latest` weiter (Build vom 2025-09-07 geprueft), und
+    # quay hat kein Docker-Hub-Rate-Limit, das Self-Hoster auf geteilten
+    # VPS-IPs ohnehin regelmaessig getroffen hat.
+    image: quay.io/minio/minio:latest
     container_name: lumio_minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -323,7 +335,7 @@ services:
   # MinIO-Bucket-Init — legt beim ersten Start den Bucket an
   # ---------------------------------------------------------------------------
   minio_init:
-    image: minio/mc:latest
+    image: quay.io/minio/mc:latest
     container_name: lumio_minio_init
     depends_on:
       minio:

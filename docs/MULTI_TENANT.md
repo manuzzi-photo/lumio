@@ -4,6 +4,12 @@
 
 > ⚠️ **License note:** Running Lumio multi-tenant for **your own organization or an agency** (several brands/clients you operate yourself) is unrestricted. Offering Lumio as a **commercial SaaS to third parties** that competes with the maintainer's hosted service is *Competing Use* and is **not** permitted out of the box under the FSL-1.1-ALv2 — that requires a commercial license. See [LICENSE](../LICENSE).
 
+> **Tenant or studio?** They are the same thing. One row, two words: we say
+> *tenant* when the topic is administration and isolation (creating, suspending,
+> archiving, billing, routing), and *studio* when the topic is the people
+> working inside it. The Super-Admin area therefore talks about tenants, the
+> studio UI never does.
+
 Lumio can run multiple tenants (studios/photographer clients) on the same installation. This document describes how a new tenant becomes reachable — the DB + UI create it, but for the right URL to land on the right tenant you need one of the three routing methods below.
 
 If you're building SaaS and have fewer than 20 clients, **method B (custom domains per client)** is the recommended path. Wildcards only pay off once editing the Caddyfile manually per client becomes tedious.
@@ -19,6 +25,8 @@ When an API request comes in, tenant resolution runs in this order (see `apps/ap
 5. **Single-mode fallback** — if only one tenant exists, it's used
 
 As soon as you create the second tenant, step 5 drops out — you have to use 2, 3 or 4.
+
+**Gallery links.** Gallery slugs are unique per studio, not per installation, so two studios can both use the same readable slug. A gallery link (`/g/<slug>`) is resolved against the studio that tenant resolution returns. For an anonymous visitor, which is what a studio's clients are, that comes from the host (steps 3 and 4), so a gallery opens on its own studio's domain. If no studio can be resolved — for example a multi-tenant installation without per-studio subdomains or custom domains — the slug is looked up across all studios and the gallery opens only if exactly one has it; if several do, the link returns 404. Slugs are random today, so this only comes up once studios can pick their own slug and two of them pick the same one. A single-studio installation always looks slugs up across the whole installation.
 
 ---
 
@@ -126,6 +134,6 @@ The studio UI shows a warning in the slug editor whenever the gallery is both pu
 | 20+ clients, no longer want to edit Caddy per client | A (wildcard) |
 | Mobile app                       | C (header)                           |
 | Browser studio                   | resolved automatically via cookie after first login |
-| Customer gallery links           | works on any tenant domain |
+| Customer gallery links           | works on the domain of the studio that owns the gallery |
 
 The methods are combinable — one tenant can have a custom domain AND a wildcard subdomain AND a mobile header at the same time.

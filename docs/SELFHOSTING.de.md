@@ -95,8 +95,13 @@ erreichbar sein.)
 ## 5. Starten
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
+
+> Die Images in `docker-compose.prod.yml` zeigen auf eine private Registry,
+> die nicht öffentlich lesbar ist. Deshalb ist `--build` nötig: damit werden
+> die Images lokal gebaut und unter diesen Namen getaggt. Ein `up -d` ohne
+> `--build` scheitert mit einem 401 der Registry.
 
 Caddy holt sich automatisch ein Let's-Encrypt-Zertifikat (dauert ca. 30 Sekunden). Beobachten:
 
@@ -108,7 +113,7 @@ Erfolg sieht so aus: `certificate obtained successfully ... galerien.dein-studio
 
 ## 6. Admin-User anlegen
 
-Im Single-Mode legt Lumio beim ersten Start automatisch einen Tenant namens "My Studio" an – du brauchst keinen Super-Admin, keinen Tenant manuell erstellen. Nur den ersten User:
+Im Single-Mode legt Lumio beim ersten Start automatisch einen Tenant namens "My Studio" an — dieser eine Tenant *ist* dein Studio, und der Begriff "Tenant" begegnet dir danach nirgends mehr – du brauchst keinen Super-Admin, keinen Tenant manuell erstellen. Nur den ersten User:
 
 ```bash
 docker compose exec api npm run create-admin -- \

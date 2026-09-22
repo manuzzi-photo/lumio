@@ -203,7 +203,10 @@ function PublicGalleryInner() {
 
   if (accessState) {
     return (
-      <GalleryShell branding={meta?.branding ?? null}>
+      <GalleryShell
+        branding={meta?.branding ?? null}
+        faviconUrl={meta?.faviconUrl ?? null}
+      >
         <div className="text-center py-20 max-w-md mx-auto">
           <div className="text-lg font-medium">
             {accessState === "expired"
@@ -228,6 +231,7 @@ function PublicGalleryInner() {
     return (
       <GalleryShell
         branding={meta.branding}
+        faviconUrl={meta.faviconUrl}
         overrides={{
           colorBackground: meta.colors.background,
           colorAccent: meta.colors.accent,
@@ -258,6 +262,7 @@ function PublicGalleryInner() {
   return (
     <GalleryShell
       branding={meta.branding}
+      faviconUrl={meta.faviconUrl}
       overrides={{
         colorBackground: meta.colors.background,
         colorAccent: meta.colors.accent,
