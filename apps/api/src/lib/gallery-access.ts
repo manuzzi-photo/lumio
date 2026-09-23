@@ -78,23 +78,12 @@ export function canAccessGallery(
 export const canManageGalleryCollaborators = canAccessGallery;
 
 /**
- * Delete-Berechtigung — bewusst STRENGER als canAccessGallery, das sonst
- * fuer alle Aktionen gilt (siehe Modul-Kommentar oben). Produktentscheidung:
- *
- *   - Admin darf jede Galerie loeschen, die er ohnehin sehen darf
- *     (galleryAccessWhere bleibt unveraendert — keine Ausweitung der
- *     Sichtbarkeit, nur der Loesch-Berechtigung innerhalb dessen).
- *   - Owner darf nur eigene Galerien loeschen (ownerId === eigene id) —
- *     auch eine Collaborator-Freigabe auf eine fremde Galerie reicht
- *     dafuer NICHT, obwohl sie fuer canAccessGallery genuegen wuerde.
- *   - Member darf nie loeschen, unabhaengig von Ersteller- oder
- *     Freigabe-Status.
+ * Delete-Berechtigung. Owner und Admin duerfen loeschen, Member nie.
+ * Die REICHWEITE ergibt sich aus galleryAccessWhere(), das in der Route
+ * vorher greift und sonst 404 liefert — fuer den Owner also jede
+ * Galerie des Studios, fuer den Admin seine eigenen plus Freigaben.
+ * Deshalb braucht diese Funktion die Galerie selbst nicht.
  */
-export function canDeleteGallery(
-  s: SessionContext,
-  gallery: { ownerId: string }
-): boolean {
-  if (s.user.role === "admin") return true;
-  if (s.user.role === "owner") return gallery.ownerId === s.user.id;
-  return false;
+export function canDeleteGallery(s: SessionContext): boolean {
+  return s.user.role === "owner" || s.user.role === "admin";
 }

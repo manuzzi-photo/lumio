@@ -531,7 +531,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
           createdAt: g.createdAt,
           updatedAt: g.updatedAt,
           fileCount: g._count.files,
-          canDelete: canDeleteGallery(s, g),
+          canDelete: canDeleteGallery(s),
           tags: g.tags.map((gt) => gt.tag),
           coverThumbUrl: coverUrlByGallery.get(g.id) ?? null,
           stats: {
@@ -1086,7 +1086,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
       });
       if (!existing) return reply.status(404).send({ error: "not_found" });
 
-      if (!canDeleteGallery(s, existing)) {
+      if (!canDeleteGallery(s)) {
         return reply.status(403).send({ error: "delete_not_allowed" });
       }
       if (existing.status !== "archived") {

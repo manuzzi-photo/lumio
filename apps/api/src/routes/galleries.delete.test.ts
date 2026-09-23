@@ -21,40 +21,32 @@ function session(role: "owner" | "admin" | "member", userId: string) {
 }
 
 describe("canDeleteGallery", () => {
-  it("admin may delete any gallery", () => {
-    expect(
-      canDeleteGallery(session("admin", OTHER_ID), { ownerId: OWNER_ID })
-    ).toBe(true);
+  it("admin may delete", () => {
+    expect(canDeleteGallery(session("admin", OTHER_ID))).toBe(true);
   });
 
-  it("owner may delete their own gallery", () => {
-    expect(
-      canDeleteGallery(session("owner", OWNER_ID), { ownerId: OWNER_ID })
-    ).toBe(true);
+  it("owner may delete", () => {
+    expect(canDeleteGallery(session("owner", OWNER_ID))).toBe(true);
   });
 
-  it("owner may not delete someone else's gallery", () => {
-    expect(
-      canDeleteGallery(session("owner", OTHER_ID), { ownerId: OWNER_ID })
-    ).toBe(false);
-  });
-
-  it("member may never delete, even their own gallery", () => {
-    expect(
-      canDeleteGallery(session("member", OWNER_ID), { ownerId: OWNER_ID })
-    ).toBe(false);
+  it("member may never delete", () => {
+    expect(canDeleteGallery(session("member", OWNER_ID))).toBe(false);
   });
 });
 
 // Guard-Reihenfolge aus der Route kopiert: Berechtigung zuerst, dann
 // archiviert-Status, dann Druckbestellungen. Reihenfolge ist bewusst so,
 // nicht vertauschbar — Test haelt das fest.
+//
+// Die REICHWEITE (welche Galerie ueberhaupt hier ankommt) ist bereits durch
+// galleryAccessWhere() in der Route entschieden — canDeleteGallery() prueft
+// nur noch die Rolle, siehe gallery-access.ts.
 function evaluateDeleteGuards(
   s: SessionContext,
-  gallery: { ownerId: string; status: string },
+  gallery: { status: string },
   printOrderCount: number
 ): "ok" | "delete_not_allowed" | "gallery_not_archived" | "gallery_has_print_orders" {
-  if (!canDeleteGallery(s, gallery)) return "delete_not_allowed";
+  if (!canDeleteGallery(s)) return "delete_not_allowed";
   if (gallery.status !== "archived") return "gallery_not_archived";
   if (printOrderCount > 0) return "gallery_has_print_orders";
   return "ok";
@@ -63,31 +55,31 @@ function evaluateDeleteGuards(
 describe("DELETE /galleries/:id guard order", () => {
   it("allows deletion when archived, permitted and no print orders", () => {
     const s = session("owner", OWNER_ID);
-    const gallery = { ownerId: OWNER_ID, status: "archived" };
+    const gallery = { status: "archived" };
     expect(evaluateDeleteGuards(s, gallery, 0)).toBe("ok");
   });
 
   it("rejects a live gallery even if otherwise deletable", () => {
     const s = session("owner", OWNER_ID);
-    const gallery = { ownerId: OWNER_ID, status: "live" };
+    const gallery = { status: "live" };
     expect(evaluateDeleteGuards(s, gallery, 0)).toBe("gallery_not_archived");
   });
 
   it("rejects an archived gallery with print orders", () => {
     const s = session("admin", OTHER_ID);
-    const gallery = { ownerId: OWNER_ID, status: "archived" };
+    const gallery = { status: "archived" };
     expect(evaluateDeleteGuards(s, gallery, 1)).toBe("gallery_has_print_orders");
   });
 
   it("permission is checked before archived-state or print orders", () => {
-    const s = session("owner", OTHER_ID); // not the gallery owner
-    const gallery = { ownerId: OWNER_ID, status: "live" };
+    const s = session("member", OWNER_ID); // not allowed to delete at all
+    const gallery = { status: "live" };
     expect(evaluateDeleteGuards(s, gallery, 5)).toBe("delete_not_allowed");
   });
 
-  it("member is rejected regardless of ownership, status or orders", () => {
+  it("member is rejected regardless of status or orders", () => {
     const s = session("member", OWNER_ID);
-    const gallery = { ownerId: OWNER_ID, status: "archived" };
+    const gallery = { status: "archived" };
     expect(evaluateDeleteGuards(s, gallery, 0)).toBe("delete_not_allowed");
   });
 });

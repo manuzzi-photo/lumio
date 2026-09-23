@@ -225,7 +225,7 @@ export async function registerCollectionRoutes(app: FastifyInstance) {
           createdAt: g.createdAt,
           updatedAt: g.updatedAt,
           fileCount: g._count.files,
-          canDelete: canDeleteGallery(s, g),
+          canDelete: canDeleteGallery(s),
           tags: g.tags.map((gt) => gt.tag),
         })),
       };
