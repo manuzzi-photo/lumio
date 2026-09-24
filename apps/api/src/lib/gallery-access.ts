@@ -8,8 +8,11 @@
  *   3. Er ist Studio-Inhaber (Rolle "owner") — Sicherheitsnetz, damit
  *      keine Galerien verwaisen, wenn ein Mitarbeiter das Studio verlässt
  *
- * "Zugriff" bedeutet volle Rechte: sehen, bearbeiten, löschen, freigeben.
- * Wer keinen Zugriff hat, sieht die Galerie gar nicht (404).
+ * "Zugriff" bedeutet volle Rechte: sehen, bearbeiten, freigeben. Wer keinen
+ * Zugriff hat, sieht die Galerie gar nicht (404).
+ *
+ * Ausnahme: das endgueltige Loeschen einer Galerie folgt einer eigenen,
+ * strengeren Regel — siehe canDeleteGallery() weiter unten.
  *
  * WICHTIG: Diese Helper sind die EINZIGE Stelle, an der das Modell
  * definiert ist. Alle Routen, die auf Galerien (oder deren Dateien,
@@ -55,6 +58,8 @@ export const galleryRelationAccessWhere = galleryAccessWhere;
  * Erwartet `ownerId` und — sofern relevant — die `collaborators` als
  * `{ userId }[]`. Fehlt `collaborators`, zählt nur Ersteller + Owner-Rolle
  * (der Aufrufer muss die Relation dann mitladen, wenn Freigaben zählen).
+ *
+ * Deckt NICHT das Loeschen ab — dafuer gilt canDeleteGallery().
  */
 export function canAccessGallery(
   s: SessionContext,
@@ -71,3 +76,14 @@ export function canAccessGallery(
  * das auch — die Prüfung ist daher identisch zu canAccessGallery.
  */
 export const canManageGalleryCollaborators = canAccessGallery;
+
+/**
+ * Delete-Berechtigung. Owner und Admin duerfen loeschen, Member nie.
+ * Die REICHWEITE ergibt sich aus galleryAccessWhere(), das in der Route
+ * vorher greift und sonst 404 liefert — fuer den Owner also jede
+ * Galerie des Studios, fuer den Admin seine eigenen plus Freigaben.
+ * Deshalb braucht diese Funktion die Galerie selbst nicht.
+ */
+export function canDeleteGallery(s: SessionContext): boolean {
+  return s.user.role === "owner" || s.user.role === "admin";
+}
