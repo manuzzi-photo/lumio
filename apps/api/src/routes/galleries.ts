@@ -19,6 +19,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { prisma } from "../db.js";
 import { config } from "../config.js";
 import { generateGallerySlug } from "../services/ids.js";
+import { resolveGalleryBySlug } from "../services/gallery-lookup.js";
 import { presignGet, presignPut, getObjectStream } from "../services/storage.js";
 import { verifyPassword, hashPassword } from "../services/auth.js";
 import { isTenantPubliclyVisible } from "../services/tenant.js";
@@ -269,8 +270,7 @@ export async function loadVisitor(
 ): Promise<{ galleryId: string; accessId: string | null } | null> {
   // Wir holen die Galerie über den Slug, damit wir wissen, welches
   // Cookie zu prüfen ist.
-  const gallery = await prisma.gallery.findUnique({
-    where: { slug: req.params.slug },
+  const gallery = await resolveGalleryBySlug(req, req.params.slug, {
     select: {
       id: true,
       status: true,
@@ -603,12 +603,13 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         : null,
     };
 
-    // Slug ist global eindeutig (User klickt einen Share-Link, der den Tenant
-    // nicht im Pfad mitführt). Wir versuchen ein paar Mal bei Kollision.
+    // Slugs are unique per tenant (@@unique([tenantId, slug])); the share link
+    // does not carry the tenant in its path, the host does. Retry a few times
+    // on a collision within this tenant.
     let slug = generateGallerySlug();
     for (let attempt = 0; attempt < 5; attempt++) {
       const exists = await prisma.gallery.findUnique({
-        where: { slug },
+        where: { tenantId_slug: { tenantId: req.tenantId, slug } },
         select: { id: true },
       });
       if (!exists) break;
@@ -1707,8 +1708,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
     Params: { slug: string };
     Querystring: { t?: string };
   }>("/g/:slug", async (req, reply) => {
-    const gallery = await prisma.gallery.findUnique({
-      where: { slug: req.params.slug },
+    const gallery = await resolveGalleryBySlug(req, req.params.slug, {
       select: {
         id: true,
         slug: true,
@@ -2016,8 +2016,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
     },
     async (req, reply) => {
       const body = unlockSchema.parse(req.body);
-      const gallery = await prisma.gallery.findUnique({
-        where: { slug: req.params.slug },
+      const gallery = await resolveGalleryBySlug(req, req.params.slug, {
         select: {
           id: true,
           tenantId: true,
@@ -2714,8 +2713,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
   app.get<{ Params: { slug: string; kind: "logo" | "hero" | "audio" } }>(
     "/g/:slug/assets/:kind",
     async (req, reply) => {
-      const gallery = await prisma.gallery.findUnique({
-        where: { slug: req.params.slug },
+      const gallery = await resolveGalleryBySlug(req, req.params.slug, {
         select: {
           status: true,
           eventLogoUrl: true,

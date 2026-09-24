@@ -36,6 +36,19 @@ Reihenfolge ab (siehe `apps/api/src/plugins/auth.ts:resolveTenant`):
 Sobald du den zweiten Tenant anlegst, fällt Schritt 5 weg — du musst
 2, 3 oder 4 nutzen.
 
+**Galerie-Links.** Galerie-Slugs sind pro Studio eindeutig, nicht pro
+Installation — zwei Studios können also denselben lesbaren Slug nutzen. Ein
+Galerie-Link (`/g/<slug>`) wird gegen das Studio aufgelöst, das die
+Tenant-Auflösung liefert. Bei einem anonymen Besucher, also einem Kunden des
+Studios, kommt das aus dem Host (Schritte 3 und 4); eine Galerie öffnet sich
+also auf der Domain ihres eigenen Studios. Lässt sich kein Studio bestimmen —
+etwa bei einer Multi-Tenant-Installation ohne Subdomains oder Custom-Domains
+pro Studio —, wird der Slug über alle Studios gesucht, und die Galerie öffnet sich nur,
+wenn genau eine ihn hat; sind es mehrere, liefert der Link 404. Slugs sind
+heute zufällig, das Thema entsteht also erst, wenn Studios ihren Slug selbst
+wählen können und zwei denselben wählen. Eine Single-Studio-Installation sucht
+Slugs immer über die ganze Installation.
+
 ---
 
 ## Verfahren B: Custom-Domains pro Kunde (empfohlen für die ersten Kunden)
@@ -175,7 +188,7 @@ trägt tenantId, nicht slug).
 | 20+ Kunden, willst nicht mehr pro Kunde Caddy editieren | A (Wildcard) |
 | Mobile-App                       | C (Header)                           |
 | Browser-Studio                   | wird automatisch resolved via Cookie nach erstem Login |
-| Customer-Galerie-Links           | funktioniert auf jeder Tenant-Domain |
+| Customer-Galerie-Links           | funktioniert auf der Domain des Studios, dem die Galerie gehört |
 
 Verfahren sind kombinierbar — ein Tenant kann gleichzeitig eine
 Custom-Domain UND eine Wildcard-Subdomain UND Mobile-Header haben.

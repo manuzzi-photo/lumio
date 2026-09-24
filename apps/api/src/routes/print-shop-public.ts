@@ -24,19 +24,22 @@ import { z } from "zod";
 import { prisma } from "../db.js";
 import { config } from "../config.js";
 import { isFeatureEnabled } from "../services/feature-flags.js";
+import { resolveGalleryBySlug } from "../services/gallery-lookup.js";
 import { loadVisitor } from "./galleries.js";
 import { createOrder, priceCart } from "../services/print/orders.js";
 import { createPaymentIntentForOrder } from "../services/print/payment.js";
 import { getPrintProvider } from "../services/print/providers.js";
 
 /** Prueft Sichtbarkeit + liefert tenantId/galleryId zurueck. */
-async function resolveGalleryForPrintShop(slug: string): Promise<{
+async function resolveGalleryForPrintShop(req: {
+  tenantId: string;
+  params: { slug: string };
+}): Promise<{
   tenantId: string;
   galleryId: string;
   galleryTitle: string;
 } | null> {
-  const gallery = await prisma.gallery.findUnique({
-    where: { slug },
+  const gallery = await resolveGalleryBySlug(req, req.params.slug, {
     select: {
       id: true,
       title: true,
@@ -76,7 +79,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
   app.get<{ Params: { slug: string } }>(
     "/g/:slug/print-shop/catalog",
     async (req, reply) => {
-      const gal = await resolveGalleryForPrintShop(req.params.slug);
+      const gal = await resolveGalleryForPrintShop(req);
       if (!gal) return reply.status(404).send({ error: "not_found" });
       const visitor = await loadVisitor(
         req as Parameters<typeof loadVisitor>[0]
@@ -231,7 +234,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
   app.post<{ Params: { slug: string } }>(
     "/g/:slug/print-shop/price",
     async (req, reply) => {
-      const gal = await resolveGalleryForPrintShop(req.params.slug);
+      const gal = await resolveGalleryForPrintShop(req);
       if (!gal) return reply.status(404).send({ error: "not_found" });
       const visitor = await loadVisitor(
         req as Parameters<typeof loadVisitor>[0]
@@ -305,7 +308,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
   app.post<{ Params: { slug: string } }>(
     "/g/:slug/print-shop/checkout",
     async (req, reply) => {
-      const gal = await resolveGalleryForPrintShop(req.params.slug);
+      const gal = await resolveGalleryForPrintShop(req);
       if (!gal) return reply.status(404).send({ error: "not_found" });
       const visitor = await loadVisitor(
         req as Parameters<typeof loadVisitor>[0]
@@ -391,7 +394,7 @@ export async function registerPrintShopPublicRoutes(app: FastifyInstance) {
   app.get<{ Params: { slug: string; orderNumber: string } }>(
     "/g/:slug/print-shop/order/:orderNumber",
     async (req, reply) => {
-      const gal = await resolveGalleryForPrintShop(req.params.slug);
+      const gal = await resolveGalleryForPrintShop(req);
       if (!gal) return reply.status(404).send({ error: "not_found" });
       const visitor = await loadVisitor(
         req as Parameters<typeof loadVisitor>[0]
