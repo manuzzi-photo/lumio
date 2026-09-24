@@ -29,6 +29,10 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.84.0] - 2026-09-24
+
+A pull is enough for the server and the worker — the database migration (gallery slugs per studio) runs automatically on deploy. Self-hosters using the bundled MinIO get the new image on the next `docker compose pull`; nothing to change in `.env`. If you call `DELETE /galleries/:id` from your own scripts, see *Changed*.
+
 ### Added
 
 - Galleries can now be permanently deleted. A gallery must be archived first, deletion respects studio roles (owners and admins can delete any gallery they can see, members not at all), and any gallery with print orders is protected so order records are never lost.
