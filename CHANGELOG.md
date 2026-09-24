@@ -32,6 +32,12 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 ### Added
 
 - Galleries can now be permanently deleted. A gallery must be archived first, deletion respects studio roles (owners and admins can delete any gallery they can see, members not at all), and any gallery with print orders is protected so order records are never lost.
+- Galleries can get a readable custom share link (`/g/<your-slug>`), set by owners and admins in the gallery's Share tab. Changing it breaks links already sent to clients. On single-mode instances a custom slug must be unique across all studios of the instance.
+
+### Changed
+
+- Gallery slugs are now unique per studio instead of per instance, so two studios can use the same readable slug. Existing links keep working; the database migration runs automatically on deploy.
+- API: `DELETE /galleries/:id` now only deletes archived galleries without print orders (otherwise `409`) and is no longer allowed for members (`403`). Scripts that deleted live galleries directly must archive them first.
 
 ## [0.83.0] - 2026-09-21
 

@@ -920,9 +920,18 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
           // Tenant-scoped uniqueness (@@unique([tenantId, slug])), same as
           // the create-flow retry loop above — two studios can share a
           // slug, so the check must not leak across tenants.
+          //
+          // Exception: single mode. There resolveGalleryBySlug() always
+          // takes the slug-only path and returns null as soon as two
+          // tenants share a slug — so a second tenant picking a slug that
+          // the first already uses would silently 404 the first tenant's
+          // shared links. Custom slugs are chosen by humans and collide far
+          // more often than random ones, so check instance-wide there.
           const taken = await prisma.gallery.findFirst({
             where: {
-              tenantId: req.tenantId,
+              ...(config.DEPLOYMENT_MODE === "single"
+                ? {}
+                : { tenantId: req.tenantId }),
               slug: candidate,
               NOT: { id: existing.id },
             },
