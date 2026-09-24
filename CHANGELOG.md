@@ -39,6 +39,10 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 - Gallery slugs are now unique per studio instead of per instance, so two studios can use the same readable slug. Existing links keep working; the database migration runs automatically on deploy.
 - API: `DELETE /galleries/:id` now only deletes archived galleries without print orders (otherwise `409`) and is no longer allowed for members (`403`). Scripts that deleted live galleries directly must archive them first.
 
+### Fixed
+
+- Fresh self-hosted installs failed at `docker compose up` again: MinIO has now also closed its images on quay.io to anonymous pulls. The bundled S3 storage now uses Chainguard's MinIO build (`cgr.dev/chainguard/minio`, same data format, runs as root like before so existing `minio_data` volumes keep working). Existing installs pick it up on the next `docker compose pull` — no action needed. This is a stopgap: a switch to RustFS is planned and will come with a migration guide.
+
 ## [0.83.0] - 2026-09-21
 
 A pull is enough for the server and the worker — nothing changes on their side. **Anyone using the Lightroom plug-in has to reinstall it:** the plug-in-side changes live only in the folder loaded into Lightroom, which is not updated along with the server. Re-add `apps/lightroom-plugin/lumio.lrdevplugin` in Lightroom (the plug-in then shows version 0.4.2).

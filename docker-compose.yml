@@ -302,13 +302,18 @@ services:
   # Im Cloud-Modus (R2/AWS S3/B2/...) kannst du diesen Service auskommentieren
   # und stattdessen die externen S3-Credentials in der .env hinterlegen.
   minio:
-    # quay.io statt Docker Hub: MinIO hat die Community-Images auf Docker Hub
-    # dichtgemacht — anonyme Pulls von minio/minio und minio/mc geben seit
-    # September 2026 401, auch mit korrektem Pull-Token. Auf quay.io
-    # pflegt MinIO `latest` weiter (Build vom 2025-09-07 geprueft), und
-    # quay hat kein Docker-Hub-Rate-Limit, das Self-Hoster auf geteilten
-    # VPS-IPs ohnehin regelmaessig getroffen hat.
-    image: quay.io/minio/minio:latest
+    # Chainguard-Build statt der MinIO-eigenen Images: MinIO hat die
+    # Community-Images erst auf Docker Hub, dann auch auf quay.io fuer anonyme
+    # Pulls dichtgemacht (401, Stand 2026-09-24). Chainguard baut MinIO aus
+    # dem Quellcode und stellt `latest` frei bereit. Die `-dev`-Variante,
+    # weil nur sie eine Shell und wget fuer den Healthcheck mitbringt.
+    # Uebergangsloesung — der Wechsel auf RustFS ist geplant.
+    image: cgr.dev/chainguard/minio:latest-dev
+    # Chainguard-Images laufen per Default als UID 65532. Bestehende
+    # Installationen haben ein minio_data-Volume, das dem alten
+    # MinIO-Image (root) gehoert — ohne root koennte MinIO dort nicht
+    # schreiben. Daher explizit wie bisher als root.
+    user: "0:0"
     container_name: lumio_minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -324,7 +329,7 @@ services:
       - "${MINIO_API_PORT:-9000}:9000"       # S3 API
       - "${MINIO_CONSOLE_PORT:-9001}:9001"   # Web-Konsole
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -335,7 +340,9 @@ services:
   # MinIO-Bucket-Init — legt beim ersten Start den Bucket an
   # ---------------------------------------------------------------------------
   minio_init:
-    image: quay.io/minio/mc:latest
+    # -dev-Variante: bringt /bin/sh fuer das Init-Skript mit.
+    image: cgr.dev/chainguard/minio-client:latest-dev
+    user: "0:0"
     container_name: lumio_minio_init
     depends_on:
       minio:
