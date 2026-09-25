@@ -115,3 +115,83 @@ export function truncateText(text: string, max: number): string {
   const base = lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut;
   return base.replace(/[\s.,;:!?-]+$/, "") + "…";
 }
+
+// ---------------------------------------------------------------------------
+// Access, password and start page: what a PATCH may change together
+// ---------------------------------------------------------------------------
+
+export interface PageAccessState {
+  access: PageAccess;
+  /** Only whether a password is set matters here, never the hash itself. */
+  hasPassword: boolean;
+  isStudioDefault: boolean;
+}
+
+export interface PageAccessInput {
+  access?: PageAccess;
+  /** undefined = untouched, null = asked to remove, string = new password. */
+  password?: string | null;
+  isStudioDefault?: boolean;
+}
+
+export type PageAccessError =
+  | "password_required" // password mode without a password would be open to all
+  | "default_page_must_be_public"; // start page requested for a non-public page
+
+export type PageAccessResult =
+  | { ok: false; error: PageAccessError }
+  | {
+      ok: true;
+      access: PageAccess;
+      /** set = hash the new password, clear = drop it, keep = leave as it is. */
+      passwordAction: "set" | "clear" | "keep";
+      isStudioDefault: boolean;
+      startPageChanged: boolean;
+    };
+
+/**
+ * Works out the resulting access, password and start-page state of a page from
+ * its current state and a PATCH. Pure, so the combinations that matter for
+ * privacy can be tested one by one.
+ *
+ * - A password page always has a password: switching to it needs one, and an
+ *   existing one cannot be removed while the mode stays.
+ * - Leaving password mode drops the password.
+ * - Only a public page can be the start page. Asking for both a start page and
+ *   a non-public access in one request is a contradiction (error); making the
+ *   current start page non-public quietly takes the flag away with it, and the
+ *   UI asks for confirmation beforehand.
+ */
+export function resolvePageAccessChange(
+  current: PageAccessState,
+  input: PageAccessInput
+): PageAccessResult {
+  const access = input.access ?? current.access;
+
+  let passwordAction: "set" | "clear" | "keep" = "keep";
+  if (access === "password") {
+    if (input.password) {
+      passwordAction = "set";
+    } else if (!current.hasPassword || input.password === null) {
+      return { ok: false, error: "password_required" };
+    }
+  } else if (current.hasPassword) {
+    passwordAction = "clear";
+  }
+
+  let isStudioDefault = input.isStudioDefault ?? current.isStudioDefault;
+  if (isStudioDefault && !canBeStartPage(access)) {
+    if (input.isStudioDefault === true) {
+      return { ok: false, error: "default_page_must_be_public" };
+    }
+    isStudioDefault = false;
+  }
+
+  return {
+    ok: true,
+    access,
+    passwordAction,
+    isStudioDefault,
+    startPageChanged: isStudioDefault !== current.isStudioDefault,
+  };
+}

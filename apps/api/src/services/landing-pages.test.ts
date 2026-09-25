@@ -8,7 +8,9 @@ import {
   isPageAccess,
   isPageIndexable,
   isPreviewVisible,
+  resolvePageAccessChange,
   truncateText,
+  type PageAccessState,
 } from "./landing-pages.js";
 
 /**
@@ -159,5 +161,160 @@ describe("truncateText", () => {
   it("hard-cuts a single long word", () => {
     const out = truncateText("a".repeat(100), 10);
     expect(out).toBe("a".repeat(9) + "…");
+  });
+});
+
+describe("resolvePageAccessChange", () => {
+  const linkOnly: PageAccessState = {
+    access: "link_only",
+    hasPassword: false,
+    isStudioDefault: false,
+  };
+  const publicPage: PageAccessState = {
+    access: "public",
+    hasPassword: false,
+    isStudioDefault: false,
+  };
+  const startPage: PageAccessState = {
+    access: "public",
+    hasPassword: false,
+    isStudioDefault: true,
+  };
+  const passwordPage: PageAccessState = {
+    access: "password",
+    hasPassword: true,
+    isStudioDefault: false,
+  };
+
+  describe("password", () => {
+    it("refuses password mode without a password (it would be open to everyone)", () => {
+      expect(resolvePageAccessChange(linkOnly, { access: "password" })).toEqual({
+        ok: false,
+        error: "password_required",
+      });
+      expect(
+        resolvePageAccessChange(linkOnly, { access: "password", password: null })
+      ).toEqual({ ok: false, error: "password_required" });
+    });
+
+    it("hashes a new password when switching to password mode", () => {
+      const r = resolvePageAccessChange(linkOnly, {
+        access: "password",
+        password: "secret",
+      });
+      expect(r).toMatchObject({ ok: true, access: "password", passwordAction: "set" });
+    });
+
+    it("keeps the existing password when the mode stays and none is sent", () => {
+      expect(resolvePageAccessChange(passwordPage, { access: "password" })).toMatchObject({
+        ok: true,
+        passwordAction: "keep",
+      });
+      expect(resolvePageAccessChange(passwordPage, {})).toMatchObject({
+        ok: true,
+        access: "password",
+        passwordAction: "keep",
+      });
+    });
+
+    it("replaces the password when a new one is sent", () => {
+      expect(resolvePageAccessChange(passwordPage, { password: "new" })).toMatchObject({
+        ok: true,
+        passwordAction: "set",
+      });
+    });
+
+    it("cannot remove the password while staying in password mode", () => {
+      expect(resolvePageAccessChange(passwordPage, { password: null })).toEqual({
+        ok: false,
+        error: "password_required",
+      });
+    });
+
+    it("drops the password when leaving password mode", () => {
+      expect(resolvePageAccessChange(passwordPage, { access: "link_only" })).toMatchObject({
+        ok: true,
+        access: "link_only",
+        passwordAction: "clear",
+      });
+      expect(resolvePageAccessChange(passwordPage, { access: "public" })).toMatchObject({
+        ok: true,
+        passwordAction: "clear",
+      });
+    });
+
+    it("ignores a password sent for a page that is not in password mode", () => {
+      expect(
+        resolvePageAccessChange(linkOnly, { access: "link_only", password: "x" })
+      ).toMatchObject({ ok: true, passwordAction: "keep" });
+    });
+  });
+
+  describe("start page", () => {
+    it("makes a public page the start page", () => {
+      expect(resolvePageAccessChange(publicPage, { isStudioDefault: true })).toEqual({
+        ok: true,
+        access: "public",
+        passwordAction: "keep",
+        isStudioDefault: true,
+        startPageChanged: true,
+      });
+    });
+
+    it("makes a link_only page public and the start page in one request", () => {
+      expect(
+        resolvePageAccessChange(linkOnly, { access: "public", isStudioDefault: true })
+      ).toMatchObject({ ok: true, access: "public", isStudioDefault: true });
+    });
+
+    it("refuses a start page that is not public", () => {
+      expect(resolvePageAccessChange(linkOnly, { isStudioDefault: true })).toEqual({
+        ok: false,
+        error: "default_page_must_be_public",
+      });
+      expect(
+        resolvePageAccessChange(publicPage, { access: "password", password: "x", isStudioDefault: true })
+      ).toEqual({ ok: false, error: "default_page_must_be_public" });
+    });
+
+    it("takes the flag away when the current start page stops being public", () => {
+      const r = resolvePageAccessChange(startPage, { access: "link_only" });
+      expect(r).toMatchObject({
+        ok: true,
+        access: "link_only",
+        isStudioDefault: false,
+        startPageChanged: true,
+      });
+    });
+
+    it("also when it becomes a password page", () => {
+      expect(
+        resolvePageAccessChange(startPage, { access: "password", password: "x" })
+      ).toMatchObject({ ok: true, isStudioDefault: false, startPageChanged: true });
+    });
+
+    it("lets the studio give up the start page explicitly", () => {
+      expect(resolvePageAccessChange(startPage, { isStudioDefault: false })).toMatchObject({
+        ok: true,
+        access: "public",
+        isStudioDefault: false,
+        startPageChanged: true,
+      });
+    });
+
+    it("reports no change when the start page is left alone", () => {
+      expect(resolvePageAccessChange(startPage, {})).toMatchObject({
+        ok: true,
+        isStudioDefault: true,
+        startPageChanged: false,
+      });
+      expect(resolvePageAccessChange(startPage, { isStudioDefault: true })).toMatchObject({
+        startPageChanged: false,
+      });
+      expect(resolvePageAccessChange(linkOnly, {})).toMatchObject({
+        isStudioDefault: false,
+        startPageChanged: false,
+      });
+    });
   });
 });
