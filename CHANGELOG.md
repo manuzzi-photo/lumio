@@ -29,6 +29,15 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+A pull is enough. Frontend and API are affected, so only the main server. The database migration (new tables for pages) runs automatically on deploy. Nothing changes until a studio creates a page.
+
+### Added
+
+- Landing pages: a studio can now create pages ("Pages" in the studio navigation), curated, ordered lists of galleries under a link of their own, for example a public portfolio or one page per client. Owners and admins put galleries on a page by hand, choose the order, and decide who can open it: public, link only, or password. A new page is link only to begin with. A page lists galleries, it never opens them: a card leads to the gallery, which applies its own rules. Galleries with a password are listed with a lock and show only title and date unless the studio switches the preview on for them. A gallery's Share tab shows which pages it is on and puts it on one (or on a new one) in a single step, and archiving or deleting a gallery that is on pages says so first. See `docs/LANDING_PAGES.md`.
+- A public page can be made the studio's **start page**: it is then shown on `/` instead of the redirect to the login (single mode, subdomain and custom domain). The login stays at `/login` and is linked from the page. A studio that does not set one sees no difference.
+- The feature sits behind the feature flag `landing_pages`, on by default; the operator of a multi-tenant instance can switch it off per studio.
+- API: studio routes under `/pages…` and public ones under `/p…`.
+
 ## [0.84.0] - 2026-09-24
 
 A pull is enough for the server and the worker — the database migration (gallery slugs per studio) runs automatically on deploy. Self-hosters using the bundled MinIO get the new image on the next `docker compose pull`; nothing to change in `.env`. If you call `DELETE /galleries/:id` from your own scripts, see *Changed*.

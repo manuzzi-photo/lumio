@@ -126,6 +126,19 @@ The studio UI shows a warning in the slug editor whenever the gallery is both pu
 
 ---
 
+## Landing pages and the start page
+
+A studio can put curated pages of galleries under `/p/<slug>` and make one public page its **start page**, shown on `/` instead of the redirect to the login (see [LANDING_PAGES.md](LANDING_PAGES.md)). Both follow the same tenant resolution as gallery links:
+
+- **Which studio** comes from the request host (custom domain or subdomain, steps 3 and 4 above), so `studio-a.example.com/` shows studio A's start page and never studio B's. A page slug is unique per studio, so two studios can both have `/p/portfolio`.
+- **On the apex domain** (`lumio-cloud.de/`, `studio.lumio-cloud.de/` and the other reserved hosts) there is no studio: `/` stays the studio picker and there are no pages.
+- **A studio without a start page**, or with the feature switched off, keeps the redirect to `/login` exactly as before.
+- **A studio on a custom domain** does not need `LUMIO_DOMAIN_BASE` for this: the frontend asks the API for every host, and the API resolves the domain.
+- **Without per-studio hosts** (a multi-tenant installation on a single host) tenant resolution finds no studio: `/` behaves as before, and a `/p/<slug>` link works only if exactly one studio uses that slug, like a gallery link.
+- For the server-side render of `/`, the frontend passes the visitor's host (`X-Forwarded-Host` from the proxy, otherwise `Host`) on to the API. Node's `fetch` cannot set that header, so it uses `node:http`.
+
+---
+
 ## Which method for what
 
 | For what                            | Method                            |

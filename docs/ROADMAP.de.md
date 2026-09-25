@@ -129,6 +129,14 @@ Vollständig gebaut — ausführliche Details in Phase 5.
 - [x] Email-Notifications (Auswahl fertig, neuer Kommentar)
 - [x] Presentation Mode (Vollbild-Slideshow mit Auto-Advance, Cross-Fade, einstellbarem Intervall)
 
+### Landing Pages ✅
+
+- [x] Seiten als kuratierte, geordnete Listen von Galerien unter eigenem Link (`/p/<slug>`): zufällige, umbenennbare Slugs; Zugang öffentlich / nur mit Link / Passwort; eine öffentliche Seite kann die Startseite des Studios unter `/` sein (Single-Mode, Subdomain, Custom-Domain). Siehe [LANDING_PAGES.de.md](LANDING_PAGES.de.md)
+- [x] Nur ausdrückliche Zuordnung, kein Tag und kein Filter entscheidet über die Sichtbarkeit; eine Seite listet Galerien, öffnet sie aber nie; Galerien mit Passwort zeigen nur Titel und Datum, solange das Studio die Vorschau nicht einschaltet
+- [ ] Filter (Tags, Smart Collections) als Komfort, um eine Seite zu *füllen*, nie um zu entscheiden, was öffentlich ist
+- [ ] Kundenportal: Das Entsperren einer Seite öffnet auch die Galerien darauf (eine Seite, die Zugriff gewährt)
+- [ ] Hero-Bild und Layout-Varianten für eine Seite, Seitenumbrüche, Sitemap
+
 ---
 
 ## Phase 3 — Polish & Wachstum

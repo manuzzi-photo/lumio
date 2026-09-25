@@ -204,6 +204,19 @@ baut, sollte denselben Hinweis beibehalten statt ihn wegzulassen.
 
 ---
 
+## Landing Pages und die Startseite
+
+Ein Studio kann kuratierte Seiten mit Galerien unter `/p/<slug>` anlegen und eine öffentliche Seite zu seiner **Startseite** machen, die unter `/` statt der Weiterleitung zur Anmeldung gezeigt wird (siehe [LANDING_PAGES.de.md](LANDING_PAGES.de.md)). Beides folgt derselben Tenant-Auflösung wie Galerie-Links:
+
+- **Welches Studio**, bestimmt der Host der Anfrage (Custom-Domain oder Subdomain, Schritte 3 und 4 oben). `studio-a.example.com/` zeigt also die Startseite von Studio A und nie die von Studio B. Ein Seiten-Slug ist pro Studio eindeutig, zwei Studios können also beide `/p/portfolio` haben.
+- **Auf der Apex-Domain** (`lumio-cloud.de/`, `studio.lumio-cloud.de/` und die anderen reservierten Hosts) gibt es kein Studio: `/` bleibt die Studio-Auswahl, und es gibt dort keine Seiten.
+- **Ein Studio ohne Startseite** oder mit ausgeschaltetem Feature behält die Weiterleitung auf `/login` genau wie bisher.
+- **Ein Studio auf einer Custom-Domain** braucht dafür kein `LUMIO_DOMAIN_BASE`: Das Frontend fragt die API für jeden Host, und die API löst die Domain auf.
+- **Ohne studiospezifische Hosts** (Multi-Tenant-Installation auf einem einzigen Host) findet die Tenant-Auflösung kein Studio: `/` verhält sich wie bisher, und ein `/p/<slug>`-Link funktioniert nur, wenn genau ein Studio diesen Slug nutzt, wie bei einem Galerie-Link.
+- Für das serverseitige Rendern von `/` reicht das Frontend den Host des Besuchers (`X-Forwarded-Host` des Proxys, sonst `Host`) an die API weiter. Node-`fetch` kann diesen Header nicht setzen, deshalb nutzt es `node:http`.
+
+---
+
 ## Welches Verfahren wofür
 
 | Wofür                            | Verfahren                            |
