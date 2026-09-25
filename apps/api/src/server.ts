@@ -44,6 +44,7 @@ import { registerSearchRoutes } from "./routes/search.js";
 import { registerTagRoutes } from "./routes/tags.js";
 import { registerCollectionRoutes } from "./routes/collections.js";
 import { registerLandingPageRoutes } from "./routes/landing-pages.js";
+import { registerLandingPagePublicRoutes } from "./routes/landing-pages-public.js";
 import { registerUploadLinkRoutes } from "./routes/upload-links.js";
 import { registerDuplicateRoutes } from "./routes/duplicates.js";
 import { registerTenantExportRoutes } from "./routes/exports.js";
@@ -222,6 +223,8 @@ async function buildServer() {
       await registerCollectionRoutes(api);
       // Landing pages (studio side): owner/admin, behind the landing_pages flag.
       await registerLandingPageRoutes(api);
+      // ... and public side (no login): /p, /p/:slug, unlock, covers.
+      await registerLandingPagePublicRoutes(api);
       await registerUploadLinkRoutes(api);
       await registerDuplicateRoutes(api);
       await registerTenantExportRoutes(api);
