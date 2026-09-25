@@ -18,6 +18,7 @@ import { SharePanel } from "@/components/studio/SharePanel";
 import { GalleryHeaderEditor } from "@/components/studio/GalleryHeaderEditor";
 import { GallerySlugEditor } from "@/components/studio/GallerySlugEditor";
 import { GalleryShareSection } from "@/components/studio/GalleryShareSection";
+import { GalleryPagesSection } from "@/components/studio/GalleryPagesSection";
 import { SectionsEditor } from "@/components/studio/SectionsEditor";
 import { UploadLinksSection } from "@/components/studio/UploadLinksSection";
 import { RejectDialog } from "@/components/studio/RejectDialog";
@@ -1294,6 +1295,14 @@ export default function GalleryDetailPage() {
           gallerySlug={gallery.slug}
           initialPublicAccess={gallery.publicAccess ?? true}
           initialHasPassword={gallery.hasPassword ?? false}
+        />
+        {/* Landing pages this gallery appears on (owner/admin). */}
+        <GalleryPagesSection
+          galleryId={gallery.id}
+          status={gallery.status}
+          publicAccess={gallery.publicAccess ?? true}
+          hasPassword={gallery.hasPassword ?? false}
+          canManage={role === "owner" || role === "admin"}
         />
           </>
         )}
