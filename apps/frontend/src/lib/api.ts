@@ -530,6 +530,73 @@ export interface Comment {
 // -----------------------------------------------------------------------------
 // API surface
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// Landing pages ("Pages" im Studio)
+// -----------------------------------------------------------------------------
+// Eine Page ist eine kuratierte, geordnete Liste von Galerien mit eigenem
+// Link. Sie LISTET Galerien, sie gibt keinen Zugriff auf sie.
+export type LandingPageAccess = "public" | "link_only" | "password";
+
+/** Warum eine Galerie gerade NICHT auf der oeffentlichen Page erscheint. */
+export type PageGalleryIneligibleReason =
+  | "not_live" // Entwurf oder archiviert
+  | "expired"
+  | "links_only"; // publicAccess = false: nur ueber Freigabe-Link erreichbar
+
+export interface StudioLandingPage {
+  id: string;
+  slug: string;
+  title: string;
+  introMarkdown: string | null;
+  access: LandingPageAccess;
+  /** Nur ob ein Passwort gesetzt ist, nie der Hash. */
+  hasPassword: boolean;
+  /** Startseite des Studios (wird unter / ausgeliefert). */
+  isStudioDefault: boolean;
+  /** null = Standard-Branding des Studios. */
+  brandingId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudioLandingPageListItem extends StudioLandingPage {
+  galleryCount: number;
+  /** Wie viele davon ein Besucher gerade sieht. */
+  visibleCount: number;
+}
+
+export interface StudioPageGallery {
+  galleryId: string;
+  sortOrder: number;
+  titleOverride: string | null;
+  /** Nur fuer geschuetzte Galerien relevant: Cover, Beschreibung und
+   *  Foto-Anzahl oeffentlich zeigen. */
+  previewOptIn: boolean;
+  gallery: {
+    slug: string;
+    title: string;
+    description: string | null;
+    status: GalleryStatus;
+    publicAccess: boolean;
+    expiresAt: string | null;
+    /** Hat ein Passwort. */
+    protected: boolean;
+    fileCount: number;
+    coverThumbUrl: string | null;
+  };
+  ineligibleReason: PageGalleryIneligibleReason | null;
+}
+
+/** Eine Page aus Sicht einer Galerie (Share-Tab): enthaelt sie die Galerie? */
+export interface GalleryPageRef {
+  id: string;
+  slug: string;
+  title: string;
+  access: LandingPageAccess;
+  isStudioDefault: boolean;
+  contains: boolean;
+}
+
 export const api = {
   // Auth
   health: () => fetch(`${API_URL}/health`).then((r) => r.json()),
@@ -889,6 +956,63 @@ export const api = {
     request<void>(`/collections/${id}`, { method: "DELETE" }),
   runCollection: (id: string) =>
     request<{ galleries: Gallery[] }>(`/collections/${id}/galleries`),
+
+  // Landing pages (Studio, Owner/Admin)
+  listPages: () =>
+    request<{ pages: StudioLandingPageListItem[] }>("/pages"),
+  createPage: (input: { title: string; galleryId?: string }) =>
+    request<{ page: StudioLandingPage }>("/pages", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  getPage: (id: string) =>
+    request<{ page: StudioLandingPage; galleries: StudioPageGallery[] }>(
+      `/pages/${id}`
+    ),
+  updatePage: (
+    id: string,
+    patch: Partial<{
+      title: string;
+      introMarkdown: string | null;
+      slug: string;
+      access: LandingPageAccess;
+      /** Nur mit access "password". */
+      password: string | null;
+      brandingId: string | null;
+      isStudioDefault: boolean;
+    }>
+  ) =>
+    request<{ page: StudioLandingPage; startPageRemoved: boolean }>(
+      `/pages/${id}`,
+      { method: "PATCH", body: JSON.stringify(patch) }
+    ),
+  deletePage: (id: string) =>
+    request<void>(`/pages/${id}`, { method: "DELETE" }),
+  addPageGallery: (pageId: string, galleryId: string) =>
+    request<{ gallery: StudioPageGallery }>(`/pages/${pageId}/galleries`, {
+      method: "POST",
+      body: JSON.stringify({ galleryId }),
+    }),
+  updatePageGallery: (
+    pageId: string,
+    galleryId: string,
+    patch: Partial<{ titleOverride: string | null; previewOptIn: boolean }>
+  ) =>
+    request<{ gallery: StudioPageGallery }>(
+      `/pages/${pageId}/galleries/${galleryId}`,
+      { method: "PATCH", body: JSON.stringify(patch) }
+    ),
+  removePageGallery: (pageId: string, galleryId: string) =>
+    request<void>(`/pages/${pageId}/galleries/${galleryId}`, {
+      method: "DELETE",
+    }),
+  reorderPageGalleries: (pageId: string, order: string[]) =>
+    request<{ ok: true }>(`/pages/${pageId}/galleries/reorder`, {
+      method: "POST",
+      body: JSON.stringify({ order }),
+    }),
+  listGalleryPages: (galleryId: string) =>
+    request<{ pages: GalleryPageRef[] }>(`/galleries/${galleryId}/pages`),
 
   // Tags
   listTags: () => request<{ tags: TagSummary[] }>("/tags"),
