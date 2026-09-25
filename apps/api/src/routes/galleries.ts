@@ -35,6 +35,7 @@ import { publishEvent } from "../services/webhooks.js";
 import { galleryAccessWhere, canDeleteGallery } from "../lib/gallery-access.js";
 import {
   createVisitorToken,
+  passwordFingerprint,
   verifyVisitorToken,
   visitorCookieName,
 } from "../services/visitor.js";
@@ -254,13 +255,6 @@ const unlockSchema = z.object({
  * fetchen, weil das Cookie an die galleryId gebunden ist. Caller muss also
  * den Slug → galleryId schon haben (z.B. aus dem Pfad-Param).
  */
-
-/** Kurzer Fingerabdruck eines Passwort-Hashes für das Visitor-Cookie.
- *  Der bcrypt-Hash ändert sich bei jeder Passwort-Änderung, also auch der
- *  Fingerabdruck — alte Cookies werden dadurch ungültig. */
-function passwordFingerprint(hash: string): string {
-  return createHash("sha256").update(hash).digest("hex").slice(0, 16);
-}
 
 /** Prüft, ob das Cookie gegen das aktuell geforderte Passwort
  *  freigeschaltet wurde. Kein Passwort gefordert → immer ok. */
