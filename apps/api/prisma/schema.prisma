@@ -150,6 +150,7 @@ model Tenant {
   webhooks    Webhook[]
   tags        Tag[]
   smartCollections SmartCollection[]
+  landingPages LandingPage[]
   exports     TenantExport[]
   notes       TenantNote[]
   featureFlags TenantFeatureFlag[]
@@ -359,6 +360,7 @@ model Branding {
   customCss     String?
 
   galleries     Gallery[]
+  landingPages  LandingPage[]
   tenantsAsDefault Tenant[] @relation("TenantBranding")
   templates     GalleryTemplate[] @relation("BrandingForTemplates")
   
@@ -606,6 +608,7 @@ model Gallery {
   zipDownloads    ZipDownload[]
   tags            GalleryTag[]
   sections        GallerySection[]
+  landingPages    LandingPageGallery[]
 
   // Print-Shop: aktivierbar pro Galerie. null = uebernimmt
   // TenantPrintShopConfig.enabled. true/false = expliziter Override.
@@ -1607,6 +1610,87 @@ model SmartCollection {
   
   @@index([tenantId, ownerId])
   @@map("smart_collections")
+}
+
+// -----------------------------------------------------------------------------
+// Landing Pages ("Pages" in the studio)
+// -----------------------------------------------------------------------------
+// A page is a curated, ordered list of galleries with its own link. A gallery
+// can sit on any number of pages. Assignment is always explicit: a tag or a
+// filter never decides what is public.
+//
+// A page only LISTS galleries, it never grants access to them. A gallery is
+// rendered on a page only if it is live, not expired and publicAccess = true;
+// a password-protected gallery is shown with a lock and still goes through its
+// own unlock when clicked. See services/landing-pages.ts for the rules.
+model LandingPage {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @db.Uuid
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Nullable: null means "the studio's default branding", resolved the same
+  // way as for galleries (page -> tenant default -> built-in defaults).
+  brandingId      String?  @db.Uuid
+  branding        Branding? @relation(fields: [brandingId], references: [id], onDelete: SetNull)
+
+  // Random by default (12 chars), renamable. Unique per tenant, like gallery
+  // slugs. Served at /p/<slug>.
+  slug            String
+  title           String
+  introMarkdown   String?
+
+  // public    = indexable, may be the studio's start page (served on /)
+  // link_only = reachable only through its slug, noindex
+  // password  = as link_only, plus a password
+  // New pages start as link_only: nothing is public by accident.
+  access          String   @default("link_only") // public | link_only | password
+  passwordHash    String?
+
+  // At most one page per tenant, enforced by a partial unique index that
+  // Prisma cannot express (see the landing_pages migration). Only a public
+  // page may be the default.
+  isStudioDefault Boolean  @default(false)
+
+  galleries       LandingPageGallery[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  // Not redundant: serves the slug-only fallback in resolvePageBySlug().
+  @@index([slug])
+  @@map("landing_pages")
+}
+
+// A gallery on a page. Cascades from both sides: deleting a gallery removes it
+// from every page, deleting a page leaves the gallery untouched. Archiving a
+// gallery keeps the row (the gallery is just not rendered until it is live
+// again, and keeps its place in the order).
+model LandingPageGallery {
+  landingPageId   String      @db.Uuid
+  landingPage     LandingPage @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
+  galleryId       String      @db.Uuid
+  gallery         Gallery     @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+
+  sortOrder       Int         @default(0)
+
+  // Caption on this page only: the same gallery can be "Anna_Luca_final" in
+  // the studio and "Anna & Luca" on the portfolio.
+  titleOverride   String?
+
+  // Only meaningful for a protected gallery (password set). Off by default:
+  // a protected gallery on a page shows just title, date and a lock. On
+  // reveals cover, description and photo count too. Evaluated at render time,
+  // never copied, so a gallery that becomes protected later loses its cover.
+  previewOptIn    Boolean     @default(false)
+
+  createdAt       DateTime    @default(now())
+
+  @@id([landingPageId, galleryId])
+  @@index([galleryId])
+  @@index([landingPageId, sortOrder])
+  @@map("landing_page_galleries")
 }
 
 // -----------------------------------------------------------------------------
