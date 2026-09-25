@@ -15,6 +15,12 @@
  *     - Auf einer Tenant-Subdomain (z.B. stefan.lumio-cloud.de) →
  *       Redirect auf /login (Tenant ist durch Host bereits identifiziert)
  *
+ *   Startseite (Landing Pages): hat ein Studio eine Page zur Startseite
+ *   gemacht, wird sie hier ausgeliefert, statt auf /login zu leiten (Single-
+ *   Mode, Tenant-Subdomain, Custom-Domain). Ohne Startseite bleibt alles wie
+ *   oben beschrieben. Der Login bleibt unter /login und ist im Footer der
+ *   Startseite verlinkt.
+ *
  *   Die Apex-vs-Subdomain-Unterscheidung passiert Server-Side über den
  *   Host-Header. Dadurch entsteht keine sichtbare Zwischenseite mit
  *   "lädt..."-Zustand.
@@ -25,13 +31,63 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
+import { cache } from "react";
+import type { Metadata } from "next";
 
+import { PublicPageView } from "@/components/landing/PublicPageView";
 import { TenantPicker } from "@/components/landing/TenantPicker";
+import { fetchStartPage, publicOrigin } from "@/lib/api-server";
+import { buildPageMetadata } from "@/lib/page-metadata";
 
 const MODE = process.env.NEXT_PUBLIC_DEPLOYMENT_MODE ?? "single";
 const DOMAIN_BASE = process.env.NEXT_PUBLIC_DOMAIN_BASE ?? "";
 
+// "/" depends on who asks: the host decides which studio, and whether that
+// studio has a start page can change at any time. Never prerender it. (In
+// single mode this used to be a plain redirect, which Next may prerender.)
+export const dynamic = "force-dynamic";
+
+// Reservierte Subdomains (studio, api, admin, app, www) zaehlen AUCH als
+// Apex-aequivalent — sie sind keine Tenant-Subdomains.
+// 'studio.lumio-cloud.de' ist der zentrale Login-Host fuer alle
+// Tenants im Multi-Mode.
+const RESERVED_SUBDOMAINS = ["www", "studio", "api", "admin", "app"];
+
+function isApexHost(host: string): boolean {
+  return (
+    !DOMAIN_BASE ||
+    host === DOMAIN_BASE ||
+    RESERVED_SUBDOMAINS.some((sd) => host === `${sd}.${DOMAIN_BASE}`)
+  );
+}
+
+/**
+ * The page this studio has made its start page, or null. A studio that never
+ * did keeps exactly the behaviour below (redirect to /login, or the tenant
+ * picker on the apex). Any failure to ask, the API being down included, also
+ * ends up as null: the front door must not break because of this feature.
+ *
+ * It asks the API for every host, the apex included, instead of guessing from
+ * NEXT_PUBLIC_DOMAIN_BASE which hosts belong to a studio. That guess is wrong
+ * for a studio on a custom domain when no domain base is configured (method B
+ * in docs/MULTI_TENANT.md), and it is unnecessary: on a multi-tenant instance
+ * the API finds no studio for the apex or an unknown host and answers 404, so
+ * those keep the tenant picker or the login redirect.
+ */
+const getStartPage = cache(() => fetchStartPage());
+
+export async function generateMetadata(): Promise<Metadata> {
+  const start = await getStartPage();
+  return start ? buildPageMetadata(start, await publicOrigin()) : {};
+}
+
 export default async function HomePage() {
+  // The studio's start page, if it has one.
+  const start = await getStartPage();
+  if (start) {
+    return <PublicPageView slug={start.page.slug} initial={start} />;
+  }
+
   // Single-Mode: direkt durchleiten.
   if (MODE === "single") {
     redirect("/login");
@@ -39,18 +95,9 @@ export default async function HomePage() {
 
   // Multi-Mode: Host inspizieren um zu entscheiden, ob wir auf der
   // Apex-Domain oder einer Tenant-Subdomain sind.
-  //
-  // Reservierte Subdomains (studio, api, admin, app, www) zaehlen
-  // AUCH als Apex-aequivalent — sie sind keine Tenant-Subdomains.
-  // 'studio.lumio-cloud.de' ist der zentrale Login-Host fuer alle
-  // Tenants im Multi-Mode.
-  const RESERVED_SUBDOMAINS = ["www", "studio", "api", "admin", "app"];
   const headerList = await headers();
   const host = (headerList.get("host") ?? "").split(":")[0].toLowerCase();
-  const isApex =
-    !DOMAIN_BASE ||
-    host === DOMAIN_BASE ||
-    RESERVED_SUBDOMAINS.some((sd) => host === `${sd}.${DOMAIN_BASE}`);
+  const isApex = isApexHost(host);
 
   // Tenant-Subdomain: Tenant ist via Host bekannt, direkt zu Login.
   if (!isApex) {

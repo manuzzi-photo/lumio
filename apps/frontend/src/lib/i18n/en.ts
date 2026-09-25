@@ -2154,6 +2154,15 @@ export const en = {
     add: "Add",
     alreadyAdded: "Added",
   },
+  publicPage: {
+    studioLogin: "Studio login",
+    empty: "No galleries are available right now.",
+    notFound: "This page does not exist.",
+    unavailable: "This page is currently unavailable.",
+    protectedLabel: "Password protected",
+    locked: "This page is password-protected.",
+    open: "Open page",
+  },
   brandingsList: {
     breadcrumbStudio: "Studio",
     breadcrumb: "Branding",

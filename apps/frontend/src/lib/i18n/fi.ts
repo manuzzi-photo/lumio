@@ -2156,6 +2156,15 @@ export const fi = {
     add: "Lisää",
     alreadyAdded: "Lisätty",
   },
+  publicPage: {
+    studioLogin: "Studion kirjautuminen",
+    empty: "Gallerioita ei ole tällä hetkellä saatavilla.",
+    notFound: "Tätä sivua ei ole olemassa.",
+    unavailable: "Tämä sivu ei ole tällä hetkellä saatavilla.",
+    protectedLabel: "Salasanasuojattu",
+    locked: "Tämä sivu on salasanasuojattu.",
+    open: "Avaa sivu",
+  },
   brandingsList: {
     breadcrumbStudio: "Studio",
     breadcrumb: "Ilme",

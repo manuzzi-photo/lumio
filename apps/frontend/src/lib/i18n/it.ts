@@ -2164,6 +2164,15 @@ export const it: LocaleDict = {
     add: "Aggiungi",
     alreadyAdded: "Aggiunta",
   },
+  publicPage: {
+    studioLogin: "Accesso studio",
+    empty: "Al momento non ci sono gallerie disponibili.",
+    notFound: "Questa pagina non esiste.",
+    unavailable: "Questa pagina al momento non è disponibile.",
+    protectedLabel: "Protetta da password",
+    locked: "Questa pagina è protetta da password.",
+    open: "Apri pagina",
+  },
   brandingsList: {
     breadcrumbStudio: "Studio",
     breadcrumb: "Branding",

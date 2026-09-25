@@ -597,6 +597,43 @@ export interface GalleryPageRef {
   contains: boolean;
 }
 
+// -----------------------------------------------------------------------------
+// Landing pages, Besucher-Sicht (/p/<slug> und die Startseite unter /)
+// -----------------------------------------------------------------------------
+/** Eine Galerie-Karte auf einer oeffentlichen Page. */
+export interface PublicPageCard {
+  /** Oeffentlicher Slug der Galerie: die Karte verlinkt auf /g/<slug>. */
+  slug: string;
+  title: string;
+  createdAt: string;
+  /** Hat ein Passwort: Schloss auf der Karte. */
+  protected: boolean;
+  /** false = Platzhalter statt Cover, Beschreibung und Foto-Anzahl. */
+  previewVisible: boolean;
+  description: string | null;
+  fileCount: number | null;
+  cover: { url: string; width: number | null; height: number | null } | null;
+}
+
+export interface PublicLandingPage {
+  page: {
+    slug: string;
+    title: string;
+    /** null, solange eine Passwort-Page gesperrt ist. */
+    introMarkdown: string | null;
+    access: LandingPageAccess;
+    /** Startseite des Studios (wird unter / ausgeliefert). */
+    isDefault: boolean;
+    indexable: boolean;
+    /** Passwort-Page, die noch nicht freigeschaltet ist. */
+    locked: boolean;
+    studioName: string | null;
+    branding: Branding | null;
+    faviconUrl: string | null;
+  };
+  galleries: PublicPageCard[];
+}
+
 export const api = {
   // Auth
   health: () => fetch(`${API_URL}/health`).then((r) => r.json()),
@@ -1873,6 +1910,15 @@ export const api = {
   // Public Gallery (Kunden-Sicht)
   getPublicGallery: (slug: string) =>
     request<{ gallery: PublicGalleryMeta }>(`/g/${slug}`),
+
+  // Landing pages (Besucher)
+  getPublicPage: (slug: string) =>
+    request<PublicLandingPage>(`/p/${encodeURIComponent(slug)}`),
+  unlockPage: (slug: string, password: string) =>
+    request<{ ok: true }>(`/p/${encodeURIComponent(slug)}/unlock`, {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    }),
 
   unlockGallery: (
     slug: string,
