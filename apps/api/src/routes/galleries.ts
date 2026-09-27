@@ -21,6 +21,7 @@ import { config } from "../config.js";
 import { generateGallerySlug } from "../services/ids.js";
 import { validateGallerySlugFormat, GALLERY_SLUG_MAX_LENGTH } from "../services/slugs.js";
 import { resolveGalleryBySlug } from "../services/gallery-lookup.js";
+import { resolveCoverThumbs } from "../services/gallery-covers.js";
 import { presignGet, presignPut, getObjectStream } from "../services/storage.js";
 import { verifyPassword, hashPassword } from "../services/auth.js";
 import { isTenantPubliclyVisible } from "../services/tenant.js";
@@ -35,6 +36,7 @@ import { publishEvent } from "../services/webhooks.js";
 import { galleryAccessWhere, canDeleteGallery } from "../lib/gallery-access.js";
 import {
   createVisitorToken,
+  passwordFingerprint,
   verifyVisitorToken,
   visitorCookieName,
 } from "../services/visitor.js";
@@ -255,13 +257,6 @@ const unlockSchema = z.object({
  * den Slug → galleryId schon haben (z.B. aus dem Pfad-Param).
  */
 
-/** Kurzer Fingerabdruck eines Passwort-Hashes für das Visitor-Cookie.
- *  Der bcrypt-Hash ändert sich bei jeder Passwort-Änderung, also auch der
- *  Fingerabdruck — alte Cookies werden dadurch ungültig. */
-function passwordFingerprint(hash: string): string {
-  return createHash("sha256").update(hash).digest("hex").slice(0, 16);
-}
-
 /** Prüft, ob das Cookie gegen das aktuell geforderte Passwort
  *  freigeschaltet wurde. Kein Passwort gefordert → immer ok. */
 function cookiePasswordOk(
@@ -450,40 +445,13 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
 
       // --- Cover-Thumbnails (Batch) -----------------------------------------
       // Pro Galerie ein Thumbnail: bevorzugt das gesetzte Hero-File, sonst
-      // das erste Bild (nach sortIndex). Wir holen die thumb-Renditions in
-      // einer Query und signieren die URLs parallel.
-      const coverKeyByGallery = new Map<string, string>();
-      if (ids.length > 0) {
-        // 1) Erstes Bild je Galerie (Fallback-Cover)
-        const firstThumbs = await prisma.$queryRaw<
-          Array<{ gid: string; key: string }>
-        >`
-          SELECT DISTINCT ON (f."galleryId") f."galleryId" AS gid, r."storageKey" AS key
-          FROM files f
-          JOIN renditions r ON r."fileId" = f.id AND r.kind = 'thumb'
-          WHERE f."galleryId" = ANY(${ids}::uuid[]) AND f.kind = 'image'
-          ORDER BY f."galleryId", f."sortIndex" ASC, f."createdAt" ASC
-        `;
-        for (const row of firstThumbs) coverKeyByGallery.set(row.gid, row.key);
-
-        // 2) Hero-File-Override, wo gesetzt
-        const heroIds = galleries
-          .filter((g) => g.heroFileId)
-          .map((g) => g.heroFileId as string);
-        if (heroIds.length > 0) {
-          const heroThumbs = await prisma.rendition.findMany({
-            where: { fileId: { in: heroIds }, kind: "thumb" },
-            select: { storageKey: true, file: { select: { id: true, galleryId: true } } },
-          });
-          for (const r of heroThumbs) {
-            coverKeyByGallery.set(r.file.galleryId, r.storageKey);
-          }
-        }
-      }
+      // das erste Bild (nach sortIndex), siehe services/gallery-covers.ts.
+      // Die URLs signieren wir parallel.
+      const coverKeyByGallery = await resolveCoverThumbs(galleries);
       const coverUrlByGallery = new Map<string, string>();
       await Promise.all(
-        Array.from(coverKeyByGallery.entries()).map(async ([gid, key]) => {
-          coverUrlByGallery.set(gid, await presignGet({ key }));
+        Array.from(coverKeyByGallery.entries()).map(async ([gid, cover]) => {
+          coverUrlByGallery.set(gid, await presignGet({ key: cover.storageKey }));
         })
       );
 

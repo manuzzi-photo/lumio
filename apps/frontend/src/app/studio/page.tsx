@@ -18,6 +18,7 @@ import { Button, Input, Textarea, Select } from "@/components/ui";
 import { TagChip } from "@/components/studio/TagPicker";
 import { useErrorText } from "@/lib/error-i18n";
 import { useConfirm, useNotify, usePrompt } from "@/components/ui/dialogs";
+import { pagesHoldingGallery } from "@/components/studio/GalleryPagesSection";
 
 export default function StudioPage() {
   const confirm = useConfirm();
@@ -856,6 +857,7 @@ function GalleryCard({
   const notify = useNotify();
   const errText = useErrorText();
   const ask = usePrompt();
+  const confirm = useConfirm();
   const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -892,6 +894,23 @@ function GalleryCard({
     setBusy(true);
     setMenuOpen(false);
     try {
+      // Archiving hides the gallery from the landing pages it is on. Say so,
+      // but only when there is something to say: no extra step otherwise.
+      if (status === "archived") {
+        const pages = await pagesHoldingGallery(g.id);
+        if (pages.length > 0) {
+          const ok = await confirm({
+            title: t("galleryPages.archiveTitle"),
+            message: t("galleryPages.archiveMessage", {
+              title: g.title,
+              pages: pages.map((p) => p.title).join(", "),
+            }),
+            confirmLabel: t("studio.archive"),
+            destructive: true,
+          });
+          if (!ok) return;
+        }
+      }
       await api.updateGallery(g.id, { status });
       onChanged();
     } catch (err) {
@@ -903,9 +922,19 @@ function GalleryCard({
 
   async function deleteForever() {
     setMenuOpen(false);
+    // An archived gallery keeps its place on the pages; deleting it removes it
+    // from all of them.
+    const pages = await pagesHoldingGallery(g.id);
     const typed = await ask({
       title: t("studio.deleteConfirmTitle"),
-      message: t("studio.deleteConfirmMessage", { title: g.title }),
+      message:
+        t("studio.deleteConfirmMessage", { title: g.title }) +
+        (pages.length > 0
+          ? "\n\n" +
+            t("galleryPages.deleteNote", {
+              pages: pages.map((p) => p.title).join(", "),
+            })
+          : ""),
       placeholder: g.title,
       confirmLabel: t("common.delete"),
     });

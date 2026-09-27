@@ -34,7 +34,7 @@ function hexToRgbTriple(hex: string): string | null {
   return `${(n >> 16) & 0xff} ${(n >> 8) & 0xff} ${n & 0xff}`;
 }
 
-function isLightColor(hex: string): boolean {
+export function isLightColor(hex: string): boolean {
   const m = hex.replace("#", "").match(/^([0-9a-f]{6})$/i);
   if (!m) return false;
   const n = parseInt(m[1], 16);
@@ -50,6 +50,7 @@ export function GalleryShell({
   branding,
   faviconUrl,
   overrides,
+  footerExtra,
   children,
 }: {
   branding: Branding | null;
@@ -72,6 +73,9 @@ export function GalleryShell({
      *  der Customer dasselbe Logo zweimal (oben + im Hero). */
     hideHeaderLogo?: boolean;
   };
+  /** Zusatz in der Footer-Zeile, neben Impressum/Datenschutz (z. B. der
+   *  Studio-Login auf der Startseite). */
+  footerExtra?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const t = useT();
@@ -367,6 +371,7 @@ export function GalleryShell({
               )}
             </div>
           )}
+          {footerExtra}
           {supported.length > 1 && (
             <LocaleSwitcher
               locale={locale}

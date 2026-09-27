@@ -17,6 +17,8 @@
  * geteilte Galerie-Links zeigten in WhatsApp/Slack weder Titel noch
  * Hero-Bild.
  */
+import type { PublicLandingPage } from "@/lib/api";
+
 const INTERNAL_API_URL =
   process.env.INTERNAL_API_URL?.trim() ||
   process.env.NEXT_PUBLIC_API_URL?.trim() ||
@@ -110,4 +112,100 @@ export async function publicOrigin(): Promise<string> {
   if (host) return `${proto}://${host}`;
   // Letzter Ausweg: die konfigurierte Public-URL, falls gesetzt.
   return (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
+}
+
+// -----------------------------------------------------------------------------
+// Landing pages
+// -----------------------------------------------------------------------------
+// Die API loest den Tenant aus dem Host-Header des Requests auf (Custom-Domain,
+// Subdomain). Ein Server-Side-Fetch geht aber direkt an den API-Container und
+// hat deshalb dessen Host. Fuer die Startseite unter / ist das fatal: ohne den
+// Host des Besuchers weiss die API nicht, welches Studio gemeint ist.
+//
+// fetch() erlaubt es in Node nicht, den Host-Header zu setzen (undici ignoriert
+// ihn stillschweigend), darum hier node:http.
+
+interface ApiResponse {
+  status: number;
+  json: unknown;
+}
+
+async function getJsonForHost(
+  path: string,
+  host: string
+): Promise<ApiResponse> {
+  const base = new URL(INTERNAL_API_URL);
+  const transport =
+    base.protocol === "https:" ? await import("node:https") : await import("node:http");
+  return new Promise((resolve, reject) => {
+    const req = transport.request(
+      {
+        hostname: base.hostname,
+        port: base.port || undefined,
+        path: base.pathname.replace(/\/+$/, "") + path,
+        method: "GET",
+        headers: { accept: "application/json", ...(host ? { host } : {}) },
+        timeout: 5000,
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (c: Buffer) => chunks.push(c));
+        res.on("end", () => {
+          const text = Buffer.concat(chunks).toString("utf8");
+          try {
+            resolve({ status: res.statusCode ?? 0, json: text ? JSON.parse(text) : null });
+          } catch {
+            resolve({ status: res.statusCode ?? 0, json: null });
+          }
+        });
+      }
+    );
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+/** Host des Besuchers, so wie ihn der Reverse-Proxy durchreicht. */
+export async function visitorHost(): Promise<string> {
+  const { headers } = await import("next/headers");
+  const h = await headers();
+  return (h.get("x-forwarded-host") ?? h.get("host") ?? "").toLowerCase();
+}
+
+/**
+ * Die Startseite des Studios (die Page, die unter / ausgeliefert wird), oder
+ * null: keine gesetzt, Feature aus, Studio offline oder API nicht erreichbar.
+ * Null heisst fuer den Aufrufer immer "bleib beim Redirect auf /login".
+ */
+export async function fetchStartPage(): Promise<PublicLandingPage | null> {
+  try {
+    const res = await getJsonForHost("/api/v1/p", await visitorHost());
+    return res.status === 200 ? (res.json as PublicLandingPage) : null;
+  } catch (err) {
+    console.warn(`[start-page] fetch fehlgeschlagen (base: ${INTERNAL_API_URL})`, err);
+    return null;
+  }
+}
+
+export interface ServerPageResult {
+  status: number;
+  data: PublicLandingPage | null;
+}
+
+/** Eine Page per Slug, fuer generateMetadata und den Redirect der Startseite. */
+export async function fetchPublicPage(slug: string): Promise<ServerPageResult> {
+  try {
+    const res = await getJsonForHost(
+      `/api/v1/p/${encodeURIComponent(slug)}`,
+      await visitorHost()
+    );
+    return {
+      status: res.status,
+      data: res.status === 200 ? (res.json as PublicLandingPage) : null,
+    };
+  } catch (err) {
+    console.warn(`[metadata] page fetch ${slug} fehlgeschlagen`, err);
+    return { status: 0, data: null };
+  }
 }

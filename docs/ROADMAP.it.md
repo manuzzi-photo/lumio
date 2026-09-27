@@ -129,6 +129,14 @@ Completamente implementato — dettagli nella fase 5.
 - [x] Notifiche email (selezione completata, nuovo commento)
 - [x] Modalità presentazione (slideshow a schermo intero con avanzamento automatico, cross-fade, intervallo regolabile)
 
+### Pagine ✅
+
+- [x] Pagine come elenchi curati e ordinati di gallerie sotto un link proprio (`/p/<slug>`): slug casuali e rinominabili; accesso pubblico / solo con link / password; una pagina pubblica può essere la pagina iniziale dello studio su `/` (single mode, sottodominio, dominio personalizzato). Vedi [LANDING_PAGES.it.md](LANDING_PAGES.it.md)
+- [x] Solo assegnazione esplicita, nessun tag o filtro decide la visibilità; una pagina elenca le gallerie ma non le apre mai; le gallerie con password mostrano solo titolo e data finché lo studio non attiva l'anteprima
+- [ ] Filtri (tag, smart collection) come comodità per *riempire* una pagina, mai per decidere cosa è pubblico
+- [ ] Portale cliente: sbloccare una pagina apre anche le gallerie al suo interno (una pagina che concede l'accesso)
+- [ ] Immagine hero e varianti di layout per una pagina, paginazione, sitemap
+
 ---
 
 ## Fase 3 — Rifinitura & crescita

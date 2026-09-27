@@ -129,6 +129,14 @@ Fully built — detailed in phase 5.
 - [x] Email notifications (selection done, new comment)
 - [x] Presentation mode (fullscreen slideshow with auto-advance, cross-fade, adjustable interval)
 
+### Landing pages ✅
+
+- [x] Pages as curated, ordered lists of galleries under their own link (`/p/<slug>`): random, renamable slugs; access public / link only / password; a public page can be the studio's start page on `/` (single mode, subdomain, custom domain). See [LANDING_PAGES.md](LANDING_PAGES.md)
+- [x] Explicit assignment only, no tag or filter decides visibility; a page lists galleries but never opens them; password galleries show only title and date unless the studio switches the preview on
+- [ ] Filters (tags, smart collections) as a convenience to *fill* a page, never to decide what is public
+- [ ] Client portal: unlocking a page also opens the galleries on it (a page that grants access)
+- [ ] Hero image and layout variants for a page, pagination, sitemap
+
 ---
 
 ## Phase 3 — Polish & growth

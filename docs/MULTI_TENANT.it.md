@@ -126,6 +126,19 @@ L'interfaccia dello studio mostra un avviso nell'editor dello slug ogni volta ch
 
 ---
 
+## Pagine e pagina iniziale
+
+Uno studio può mettere pagine curate di gallerie sotto `/p/<slug>` e rendere una pagina pubblica la sua **pagina iniziale**, mostrata su `/` invece del reindirizzamento all'accesso (vedi [LANDING_PAGES.it.md](LANDING_PAGES.it.md)). Entrambe seguono la stessa risoluzione del tenant dei link alle gallerie:
+
+- **Quale studio** lo decide l'host della richiesta (dominio personalizzato o sottodominio, passi 3 e 4 sopra), quindi `studio-a.example.com/` mostra la pagina iniziale dello studio A e mai quella dello studio B. Lo slug di una pagina è univoco per studio, quindi due studi possono avere entrambi `/p/portfolio`.
+- **Sul dominio apex** (`lumio-cloud.de/`, `studio.lumio-cloud.de/` e gli altri host riservati) non c'è nessuno studio: `/` resta la scelta dello studio e non ci sono pagine.
+- **Uno studio senza pagina iniziale**, o con la funzione disattivata, mantiene il reindirizzamento a `/login` esattamente come prima.
+- **Uno studio con dominio personalizzato** non ha bisogno di `LUMIO_DOMAIN_BASE` per questo: il frontend interroga l'API per ogni host, e l'API risolve il dominio.
+- **Senza host per studio** (un'installazione multi-tenant su un unico host) la risoluzione del tenant non trova nessuno studio: `/` si comporta come prima, e un link `/p/<slug>` funziona solo se esattamente uno studio usa quello slug, come un link a una galleria.
+- Per il render lato server di `/`, il frontend passa l'host del visitatore (`X-Forwarded-Host` del proxy, altrimenti `Host`) all'API. Il `fetch` di Node non può impostare quell'header, quindi usa `node:http`.
+
+---
+
 ## Quale metodo per cosa
 
 | Per cosa                            | Metodo                            |

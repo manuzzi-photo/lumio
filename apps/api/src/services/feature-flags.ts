@@ -72,6 +72,16 @@ export const FEATURE_FLAG_DEFS: FeatureFlagDef[] = [
     badge: "experimental",
   },
   {
+    // On by default: pages are opt-in per studio anyway (nothing changes until
+    // one is created). The flag is a kill switch for a SaaS operator, who can
+    // switch it off per tenant; it also gates "/" and every /p route.
+    key: "landing_pages",
+    name: "Landing Pages",
+    description:
+      "Kuratierte Seiten mit eigenem Link, die mehrere Galerien auflisten; optional als Startseite des Studios unter /.",
+    defaultValue: true,
+  },
+  {
     key: "video_streaming_4k",
     name: "4K-Video-Streaming",
     description:
