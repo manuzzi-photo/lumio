@@ -210,6 +210,101 @@ describe("buildOrderSummaryMarkdown", () => {
   });
 });
 
+describe("buildOrderSummaryMarkdown — customer registry and invoice", () => {
+  const addr = {
+    street: "Via Roma 1",
+    postalCode: "24121",
+    city: "Bergamo",
+    region: "BG",
+    countryCode: "IT",
+  };
+
+  it("prints tax code, phone and customer address when present", () => {
+    const md = buildOrderSummaryMarkdown(
+      header({
+        guestTaxCode: "RSSMRA85T10A562S",
+        guestPhone: "+39 333 1234567",
+        customerAddress: addr,
+      }),
+      [row()]
+    );
+    expect(md).toContain("- **Tax code:** RSSMRA85T10A562S");
+    expect(md).toContain("- **Phone:** +39 333 1234567");
+    expect(md).toContain("- **Customer address:** Via Roma 1, 24121 Bergamo, BG, IT");
+  });
+
+  it("does not print the phone twice when it is also on the shipping address", () => {
+    const md = buildOrderSummaryMarkdown(
+      header({
+        guestPhone: "+39 333 1234567",
+        shippingAddress: { ...addr, phone: "+39 333 1234567" },
+      }),
+      [row()]
+    );
+    expect(md.match(/\*\*Phone:\*\*/g)).toHaveLength(1);
+  });
+
+  it("still prints the phone from the shipping address on a pre-registry order", () => {
+    const md = buildOrderSummaryMarkdown(
+      header({ shippingAddress: { ...addr, phone: "+39 111" } }),
+      [row()]
+    );
+    expect(md).toContain("- **Phone:** +39 111");
+  });
+
+  it("escapes a pipe or a newline in any address field, so a customer's input can't break the bullet list", () => {
+    const hostile = {
+      street: "Via Roma 1\nInvoice requested: yes",
+      postalCode: "24121",
+      city: "Ber|gamo",
+      region: "BG",
+      countryCode: "IT",
+    };
+    const md = buildOrderSummaryMarkdown(
+      header({
+        customerAddress: hostile,
+        shippingAddress: hostile,
+        invoice: { name: "X", vatNumber: null, taxCode: null, eAddress: null, address: hostile },
+      }),
+      [row()]
+    );
+    // No literal newline made it into an address line — mdEscape() replaces it
+    // with a space, so the line stays on one bullet and can't fabricate a new
+    // one (e.g. a fake "Invoice requested: yes" line the studio didn't ask for).
+    expect(md).not.toContain("Roma 1\nInvoice requested: yes");
+    expect(md).toContain("Via Roma 1 Invoice requested: yes");
+    // The pipe survives escaped, not stripped, and not left to break a future
+    // table cell.
+    expect(md).toContain("Ber\\|gamo");
+    expect(md).not.toMatch(/Ber\|gamo/);
+  });
+
+  it("prints the invoice block only when an invoice was requested", () => {
+    const without = buildOrderSummaryMarkdown(header({ invoice: null }), [row()]);
+    expect(without).not.toContain("Invoice requested");
+
+    const md = buildOrderSummaryMarkdown(
+      header({
+        invoice: {
+          kind: "business",
+          name: "Rossi Foto SRL",
+          vatNumber: "IT12345678903",
+          taxCode: "12345678903",
+          eAddress: "KJH45Z1",
+          address: addr,
+        },
+      }),
+      [row()]
+    );
+    expect(md).toContain("- **Invoice requested:** yes (business)");
+    expect(md).toContain("E-invoice address: KJH45Z1");
+    expect(md).toContain("Invoice to: Rossi Foto SRL");
+    expect(md).toContain("VAT number: IT12345678903");
+    expect(md).toContain("Tax code: 12345678903");
+    expect(md).toContain("Invoice address: Via Roma 1, 24121 Bergamo, BG, IT");
+  });
+});
+
 describe("isOrderSummaryAddress", () => {
   it("accepts a well-formed address", () => {
     expect(

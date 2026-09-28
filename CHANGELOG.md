@@ -29,7 +29,7 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
-A pull is enough. Frontend and API are affected, so only the main server. The database migration (new tables for pages) runs automatically on deploy. Nothing changes until a studio creates a page.
+A pull is enough — the database migrates automatically on start. Only the main server is affected. **The print-shop checkout asks for more than before** — see below. Nothing changes for landing pages until a studio creates one.
 
 ### Added
 
@@ -37,6 +37,16 @@ A pull is enough. Frontend and API are affected, so only the main server. The da
 - A public page can be made the studio's **start page**: it is then shown on `/` instead of the redirect to the login (single mode, subdomain and custom domain). The login stays at `/login` and is linked from the page. A studio that does not set one sees no difference.
 - The feature sits behind the feature flag `landing_pages`, on by default; the operator of a multi-tenant instance can switch it off per studio.
 - API: studio routes under `/pages…` and public ones under `/p…`.
+- Print shop: the checkout now collects a full customer registry: first and last name, email, phone and a residence address. The residence address is asked for pickup orders too, which still take no shipping address. A courier order can ship to the residence address (default) or to a separate one. The phone number is required for a courier order — carriers need it — and optional for pickup. The studio's order view shows the registry, and so does the Markdown summary of the order.
+- Print shop: the customer can ask for an invoice, as a **private person or a business**, with one checkbox to reuse the name, address and tax ID already entered. What it asks for beyond that is **the studio's own setting**, under *Print shop → Settings → Tax ID & invoice details*: a **VAT number**, a **tax ID** and an **e-invoice address**, each off, optional or required separately for private and business customers, each with a label the studio words itself ("Codice fiscale", "NIF", "USt-IdNr."…). A further setting, *Tax ID at checkout*, asks every customer for the tax ID whether or not they want an invoice. Everything is off until the studio turns it on, so nothing changes for a studio that does not.
+- Print shop: a studio can have the VAT number, the tax ID and the e-invoice address *checked* as a known type instead of only for a plausible shape — the EU VAT format for the VAT number, an Italian codice fiscale, a French SIREN, a Spanish or Portuguese NIF, a Croatian OIB, an Italian recipient code / PEC. The check verifies format and check digit while the customer is still on the page, which is what saves a studio from writing to a customer for a mistyped number, or one typed into the wrong field (a codice fiscale in the VAT number field is rejected by the Italian SdI). It is opt-in for every one of the three fields, defaulting to a generic plausible-shape check, and nothing is looked up at VIES or a tax authority. A typed tax ID or e-invoice address is only *required* of customers who live in its country; the VAT format check applies everywhere, since a VAT number isn't tied to where the customer lives.
+- An invoice order gets an "Invoice" badge in the studio's order list, its own block in the order view — worded with the studio's labels — and a line in the new-order mail to the studio.
+
+### Changed
+
+- Print shop: the checkout takes first and last name as two fields instead of one "full name". The default country in the address fields is now the one in the studio's legal details (the DPA page, hosted cloud only), else the first country a shipping method is limited to, else Germany.
+- A request the API rejects as invalid (`validation_failed`) now shows a translated message instead of the English "request validation failed". In the print-shop checkout, the submit button also waits for a plausible email and phone number, and says so under the field, rather than letting the server refuse them.
+- Print shop: the customer-facing checkout API changed — `guestName` is replaced by `guestFirstName` / `guestLastName`, `customerAddress` is required, `guestPhone` is required only for a courier order, and `billingAddress` is replaced by an optional `invoice` block carrying the customer `kind` and the identifiers the studio asks for. The catalog response gains `invoicing` (the studio's settings) and `defaultCountry`. Only relevant if something other than Lumio's own frontend calls it.
 
 ## [0.85.0] - 2026-09-26
 
