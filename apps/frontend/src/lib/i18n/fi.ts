@@ -2303,7 +2303,7 @@ export const fi = {
     evNote: "Muistiinpano lisätty",
     evMailsPaid: "Vahvistussähköpostit lähetetty",
     evApproveCod: "Maksu toimituksen yhteydessä sallittu",
-    evCollectPayment: "Maksu perity",
+    evCollectPayment: "Maksu peritty",
     evMailsCreated: "Tilausvahvistusviestit lähetetty",
     actorGuest: "Asiakas",
     actorStudio: "Studio",
