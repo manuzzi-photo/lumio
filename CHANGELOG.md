@@ -38,6 +38,10 @@ A pull is enough. Frontend and API are affected, so only the main server. The da
 - The feature sits behind the feature flag `landing_pages`, on by default; the operator of a multi-tenant instance can switch it off per studio.
 - API: studio routes under `/pages…` and public ones under `/p…`.
 
+### Fixed
+
+- With a **studio favicon** set (Appearance), or a **branding favicon** on a gallery or page, the app could freeze on navigation: the URL changed, the page did not, and nothing navigated any more until a reload (in Firefox the console shows `can't access property "removeChild", n.stateNode.parentNode is null`). In the studio this happened on the first navigation; on a branded start page, on going back from a gallery or following the login link. The favicon code deleted the default icon links that Next.js manages, and the next page change failed when it tried to remove them itself. The default icons are now set aside instead and restored when leaving the studio or gallery, so the custom favicon also stays in place across page changes, where before it could lose to the default icons.
+
 ## [0.85.0] - 2026-09-26
 
 A pull is enough — the database migrates automatically on start. Only the main server (API and frontend) is affected.

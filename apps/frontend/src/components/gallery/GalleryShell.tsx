@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import { api, type Branding } from "@/lib/api";
 import { useT, useLocale } from "@/lib/i18n";
 import { bunnyFontsCssUrl, resolveFontStack } from "@/lib/fonts";
+import { useFavicon } from "@/lib/useFavicon";
 
 /**
  * Wrapper für alle Kunden-Galerie-Seiten. Wendet das Branding eines
@@ -80,31 +81,8 @@ export function GalleryShell({
 }) {
   const t = useT();
   const { locale, setLocale, supported } = useLocale();
-  // Favicon dynamisch setzen.
-  //
-  // Wichtig: layout.tsx deklariert DREI Icons (SVG, PNG 32, PNG 16), Next
-  // rendert daraus drei <link rel="icon">. Frueher wurde per
-  // querySelector nur das ERSTE (das SVG) umgebogen — dessen
-  // type="image/svg+xml" blieb stehen, und die beiden groessenannotierten
-  // PNGs zeigten weiter auf das Lumio-Standardicon. Browser bevorzugen
-  // genau die, also gewann das Branding nie. Darum: alle Icon-Links
-  // entfernen und genau einen neuen setzen, ohne type (der Browser
-  // erkennt das Format selbst, und ein falscher type laesst ihn das
-  // Icon verwerfen).
-  useEffect(() => {
-    if (!faviconUrl) return;
-    const selector = 'link[rel="icon"], link[rel="shortcut icon"]';
-    document
-      .querySelectorAll<HTMLLinkElement>(selector)
-      .forEach((el) => el.remove());
-    const link = document.createElement("link");
-    link.rel = "icon";
-    link.href = faviconUrl;
-    document.head.appendChild(link);
-    return () => {
-      link.remove();
-    };
-  }, [faviconUrl]);
+  // Favicon des Brandings, siehe lib/useFavicon.ts.
+  useFavicon(faviconUrl);
 
   // Rechtliche Links des Betreibers (Impressum/Datenschutz) aus der
   // Instanz-Config. Bei Self-Hostern ohne Config bleibt es leer.
