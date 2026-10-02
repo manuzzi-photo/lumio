@@ -1,7 +1,8 @@
 /**
  * Lumio API — Print-Shop Mail-Templates
  *
- * Endkunden-Bestaetigung, Studio-Notifikation, Versand-Notifikation.
+ * Bestellung eingegangen (Endkunde + Studio), Zahlung erhalten (Endkunde),
+ * Versand-/Abhol-Notifikation (Endkunde).
  * Folgt dem Template-Pattern von mail.ts: subject/text/html als POJO.
  *
  * Diese drei Mails haben frueher ihr eigenes nacktes HTML gebaut und
@@ -132,7 +133,7 @@ function escapeHtml(s: string): string {
 }
 
 // =============================================================================
-// 1) Endkunde — Bestellbestaetigung (nach 'paid')
+// 1) Endkunde — Bestellung eingegangen (bei Anlage, vor der Zahlung)
 // =============================================================================
 
 /**
@@ -191,6 +192,24 @@ const printGuestPhrases = {
     en: "We are preparing your order for production now. You will get another email once it ships.",
     it: "Stiamo preparando il tuo ordine per la produzione. Riceverai un'altra email non appena verrà spedito.",
     fi: "Valmistelemme tilaustasi tuotantoon. Saat uuden viestin heti kun se on lähetetty.",
+  },
+  awaitingOnlinePayment: {
+    de: "Sobald deine Zahlung bei {studio} eingegangen ist, bekommst du eine Bestätigung und deine Bestellung geht in die Produktion.",
+    en: "Once your payment has reached {studio}, you will get a confirmation and your order goes into production.",
+    it: "Non appena il tuo pagamento è arrivato a {studio}, riceverai una conferma e il tuo ordine andrà in produzione.",
+    fi: "Kun maksusi on saapunut studiolle {studio}, saat vahvistuksen ja tilauksesi menee tuotantoon.",
+  },
+  paidSubject: {
+    de: "Zahlung für deine Bestellung {order} erhalten",
+    en: "Payment received for your order {order}",
+    it: "Pagamento ricevuto per il tuo ordine {order}",
+    fi: "Maksu vastaanotettu tilaukselle {order}",
+  },
+  paidBody: {
+    de: "wir haben deine Zahlung für die Bestellung {order} erhalten. Vielen Dank!",
+    en: "we have received your payment for order {order}. Thank you!",
+    it: "abbiamo ricevuto il tuo pagamento per l'ordine {order}. Grazie!",
+    fi: "olemme vastaanottaneet maksusi tilaukselle {order}. Kiitos!",
   },
   questions: {
     de: "Bei Fragen: {contact}",
@@ -289,6 +308,12 @@ const printStudioPhrases = {
     it: "Fattura offline",
     fi: "Lasku jälkikäteen",
   },
+  paymentPending: {
+    de: "Zahlung ausstehend",
+    en: "payment pending",
+    it: "pagamento in attesa",
+    fi: "maksu odottaa",
+  },
   total: { de: "Gesamtsumme", en: "Total", it: "Totale", fi: "Yhteensä" },
   items: { de: "Artikel", en: "Items", it: "Articoli", fi: "Tuotteet" },
   deliveryAddress: {
@@ -356,7 +381,7 @@ ${formatAddress(order.shippingAddress)}
 ${
   order.paymentMode === "offline_invoice"
     ? phrase(P.offlineInvoice, l, vars)
-    : phrase(P.inProduction, l)
+    : phrase(P.awaitingOnlinePayment, l, vars)
 }
 
 ${printSupport(supportEmail) ? phrase(P.questions, l, { contact: printSupport(supportEmail)! }) : ""}
@@ -387,7 +412,7 @@ ${studioName}`;
     ${
       order.paymentMode === "offline_invoice"
         ? escapeHtml(phrase(P.offlineInvoice, l, { studio: studioName }))
-        : escapeHtml(phrase(P.inProduction, l))
+        : escapeHtml(phrase(P.awaitingOnlinePayment, l, { studio: studioName }))
     }
   </p>
   <p style="color:#888;font-size:13px;margin-top:24px;">
@@ -400,7 +425,7 @@ ${studioName}`;
 }
 
 // =============================================================================
-// 2) Studio — neue Bestellung eingegangen
+// 2) Studio — neue Bestellung eingegangen (bei Anlage)
 // =============================================================================
 export function tmplPrintOrderNotifyStudio(opts: {
   studioName: string;
@@ -415,10 +440,12 @@ export function tmplPrintOrderNotifyStudio(opts: {
   const S = printStudioPhrases;
   const orderUrl = `${baseUrl.replace(/\/+$/, "")}/studio/print-shop/orders/${order.id}`;
   const subject = phrase(S.subject, l, { order: order.orderNumber });
-  const payLabel =
+  // The mail goes out when the order is created, i.e. before any payment.
+  const payLabel = `${
     order.paymentMode === "stripe_connect"
       ? phrase(S.payOnline, l)
-      : phrase(S.payOffline, l);
+      : phrase(S.payOffline, l)
+  } — ${phrase(S.paymentPending, l)}`;
   // Just the pointer that an invoice is due (with the first identifier that
   // is there, for a quick glance) — the full invoice details live in the
   // order in the studio. Which identifiers exist depends on what the studio
@@ -472,6 +499,61 @@ ${orderUrl}`;
   ${order.guestNote ? `<h3 style="margin-top:20px;">${escapeHtml(phrase(S.customerNote, l))}</h3><blockquote style="border-left:3px solid #ddd;padding-left:12px;margin:0;color:#444;">${escapeHtml(order.guestNote)}</blockquote>` : ""}
   <p style="margin-top:24px;">
     ${mailButton(orderUrl, phrase(S.openOrderButton, l), branding?.accentColor)}
+  </p>
+`,
+  });
+
+  return { subject, text, html };
+}
+
+// =============================================================================
+// 2b) Endkunde — Zahlung erhalten
+// =============================================================================
+export function tmplPrintOrderPaidGuest(opts: {
+  studioName: string;
+  branding?: MailBranding;
+  supportEmail: string;
+  order: OrderLike;
+  locale?: MailLocale;
+}): { subject: string; text: string; html: string } {
+  const { studioName, supportEmail, order, branding } = opts;
+  const l = opts.locale ?? instanceMailLocale();
+  const P = printGuestPhrases;
+  const vars = {
+    order: order.orderNumber,
+    studio: studioName,
+    name: order.guestName,
+  };
+  const subject = phrase(P.paidSubject, l, vars);
+  // Paid on delivery: the order is long past production by then.
+  const producing = order.paymentMode !== "cash_on_delivery";
+
+  const text =
+    `${phrase(P.greeting, l, vars)}
+
+${phrase(P.paidBody, l, vars)}
+
+${phrase(P.total, l)}: ${formatPrice(order.totalCents, order.currency, l)}
+${producing ? `\n${phrase(P.inProduction, l)}\n` : ""}
+${phrase(P.regards, l)}
+${studioName}
+
+${printSupport(supportEmail) ? phrase(P.questions, l, { contact: printSupport(supportEmail)! }) : ""}`;
+
+  const html = renderMailLayout({
+    locale: l,
+    branding,
+    bodyHtml: `
+  <p>${escapeHtml(phrase(P.greeting, l, vars))}</p>
+  <p>${escapeHtml(phrase(P.paidBody, l, vars))}</p>
+  <p style="background:#f5f5f5;padding:10px 14px;border-radius:4px;display:inline-block;">
+    ${escapeHtml(phrase(P.orderNumber, l))}: <strong style="font-family:monospace;">${order.orderNumber}</strong><br>
+    ${escapeHtml(phrase(P.total, l))}: <strong>${formatPrice(order.totalCents, order.currency, l)}</strong>
+  </p>
+  ${producing ? `<p style="margin-top:24px;color:#444;">${escapeHtml(phrase(P.inProduction, l))}</p>` : ""}
+  <p style="margin-top:24px;color:#444;">${escapeHtml(phrase(P.regards, l))}<br>${escapeHtml(studioName)}</p>
+  <p style="color:#888;font-size:13px;margin-top:24px;">
+    ${printSupport(supportEmail) ? `${escapeHtml(phrase(P.questionsLabel, l))} <a href="mailto:${escapeHtml(printSupport(supportEmail)!)}">${escapeHtml(printSupport(supportEmail)!)}</a>` : ""}
   </p>
 `,
   });

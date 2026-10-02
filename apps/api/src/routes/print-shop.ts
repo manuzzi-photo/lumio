@@ -54,7 +54,10 @@ import {
   disconnectAccount,
   getConnectStatus,
 } from "../services/print/stripe-connect.js";
-import { transitionOrder } from "../services/print/orders.js";
+import {
+  transitionOrder,
+  COLLECT_PAYMENT_METHODS,
+} from "../services/print/orders.js";
 import {
   eAddressLabel,
   invoiceSettingsSchema,
@@ -1326,6 +1329,8 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
   const transitionSchema = z.object({
     type: z.enum([
       "mark_paid",
+      "approve_cod",
+      "collect_payment",
       "mark_in_production",
       "mark_shipped",
       "mark_ready_for_pickup",
@@ -1346,6 +1351,8 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
     // happens to include the field), not just the one case that
     // actually needs a non-blank value.
     paymentReference: z.string().max(200).optional(),
+    // Required by 'collect_payment' (checked below).
+    paymentMethod: z.enum(COLLECT_PAYMENT_METHODS).optional(),
   });
   app.post<{ Params: { id: string } }>(
     "/print-shop/orders/:id/transitions",
@@ -1358,11 +1365,25 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
         select: { id: true },
       });
       if (!order) return reply.status(404).send({ error: "not_found" });
+      if (body.type === "collect_payment" && !body.paymentMethod) {
+        return reply.status(400).send({
+          error: "transition_failed",
+          message: "paymentMethod erforderlich",
+        });
+      }
       try {
-        await transitionOrder(req.params.id, {
+        await transitionOrder(
+          req.params.id,
+          {
           type: body.type,
           actor: "studio",
           actorUserId: ctx.userId,
+          ...(body.type === "collect_payment"
+            ? {
+                paymentMethod: body.paymentMethod!,
+                paymentReference: body.paymentReference,
+              }
+            : {}),
           ...(body.type === "mark_shipped"
             ? {
                 trackingNumber: body.trackingNumber,
@@ -1376,7 +1397,8 @@ export async function registerPrintShopRoutes(app: FastifyInstance) {
           ...(body.type === "mark_paid"
             ? { paymentReference: body.paymentReference }
             : {}),
-        });
+          } as Parameters<typeof transitionOrder>[1]
+        );
         await logEvent({
           tenantId: ctx.tenantId,
           actorType: "user",

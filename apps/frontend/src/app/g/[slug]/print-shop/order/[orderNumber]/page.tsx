@@ -78,6 +78,12 @@ export default function PrintOrderConfirmationPage({
               <>
                 {t("orderPage.invoiceComing")}
               </>
+            ) : order.paymentMode === "cash_on_delivery" && !order.paidAt ? (
+              <>
+                {t("orderPage.payOnDelivery", {
+                  amount: formatPrice(fmt, order.totals.totalCents, order.currency),
+                })}
+              </>
             ) : (
               <>
                 {t("orderPage.paymentReceived")}

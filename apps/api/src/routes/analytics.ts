@@ -117,7 +117,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
           where: {
             tenantId,
             createdAt: { gte: since },
-            status: { in: ["paid", "in_production", "shipped", "delivered"] },
+            status: { in: ["paid", "confirmed", "in_production", "shipped", "delivered"] },
           },
         }),
 
@@ -184,7 +184,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
           where: {
             tenantId,
             createdAt: { gte: since },
-            status: { in: ["paid", "in_production", "shipped", "delivered"] },
+            status: { in: ["paid", "confirmed", "in_production", "shipped", "delivered"] },
           },
           _sum: { totalCents: true },
         }),
@@ -330,7 +330,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
             where: {
               galleryId,
               createdAt: { gte: since },
-              status: { in: ["paid", "in_production", "shipped", "delivered"] },
+              status: { in: ["paid", "confirmed", "in_production", "shipped", "delivered"] },
             },
           }),
         ]);

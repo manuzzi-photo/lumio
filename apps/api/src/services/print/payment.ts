@@ -172,3 +172,39 @@ export async function refundStripeChargeForOrder(
     throw err;
   }
 }
+
+/**
+ * Cancels the open PaymentIntent of an order so it can no longer be paid
+ * online — used when the studio lets the customer pay on delivery
+ * instead. Nothing to do when there is none or it is already cancelled.
+ * Throws when the payment went through (or is processing) in the
+ * meantime: the caller must not switch the order to pay-on-delivery then.
+ */
+export async function cancelPaymentIntentForOrder(
+  orderId: string
+): Promise<void> {
+  const order = await prisma.printOrder.findUnique({ where: { id: orderId } });
+  if (!order?.stripePaymentIntentId) return;
+
+  const connect = await prisma.tenantStripeConnect.findUnique({
+    where: { tenantId: order.tenantId },
+  });
+  if (!connect) {
+    throw new Error(
+      "Stripe-Connect-Account nicht gefunden — PaymentIntent kann nicht storniert werden"
+    );
+  }
+  const opts = { stripeAccount: connect.stripeConnectedAccountId };
+  const stripe = getStripe();
+  const intent = await stripe.paymentIntents.retrieve(
+    order.stripePaymentIntentId,
+    opts
+  );
+  if (intent.status === "canceled") return;
+  if (intent.status === "succeeded" || intent.status === "processing") {
+    throw new Error(
+      "Der Kunde hat gerade online bezahlt — Zahlung bei Lieferung nicht mehr moeglich"
+    );
+  }
+  await stripe.paymentIntents.cancel(intent.id, undefined, opts);
+}

@@ -19,6 +19,7 @@ import {
 import { getInvoiceSettings } from "./shop.js";
 import {
   tmplPrintOrderConfirmGuest,
+  tmplPrintOrderPaidGuest,
   tmplPrintOrderNotifyStudio,
   tmplPrintOrderShippedGuest,
   tmplPrintOrderReadyForPickupGuest,
@@ -418,14 +419,29 @@ export async function createOrder(input: CheckoutInput): Promise<{
         })),
       },
       events: {
-        create: {
-          eventType: "created",
-          actor: "guest",
-          data: { paymentMode: input.paymentMode } as never,
-        },
+        create: [
+          {
+            eventType: "created",
+            actor: "guest",
+            data: { paymentMode: input.paymentMode } as never,
+          },
+          // Marker set together with the order, so the mail below is sent
+          // exactly once — createOrder() is the only path that creates one.
+          {
+            eventType: "mails_sent_created",
+            actor: "system",
+            data: {} as never,
+          },
+        ],
       },
     },
   });
+
+  // Order received: tell the customer and the studio. The order is still
+  // 'pending_payment' here; the payment mail follows once it is paid.
+  void sendOrderMails(order.id, "created").catch((err) =>
+    logger.warn({ err, orderId: order.id }, "print.order.mail_failed")
+  );
 
   return {
     orderId: order.id,
@@ -442,6 +458,18 @@ type Transition =
       type: "mark_paid";
       actor: "system" | "studio";
       actorUserId?: string;
+      paymentReference?: string;
+    }
+  // Studio-only: the studio lets the customer pay on delivery instead of
+  // upfront. Moves the order to 'confirmed' (accepted, payment still due).
+  | { type: "approve_cod"; actor: "studio"; actorUserId?: string }
+  // Studio-only: records the money collected on delivery of a
+  // cash_on_delivery order. Does not change the fulfilment status.
+  | {
+      type: "collect_payment";
+      actor: "studio";
+      actorUserId?: string;
+      paymentMethod: string;
       paymentReference?: string;
     }
   | { type: "mark_in_production"; actor: "studio" | "system"; actorUserId?: string }
@@ -501,33 +529,61 @@ export function isMissingRequiredPaymentReference(
   );
 }
 
+/** How a cash_on_delivery order was (or wasn't yet) paid. */
+export const COLLECT_PAYMENT_METHODS = ["cash", "card_pos", "bank_transfer"] as const;
+
 /** Allowed next transitions from a given status. The 'in_production'
  *  step forks on isPickupDelivery: courier orders move to 'shipped',
  *  pickup orders to 'ready_for_pickup' — both converge back on the
- *  shared 'delivered' terminal status. */
+ *  shared 'delivered' terminal status.
+ *
+ *  'confirmed' is the studio-approved cash_on_delivery counterpart of
+ *  'paid' (it gates production the same way). Payment on delivery is
+ *  recorded with 'collect_payment', which leaves the status alone and is
+ *  offered until the money is in; an order that was never paid cannot be
+ *  refunded. */
 export function allowedTransitionsFor(
   status: string,
-  isPickupDelivery: boolean
+  isPickupDelivery: boolean,
+  payment?: { paymentMode: string; paid: boolean }
 ): Transition["type"][] {
-  switch (status) {
-    case "draft":
-      return ["cancel"];
-    case "pending_payment":
-      return ["mark_paid", "cancel"];
-    case "paid":
-      return ["mark_in_production", "cancel", "refund"];
-    case "in_production":
-      return isPickupDelivery
-        ? ["mark_ready_for_pickup", "cancel", "refund"]
-        : ["mark_shipped", "cancel", "refund"];
-    case "shipped":
-    case "ready_for_pickup":
-      return ["mark_delivered", "refund"];
-    case "delivered":
-      return ["refund"];
-    default:
-      return [];
-  }
+  const base = ((): Transition["type"][] => {
+    switch (status) {
+      case "draft":
+        return ["cancel"];
+      case "pending_payment":
+        return ["mark_paid", "approve_cod", "cancel"];
+      case "confirmed":
+        return ["mark_in_production", "cancel"];
+      case "paid":
+        return ["mark_in_production", "cancel", "refund"];
+      case "in_production":
+        return isPickupDelivery
+          ? ["mark_ready_for_pickup", "cancel", "refund"]
+          : ["mark_shipped", "cancel", "refund"];
+      case "shipped":
+      case "ready_for_pickup":
+        return ["mark_delivered", "refund"];
+      case "delivered":
+        return ["refund"];
+      default:
+        return [];
+    }
+  })();
+  if (payment?.paymentMode !== "cash_on_delivery" || payment.paid) return base;
+  // Unpaid cash_on_delivery: nothing to refund yet, but the payment can
+  // be collected at any point from confirmation on.
+  const withoutRefund = base.filter((t) => t !== "refund");
+  const collectable = [
+    "confirmed",
+    "in_production",
+    "shipped",
+    "ready_for_pickup",
+    "delivered",
+  ];
+  return collectable.includes(status)
+    ? [...withoutRefund, "collect_payment"]
+    : withoutRefund;
 }
 
 export async function transitionOrder(
@@ -539,7 +595,10 @@ export async function transitionOrder(
   });
   if (!order) throw new Error("Order nicht gefunden");
 
-  const allowedHere = allowedTransitionsFor(order.status, order.isPickupDelivery);
+  const allowedHere = allowedTransitionsFor(order.status, order.isPickupDelivery, {
+    paymentMode: order.paymentMode,
+    paid: order.paidAt !== null,
+  });
   if (!allowedHere.includes(t.type)) {
     throw new Error(
       `Transition ${t.type} aus Status ${order.status} nicht erlaubt`
@@ -557,9 +616,36 @@ export async function transitionOrder(
     );
   }
 
+  if (
+    t.type === "collect_payment" &&
+    !(COLLECT_PAYMENT_METHODS as readonly string[]).includes(t.paymentMethod)
+  ) {
+    throw new Error("Zahlungsart ungueltig");
+  }
+
+  // The customer can no longer pay online once the studio lets them pay
+  // on delivery. Cancel the Stripe PaymentIntent first and stop if that is
+  // not possible (e.g. the payment just went through), so no payment can
+  // arrive for an order that is no longer waiting for one.
+  if (t.type === "approve_cod" && order.stripePaymentIntentId) {
+    const { cancelPaymentIntentForOrder } = await import("./payment.js");
+    await cancelPaymentIntentForOrder(orderId);
+  }
+
   const now = new Date();
   const updates: Record<string, unknown> = {};
   switch (t.type) {
+    case "approve_cod":
+      updates.status = "confirmed";
+      updates.paymentMode = "cash_on_delivery";
+      break;
+    case "collect_payment":
+      updates.paidAt = now;
+      updates.paymentMethod = t.paymentMethod;
+      if (t.paymentReference?.trim()) {
+        updates.paymentReference = t.paymentReference.trim();
+      }
+      break;
     case "mark_paid":
       updates.status = "paid";
       updates.paidAt = now;
@@ -630,7 +716,7 @@ export async function transitionOrder(
           actor: t.actor,
           actorUserId: t.actorUserId ?? null,
           data: {
-            ...(extractEventData(t) ?? {}),
+            ...(extractEventData(t, order.paymentMode) ?? {}),
             ...(stripeRefund ? { stripeRefund } : {}),
           } as never,
         },
@@ -639,7 +725,11 @@ export async function transitionOrder(
   });
 
   // Mail-Trigger
-  if (t.type === "mark_paid") {
+  if (t.type === "approve_cod") {
+    // Production-ready from here on, same as a paid order: render the
+    // print files now (only reachable once, from 'pending_payment').
+    enqueuePrintRenders(orderId);
+  } else if (t.type === "mark_paid" || t.type === "collect_payment") {
     // Marker VOR dem Mail-Versand setzen (nicht danach) — sonst findet
     // der print-mail-sweeper (laeuft alle 30s) dieselbe Order noch
     // ohne Marker und verschickt die 'paid'-Mail ein zweites Mal.
@@ -662,7 +752,7 @@ export async function transitionOrder(
           printOrderId: orderId,
           eventType: "mails_sent_paid",
           actor: "system",
-          data: { trigger: "mark_paid_transition" } as never,
+          data: { trigger: `${t.type}_transition` } as never,
         },
       });
       return true;
@@ -671,7 +761,9 @@ export async function transitionOrder(
       void sendOrderMails(orderId, "paid").catch((err) =>
         logger.warn({ err, orderId }, "print.order.mail_failed")
       );
-      enqueuePrintRenders(orderId);
+      // Render files exist already for a cash_on_delivery order (rendered
+      // when the studio approved it).
+      if (t.type === "mark_paid") enqueuePrintRenders(orderId);
     }
   } else if (t.type === "mark_shipped") {
     void sendOrderMails(orderId, "shipped").catch((err) =>
@@ -684,7 +776,19 @@ export async function transitionOrder(
   }
 }
 
-function extractEventData(t: Transition): Record<string, unknown> | null {
+function extractEventData(
+  t: Transition,
+  previousPaymentMode: string
+): Record<string, unknown> | null {
+  if (t.type === "approve_cod") {
+    return { previousPaymentMode };
+  }
+  if (t.type === "collect_payment") {
+    return {
+      paymentMethod: t.paymentMethod,
+      paymentReference: t.paymentReference?.trim() || null,
+    };
+  }
   if (t.type === "mark_shipped") {
     return {
       trackingNumber: t.trackingNumber ?? null,
@@ -702,14 +806,17 @@ function extractEventData(t: Transition): Record<string, unknown> | null {
 // Mail-Versand bei Lifecycle-Events
 // =============================================================================
 /**
- * Versendet Endkunden- und Studio-Mails fuer einen Order-Lifecycle-
- * Event. Wird intern von createOrder() und transitionOrder() aufgerufen.
+ * Versendet die Mails fuer einen Order-Lifecycle-Event:
+ *   - created:          Endkunde + Studio (Bestellung eingegangen)
+ *   - paid:             nur Endkunde (Zahlung erhalten)
+ *   - shipped / ready_for_pickup: nur Endkunde
+ * Wird intern von createOrder() und transitionOrder() aufgerufen.
  * Plus extern vom print-mail-sweeper fuer Webhook-getriggerte paid-
  * Transitions (Stripe).
  */
 export async function sendOrderMails(
   orderId: string,
-  trigger: "paid" | "shipped" | "ready_for_pickup"
+  trigger: "created" | "paid" | "shipped" | "ready_for_pickup"
 ): Promise<void> {
   const order = await prisma.printOrder.findUnique({
     where: { id: orderId },
@@ -760,8 +867,8 @@ export async function sendOrderMails(
     ? normalizeLocale(owner.locale)
     : instanceMailLocale();
 
-  if (trigger === "paid") {
-    // Endkunde: Bestaetigung
+  if (trigger === "created") {
+    // Endkunde: Bestellung eingegangen
     await sendMail({
       to: order.guestEmail,
       ...tmplPrintOrderConfirmGuest({
@@ -785,6 +892,19 @@ export async function sendOrderMails(
         }),
       });
     }
+  } else if (trigger === "paid") {
+    // Nur Endkunde: Zahlung erhalten. Das Studio kennt die Bestellung
+    // schon aus der 'created'-Mail.
+    await sendMail({
+      to: order.guestEmail,
+      ...tmplPrintOrderPaidGuest({
+        branding: mailBranding,
+        studioName,
+        supportEmail,
+        order: orderForMail,
+        locale: guestLocale,
+      }),
+    });
   } else if (trigger === "shipped") {
     await sendMail({
       to: order.guestEmail,
