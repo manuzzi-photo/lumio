@@ -2353,7 +2353,10 @@ model PrintOrder {
   isPickupDelivery Boolean @default(false)
 
   /// Bezahlmodus. 'stripe_connect' = online via Stripe Connect,
-  /// 'offline_invoice' = Fotograf rechnet selbst ab.
+  /// 'offline_invoice' = Fotograf rechnet selbst ab,
+  /// 'cash_on_delivery' = Studio hat fuer diese Bestellung Zahlung bei
+  /// Lieferung/Abholung erlaubt (nur per Studio-Aktion 'approve_cod',
+  /// nie vom Kunden waehlbar).
   paymentMode     String
 
   /// Stripe-Referenzen (nur bei stripe_connect).
@@ -2365,6 +2368,10 @@ model PrintOrder {
   /// transition for offline_invoice orders; stripe_connect orders use
   /// stripeChargeId as their reference instead.
   paymentReference      String?
+
+  /// How a cash_on_delivery order was paid: 'cash' | 'card_pos' |
+  /// 'bank_transfer'. Set by the 'collect_payment' transition.
+  paymentMethod         String?
 
   /// Geld-Beträge. Alle in kleinster Waehrungseinheit.
   subtotalCents   Int
@@ -2385,6 +2392,9 @@ model PrintOrder {
   /// 'paid'       = Zahlung eingegangen (bei stripe_connect) oder
   ///                vom Fotograf manuell als bezahlt markiert
   ///                (offline_invoice erfordert dabei paymentReference)
+  /// 'confirmed' = Studio hat fuer diese Bestellung Zahlung bei Lieferung
+  ///                erlaubt (cash_on_delivery); statt 'paid' das Tor zur
+  ///                Produktion, Geld folgt per 'collect_payment'
   /// 'in_production' = An Lab uebergeben (api) oder Fotograf hat
   ///                'in Druck'-Status gesetzt
   /// Danach forkt der Ablauf je nach isPickupDelivery:

@@ -236,6 +236,7 @@ describe("allowedTransitionsFor", () => {
       expect(allowedTransitionsFor("draft", isPickupDelivery)).toEqual(["cancel"]);
       expect(allowedTransitionsFor("pending_payment", isPickupDelivery)).toEqual([
         "mark_paid",
+        "approve_cod",
         "cancel",
       ]);
       expect(allowedTransitionsFor("paid", isPickupDelivery)).toEqual([
@@ -288,6 +289,56 @@ describe("allowedTransitionsFor", () => {
 
   it("unknown status allows nothing", () => {
     expect(allowedTransitionsFor("bogus", false)).toEqual([]);
+  });
+});
+
+describe("allowedTransitionsFor — cash on delivery", () => {
+  const unpaid = { paymentMode: "cash_on_delivery", paid: false };
+  const paid = { paymentMode: "cash_on_delivery", paid: true };
+
+  it("a confirmed order goes to production or is cancelled, and can be collected", () => {
+    expect(allowedTransitionsFor("confirmed", false, unpaid)).toEqual([
+      "mark_in_production",
+      "cancel",
+      "collect_payment",
+    ]);
+  });
+
+  it("follows the normal fulfilment path, offering collect_payment instead of refund", () => {
+    expect(allowedTransitionsFor("in_production", false, unpaid)).toEqual([
+      "mark_shipped",
+      "cancel",
+      "collect_payment",
+    ]);
+    expect(allowedTransitionsFor("ready_for_pickup", true, unpaid)).toEqual([
+      "mark_delivered",
+      "collect_payment",
+    ]);
+    expect(allowedTransitionsFor("delivered", false, unpaid)).toEqual([
+      "collect_payment",
+    ]);
+  });
+
+  it("once collected, collect_payment is gone and refund is possible again", () => {
+    expect(allowedTransitionsFor("delivered", false, paid)).toEqual(["refund"]);
+    expect(allowedTransitionsFor("shipped", false, paid)).toEqual([
+      "mark_delivered",
+      "refund",
+    ]);
+  });
+
+  it("never offers collect_payment on other payment modes", () => {
+    for (const paymentMode of ["stripe_connect", "offline_invoice"]) {
+      expect(
+        allowedTransitionsFor("in_production", false, { paymentMode, paid: false })
+      ).not.toContain("collect_payment");
+    }
+  });
+
+  it("only a pending_payment order can be approved for payment on delivery", () => {
+    for (const status of ["confirmed", "paid", "in_production", "delivered"]) {
+      expect(allowedTransitionsFor(status, false)).not.toContain("approve_cod");
+    }
   });
 });
 

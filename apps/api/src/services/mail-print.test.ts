@@ -82,6 +82,19 @@ describe("print order mails", () => {
     expect(m.html).toContain("P-1001");
   });
 
+  it("paid-on-delivery mail does not say the order goes into production", async () => {
+    const { tmplPrintOrderPaidGuest } = await load();
+    const m = tmplPrintOrderPaidGuest({
+      studioName: "Studio X",
+      supportEmail: "",
+      order: order("cash_on_delivery"),
+      locale: "en",
+    });
+    expect(m.text).toContain("we have received your payment");
+    expect(m.text).not.toContain("production");
+    expect(m.html).not.toContain("production");
+  });
+
   it("paid mail exists in every locale", async () => {
     const { tmplPrintOrderPaidGuest } = await load();
     for (const locale of MAIL_LOCALES) {

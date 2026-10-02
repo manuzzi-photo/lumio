@@ -17,6 +17,7 @@ type Order = Awaited<
 const STATUS_FILTERS = [
   { value: "", label: "orders.filterAll" },
   { value: "pending_payment", label: "orders.filterPendingPayment" },
+  { value: "confirmed", label: "orders.statusConfirmed" },
   { value: "paid", label: "orders.statusPaid" },
   { value: "in_production", label: "orders.statusInProduction" },
   { value: "shipped", label: "orders.statusShipped" },
@@ -113,8 +114,17 @@ export default function PrintOrdersPage() {
                       <span className="text-xs px-1.5 py-0.5 rounded bg-surface-sunken text-ink-tertiary">
                         {o.paymentMode === "stripe_connect"
                           ? t("orders.online")
-                          : t("orders.offline")}
+                          : o.paymentMode === "cash_on_delivery"
+                            ? t("orders.payOnDelivery")
+                            : t("orders.offline")}
                       </span>
+                      {o.paymentMode === "cash_on_delivery" &&
+                        !o.paidAt &&
+                        o.status !== "cancelled" && (
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-semantic-warning/15 text-semantic-warning">
+                            {t("orders.codDue")}
+                          </span>
+                        )}
                       {o.invoiceRequested && (
                         <span className="text-xs px-1.5 py-0.5 rounded bg-accent/10 text-accent">
                           {t("orders.invoiceBadge")}
@@ -177,6 +187,10 @@ export function StatusBadge({
     pending_payment: {
       label: t("orders.badgePendingPayment"),
       classes: "bg-semantic-warning/15 text-semantic-warning",
+    },
+    confirmed: {
+      label: t("orders.statusConfirmed"),
+      classes: "bg-accent/15 text-accent",
     },
     paid: {
       label: t("orders.statusPaid"),

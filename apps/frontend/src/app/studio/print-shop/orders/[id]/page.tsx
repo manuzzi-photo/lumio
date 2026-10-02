@@ -20,7 +20,7 @@ import { StatusBadge } from "../page";
 import { useT, useFormat} from "@/lib/i18n";
 import type { Formatters } from "@/lib/i18n/format";
 import { useErrorText } from "@/lib/error-i18n";
-import { usePrompt } from "@/components/ui/dialogs";
+import { useConfirm, usePrompt } from "@/components/ui/dialogs";
 
 export default function OrderDetailPage({
   params,
@@ -28,6 +28,7 @@ export default function OrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const ask = usePrompt();
+  const confirm = useConfirm();
   const errText = useErrorText();
   const fmt = useFormat();
   const { id } = use(params);
@@ -45,6 +46,7 @@ export default function OrderDetailPage({
   >(null);
   const [busy, setBusy] = useState(false);
   const [shippingDialog, setShippingDialog] = useState(false);
+  const [collectDialog, setCollectDialog] = useState(false);
   const [noteValue, setNoteValue] = useState("");
   const [zipJob, setZipJob] = useState<{
     zipId: string;
@@ -129,20 +131,14 @@ export default function OrderDetailPage({
   }, [load]);
 
   async function transition(
-    type:
-      | "mark_paid"
-      | "mark_in_production"
-      | "mark_shipped"
-      | "mark_ready_for_pickup"
-      | "mark_delivered"
-      | "cancel"
-      | "refund",
+    type: OrderTransition,
     extra?: {
       trackingNumber?: string;
       trackingCarrier?: string;
       trackingUrl?: string;
       reason?: string;
       paymentReference?: string;
+      paymentMethod?: "cash" | "card_pos" | "bank_transfer";
     }
   ) {
     setBusy(true);
@@ -165,18 +161,34 @@ export default function OrderDetailPage({
    *  firing — used by both the action-button row and the fulfillment
    *  checklist, so the two never drift apart on what a click does. */
   async function runTransition(
-    tr:
-      | "mark_paid"
-      | "mark_in_production"
-      | "mark_shipped"
-      | "mark_ready_for_pickup"
-      | "mark_delivered"
-      | "cancel"
-      | "refund"
+    tr: OrderTransition
   ) {
     if (tr === "mark_shipped") {
       setShippingDialog(true);
       return;
+    }
+    if (tr === "collect_payment") {
+      setCollectDialog(true);
+      return;
+    }
+    if (tr === "approve_cod") {
+      const ok = await confirm({
+        message: t("orderDetail.approveCodConfirm"),
+        confirmLabel: t("orderDetail.actApproveCod"),
+      });
+      if (!ok) return;
+      void transition(tr);
+      return;
+    }
+    if (
+      tr === "mark_delivered" &&
+      order?.paymentMode === "cash_on_delivery" &&
+      !order.paidAt
+    ) {
+      const ok = await confirm({
+        message: t("orderDetail.deliveredUnpaidConfirm"),
+      });
+      if (!ok) return;
     }
     if (tr === "mark_paid" && order?.paymentMode === "offline_invoice") {
       const paymentReference = await ask({
@@ -232,8 +244,10 @@ export default function OrderDetailPage({
   // Status-spezifische Buttons
   const availableTransitions = transitionsForStatus(
     order.status,
-    order.isPickupDelivery
+    order.isPickupDelivery,
+    { paymentMode: order.paymentMode, paid: order.paidAt !== null }
   );
+  const isCodDue = order.paymentMode === "cash_on_delivery" && !order.paidAt;
 
   return (
     <div className="space-y-5">
@@ -286,8 +300,23 @@ export default function OrderDetailPage({
             <div className="text-xs text-ink-tertiary">
               {order.paymentMode === "stripe_connect"
                 ? t("orderDetail.paymentOnline")
-                : t("orderDetail.paymentOffline")}
+                : order.paymentMode === "cash_on_delivery"
+                  ? t("orderDetail.paymentCod")
+                  : t("orderDetail.paymentOffline")}
             </div>
+            {isCodDue && (
+              <div className="text-xs font-medium text-semantic-warning">
+                {t("orderDetail.codDue", {
+                  amount: formatPrice(fmt, order.totalCents, order.currency),
+                })}
+              </div>
+            )}
+            {order.paymentMethod && (
+              <div className="text-xs text-ink-tertiary">
+                {t("orderDetail.paymentMethodLabel")}:{" "}
+                {t(`orderDetail.method_${order.paymentMethod}`)}
+              </div>
+            )}
             {order.paymentReference && (
               <div className="text-xs text-ink-tertiary font-mono">
                 {t("orderDetail.paymentReferenceLabel")}: {order.paymentReference}
@@ -296,24 +325,22 @@ export default function OrderDetailPage({
           </div>
         </div>
 
-        {/* Cancel/Refund — side-exits, not part of the linear fulfillment
-            checklist below. The linear steps (mark_paid..mark_delivered)
-            are driven from the checklist instead. */}
-        {availableTransitions.some((tr) => tr === "cancel" || tr === "refund") && (
+        {/* Side actions — not part of the linear fulfillment checklist
+            below, which is driven from the checklist itself: cancel,
+            refund, and the two cash-on-delivery payment actions. */}
+        {availableTransitions.some(isSideAction) && (
           <div className="flex flex-wrap gap-2 pt-3 border-t border-line-subtle">
-            {availableTransitions
-              .filter((tr) => tr === "cancel" || tr === "refund")
-              .map((tr) => (
-                <Button
-                  key={tr}
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => void runTransition(tr)}
-                  disabled={busy}
-                >
-                  {t(transitionLabel(tr, order.isPickupDelivery))}
-                </Button>
-              ))}
+            {availableTransitions.filter(isSideAction).map((tr) => (
+              <Button
+                key={tr}
+                size="sm"
+                variant="secondary"
+                onClick={() => void runTransition(tr)}
+                disabled={busy}
+              >
+                {t(transitionLabel(tr, order.isPickupDelivery))}
+              </Button>
+            ))}
           </div>
         )}
       </div>
@@ -323,7 +350,7 @@ export default function OrderDetailPage({
         <FulfillmentChecklist
           order={order}
           nextTransition={availableTransitions.find(
-            (tr) => tr !== "cancel" && tr !== "refund"
+            (tr): tr is LinearTransition => !isSideAction(tr)
           )}
           onAdvance={(tr) => void runTransition(tr)}
           busy={busy}
@@ -700,6 +727,17 @@ export default function OrderDetailPage({
         </ol>
       </Section>
 
+      {collectDialog && (
+        <CollectPaymentDialog
+          amount={formatPrice(fmt, order.totalCents, order.currency)}
+          onClose={() => setCollectDialog(false)}
+          onSubmit={(values) => {
+            setCollectDialog(false);
+            void transition("collect_payment", values);
+          }}
+        />
+      )}
+
       {shippingDialog && (
         <ShippingDialog
           onClose={() => setShippingDialog(false)}
@@ -709,6 +747,91 @@ export default function OrderDetailPage({
           }}
         />
       )}
+    </div>
+  );
+}
+
+const COLLECT_METHODS = ["cash", "card_pos", "bank_transfer"] as const;
+
+function CollectPaymentDialog({
+  amount,
+  onClose,
+  onSubmit,
+}: {
+  amount: string;
+  onClose: () => void;
+  onSubmit: (values: {
+    paymentMethod: (typeof COLLECT_METHODS)[number];
+    paymentReference?: string;
+  }) => void;
+}) {
+  const t = useT();
+  const [method, setMethod] =
+    useState<(typeof COLLECT_METHODS)[number]>("cash");
+  const [reference, setReference] = useState("");
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="bg-surface-raised rounded-md border border-line-subtle p-5 max-w-md w-full">
+        <h3 className="text-lg font-semibold mb-3">
+          {t("orderDetail.collectDialogTitle")}
+        </h3>
+        <p className="text-xs text-ink-tertiary mb-3">
+          {t("orderDetail.collectDialogDesc", { amount })}
+        </p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit({
+              paymentMethod: method,
+              paymentReference: reference.trim() || undefined,
+            });
+          }}
+          className="space-y-3"
+        >
+          <fieldset className="space-y-1">
+            <legend className="block text-xs text-ink-tertiary mb-1">
+              {t("orderDetail.paymentMethodLabel")}
+            </legend>
+            {COLLECT_METHODS.map((m) => (
+              <label key={m} className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value={m}
+                  checked={method === m}
+                  onChange={() => setMethod(m)}
+                />
+                {t(`orderDetail.method_${m}`)}
+              </label>
+            ))}
+          </fieldset>
+          <label className="block">
+            <span className="block text-xs text-ink-tertiary mb-1">
+              {t("orderDetail.collectReferenceOptional")}
+            </span>
+            <Input
+              type="text"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder={t("orderDetail.paymentReferencePlaceholder")}
+            />
+          </label>
+          <div className="flex gap-2 justify-end pt-2">
+            <Button type="button" variant="secondary" onClick={onClose}>
+              {t("common.cancel")}
+            </Button>
+            <Button type="submit">{t("orderDetail.collectSubmit")}</Button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
@@ -795,6 +918,29 @@ function ShippingDialog({
   );
 }
 
+type OrderTransition =
+  | "mark_paid"
+  | "approve_cod"
+  | "collect_payment"
+  | "mark_in_production"
+  | "mark_shipped"
+  | "mark_ready_for_pickup"
+  | "mark_delivered"
+  | "cancel"
+  | "refund";
+
+/** Actions shown beside the checklist rather than inside it. */
+function isSideAction(
+  tr: OrderTransition
+): tr is "cancel" | "refund" | "approve_cod" | "collect_payment" {
+  return (
+    tr === "cancel" ||
+    tr === "refund" ||
+    tr === "approve_cod" ||
+    tr === "collect_payment"
+  );
+}
+
 type LinearTransition =
   | "mark_paid"
   | "mark_in_production"
@@ -804,6 +950,7 @@ type LinearTransition =
 
 const STATUS_RANK: Record<string, number> = {
   pending_payment: 0,
+  confirmed: 1,
   paid: 1,
   in_production: 2,
   shipped: 3,
@@ -824,7 +971,7 @@ function FulfillmentChecklist({
   busy,
 }: {
   order: PrintOrderDetail;
-  nextTransition: LinearTransition | "cancel" | "refund" | undefined;
+  nextTransition: LinearTransition | undefined;
   onAdvance: (tr: LinearTransition) => void;
   busy: boolean;
 }) {
@@ -939,42 +1086,55 @@ function formatPrice(fmt: Formatters, cents: number, currency = "EUR"): string {
 }
 
 /** Mirrors allowedTransitionsFor() in apps/api/src/services/print/orders.ts —
- *  the 'in_production' step forks on isPickupDelivery. */
+ *  the 'in_production' step forks on isPickupDelivery, and an unpaid
+ *  cash_on_delivery order offers collect_payment instead of refund. */
 function transitionsForStatus(
   status: string,
-  isPickupDelivery: boolean
-): Array<
-  | "mark_paid"
-  | "mark_in_production"
-  | "mark_shipped"
-  | "mark_ready_for_pickup"
-  | "mark_delivered"
-  | "cancel"
-  | "refund"
-> {
-  switch (status) {
-    case "pending_payment":
-      return ["mark_paid", "cancel"];
-    case "paid":
-      return ["mark_in_production", "cancel", "refund"];
-    case "in_production":
-      return isPickupDelivery
-        ? ["mark_ready_for_pickup", "cancel", "refund"]
-        : ["mark_shipped", "cancel", "refund"];
-    case "shipped":
-    case "ready_for_pickup":
-      return ["mark_delivered", "refund"];
-    case "delivered":
-      return ["refund"];
-    default:
-      return [];
-  }
+  isPickupDelivery: boolean,
+  payment: { paymentMode: string; paid: boolean }
+): OrderTransition[] {
+  const base = ((): OrderTransition[] => {
+    switch (status) {
+      case "pending_payment":
+        return ["mark_paid", "approve_cod", "cancel"];
+      case "confirmed":
+        return ["mark_in_production", "cancel"];
+      case "paid":
+        return ["mark_in_production", "cancel", "refund"];
+      case "in_production":
+        return isPickupDelivery
+          ? ["mark_ready_for_pickup", "cancel", "refund"]
+          : ["mark_shipped", "cancel", "refund"];
+      case "shipped":
+      case "ready_for_pickup":
+        return ["mark_delivered", "refund"];
+      case "delivered":
+        return ["refund"];
+      default:
+        return [];
+    }
+  })();
+  if (payment.paymentMode !== "cash_on_delivery" || payment.paid) return base;
+  const withoutRefund = base.filter((tr) => tr !== "refund");
+  return [
+    "confirmed",
+    "in_production",
+    "shipped",
+    "ready_for_pickup",
+    "delivered",
+  ].includes(status)
+    ? [...withoutRefund, "collect_payment"]
+    : withoutRefund;
 }
 
 function transitionLabel(t: string, isPickupDelivery: boolean): string {
   switch (t) {
     case "mark_paid":
       return "orderDetail.actMarkPaid";
+    case "approve_cod":
+      return "orderDetail.actApproveCod";
+    case "collect_payment":
+      return "orderDetail.actCollectPayment";
     case "mark_in_production":
       return "orderDetail.actInProduction";
     case "mark_shipped":
@@ -1000,6 +1160,12 @@ function eventLabel(t: string, isPickupDelivery: boolean): string {
       return "orderDetail.evCreated";
     case "mark_paid":
       return "orderDetail.evPaid";
+    case "approve_cod":
+      return "orderDetail.evApproveCod";
+    case "collect_payment":
+      return "orderDetail.evCollectPayment";
+    case "mails_sent_created":
+      return "orderDetail.evMailsCreated";
     case "mark_in_production":
       return "orderDetail.evInProduction";
     case "mark_shipped":

@@ -3415,6 +3415,8 @@ export const api = {
     body: {
       type:
         | "mark_paid"
+        | "approve_cod"
+        | "collect_payment"
         | "mark_in_production"
         | "mark_shipped"
         | "mark_ready_for_pickup"
@@ -3426,6 +3428,7 @@ export const api = {
       trackingUrl?: string;
       reason?: string;
       paymentReference?: string;
+      paymentMethod?: "cash" | "card_pos" | "bank_transfer";
     }
   ) =>
     request<{ ok: true }>(`/print-shop/orders/${id}/transitions`, {
@@ -3815,6 +3818,8 @@ export interface PrintOrderDetail {
   stripePaymentIntentId: string | null;
   stripeChargeId: string | null;
   paymentReference: string | null;
+  /** How a cash_on_delivery order was paid; null until collected. */
+  paymentMethod: string | null;
   subtotalCents: number;
   shippingCents: number;
   taxCents: number;

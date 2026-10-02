@@ -203,7 +203,7 @@ export async function disconnectAccount(tenantId: string): Promise<{ ok: boolean
     where: {
       tenantId,
       paymentMode: "stripe_connect",
-      status: { in: ["pending_payment", "paid", "in_production", "shipped"] },
+      status: { in: ["pending_payment", "confirmed", "paid", "in_production", "shipped"] },
     },
   });
   if (activeOrders > 0) {

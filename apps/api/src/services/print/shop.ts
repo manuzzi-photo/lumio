@@ -303,7 +303,7 @@ export async function deleteTenantProvider(tenantId: string, providerKey: string
     where: {
       tenantId,
       providerKey,
-      status: { in: ["pending_payment", "paid", "in_production", "shipped"] },
+      status: { in: ["pending_payment", "confirmed", "paid", "in_production", "shipped"] },
     },
   });
   if (activeOrders > 0) {

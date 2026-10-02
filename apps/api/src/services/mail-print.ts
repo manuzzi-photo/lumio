@@ -525,6 +525,8 @@ export function tmplPrintOrderPaidGuest(opts: {
     name: order.guestName,
   };
   const subject = phrase(P.paidSubject, l, vars);
+  // Paid on delivery: the order is long past production by then.
+  const producing = order.paymentMode !== "cash_on_delivery";
 
   const text =
     `${phrase(P.greeting, l, vars)}
@@ -532,9 +534,7 @@ export function tmplPrintOrderPaidGuest(opts: {
 ${phrase(P.paidBody, l, vars)}
 
 ${phrase(P.total, l)}: ${formatPrice(order.totalCents, order.currency, l)}
-
-${phrase(P.inProduction, l)}
-
+${producing ? `\n${phrase(P.inProduction, l)}\n` : ""}
 ${phrase(P.regards, l)}
 ${studioName}
 
@@ -550,7 +550,7 @@ ${printSupport(supportEmail) ? phrase(P.questions, l, { contact: printSupport(su
     ${escapeHtml(phrase(P.orderNumber, l))}: <strong style="font-family:monospace;">${order.orderNumber}</strong><br>
     ${escapeHtml(phrase(P.total, l))}: <strong>${formatPrice(order.totalCents, order.currency, l)}</strong>
   </p>
-  <p style="margin-top:24px;color:#444;">${escapeHtml(phrase(P.inProduction, l))}</p>
+  ${producing ? `<p style="margin-top:24px;color:#444;">${escapeHtml(phrase(P.inProduction, l))}</p>` : ""}
   <p style="margin-top:24px;color:#444;">${escapeHtml(phrase(P.regards, l))}<br>${escapeHtml(studioName)}</p>
   <p style="color:#888;font-size:13px;margin-top:24px;">
     ${printSupport(supportEmail) ? `${escapeHtml(phrase(P.questionsLabel, l))} <a href="mailto:${escapeHtml(printSupport(supportEmail)!)}">${escapeHtml(printSupport(supportEmail)!)}</a>` : ""}
