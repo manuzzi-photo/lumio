@@ -48,6 +48,10 @@ A pull is enough — the database migrates automatically on start. Only the main
 - A request the API rejects as invalid (`validation_failed`) now shows a translated message instead of the English "request validation failed". In the print-shop checkout, the submit button also waits for a plausible email and phone number, and says so under the field, rather than letting the server refuse them.
 - Print shop: the customer-facing checkout API changed — `guestName` is replaced by `guestFirstName` / `guestLastName`, `customerAddress` is required, `guestPhone` is required only for a courier order, and `billingAddress` is replaced by an optional `invoice` block carrying the customer `kind` and the identifiers the studio asks for. The catalog response gains `invoicing` (the studio's settings) and `defaultCountry`. Only relevant if something other than Lumio's own frontend calls it.
 
+### Fixed
+
+- With a **studio favicon** set (Appearance), or a **branding favicon** on a gallery or page, the app could freeze on navigation: the URL changed, the page did not, and nothing navigated any more until a reload (in Firefox the console shows `can't access property "removeChild", n.stateNode.parentNode is null`). In the studio this happened on the first navigation; on a branded start page, on going back from a gallery or following the login link. The favicon code deleted the default icon links that Next.js manages, and the next page change failed when it tried to remove them itself. The default icons are now set aside instead and restored when leaving the studio or gallery, so the custom favicon also stays in place across page changes, where before it could lose to the default icons.
+
 ## [0.85.0] - 2026-09-26
 
 A pull is enough — the database migrates automatically on start. Only the main server (API and frontend) is affected.
