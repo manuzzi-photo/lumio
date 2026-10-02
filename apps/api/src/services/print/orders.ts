@@ -19,6 +19,7 @@ import {
 import { getInvoiceSettings } from "./shop.js";
 import {
   tmplPrintOrderConfirmGuest,
+  tmplPrintOrderPaidGuest,
   tmplPrintOrderNotifyStudio,
   tmplPrintOrderShippedGuest,
   tmplPrintOrderReadyForPickupGuest,
@@ -418,14 +419,29 @@ export async function createOrder(input: CheckoutInput): Promise<{
         })),
       },
       events: {
-        create: {
-          eventType: "created",
-          actor: "guest",
-          data: { paymentMode: input.paymentMode } as never,
-        },
+        create: [
+          {
+            eventType: "created",
+            actor: "guest",
+            data: { paymentMode: input.paymentMode } as never,
+          },
+          // Marker set together with the order, so the mail below is sent
+          // exactly once — createOrder() is the only path that creates one.
+          {
+            eventType: "mails_sent_created",
+            actor: "system",
+            data: {} as never,
+          },
+        ],
       },
     },
   });
+
+  // Order received: tell the customer and the studio. The order is still
+  // 'pending_payment' here; the payment mail follows once it is paid.
+  void sendOrderMails(order.id, "created").catch((err) =>
+    logger.warn({ err, orderId: order.id }, "print.order.mail_failed")
+  );
 
   return {
     orderId: order.id,
@@ -702,14 +718,17 @@ function extractEventData(t: Transition): Record<string, unknown> | null {
 // Mail-Versand bei Lifecycle-Events
 // =============================================================================
 /**
- * Versendet Endkunden- und Studio-Mails fuer einen Order-Lifecycle-
- * Event. Wird intern von createOrder() und transitionOrder() aufgerufen.
+ * Versendet die Mails fuer einen Order-Lifecycle-Event:
+ *   - created:          Endkunde + Studio (Bestellung eingegangen)
+ *   - paid:             nur Endkunde (Zahlung erhalten)
+ *   - shipped / ready_for_pickup: nur Endkunde
+ * Wird intern von createOrder() und transitionOrder() aufgerufen.
  * Plus extern vom print-mail-sweeper fuer Webhook-getriggerte paid-
  * Transitions (Stripe).
  */
 export async function sendOrderMails(
   orderId: string,
-  trigger: "paid" | "shipped" | "ready_for_pickup"
+  trigger: "created" | "paid" | "shipped" | "ready_for_pickup"
 ): Promise<void> {
   const order = await prisma.printOrder.findUnique({
     where: { id: orderId },
@@ -760,8 +779,8 @@ export async function sendOrderMails(
     ? normalizeLocale(owner.locale)
     : instanceMailLocale();
 
-  if (trigger === "paid") {
-    // Endkunde: Bestaetigung
+  if (trigger === "created") {
+    // Endkunde: Bestellung eingegangen
     await sendMail({
       to: order.guestEmail,
       ...tmplPrintOrderConfirmGuest({
@@ -785,6 +804,19 @@ export async function sendOrderMails(
         }),
       });
     }
+  } else if (trigger === "paid") {
+    // Nur Endkunde: Zahlung erhalten. Das Studio kennt die Bestellung
+    // schon aus der 'created'-Mail.
+    await sendMail({
+      to: order.guestEmail,
+      ...tmplPrintOrderPaidGuest({
+        branding: mailBranding,
+        studioName,
+        supportEmail,
+        order: orderForMail,
+        locale: guestLocale,
+      }),
+    });
   } else if (trigger === "shipped") {
     await sendMail({
       to: order.guestEmail,

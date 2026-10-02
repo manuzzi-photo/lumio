@@ -50,7 +50,8 @@ export const STUDIO_NOTIFICATION_EVENTS: StudioNotificationEvent[] = [
   {
     key: "print_order",
     label: "Neue Print-Bestellung",
-    description: "Ein Kunde hat eine Print-Bestellung aufgegeben.",
+    description:
+      "Ein Kunde hat eine Print-Bestellung aufgegeben (noch vor der Zahlung).",
     defaultOn: true,
   },
   {
