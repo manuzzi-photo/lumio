@@ -91,13 +91,42 @@ non riesci ad aprirla — rinominala semplicemente da `.lrdevplugin` a
 5. Trascina le immagini nella raccolta con drag-and-drop oppure
    tramite smart collection → sotto la raccolta le immagini si
    accumulano come "Pronte per la pubblicazione".
-6. Clicca su **Pubblica** → Lightroom renderizza le immagini come
-   JPEG (sRGB) e le carica su Lumio. Per ogni caricamento vengono
-   generate in background le varianti di anteprima, thumbnail ed
-   eventualmente watermark.
+6. Clicca su **Pubblica** → Lightroom renderizza le immagini nel
+   formato scelto (di default JPEG sRGB, vedi "Formati e file di
+   grandi dimensioni") e le carica su Lumio. Per ogni caricamento
+   vengono generate in background le varianti di anteprima, thumbnail
+   ed eventualmente watermark.
 7. **Mostra in Lumio** (clic destro sulla raccolta) apre la galleria
    nell'area di gestione dello Studio nel browser (non la vista
    pubblica lato cliente).
+
+### Formati e file di grandi dimensioni
+
+Il formato si sceglie, come per ogni export, nelle impostazioni
+dell'export di Lightroom (sezione *Impostazioni file*):
+
+| Formato | Note |
+|---|---|
+| **JPEG** | Predefinito, come sempre. |
+| **TIFF**, **PSD**, **PNG** | Vengono caricati così come sono; Lumio ne ricava anteprime e miniature. |
+| **DNG** | Caricato come file RAW. Nelle impostazioni DNG non attivare "Incorpora originale": raddoppia la dimensione del file. |
+
+**Spazio colore**: sRGB (predefinito), AdobeRGB o ProPhotoRGB. È
+un'unica impostazione per tutti i formati. Lumio converte le anteprime
+web in sRGB a partire dal profilo incorporato, quindi appaiono corrette
+in ogni caso; il file caricato resta nel profilo che hai scelto.
+
+**File grandi**: fino a 100 MB il file parte in un unico invio. Sopra
+questa soglia il plugin lo carica a blocchi da 8 MB (la barra di
+avanzamento mostra "parte 3/40"); ogni blocco viene ritentato
+automaticamente in caso di errore di rete, e se un link di upload
+scade ne viene richiesto uno nuovo. La RAM usata non dipende dalla
+dimensione del file. Il plugin non impone un proprio limite: vale
+quello per file del tuo Studio (predefinito 10 GB, regolabile nelle
+impostazioni dello Studio). Il plugin legge dallo Studio il limite e i
+tipi di file ammessi, e rifiuta subito — con un messaggio chiaro, prima
+di caricare qualsiasi cosa — un file troppo grande o di un tipo non
+ammesso. **Verifica connessione** mostra il limite per file.
 
 ### Ripubblicare
 
@@ -165,7 +194,7 @@ vengono aggregati lato server:
 
 ## Limitazioni note
 
-- **Matching per nome file (import selezione)**: per i file pubblicati
+- **Matching per nome file (import selezione)**: per i file JPEG pubblicati
   con questa versione del plugin, nel JPEG caricato viene incorporato
   anche un hash MD5 del master originale. Questo risolve automaticamente
   le corrispondenze ambigue, e con l'opzione "ritrova i file rinominati
@@ -181,12 +210,19 @@ vengono aggregati lato server:
 - **Flag Reject**: al momento Lumio conosce solo "pick" e "none",
   non "reject". Per questo, durante l'import nessun flag Reject
   esistente viene sovrascritto.
-- **Pubblicazione: solo JPEG, sRGB**: renderizziamo in JPEG sRGB e
-  carichiamo solo quello. Gli originali (RAW) restano in locale.
-- **Pubblicazione: solo upload single-part**: i file > 100 MB
-  vengono attualmente rifiutati. Con i render JPEG non è un
-  problema; con gli export TIFF potrebbe servire ridurre
-  manualmente la qualità.
+- **Pubblicazione: solo i render di Lightroom**: carichiamo il file
+  esportato (JPEG, TIFF, PSD, PNG o DNG), non il master. Gli originali
+  (RAW) restano in locale; le altre voci dell'export di Lightroom
+  (JPEG XL, AVIF, "Originale") non sono disponibili.
+- **Hash del master solo nei JPEG**: l'hash MD5 per il ritrovamento dei
+  file rinominati viene incorporato solo nei JPEG. Per TIFF, PSD, PNG e
+  DNG il matching per nome file funziona, il ritrovamento tramite hash
+  no.
+- **Upload interrotti**: se un upload a blocchi fallisce, il plugin
+  rimuove la voce rimasta a metà dalla galleria, ma i blocchi già
+  caricati possono restare nello storage S3 finché non vengono ripuliti
+  (consigliata una regola di lifecycle `AbortIncompleteMultipartUpload`
+  sul bucket).
 - **Smart Preview / stack RAW+JPEG**: il matching avviene a livello
   di nome file, la voce principale del catalogo riceve i metadati.
 

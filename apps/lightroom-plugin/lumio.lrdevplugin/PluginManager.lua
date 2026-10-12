@@ -29,8 +29,16 @@ local function testConnection(propertyTable)
             propertyTable.testStatus = "Testing…"
             local ok, result = LrTasks.pcall(LumioApi.testConnection)
             if ok and result and result.ok then
-                propertyTable.testStatus = "✓ Connected (API v" ..
-                    (result.apiVersion or "?") .. ")"
+                local status = "✓ Connected (API v" .. (result.apiVersion or "?") .. ")"
+                -- Best-effort extra: show the studio's per-file upload limit,
+                -- so it is known before a large TIFF fails to upload. A
+                -- failure here must never turn a working connection red.
+                local okPolicy, policy = LrTasks.pcall(LumioApi.getUploadPolicy)
+                if okPolicy and policy and policy.maxBytes then
+                    status = status .. " — max " ..
+                        LumioApi.formatBytes(policy.maxBytes) .. " per file"
+                end
+                propertyTable.testStatus = status
                 log:info("connection test ok")
             else
                 propertyTable.testStatus = "✗ " ..
@@ -96,7 +104,7 @@ return {
                     },
                     f:static_text {
                         title = LrView.bind("testStatus"),
-                        width_in_chars = 40,
+                        width_in_chars = 50,
                     },
                 },
                 f:row {

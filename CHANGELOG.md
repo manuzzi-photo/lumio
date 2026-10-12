@@ -29,6 +29,22 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+A pull is enough for the server and the worker — nothing changes on their side. **Anyone using the Lightroom plug-in has to reinstall it:** the plug-in-side changes live only in the folder loaded into Lightroom, which is not updated along with the server. Re-add `apps/lightroom-plugin/lumio.lrdevplugin` in Lightroom (the plug-in then shows version 0.5.0).
+
+### Added
+
+- Lightroom plug-in (v0.5.0): the Publish Service is no longer limited to JPEG. In the export settings you can now pick **TIFF, PSD, PNG or DNG** as well, and the colour space can be sRGB (default), AdobeRGB or ProPhotoRGB. The file is uploaded as rendered, with the extension of the chosen format (a NEF published as TIFF is stored as `.tif`); Lumio builds the previews from it as for any other upload, converting them to sRGB from the embedded profile. No server-side changes were needed — TIFF, PSD, PNG and DNG were already accepted by default.
+- Lightroom plug-in (v0.5.0): **files above 100 MB can be published.** Until now they were rejected with "multipart upload not currently supported". The plug-in now uploads them in 8 MB parts, one at a time, so memory use stays flat regardless of file size; each part is retried on network errors, an expired upload link is renewed, Cancel works between parts, and the progress bar shows the part being sent.
+- Lightroom plug-in (v0.5.0): the plug-in reads the studio's per-file size limit and allowed file types (`GET /settings`, which accepts the API token) and refuses a file that is too large or of a disallowed type right away, with a readable reason, instead of failing after the upload. **Test connection** in the Plug-in Manager shows the per-file limit. If the settings cannot be read, the checks are skipped and the server's own checks still apply.
+
+### Fixed
+
+- Lightroom plug-in (v0.5.0): error messages for refused uploads (file too large, file type not allowed, storage plan) now show the server's explanation instead of raw JSON.
+- Lightroom plug-in (v0.5.0): when an upload failed after it had been registered, the half-created file stayed in the gallery in the "uploading" state forever. The plug-in now removes it. For a multipart upload, already-sent parts can remain in S3 until cleaned up; an `AbortIncompleteMultipartUpload` lifecycle rule on the bucket takes care of that.
+- Lightroom plug-in (v0.5.0): losing the server's reply to "upload complete" (e.g. a network drop at the very end of a large upload) discarded the finished upload; the call is now retried, which the server handles safely.
+
+Known limitation: the original-file hash used to find renamed files during Selection-Import is only embedded in JPEGs. Photos published as TIFF, PSD, PNG or DNG are still matched by file name.
+
 ## [0.91.1] - 2026-10-12
 
 A pull is enough, no manual step.

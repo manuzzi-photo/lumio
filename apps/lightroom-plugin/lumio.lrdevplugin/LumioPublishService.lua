@@ -38,12 +38,16 @@
 
     Data flow
     =========
-    1. LR renders photo -> temp JPEG
+    1. LR renders photo -> temp file (JPEG, TIFF, PSD, PNG or DNG, whatever
+       the photographer picked in the export settings)
     2. processRenderedPhotos receives each rendered photo
-    3. We call initUpload(gallery, [{ filename, sizeBytes, mimeType }])
-    4. S3 PUT to the presigned URL
-    5. completeUpload(fileId)
-    6. rendition:recordPublishedPhotoId(fileId) -- LR remembers the Lumio ID
+    3. Pre-check against the studio's upload policy (size limit, allowed
+       file kinds) -- best-effort, the server enforces it anyway
+    4. We call initUpload(gallery, [{ filename, sizeBytes, mimeType }])
+    5. S3 PUT: one presigned PUT up to 100 MB, otherwise a multipart upload
+       (the server decides, init says which)
+    6. completeUpload(fileId[, parts, uploadId])
+    7. rendition:recordPublishedPhotoId(fileId) -- LR remembers the Lumio ID
 ]]
 
 local LrApplication        = import "LrApplication"
@@ -81,8 +85,16 @@ exportServiceProvider.hideSections = {
     "watermarking",     -- watermarking happens server-side in Lumio
     "postProcessing",   -- handled by Lumio (renditions/watermark/HLS)
 }
-exportServiceProvider.allowFileFormats = { "JPEG" }
-exportServiceProvider.allowColorSpaces = { "sRGB" }
+-- Formats Lumio can process: JPEG as before, plus TIFF, PSD, PNG (all "image"
+-- on the server -- libvips, PSD via a flattened composite) and DNG ("raw"
+-- pipeline). Keep in sync with FORMATS below. Lightroom's other export
+-- formats (JXL, AVIF, "Original") are deliberately not offered.
+exportServiceProvider.allowFileFormats = { "JPEG", "TIFF", "PSD", "PNG", "DNG" }
+-- Wide-gamut profiles make sense for TIFF/PSD/DNG. This is one setting for
+-- all formats, not per format; the preset still starts at sRGB. The worker
+-- converts its web renditions to sRGB from the embedded ICC profile, so the
+-- derived previews stay correct either way.
+exportServiceProvider.allowColorSpaces = { "sRGB", "AdobeRGB", "ProPhotoRGB" }
 -- Two kinds of published collection now exist:
 --   - a plain collection directly under the service = "Simple Gallery" in
 --     our OWN dialog UI (see viewForCollectionSettings), the original flat
@@ -631,6 +643,66 @@ local function computeOriginalMd5(photo)
     return LrMD5.digest(data):lower(), #data
 end
 
+-- ============================================================================
+-- Export formats
+-- ============================================================================
+-- Extension of the rendered file -> what we tell the server about it.
+-- `mime` is stored with the file and used as the S3 Content-Type. `kind`
+-- mirrors detectFileKind() in the API (filekind.ts, which classifies by
+-- extension first) and feeds the pre-check against the studio's allowed
+-- file kinds. Keep in sync with allowFileFormats above.
+local FORMATS = {
+    jpg  = { mime = "image/jpeg",                kind = "image" },
+    jpeg = { mime = "image/jpeg",                kind = "image" },
+    tif  = { mime = "image/tiff",                kind = "image" },
+    tiff = { mime = "image/tiff",                kind = "image" },
+    psd  = { mime = "image/vnd.adobe.photoshop", kind = "image" },
+    png  = { mime = "image/png",                 kind = "image" },
+    dng  = { mime = "image/x-adobe-dng",         kind = "raw"   },
+}
+
+-- Returns the lower-cased extension and its FORMATS entry (nil if unknown).
+local function formatForPath(filepath)
+    local ext = (LrPathUtils.extension(filepath) or ""):lower()
+    return ext, FORMATS[ext]
+end
+
+-- The original-file hash is spliced into the file as an XMP APP1 segment,
+-- which JpegXmp can do for a JPEG with a plain byte splice. TIFF, PSD, PNG
+-- and DNG would each need their own container surgery (TIFF: re-serializing
+-- the IFD, with every offset behind it shifting), so they go without. The
+-- Selection-Import still finds them by name; only the rename-recovery by
+-- hash is unavailable for them.
+local function carriesOriginalHash(ext)
+    return ext == "jpg" or ext == "jpeg"
+end
+
+-- Checks one rendered file against the studio's upload policy (api.getUploadPolicy).
+-- Best-effort: no policy means no check, the server still enforces its limits
+-- on /uploads/init -- this only turns a late, cryptic failure into an early,
+-- readable one.
+-- Returns nil when the file is fine, otherwise  message, stopAll  where stopAll
+-- means every further file of this format would fail the same way.
+-- The messages carry no file name: the caller prefixes it ("IMG_001.NEF: ...").
+local function checkUploadPolicy(policy, fmt, sizeBytes)
+    if not policy then return nil end
+    local allowed = policy.allowedKinds
+    -- "other" in the list switches the filter off server-side, by documented intent
+    if allowed and not (allowed[fmt.kind] or allowed.other) then
+        return string.format(
+            "your Lumio studio does not accept '%s' files. Export as JPEG, " ..
+            "or change the allowed file types in the Lumio Studio settings.",
+            fmt.kind), true
+    end
+    if policy.maxBytes and sizeBytes > policy.maxBytes then
+        return string.format(
+            "the file is %s, over the upload limit of %s set for your Lumio studio. " ..
+            "Reduce the export size, or raise the limit in the Lumio Studio settings.",
+            api.formatBytes(sizeBytes), api.formatBytes(policy.maxBytes)), false
+    end
+    return nil
+end
+
 -- RE-PUBLISH. Before: every re-publish (edit -> "Republish", or a manual
 -- "Republish" click) uploaded a brand-new file and never touched the
 -- previous one. rendition.publishedPhotoId, set by LR from the ID we
@@ -643,27 +715,40 @@ end
 -- /plugin/galleries/:id/files/:fileId). This trades a small window (old
 -- file gone, new upload not yet done) for never leaving two copies behind;
 -- see the loud failure message below for why that window is acceptable.
-local function uploadOnePhoto(rendition, filepath, galleryId)
+--
+-- onPartProgress(partsDone, totalParts) is optional: called after every part
+-- of a multipart upload (files above 100 MB) so the caller can move the
+-- progress bar -- a single such file can take minutes.
+local function uploadOnePhoto(rendition, filepath, galleryId, onPartProgress)
     -- Read the original filename from the LR photo (NOT from the render
-    -- path, which is a temp.jpg)
+    -- path, which is a temp file)
     local photo = rendition.photo
     local origName = photo:getFormattedMetadata("fileName") or LrPathUtils.leafName(filepath)
-    -- Fix the extension: we render as JPEG, so .jpg
+    -- The extension follows what Lightroom rendered (jpg, tif, psd, png,
+    -- dng), not the master's: a NEF published as TIFF is stored as .tif.
+    local ext, fmt = formatForPath(filepath)
+    if not fmt then
+        error("Unsupported export format '." .. ext .. "' -- Lumio accepts JPEG, TIFF, PSD, PNG and DNG")
+    end
     local nameNoExt = LrPathUtils.removeExtension(origName)
-    local filename = nameNoExt .. ".jpg"
+    local filename = nameNoExt .. "." .. ext
 
     -- Compute + embed the original hash BEFORE measuring the file size --
     -- embedding changes the file size, and initUpload needs the actual
-    -- (final) size for the S3 presign.
-    local okHash, hashResult, sizeResult = LrTasks.pcall(computeOriginalMd5, photo)
-    local originalMd5 = okHash and hashResult or nil
-    if not okHash then
-        log:warn("original hash: computation failed: " .. tostring(hashResult))
-    elseif originalMd5 then
-        local okEmbed, embedErr = LrTasks.pcall(jpegXmp.embedOriginalMd5, filepath, originalMd5, sizeResult)
-        if not okEmbed then
-            log:warn("original hash: embedding into JPEG failed: " .. tostring(embedErr))
+    -- (final) size for the S3 presign. JPEG only, see carriesOriginalHash.
+    if carriesOriginalHash(ext) then
+        local okHash, hashResult, sizeResult = LrTasks.pcall(computeOriginalMd5, photo)
+        local originalMd5 = okHash and hashResult or nil
+        if not okHash then
+            log:warn("original hash: computation failed: " .. tostring(hashResult))
+        elseif originalMd5 then
+            local okEmbed, embedErr = LrTasks.pcall(jpegXmp.embedOriginalMd5, filepath, originalMd5, sizeResult)
+            if not okEmbed then
+                log:warn("original hash: embedding into JPEG failed: " .. tostring(embedErr))
+            end
         end
+    else
+        log:info("original hash: skipped for ." .. ext .. " (only JPEG carries it)")
     end
 
     -- File size (measure AFTER embedding, see above). fileAttributes can
@@ -696,28 +781,38 @@ local function uploadOnePhoto(rendition, filepath, galleryId)
         end
     end
 
-    -- Init call: returns a presigned PUT URL
+    -- Init call: returns presigned URL(s). Set as soon as init succeeded, so a
+    -- failure further down can clean up the half-created file row.
+    local newFileId
     local okUpload, resultOrErr = LrTasks.pcall(function()
         local uploads = api.initUpload(galleryId, {
             {
                 filename = filename,
                 sizeBytes = sizeBytes,
-                mimeType = "image/jpeg",
+                mimeType = fmt.mime,
             },
         })
         if not uploads or not uploads[1] then
             error("init: no upload instructions received")
         end
         local u = uploads[1]
-        if u.method ~= "single" then
-            error("multipart upload not currently supported (photo > 100 MB)")
+        newFileId = u.fileId
+
+        -- The server decides: one presigned PUT up to 100 MB, a multipart
+        -- upload (one presigned URL per part) above that.
+        if u.method == "single" then
+            api.uploadFileToS3(u.uploadUrl, filepath, fmt.mime)
+            -- Complete: kicks off worker processing
+            api.completeUpload(u.fileId, nil, nil)
+        elseif u.method == "multipart" then
+            log:info(string.format("multipart upload: %s, %s in %d parts",
+                filename, api.formatBytes(sizeBytes), tonumber(u.totalParts) or 0))
+            local parts = api.uploadFileMultipart(u, filepath, onPartProgress)
+            -- Complete: S3 assembles the parts, then worker processing starts
+            api.completeUpload(u.fileId, parts, u.uploadId)
+        else
+            error("init: unknown upload method '" .. tostring(u.method) .. "'")
         end
-
-        -- S3 PUT
-        api.uploadFileToS3(u.uploadUrl, filepath, "image/jpeg")
-
-        -- Complete: kicks off worker processing
-        api.completeUpload(u.fileId, nil)
 
         -- LR remembers the Lumio file ID. On a later republish/delete, LR
         -- hands this ID to deletePhotosFromPublishedCollection.
@@ -730,6 +825,17 @@ local function uploadOnePhoto(rendition, filepath, galleryId)
     end)
 
     if not okUpload then
+        -- Init created a file row (status 'uploading') that no upload will
+        -- ever finish now. Left alone it sits in the gallery as a broken
+        -- entry forever -- remove it, best-effort. This is the NEW file only;
+        -- the previous version was dealt with above.
+        if newFileId then
+            local okClean, cleanErr = LrTasks.pcall(api.deleteGalleryFile, galleryId, newFileId)
+            if not okClean then
+                log:warn("could not remove the unfinished upload " ..
+                    tostring(newFileId) .. ": " .. tostring(cleanErr))
+            end
+        end
         if deletedPrevious then
             -- The old remote file is already gone at this point -- unlike a
             -- first-time publish failure, the photo is now genuinely MISSING
@@ -1004,6 +1110,21 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
     -- only checked BETWEEN photos.
     api.isCanceled = function() return progressScope:isCanceled() end
 
+    -- The studio's upload policy (size limit, allowed file kinds), fetched once
+    -- per publish run. Best-effort: if it cannot be read (older server, a
+    -- hiccup) the pre-checks are skipped and the server's own checks on
+    -- /uploads/init still apply.
+    local policy
+    do
+        local okPolicy, policyOrErr = LrTasks.pcall(api.getUploadPolicy)
+        if okPolicy then
+            policy = policyOrErr
+        else
+            log:warn("upload policy not available, skipping the pre-checks: " .. tostring(policyOrErr))
+        end
+    end
+    local stoppedEarly = false
+
     for i, rendition in exportContext:renditions { stopIfCanceled = true } do
         progressScope:setPortionComplete((i - 1) / nPhotos)
 
@@ -1023,7 +1144,33 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
             -- was never uploaded.
             rendition:uploadFailed(tostring(pathOrMessage))
         else
-            local ok, resultOrErr = LrTasks.pcall(uploadOnePhoto, rendition, pathOrMessage, galleryId)
+            local fname = rendition.photo:getFormattedMetadata("fileName") or "?"
+
+            -- Pre-check against the studio's policy BEFORE any hashing or
+            -- uploading, so an oversized or disallowed file fails in a
+            -- second with a readable reason.
+            local violation, stopAll
+            local _, fmt = formatForPath(pathOrMessage)
+            local attrs = LrFileUtils.fileAttributes(pathOrMessage)
+            if fmt and attrs and attrs.fileSize then
+                violation, stopAll = checkUploadPolicy(policy, fmt, attrs.fileSize)
+            end
+
+            local ok, resultOrErr
+            if violation then
+                ok, resultOrErr = false, violation
+                if stopAll then stoppedEarly = true end
+            else
+                -- A multipart file (over 100 MB) takes minutes: move the bar
+                -- inside the photo and show which part is on its way.
+                local function onPart(done, total)
+                    progressScope:setPortionComplete((i - 1 + done / total) / nPhotos)
+                    progressScope:setCaption(string.format("%s — part %d/%d", fname, done, total))
+                end
+                ok, resultOrErr = LrTasks.pcall(uploadOnePhoto, rendition, pathOrMessage, galleryId, onPart)
+                progressScope:setCaption("")
+            end
+
             if ok then
                 uploaded = uploaded + 1
                 if sectionId and sectionId ~= "" then
@@ -1031,7 +1178,6 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
                 end
             else
                 failed = failed + 1
-                local fname = rendition.photo:getFormattedMetadata("fileName") or "?"
                 table.insert(failedList, fname .. ": " .. tostring(resultOrErr))
                 log:warn("Upload failed for " .. fname .. ": " .. tostring(resultOrErr))
                 rendition:uploadFailed(tostring(resultOrErr))
@@ -1043,6 +1189,11 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
         end
 
         progressScope:setPortionComplete(i / nPhotos)
+
+        -- The studio refuses this file KIND outright (not just this one
+        -- file): every further photo in the batch has the same format and
+        -- would fail the same way, so stop instead of listing them all.
+        if stoppedEarly then break end
     end
 
     -- Chapter-only: assign this run's uploaded files to the Section, chunked
@@ -1119,6 +1270,11 @@ function exportServiceProvider.processRenderedPhotos(functionContext, exportCont
             msg = msg .. line .. "\n"
         end
         table.insert(notes, msg)
+    end
+    if stoppedEarly then
+        table.insert(notes,
+            "Publishing stopped early: the remaining photos use the same file " ..
+            "format and would be refused the same way. They were not uploaded.")
     end
     if #notes > 0 then
         LrDialogs.message("Lumio", table.concat(notes, "\n\n"), "warning")

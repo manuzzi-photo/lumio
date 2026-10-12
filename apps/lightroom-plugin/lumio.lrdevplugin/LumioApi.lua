@@ -12,7 +12,8 @@
 
     Write side (Publish-Service: LR -> Lumio):
       createGallery, patchGallery, listGalleryFiles, deleteGalleryFile,
-      initUpload, completeUpload, uploadFileToS3
+      getUploadPolicy, initUpload, completeUpload, resignUpload,
+      uploadFileToS3 (single PUT), uploadFileMultipart (files > 100 MB)
 ]]
 
 local LrHttp           = import "LrHttp"
@@ -57,6 +58,13 @@ local MAX_DELAY      = 30   -- cap for a single wait, including Retry-After
 local MAX_TOTAL_WAIT = 90   -- total budget per call
 local MAX_NET_RETRIES = 1   -- a network error is often PERMANENT (wrong host) -> only 1 retry
 
+-- Explicit timeouts (seconds) for the S3 PUTs. The SDK documents neither a
+-- default nor whether the value covers the whole transfer or each phase of
+-- it, so we set generous values ourselves: a 100 MB single PUT on a slow
+-- uplink, resp. one 8 MiB multipart part.
+local PUT_TIMEOUT_SINGLE = 600
+local PUT_TIMEOUT_PART   = 180
+
 -- A caller can set this so that long waits are interrupted by a cancellation.
 -- Without it LrTasks.sleep does not react to the Cancel button at all.
 M.isCanceled = nil
@@ -99,8 +107,28 @@ local function httpDispatch(method, url, headers, body)
     end
 end
 
+-- Turns an HTTP error response into one readable line. The Lumio API answers
+-- limit violations (413 file_too_large, 415 file_type_not_allowed, 402 storage
+-- plan) with a JSON body carrying a human-readable "message"; showing that
+-- beats dumping raw JSON into a dialog. Anything else keeps the plain form.
+local function describeHttpError(status, responseBody)
+    local raw = responseBody or ""
+    local okParse, parsed = pcall(json.decode, raw)
+    if okParse and type(parsed) == "table"
+        and type(parsed.message) == "string" and parsed.message ~= "" then
+        return parsed.message .. " (HTTP " .. tostring(status) .. ")"
+    end
+    return "HTTP " .. tostring(status) .. " " .. raw:sub(1, 200)
+end
+
 -- Low-level request. Returns body + status, throws on an auth error.
-function M.request(method, path, body)
+--
+-- opts (optional):
+--   headers    = { { field = ..., value = ... }, ... }  extra request headers
+--   idempotent = true  the server tolerates a repeated call (see below), so a
+--                      POST may be retried after a network error as well
+function M.request(method, path, body, opts)
+    opts = opts or {}
     local url = getBase() .. "/api/v1" .. path
     log:info("HTTP " .. method .. " " .. url)
 
@@ -110,7 +138,11 @@ function M.request(method, path, body)
     -- create a second file row (stuck in 'uploading' forever) or an entirely
     -- second gallery. A 429 is safe for every method, because the rate limit
     -- rejects the request BEFORE the handler runs.
-    local isPost = (method == "POST")
+    -- Exception, via opts.idempotent: /uploads/complete (answers a repeat with
+    -- the current status instead of acting twice) and /uploads/:id/resign
+    -- (only signs URLs). Losing the response of /uploads/complete after
+    -- uploading a 2 GB file would otherwise throw the whole upload away.
+    local isPost = (method == "POST") and not opts.idempotent
 
     local responseBody, responseHeaders, status
     local totalWait, netRetries = 0, 0
@@ -120,6 +152,9 @@ function M.request(method, path, body)
             { field = "Authorization", value = "Bearer " .. getToken() },
             { field = "Accept",        value = "application/json" },
         }
+        for _, h in ipairs(opts.headers or {}) do
+            table.insert(headers, h)
+        end
         responseBody, responseHeaders = httpDispatch(method, url, headers, body)
 
         -- LrHttp signals a network error in responseHeaders.error, NOT as an exception
@@ -172,8 +207,7 @@ function M.request(method, path, body)
     elseif status == 204 then
         return nil
     elseif status and status >= 400 then
-        error("Lumio: HTTP " .. tostring(status) ..
-            " " .. (responseBody or ""):sub(1, 200))
+        error("Lumio: " .. describeHttpError(status, responseBody))
     end
 
     if not responseBody or responseBody == "" then
@@ -184,6 +218,17 @@ function M.request(method, path, body)
         error("Lumio: response is not valid JSON")
     end
     return parsed
+end
+
+-- "812 MB" / "2.5 GB" -- same units as the server's formatLimit(), so the
+-- numbers in our own messages match the ones the server reports.
+function M.formatBytes(n)
+    n = tonumber(n) or 0
+    local gib = 1024 * 1024 * 1024
+    if n >= gib then
+        return string.format("%.1f GB", n / gib)
+    end
+    return string.format("%.0f MB", n / (1024 * 1024))
 end
 
 -- ============================================================================
@@ -272,9 +317,63 @@ function M.assignFilesToSection(galleryId, sectionId, fileIds)
     return res and res.assigned
 end
 
+-- ============================================================================
+-- Upload
+-- ============================================================================
+
+-- Upload policy of the signed-in studio: the per-file size limit and the
+-- allowed file kinds, so the plug-in can refuse an oversized or disallowed
+-- file with a clear message BEFORE spending minutes uploading it.
+--
+-- Read from GET /settings (a Studio route that, like /uploads/init, accepts
+-- the Bearer token). The effective limit mirrors the server's
+-- effectiveUploadLimitBytes(): the studio's own maxUploadMib, else the
+-- instance default, never above the hard cap. The allowed kinds mirror
+-- effectiveAllowedKinds(): the studio's override, else the instance default.
+--
+-- BEST-EFFORT. This is only a convenience; the server enforces both limits
+-- on /uploads/init anyway. Any failure (older server, missing permission,
+-- changed response shape) returns nil and the caller simply skips the check.
+--
+-- Returns { maxBytes = number|nil, allowedKinds = { image = true, ... }|nil }
+function M.getUploadPolicy()
+    local res = M.request("GET", "/settings")
+    if type(res) ~= "table" then return nil end
+
+    local tenant = type(res.tenant) == "table" and res.tenant or {}
+    local limits = type(res.uploadLimits) == "table" and res.uploadLimits or {}
+
+    local maxBytes
+    local mib = tonumber(tenant.maxUploadMib) or tonumber(limits.defaultMib)
+    if mib then
+        local hardCap = tonumber(limits.hardCapMib)
+        if hardCap and mib > hardCap then mib = hardCap end
+        maxBytes = mib * 1024 * 1024
+    end
+
+    local allowed = {}
+    if type(tenant.uploadAllowedKinds) == "string" and tenant.uploadAllowedKinds ~= "" then
+        for kind in tenant.uploadAllowedKinds:gmatch("[^,%s]+") do
+            allowed[kind:lower()] = true
+        end
+    elseif type(res.allowedKinds) == "table" and type(res.allowedKinds.default) == "table" then
+        for _, kind in ipairs(res.allowedKinds.default) do
+            allowed[tostring(kind):lower()] = true
+        end
+    end
+    if next(allowed) == nil then allowed = nil end
+
+    return { maxBytes = maxBytes, allowedKinds = allowed }
+end
+
 -- Upload-init: registers n files, gets back presigned PUT URLs. We use the
 -- existing Studio upload endpoint -- no plug-in-specific path needed, since
 -- it already supports Bearer-token auth.
+--
+-- Each returned upload has method = "single" (one presigned PUT, files up to
+-- 100 MB) or "multipart" (uploadId, partSize, totalParts and one presigned URL
+-- per part). The SERVER picks the method -- callers follow it instead of
+-- recomputing the threshold.
 function M.initUpload(galleryId, files)
     local res = M.request("POST", "/uploads/init", {
         galleryId = galleryId,
@@ -285,45 +384,52 @@ end
 
 -- Upload-complete: after the S3 PUT, the plug-in reports success to Lumio
 -- so worker processing (thumbs/preview/web/watermark) starts.
-function M.completeUpload(fileId, parts)
-    local res = M.request("POST", "/uploads/complete", {
+--
+-- Multipart: `parts` is { { partNumber = 1, eTag = "..." }, ... } and the
+-- uploadId travels in the "x-upload-id" REQUEST HEADER, not in the body -- the
+-- API reads it from there (routes/files.ts), same as the browser does.
+-- Leaving it out makes S3 reject the completion.
+function M.completeUpload(fileId, parts, uploadId)
+    local opts = { idempotent = true }
+    if uploadId then
+        opts.headers = { { field = "x-upload-id", value = uploadId } }
+    end
+    return M.request("POST", "/uploads/complete", {
         fileId = fileId,
         parts = parts,  -- nil for single-PUT, array for multipart
-    })
-    return res
+    }, opts)
 end
 
--- Single-part upload to S3 via a presigned PUT URL.
--- Lightroom renders are typically < 50 MB JPEGs (even at 100% quality), so
--- single-PUT instead of multipart. Multipart support can come later if
--- someone exports RAW.
-function M.uploadFileToS3(presignedUrl, filepath, mimeType)
-    -- Read the file -- the LR SDK offers no streamed-upload API, so we
-    -- load it entirely into RAM. For huge files (100 MB+) that would be
-    -- problematic, but JPEG renders are rarely that large.
-    local f, err = io.open(filepath, "rb")
-    if not f then
-        error("Lumio: cannot open file: " .. tostring(err))
-    end
-    local data = f:read("*all")
-    f:close()
-    if not data then
-        error("Lumio: file is empty or unreadable: " .. filepath)
-    end
+-- Fresh presigned URLs for a file that is still 'uploading': presigned URLs
+-- are valid for one hour, which a multi-gigabyte upload on a slow uplink can
+-- exceed. For multipart the uploadId is required (it is not stored server-side)
+-- and partNumbers selects which parts to sign again.
+function M.resignUpload(fileId, uploadId, partNumbers)
+    return M.request("POST", "/uploads/" .. fileId .. "/resign", {
+        uploadId = uploadId,
+        partNumbers = partNumbers,
+    }, { idempotent = true })
+end
 
-    local headers = {
-        { field = "Content-Type", value = mimeType or "application/octet-stream" },
-    }
-    log:info("S3 PUT " .. presignedUrl:sub(1, 80) .. "... (" .. #data .. " bytes)")
-
-    -- Retry here as well. This is the only multi-megabyte transfer and at the
-    -- same time the only call that is SAFE to repeat: a presigned PUT to the
-    -- same key with the same content is idempotent, unlike POST /uploads/init.
-    -- Without this, a single network hiccup discarded the whole photo.
+-- One presigned PUT with retries. Shared by the single-part upload and every
+-- part of a multipart upload.
+--
+-- Retry here as well. This is the only multi-megabyte transfer and at the
+-- same time the only call that is SAFE to repeat: a presigned PUT to the
+-- same key with the same content is idempotent, unlike POST /uploads/init.
+-- Without this, a single network hiccup discarded the whole photo.
+--
+-- Returns  true,  etag|nil                 on success
+--          false, message, httpStatus|nil  on failure (status is nil for a
+--                                          network failure)
+-- A network-level failure after the last retry is a failure too, not a throw,
+-- so the multipart caller can look at the status (expired URL -> resign).
+-- A cancellation DOES throw (from interruptibleSleep).
+local function putWithRetry(url, data, headers, timeout)
     local responseBody, responseHeaders
     local waited = 0
     for attempt = 0, #RETRY_DELAYS do
-        responseBody, responseHeaders = LrHttp.post(presignedUrl, data, headers, "PUT")
+        responseBody, responseHeaders = LrHttp.post(url, data, headers, "PUT", timeout)
 
         local netErr = responseHeaders and responseHeaders.error
         local st = responseHeaders and tonumber(responseHeaders.status) or nil
@@ -341,7 +447,7 @@ function M.uploadFileToS3(presignedUrl, filepath, mimeType)
     end
 
     if not responseHeaders then
-        error("Lumio: no response from S3 (network problem?)")
+        return false, "no response from S3 (network problem?)", nil
     end
     -- Was `responseHeaders.status or 0`, so a MISSING status code (connection
     -- dropped mid-transfer) was read as SUCCESS -> the server was left with a
@@ -350,15 +456,15 @@ function M.uploadFileToS3(presignedUrl, filepath, mimeType)
     local netErr = responseHeaders.error
     local status = tonumber(responseHeaders.status)
     if netErr then
-        error("Lumio: S3 upload failed due to a network error: " ..
-            tostring(netErr.name or netErr.errorCode or "unknown"))
+        return false, "S3 upload failed due to a network error: " ..
+            tostring(netErr.name or netErr.errorCode or "unknown"), nil
     end
     if type(status) ~= "number" or status < 200 or status >= 300 then
-        error("Lumio: S3 upload failed (status " .. tostring(status) .. ") " ..
-            (responseBody or ""):sub(1, 200))
+        return false, "S3 upload failed (status " .. tostring(status) .. ") " ..
+            (responseBody or ""):sub(1, 200), status
     end
-    -- S3 returns an ETag header -- not strictly needed for single-PUT, but
-    -- we return it for a possible future multipart extension.
+    -- S3 returns an ETag header. Single-PUT does not need it; multipart
+    -- needs the ETag of every part to complete the upload.
     local etag
     for _, h in ipairs(responseHeaders) do
         if (h.field or ""):lower() == "etag" then
@@ -366,7 +472,130 @@ function M.uploadFileToS3(presignedUrl, filepath, mimeType)
             break
         end
     end
-    return etag
+    return true, etag
+end
+
+-- Single-part upload to S3 via a presigned PUT URL (files up to 100 MB; the
+-- server hands out a multipart upload above that, see uploadFileMultipart).
+function M.uploadFileToS3(presignedUrl, filepath, mimeType)
+    -- Read the file -- the LR SDK offers no streamed-upload API, so we
+    -- load it entirely into RAM. Fine up to the 100 MB single-PUT ceiling;
+    -- larger files never come through here.
+    local f, err = io.open(filepath, "rb")
+    if not f then
+        error("Lumio: cannot open file: " .. tostring(err))
+    end
+    local data = f:read("*all")
+    f:close()
+    if not data then
+        error("Lumio: file is empty or unreadable: " .. filepath)
+    end
+
+    local headers = {
+        { field = "Content-Type", value = mimeType or "application/octet-stream" },
+    }
+    log:info("S3 PUT " .. presignedUrl:sub(1, 80) .. "... (" .. #data .. " bytes)")
+
+    local ok, etagOrMessage = putWithRetry(presignedUrl, data, headers, PUT_TIMEOUT_SINGLE)
+    if not ok then
+        error("Lumio: " .. etagOrMessage)
+    end
+    return etagOrMessage
+end
+
+-- Multipart upload for files above the single-PUT ceiling. `upload` is one
+-- entry of initUpload()'s result with method = "multipart". The file is read
+-- one part at a time (8 MiB by default), so memory use stays flat no matter
+-- how large the file is -- the reason multipart exists here at all, since the
+-- SDK cannot stream a body from disk.
+--
+-- Parts are sent one after the other. Lightroom tasks are cooperative and a
+-- single connection already saturates most uplinks; parallel parts can come
+-- later if measurements ask for it.
+--
+-- onProgress(partsDone, totalParts) is called after every finished part.
+-- Returns the parts for completeUpload(): { { partNumber, eTag }, ... }.
+function M.uploadFileMultipart(upload, filepath, onProgress)
+    local partSize = tonumber(upload.partSize)
+    local totalParts = tonumber(upload.totalParts)
+    if not (upload.uploadId and upload.fileId and partSize and partSize > 0
+            and totalParts and totalParts > 0 and type(upload.parts) == "table") then
+        error("Lumio: invalid multipart upload instructions from the server")
+    end
+
+    local urls = {}
+    for _, p in ipairs(upload.parts) do
+        urls[p.partNumber] = p.uploadUrl
+    end
+
+    local f, err = io.open(filepath, "rb")
+    if not f then
+        error("Lumio: cannot open file: " .. tostring(err))
+    end
+
+    local headers = {
+        { field = "Content-Type", value = "application/octet-stream" },
+    }
+
+    -- Sends one part. A 400/403/410 means the presigned URL is expired or
+    -- otherwise dead (they last one hour): fetch fresh URLs once and try again.
+    -- The fresh URLs are requested for this part AND all that follow, so a
+    -- long upload pays for one resign call instead of one per remaining part.
+    local resigned = false
+    local function putPart(n, data)
+        while true do
+            local url = urls[n]
+            if not url then
+                error("Lumio: no upload URL for part " .. n)
+            end
+            local ok, etagOrMessage, status = putWithRetry(url, data, headers, PUT_TIMEOUT_PART)
+            if ok then
+                if not etagOrMessage then
+                    error("Lumio: S3 did not return an ETag for part " .. n)
+                end
+                -- S3 quotes the ETag; the API takes it unquoted (as the browser sends it).
+                return (etagOrMessage:gsub('"', ''))
+            end
+            if (status == 400 or status == 403 or status == 410) and not resigned then
+                resigned = true
+                log:warn("part " .. n .. ": presigned URL rejected (" .. status .. "), requesting new URLs")
+                local wanted = {}
+                for k = n, totalParts do table.insert(wanted, k) end
+                local fresh = M.resignUpload(upload.fileId, upload.uploadId, wanted)
+                for _, p in ipairs((fresh and fresh.parts) or {}) do
+                    urls[p.partNumber] = p.uploadUrl
+                end
+            else
+                error("Lumio: " .. tostring(etagOrMessage))
+            end
+        end
+    end
+
+    -- LrTasks.pcall (not pcall): LrHttp yields, which a plain pcall forbids.
+    -- Needed so the file handle is closed on every exit path, cancel included.
+    local ok, result = LrTasks.pcall(function()
+        local completed = {}
+        for n = 1, totalParts do
+            if M.isCanceled and M.isCanceled() then
+                error("Lumio: canceled")
+            end
+            f:seek("set", (n - 1) * partSize)
+            local data = f:read(partSize)
+            if not data or #data == 0 then
+                error("Lumio: could not read part " .. n .. " of " .. filepath)
+            end
+            log:info(string.format("S3 PUT part %d/%d (%d bytes)", n, totalParts, #data))
+            local eTag = putPart(n, data)
+            table.insert(completed, { partNumber = n, eTag = eTag })
+            if onProgress then onProgress(n, totalParts) end
+        end
+        return completed
+    end)
+    f:close()
+    if not ok then
+        error(result, 0)  -- already carries its own "Lumio: ..." message
+    end
+    return result
 end
 
 return M
