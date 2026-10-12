@@ -29,8 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.91.1] - 2026-10-12
+
+A pull is enough, no manual step.
+
 ### Fixed
 - **Typing in the comment field no longer triggers shortcuts** (#67). In the client gallery's photo viewer, Space liked the photo instead of typing a space, the arrow keys switched photos and 1/2/3 set colour labels while writing a comment. Shortcuts now pause while a text field has focus; Escape leaves the field instead of closing the viewer, so a half-written comment is kept. The same applies to the slideshow and the studio's photo viewer.
+- **Version number:** v0.91.0 still reported `0.90.0` in `GET /health` and in the app, because only the `VERSION` file had been updated. From this release on, all version files match again. Nothing else in v0.91.0 was affected.
 
 ## [0.91.0] - 2026-10-09
 
