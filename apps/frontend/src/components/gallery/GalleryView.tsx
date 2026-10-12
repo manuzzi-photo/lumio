@@ -38,6 +38,7 @@ import {
   type AnnotationColor,
   type AnnotationData,
 } from "@/components/annotation/AnnotationOverlay";
+import { shouldIgnoreShortcut } from "@/lib/keyboard";
 
 interface Props {
   meta: PublicGalleryMeta;
@@ -1769,8 +1770,7 @@ function Lightbox({
   // Zusatz-Keyboard für Zoom: + / − / 0
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.target && (e.target as HTMLElement).tagName === "TEXTAREA") return;
-      if (e.target && (e.target as HTMLElement).tagName === "INPUT") return;
+      if (shouldIgnoreShortcut(e)) return;
       if (e.key === "+" || e.key === "=") {
         e.preventDefault();
         zoom.zoomIn();
@@ -1789,6 +1789,8 @@ function Lightbox({
   // Tastatur-Navigation
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      // Not while typing a comment (#67): Space would like the photo.
+      if (shouldIgnoreShortcut(e)) return;
       if (e.key === "Escape") onClose();
       else if (e.key === "ArrowLeft" && index > 0) onNavigate(index - 1);
       else if (e.key === "ArrowRight" && index < files.length - 1)

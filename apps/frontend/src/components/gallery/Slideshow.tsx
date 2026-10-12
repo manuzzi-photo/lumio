@@ -26,6 +26,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PublicFile } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { shouldIgnoreShortcut } from "@/lib/keyboard";
 
 interface Props {
   files: PublicFile[];
@@ -166,6 +167,7 @@ export function Slideshow({
   // Keyboard
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (shouldIgnoreShortcut(e)) return;
       if (e.key === "Escape") {
         onClose();
       } else if (e.key === "ArrowLeft") {

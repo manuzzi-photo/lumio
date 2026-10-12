@@ -57,6 +57,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useErrorText } from "@/lib/error-i18n";
 import { useConfirm } from "@/components/ui/dialogs";
+import { shouldIgnoreShortcut } from "@/lib/keyboard";
 
 // accept-Liste fürs Upload-<input>. Hintergrund: ohne accept gibt der
 // iOS/iPadOS-Foto-Picker bei einem ausgewählten VIDEO beim Bestätigen
@@ -2490,6 +2491,7 @@ function Lightbox({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (shouldIgnoreShortcut(e)) return;
       if (e.key === "Escape") onClose();
       else if (e.key === "ArrowLeft") prev();
       else if (e.key === "ArrowRight") next();

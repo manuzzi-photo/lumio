@@ -40,6 +40,7 @@ import {
 import { AutoTagsSection } from "@/components/studio/AutoTagsSection";
 import { FileTagsSection } from "@/components/studio/FileTagsSection";
 import { VideoMarkup } from "@/components/gallery/VideoMarkup";
+import { shouldIgnoreShortcut } from "@/lib/keyboard";
 
 interface Props {
   galleryId: string;
@@ -77,8 +78,7 @@ export function ProofingFileDetail({ galleryId, file, onClose }: Props) {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.target && (e.target as HTMLElement).tagName === "TEXTAREA") return;
-      if (e.target && (e.target as HTMLElement).tagName === "INPUT") return;
+      if (shouldIgnoreShortcut(e)) return;
       if (e.key === "+" || e.key === "=") {
         e.preventDefault();
         zoom.zoomIn();

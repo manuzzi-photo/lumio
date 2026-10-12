@@ -29,6 +29,9 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Fixed
+- **Typing in the comment field no longer triggers shortcuts** (#67). In the client gallery's photo viewer, Space liked the photo instead of typing a space, the arrow keys switched photos and 1/2/3 set colour labels while writing a comment. Shortcuts now pause while a text field has focus; Escape leaves the field instead of closing the viewer, so a half-written comment is kept. The same applies to the slideshow and the studio's photo viewer.
+
 ## [0.91.0] - 2026-10-09
 
 A pull is enough, no manual step.
