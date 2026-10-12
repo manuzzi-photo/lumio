@@ -23,7 +23,10 @@ const envSchema = z.object({
    * prüfen ob die DNS-Auflösung der Custom-Domain darauf zeigt. Wenn
    * nicht gesetzt, wird der DNS-Vergleich übersprungen (nur Resolve-
    * Anzeige ohne Soll/Ist-Abgleich). */
-  LUMIO_PUBLIC_IP: z.string().optional(),
+  LUMIO_PUBLIC_IP: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().optional()
+  ),
 
   /** Rechtliche Links des Betreibers (Impressum / Datenschutz). Werden
    *  als Footer-Links auf Login-, Galerie- und Studio-Seiten angezeigt.

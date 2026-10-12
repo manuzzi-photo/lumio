@@ -838,7 +838,7 @@ export default function StudioSettingsPage() {
                       }
                       message={
                         customDomainStatus.dns.correct
-                          ? t("settings.dnsCorrect", { domain: customDomainStatus.domain, ip: customDomainStatus.expectedIp ?? "" })
+                          ? t("settings.dnsCorrect", { domain: customDomainStatus.domain, ip: customDomainStatus.expectedIp ?? customDomainStatus.dns.resolved[0] ?? "" })
                           : customDomainStatus.dns.resolved.length === 0
                           ? customDomainStatus.dns.error
                             ? t("settings.dnsNotResolvableErr", { error: customDomainStatus.dns.error })
