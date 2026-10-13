@@ -86,12 +86,40 @@ umbenennen (oder per Rechtsklick → „Paketinhalt zeigen").
 5. Bilder per Drag-and-Drop oder Smart-Collection in die Sammlung
    ziehen → unter der Sammlung sammeln sich die Bilder als „Bereit
    zu veröffentlichen".
-6. **Veröffentlichen** klicken → Lightroom rendert die Bilder als
-   JPEG (sRGB), lädt sie zu Lumio hoch. Pro Upload werden im Hintergrund
+6. **Veröffentlichen** klicken → Lightroom rendert die Bilder im
+   gewählten Format (Standard: JPEG sRGB, siehe „Formate und große
+   Dateien"), lädt sie zu Lumio hoch. Pro Upload werden im Hintergrund
    Vorschau-, Thumbnail- und ggf. Watermark-Varianten erzeugt.
 7. **In Lumio anzeigen** (Rechtsklick auf Sammlung) öffnet die Galerie
    im Studio-Verwaltungsbereich im Browser (nicht die öffentliche
    Kunden-Ansicht).
+
+### Formate und große Dateien
+
+Das Format wählst du wie bei jedem Export in den Lightroom-
+Export-Einstellungen (Bereich *Dateieinstellungen*):
+
+| Format | Hinweis |
+|---|---|
+| **JPEG** | Standard, wie bisher. |
+| **TIFF**, **PSD**, **PNG** | Werden unverändert hochgeladen; Lumio erzeugt daraus Vorschauen und Thumbnails. |
+| **DNG** | Wird als RAW-Datei hochgeladen. In den DNG-Einstellungen „Originaldatei einbetten" nicht aktivieren — das verdoppelt die Dateigröße. |
+
+**Farbraum**: sRGB (Standard), AdobeRGB oder ProPhotoRGB. Das ist eine
+gemeinsame Einstellung für alle Formate. Lumio rechnet die Web-Vorschauen
+anhand des eingebetteten Profils nach sRGB um, sie sehen also in jedem
+Fall richtig aus; die hochgeladene Datei bleibt im gewählten Profil.
+
+**Große Dateien**: Bis 100 MB geht die Datei in einem Stück hoch. Darüber
+lädt das Plugin sie in Blöcken zu je 8 MB hoch (der Fortschrittsbalken
+zeigt „part 3/40"); jeder Block wird bei einem Netzwerkfehler automatisch
+wiederholt, und läuft ein Upload-Link ab, wird ein neuer angefordert. Der
+Speicherbedarf hängt nicht von der Dateigröße ab. Das Plugin setzt kein
+eigenes Limit: Es gilt das Pro-Datei-Limit deines Studios (Standard 10 GB,
+in den Studio-Einstellungen änderbar). Das Plugin liest Limit und erlaubte
+Dateitypen vom Studio und lehnt eine zu große oder nicht erlaubte Datei
+sofort — mit klarer Meldung, bevor etwas hochgeladen wird — ab.
+**Verbindung testen** zeigt das Pro-Datei-Limit an.
 
 ### Re-Publish
 
@@ -160,7 +188,7 @@ werden die Werte serverseitig zusammengefasst:
 
 ## Bekannte Einschränkungen
 
-- **Filename-Matching (Selection-Import)**: Für Files, die mit dieser
+- **Filename-Matching (Selection-Import)**: Für JPEG-Files, die mit dieser
   Plugin-Version veröffentlicht wurden, wird zusätzlich ein MD5-Hash des
   Original-Masters im hochgeladenen JPEG hinterlegt. Damit werden
   mehrdeutige Treffer automatisch aufgelöst, und mit der Option
@@ -175,11 +203,19 @@ werden die Werte serverseitig zusammengefasst:
 - **Reject-Flag**: Lumio kennt aktuell nur „pick" und „none", kein
   „reject". Daher wird beim Import kein bestehender Reject-Flag
   überschrieben.
-- **Publish: nur JPEG, sRGB**: Wir rendern auf JPEG sRGB und laden
-  nur das hoch. Originale (RAW) bleiben lokal.
-- **Publish: nur single-part Upload**: Files > 100 MB werden aktuell
-  abgelehnt. Bei JPEG-Renders kein Problem; bei TIFF-Exporten ggf.
-  manuell die Quality reduzieren.
+- **Publish: nur Lightroom-Renders**: Wir laden die exportierte Datei
+  (JPEG, TIFF, PSD, PNG oder DNG) hoch, nicht das Master. Originale
+  (RAW) bleiben lokal; die übrigen Lightroom-Exportformate (JPEG XL,
+  AVIF, „Original") stehen nicht zur Verfügung.
+- **Master-Hash nur in JPEGs**: Der MD5-Hash für die Wiedererkennung
+  umbenannter Dateien wird nur in JPEGs eingebettet. Bei TIFF, PSD, PNG
+  und DNG funktioniert das Matching per Dateiname, das Wiederfinden per
+  Hash nicht.
+- **Abgebrochene Uploads**: Scheitert ein Block-Upload, entfernt das
+  Plugin den halbfertigen Eintrag aus der Galerie, bereits hochgeladene
+  Blöcke können aber im S3-Speicher liegen bleiben, bis sie aufgeräumt
+  werden (empfohlen: eine Lifecycle-Regel `AbortIncompleteMultipartUpload`
+  am Bucket).
 - **Smart-Previews / RAW+JPEG-Stacks**: Wir matchen auf Dateinamens-
   Ebene, der primäre Catalog-Eintrag bekommt die Metadaten.
 

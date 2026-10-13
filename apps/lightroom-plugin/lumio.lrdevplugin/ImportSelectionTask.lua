@@ -59,8 +59,9 @@ local function buildIndex(photos)
     return { byFull = byFull, byBase = byBase }
 end
 
--- CRITICAL. Publishing forces the uploaded name to "<basename>.jpg"
--- (LumioPublishService.lua:308) and the server stores it verbatim. Import,
+-- CRITICAL. Publishing renames the uploaded file to "<basename>.<ext>", with
+-- the extension of the EXPORT (jpg, tif, psd, png or dng -- see uploadOnePhoto
+-- in LumioPublishService.lua), and the server stores it verbatim. Import,
 -- on the other hand, indexed the catalog by its REAL filename including the
 -- extension, so "int_4325.jpg" could never match the catalog's
 -- "int_4325.nef". Measured on a real catalog: dng 1083, nef 967, jpg 91,
@@ -71,7 +72,7 @@ local function findMatches(idx, filename)
     local fn = (filename or ""):lower()
     if fn == "" then return nil, "none" end
 
-    -- Publishing ALWAYS sends the name as "<basename>.jpg", so both the exact
+    -- Publishing sends the name as "<basename>.<export extension>", so both the exact
     -- name and the basename are relevant. Collect both and only then decide --
     -- returning on the first exact hit would let an exported JPEG in the
     -- catalog win over the RAW master.
