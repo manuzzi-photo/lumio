@@ -136,6 +136,10 @@ services:
       # Ohne diese Variable erkennt resolveTenant <slug>.<base> nicht und
       # jede Tenant-Subdomain fällt auf tenant:null zurück.
       - LUMIO_DOMAIN_BASE=${LUMIO_DOMAIN_BASE:-}
+      # Public IPv4 of the server, used for the custom-domain hints and the
+      # DNS expected-vs-actual check in the studio. Without a value the
+      # comparison is skipped.
+      - LUMIO_PUBLIC_IP=${LUMIO_PUBLIC_IP:-}
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - STORAGE_PROVIDER=${STORAGE_PROVIDER:-minio}

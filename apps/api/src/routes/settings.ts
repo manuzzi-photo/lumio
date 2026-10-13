@@ -444,8 +444,12 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       // Kein CNAME → kein Fehler, ist normal bei A-Records
     }
 
+    // Without LUMIO_PUBLIC_IP there is no expected value to compare against,
+    // so any successful resolution counts as correct (see config.ts).
     const dnsCorrect =
-      expectedIp !== null && dnsResolved.includes(expectedIp);
+      expectedIp !== null
+        ? dnsResolved.includes(expectedIp)
+        : dnsResolved.length > 0;
 
     // TLS-Probe: HEAD-Request gegen https://<domain>/health (existierender
     // unauthentifizierter Endpoint). Wenn TLS-Handshake durchlaeuft, ist
