@@ -39,8 +39,10 @@ A pull is enough for the server and the worker — nothing changes on their side
 
 ### Fixed
 
+- **Custom domains: the DNS check in the studio always failed** unless `LUMIO_PUBLIC_IP` was set, and it never reached the API container even when it was. It is now passed through. Without it, a domain counts as correct as soon as it resolves (the HTTPS check follows as before); with it, the studio compares against exactly that IP. `.env.example` now documents the variable (optional).
+- Lightroom plug-in (v0.5.0): sizes in its messages are formatted like the server's ("10 GB", not "10.0 GB").
 - Lightroom plug-in (v0.5.0): error messages for refused uploads (file too large, file type not allowed, storage plan) now show the server's explanation instead of raw JSON.
-- Lightroom plug-in (v0.5.0): when an upload failed after it had been registered, the half-created file stayed in the gallery in the "uploading" state forever. The plug-in now removes it. For a multipart upload, already-sent parts can remain in S3 until cleaned up; an `AbortIncompleteMultipartUpload` lifecycle rule on the bucket takes care of that.
+- Lightroom plug-in (v0.5.0): when an upload failed after it had been registered, the half-created file stayed in the gallery in the "uploading" state forever. The plug-in now removes it. For a multipart upload, already-sent parts can remain in storage. With the bundled RustFS (default for new installations) the bucket removes them after 7 days; with the bundled MinIO they stay until removed by hand.
 - Lightroom plug-in (v0.5.0): losing the server's reply to "upload complete" (e.g. a network drop at the very end of a large upload) discarded the finished upload; the call is now retried, which the server handles safely.
 
 Known limitation: the original-file hash used to find renamed files during Selection-Import is only embedded in JPEGs. Photos published as TIFF, PSD, PNG or DNG are still matched by file name.

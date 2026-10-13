@@ -226,7 +226,9 @@ function M.formatBytes(n)
     n = tonumber(n) or 0
     local gib = 1024 * 1024 * 1024
     if n >= gib then
-        return string.format("%.1f GB", n / gib)
+        local gb = n / gib
+        -- Like formatLimit(): no decimal from 10 GB on ("10 GB", "2.5 GB").
+        return string.format(gb >= 10 and "%.0f GB" or "%.1f GB", gb)
     end
     return string.format("%.0f MB", n / (1024 * 1024))
 end
