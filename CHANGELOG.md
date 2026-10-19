@@ -29,6 +29,10 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+## [0.93.0] - 2026-10-19
+
+A pull is enough. The database migration (one new setting for galleries and templates) runs automatically on start; existing galleries keep offering what they offered before.
+
 ### Added
 - **Downloads: originals only** (#70). A gallery can now offer *Both*, *Originals only* or *Web version only* for download; until now the smaller web version was always offered. Gallery templates have the same choice, so new galleries inherit it. Every download path follows the setting (single file, all as ZIP, selection, picks, tag filter). Existing galleries and templates keep their behaviour. The database migration runs automatically on start.
 
