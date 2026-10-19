@@ -59,6 +59,7 @@ export const de: LocaleDict = {
 
 
   apiError: {
+    downloadVariantRequired: "Mindestens eine Version zum Herunterladen wählen oder Downloads ganz ausschalten.",
     heroGalleryProtected: "Diese Galerie hat ein Passwort. Ihre Fotos können nicht als Headerbild der Seite verwendet werden.",
     heroFileInvalid: "Dieses Foto kann nicht als Headerbild dienen: Seine Galerie muss auf dieser Seite sein und dort angezeigt werden.",
     invalidAssetKey: "Der Upload konnte dieser Seite nicht zugeordnet werden. Bitte erneut hochladen.",
@@ -349,9 +350,13 @@ export const de: LocaleDict = {
     settingsHeading: "Einstellungen",
     uploadHint: "bis {size} pro File",
     settingDownload: "Download für Kunden erlauben",
-    settingOriginals: "Originale erlauben",
-    settingOriginalsDesc:
-      "Wenn aktiv, können Kunden die Original-Dateien herunterladen. Wenn aus, gibt es nur die reduzierten Web-Versionen (~2560px JPEG, gut für Online-Posts).",
+    downloadVersions: "Welche Version dürfen Kunden herunterladen?",
+    downloadVersions_both: "Beides",
+    downloadVersions_originals: "Nur Originale",
+    downloadVersions_web: "Nur Web-Version",
+    downloadVersions_bothDesc: "Kunden wählen zwischen den Originaldateien und einer kleineren Web-Version (etwa 2560 px JPEG, Videos als MP4).",
+    downloadVersions_originalsDesc: "Kunden bekommen die Dateien genau so, wie du sie hochgeladen hast, ohne kleinere Web-Version. Bei RAW-Uploads ist das die RAW-Datei.",
+    downloadVersions_webDesc: "Kunden bekommen nur die kleinere Web-Version (etwa 2560 px JPEG, Videos als MP4), nicht die Originaldateien.",
     settingWatermark: "Wasserzeichen auf Vorschaubildern",
     settingWatermarkDesc:
       "Wird automatisch generiert. Studio-Watermark-Text in den Studio-Einstellungen festlegen.",

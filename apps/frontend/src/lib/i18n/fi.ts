@@ -60,6 +60,7 @@ export const fi = {
 
 
   apiError: {
+    downloadVariantRequired: "Valitse vähintään yksi ladattava versio tai poista lataukset käytöstä.",
     heroGalleryProtected: "Tällä gallerialla on salasana. Sen kuvia ei voi käyttää sivun ylätunnisteen kuvana.",
     heroFileInvalid: "Tätä kuvaa ei voi käyttää ylätunnisteen kuvana: sen gallerian on oltava tällä sivulla ja näkyvissä siellä.",
     invalidAssetKey: "Latausta ei voitu liittää tähän sivuun. Lataa se uudelleen.",
@@ -349,9 +350,13 @@ export const fi = {
     settingsHeading: "Asetukset",
     uploadHint: "enintään {size} tiedostoa kohti",
     settingDownload: "Salli lataus asiakkaille",
-    settingOriginals: "Salli alkuperäistiedostot",
-    settingOriginalsDesc:
-      "Kun asetus on käytössä, asiakkaat voivat ladata alkuperäistiedostot. Kun se on pois käytöstä, saatavilla ovat vain pienennetyt verkkoversiot (~2560 px JPEG).",
+    downloadVersions: "Minkä version asiakkaat voivat ladata?",
+    downloadVersions_both: "Molemmat",
+    downloadVersions_originals: "Vain alkuperäiset",
+    downloadVersions_web: "Vain verkkoversio",
+    downloadVersions_bothDesc: "Asiakkaat valitsevat alkuperäisten tiedostojen ja pienemmän verkkoversion välillä (noin 2560 px JPEG, videot MP4:nä).",
+    downloadVersions_originalsDesc: "Asiakkaat saavat tiedostot täsmälleen sellaisina kuin latasit ne, ilman pienempää verkkoversiota. RAW-latauksissa se on RAW-tiedosto.",
+    downloadVersions_webDesc: "Asiakkaat saavat vain pienemmän verkkoversion (noin 2560 px JPEG, videot MP4:nä), eivät alkuperäisiä tiedostoja.",
     settingWatermark: "Vesileima esikatselukuviin",
     settingWatermarkDesc:
       "Luodaan automaattisesti. Määritä vesileiman teksti studion asetuksissa.",

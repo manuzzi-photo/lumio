@@ -391,6 +391,9 @@ model GalleryTemplate {
   // Galerie-Settings
   mode              String   @default("collaboration")  // collaboration | presentation
   downloadEnabled   Boolean  @default(true)
+  // Which versions clients may download, as on Gallery (#70).
+  downloadOriginalsEnabled Boolean @default(true)
+  downloadWebEnabled       Boolean @default(true)
   watermarkEnabled  Boolean  @default(false)
   commentsEnabled   Boolean  @default(true)
   ratingsEnabled    Boolean  @default(true)
@@ -453,6 +456,10 @@ model Gallery {
   // damit existierende Galerien unverändert weiterlaufen — der neue Toggle
   // im Studio gibt Photographen die explizite Wahl "nur Web ausliefern".
   downloadOriginalsEnabled Boolean @default(true)
+  // Counterpart for the web version (#70): off = clients get originals only.
+  // At least one of the two stays on while downloadEnabled is on (checked
+  // in the API); "no downloads at all" is downloadEnabled = false.
+  downloadWebEnabled Boolean @default(true)
   watermarkEnabled Boolean @default(false)
   commentsEnabled Boolean  @default(true)
   ratingsEnabled  Boolean  @default(true)

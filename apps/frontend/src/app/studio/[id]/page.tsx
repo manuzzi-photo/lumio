@@ -58,6 +58,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { useErrorText } from "@/lib/error-i18n";
 import { useConfirm } from "@/components/ui/dialogs";
 import { shouldIgnoreShortcut } from "@/lib/keyboard";
+import {
+  DownloadVersionPicker,
+  flagsFromVersions,
+  versionsFromFlags,
+} from "@/components/studio/DownloadVersionPicker";
 
 // accept-Liste fürs Upload-<input>. Hintergrund: ohne accept gibt der
 // iOS/iPadOS-Foto-Picker bei einem ausgewählten VIDEO beim Bestätigen
@@ -1465,11 +1470,12 @@ export default function GalleryDetailPage() {
             onChange={(v) => toggleSetting("downloadEnabled", v)}
           />
           {gallery.downloadEnabled && (
-            <SettingToggle
-              label={t("studio.settingOriginals")}
-              description={t("studio.settingOriginalsDesc")}
-              value={gallery.downloadOriginalsEnabled}
-              onChange={(v) => toggleSetting("downloadOriginalsEnabled", v)}
+            <DownloadVersionPicker
+              value={versionsFromFlags(gallery)}
+              onChange={async (v) => {
+                await api.updateGallery(gallery.id, flagsFromVersions(v));
+                await load();
+              }}
             />
           )}
           <SettingToggle

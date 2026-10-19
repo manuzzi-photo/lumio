@@ -57,6 +57,7 @@ export const it: LocaleDict = {
 
 
   apiError: {
+    downloadVariantRequired: "Scegli almeno una versione da scaricare oppure disattiva i download.",
     heroGalleryProtected: "Questa galleria ha una password. Le sue foto non possono essere usate come immagine di intestazione della pagina.",
     heroFileInvalid: "Questa foto non può essere usata come immagine di intestazione: la sua galleria deve essere in questa pagina ed esservi mostrata.",
     invalidAssetKey: "Il caricamento non è stato associato a questa pagina. Caricalo di nuovo.",
@@ -349,9 +350,13 @@ export const it: LocaleDict = {
     settingsHeading: "Impostazioni",
     uploadHint: "fino a {size} per file",
     settingDownload: "Consenti download ai clienti",
-    settingOriginals: "Consenti originali",
-    settingOriginalsDesc:
-      "Se attivo, i clienti possono scaricare i file originali. Se disattivo, sono disponibili solo le versioni web ridotte (~2560px JPEG).",
+    downloadVersions: "Quale versione possono scaricare i clienti?",
+    downloadVersions_both: "Entrambe",
+    downloadVersions_originals: "Solo originali",
+    downloadVersions_web: "Solo versione web",
+    downloadVersions_bothDesc: "I clienti scelgono tra i file originali e una versione web più piccola (circa 2560 px JPEG, video in MP4).",
+    downloadVersions_originalsDesc: "I clienti ricevono i file esattamente come li hai caricati, senza versione web ridotta. Per i caricamenti RAW è il file RAW.",
+    downloadVersions_webDesc: "I clienti ricevono solo la versione web più piccola (circa 2560 px JPEG, video in MP4), non i file originali.",
     settingWatermark: "Filigrana sulle anteprime",
     settingWatermarkDesc:
       "Generata automaticamente. Configura il testo della filigrana nelle impostazioni dello studio.",

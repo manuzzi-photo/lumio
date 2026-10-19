@@ -13,6 +13,12 @@ import { Button } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { useErrorText } from "@/lib/error-i18n";
 import { useConfirm } from "@/components/ui/dialogs";
+import {
+  DownloadVersionPicker,
+  flagsFromVersions,
+  versionsFromFlags,
+  type DownloadVersions,
+} from "@/components/studio/DownloadVersionPicker";
 
 export default function TemplateEditorPage() {
   const confirm = useConfirm();
@@ -35,6 +41,8 @@ export default function TemplateEditorPage() {
     "collaboration"
   );
   const [downloadEnabled, setDownloadEnabled] = useState(true);
+  const [downloadVersions, setDownloadVersions] =
+    useState<DownloadVersions>("both");
   const [watermarkEnabled, setWatermarkEnabled] = useState(false);
   const [commentsEnabled, setCommentsEnabled] = useState(true);
   const [ratingsEnabled, setRatingsEnabled] = useState(true);
@@ -50,6 +58,7 @@ export default function TemplateEditorPage() {
       setDescription(res.template.description ?? "");
       setMode(res.template.mode as "collaboration" | "presentation");
       setDownloadEnabled(res.template.downloadEnabled);
+      setDownloadVersions(versionsFromFlags(res.template));
       setWatermarkEnabled(res.template.watermarkEnabled);
       setCommentsEnabled(res.template.commentsEnabled);
       setRatingsEnabled(res.template.ratingsEnabled);
@@ -90,6 +99,7 @@ export default function TemplateEditorPage() {
         description: description.trim() || null,
         mode,
         downloadEnabled,
+        ...flagsFromVersions(downloadVersions),
         watermarkEnabled,
         commentsEnabled,
         ratingsEnabled,
@@ -216,6 +226,13 @@ export default function TemplateEditorPage() {
               onChange={setRatingsEnabled}
             />
           </div>
+
+          {downloadEnabled && (
+            <DownloadVersionPicker
+              value={downloadVersions}
+              onChange={setDownloadVersions}
+            />
+          )}
 
           <Field label="Standard-Ablauf in Tagen (leer = unbegrenzt)">
             <input

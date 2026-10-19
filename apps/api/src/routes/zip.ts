@@ -24,6 +24,7 @@ import { requestZipDownload } from "../services/zip.js";
 import { notifyZipReadyOnce } from "../services/notifier.js";
 import { loadVisitor } from "./galleries.js";
 import { galleryAccessWhere } from "../lib/gallery-access.js";
+import { downloadVariantRefusal, parseDownloadVariant } from "../services/download-policy.js";
 
 // ZIP-Downloads sind potenziell riesig und laufen bei Kunden auch über
 // langsame Leitungen. Die presigned Download-URL muss lange genug gültig
@@ -73,6 +74,7 @@ export async function registerZipRoutes(app: FastifyInstance) {
           tenantId: true,
           downloadEnabled: true,
           downloadOriginalsEnabled: true,
+          downloadWebEnabled: true,
         },
       });
       if (!gallery || !gallery.downloadEnabled) {
@@ -91,13 +93,9 @@ export async function registerZipRoutes(app: FastifyInstance) {
       }
 
       // Variant validieren + Permission-Check
-      const variant: "original" | "web" =
-        req.query.variant === "web" ? "web" : "original";
-      if (variant === "original" && !gallery.downloadOriginalsEnabled) {
-        return reply
-          .status(403)
-          .send({ error: "originals_disabled" });
-      }
+      const variant = parseDownloadVariant(req.query.variant);
+      const refusal = downloadVariantRefusal(gallery, variant);
+      if (refusal) return reply.status(403).send({ error: refusal });
 
       const zipDownload = await requestZipDownload({
         tenantId: gallery.tenantId,
@@ -142,6 +140,7 @@ export async function registerZipRoutes(app: FastifyInstance) {
           tenantId: true,
           downloadEnabled: true,
           downloadOriginalsEnabled: true,
+          downloadWebEnabled: true,
         },
       });
       if (!gallery || !gallery.downloadEnabled) {
@@ -159,13 +158,9 @@ export async function registerZipRoutes(app: FastifyInstance) {
         }
       }
 
-      const variant: "original" | "web" =
-        req.query.variant === "web" ? "web" : "original";
-      if (variant === "original" && !gallery.downloadOriginalsEnabled) {
-        return reply
-          .status(403)
-          .send({ error: "originals_disabled" });
-      }
+      const variant = parseDownloadVariant(req.query.variant);
+      const refusal = downloadVariantRefusal(gallery, variant);
+      if (refusal) return reply.status(403).send({ error: refusal });
 
       // Auswahl des Visitors holen — alle liked oder picked
       const selections = await prisma.selection.findMany({
@@ -232,6 +227,7 @@ export async function registerZipRoutes(app: FastifyInstance) {
           tenantId: true,
           downloadEnabled: true,
           downloadOriginalsEnabled: true,
+          downloadWebEnabled: true,
         },
       });
       if (!gallery || !gallery.downloadEnabled) {
@@ -249,13 +245,9 @@ export async function registerZipRoutes(app: FastifyInstance) {
         }
       }
 
-      const variant: "original" | "web" =
-        req.query.variant === "web" ? "web" : "original";
-      if (variant === "original" && !gallery.downloadOriginalsEnabled) {
-        return reply
-          .status(403)
-          .send({ error: "originals_disabled" });
-      }
+      const variant = parseDownloadVariant(req.query.variant);
+      const refusal = downloadVariantRefusal(gallery, variant);
+      if (refusal) return reply.status(403).send({ error: refusal });
 
       // File-IDs aus Body. Max 500 — eine ZIP-Anfrage mit 500 Files
       // ist schon ein 5-10-GB-Job, mehr macht beim Streamen über
@@ -346,6 +338,7 @@ export async function registerZipRoutes(app: FastifyInstance) {
           tenantId: true,
           downloadEnabled: true,
           downloadOriginalsEnabled: true,
+          downloadWebEnabled: true,
           customerTagFilterEnabled: true,
         },
       });
@@ -372,13 +365,9 @@ export async function registerZipRoutes(app: FastifyInstance) {
           .send({ error: "tag_filter_disabled_for_gallery" });
       }
 
-      const variant: "original" | "web" =
-        req.query.variant === "web" ? "web" : "original";
-      if (variant === "original" && !gallery.downloadOriginalsEnabled) {
-        return reply
-          .status(403)
-          .send({ error: "originals_disabled" });
-      }
+      const variant = parseDownloadVariant(req.query.variant);
+      const refusal = downloadVariantRefusal(gallery, variant);
+      if (refusal) return reply.status(403).send({ error: refusal });
 
       const bodySchema = z.object({
         tagIds: z.array(z.string().uuid()).min(1).max(20),
@@ -472,7 +461,7 @@ export async function registerZipRoutes(app: FastifyInstance) {
             orderBy: { partIndex: "asc" },
           },
           gallery: {
-            select: { downloadEnabled: true, downloadOriginalsEnabled: true },
+            select: { downloadEnabled: true, downloadOriginalsEnabled: true, downloadWebEnabled: true },
           },
         },
       });
@@ -498,8 +487,9 @@ export async function registerZipRoutes(app: FastifyInstance) {
       if (!zip.gallery.downloadEnabled) {
         return reply.status(403).send({ error: "downloads_disabled" });
       }
-      if (zip.variant === "original" && !zip.gallery.downloadOriginalsEnabled) {
-        return reply.status(403).send({ error: "originals_disabled" });
+      if (zip.variant === "original" || zip.variant === "web") {
+        const refusal = downloadVariantRefusal(zip.gallery, zip.variant);
+        if (refusal) return reply.status(403).send({ error: refusal });
       }
 
       // Wenn fertig und Download via Query-Param ?download=1: zum

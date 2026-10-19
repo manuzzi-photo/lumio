@@ -41,6 +41,11 @@ import {
   visitorCookieName,
 } from "../services/visitor.js";
 import { shouldExposeFilename } from "../services/customerLabel.js";
+import {
+  downloadVariantRefusal,
+  parseDownloadVariant,
+  resolveDownloadFlags,
+} from "../services/download-policy.js";
 
 // ---------------------------------------------------------------------------
 // Customer-Download: Variant-Auflösung (geteilt)
@@ -160,6 +165,7 @@ const createGallerySchema = z.object({
   brandingId: z.string().uuid().nullable().optional(),
   downloadEnabled: z.boolean().optional(),
   downloadOriginalsEnabled: z.boolean().optional(),
+  downloadWebEnabled: z.boolean().optional(),
   watermarkEnabled: z.boolean().optional(),
   commentsEnabled: z.boolean().optional(),
   ratingsEnabled: z.boolean().optional(),
@@ -561,6 +567,10 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         : template?.brandingId ?? null,
       downloadEnabled:
         body.downloadEnabled ?? template?.downloadEnabled ?? true,
+      downloadOriginalsEnabled:
+        body.downloadOriginalsEnabled ?? template?.downloadOriginalsEnabled ?? true,
+      downloadWebEnabled:
+        body.downloadWebEnabled ?? template?.downloadWebEnabled ?? true,
       watermarkEnabled:
         body.watermarkEnabled ?? template?.watermarkEnabled ?? false,
       commentsEnabled:
@@ -581,6 +591,12 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
           )
         : null,
     };
+
+    // Downloads on with neither version would leave clients a button that
+    // only ever answers 403.
+    if (!resolveDownloadFlags(eff, {}).ok) {
+      return reply.status(400).send({ error: "download_variant_required" });
+    }
 
     // Slugs are unique per tenant (@@unique([tenantId, slug])); the share link
     // does not carry the tenant in its path, the host does. Retry a few times
@@ -610,6 +626,8 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         mode: eff.mode,
         brandingId: eff.brandingId,
         downloadEnabled: eff.downloadEnabled,
+        downloadOriginalsEnabled: eff.downloadOriginalsEnabled,
+        downloadWebEnabled: eff.downloadWebEnabled,
         watermarkEnabled: eff.watermarkEnabled,
         commentsEnabled: eff.commentsEnabled,
         ratingsEnabled: eff.ratingsEnabled,
@@ -862,9 +880,20 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
           tenantId: req.tenantId,
           ...galleryAccessWhere(s),
         },
-        select: { id: true, slug: true, watermarkEnabled: true, status: true },
+        select: {
+          id: true,
+          slug: true,
+          watermarkEnabled: true,
+          status: true,
+          downloadEnabled: true,
+          downloadOriginalsEnabled: true,
+          downloadWebEnabled: true,
+        },
       });
       if (!existing) return reply.status(404).send({ error: "not_found" });
+      if (!resolveDownloadFlags(existing, body).ok) {
+        return reply.status(400).send({ error: "download_variant_required" });
+      }
 
       // Custom slug: owner or admin, not member. Changing it breaks any
       // link already shared with clients (same tradeoff as the tenant
@@ -958,6 +987,9 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
               : {}),
             ...(body.downloadOriginalsEnabled !== undefined
               ? { downloadOriginalsEnabled: body.downloadOriginalsEnabled }
+              : {}),
+            ...(body.downloadWebEnabled !== undefined
+              ? { downloadWebEnabled: body.downloadWebEnabled }
               : {}),
             ...(body.watermarkEnabled !== undefined
               ? { watermarkEnabled: body.watermarkEnabled }
@@ -1775,6 +1807,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         status: true,
         downloadEnabled: true,
         downloadOriginalsEnabled: true,
+        downloadWebEnabled: true,
         watermarkEnabled: true,
         commentsEnabled: true,
         ratingsEnabled: true,
@@ -2000,6 +2033,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         mode: gallery.mode,
         downloadEnabled: gallery.downloadEnabled,
         downloadOriginalsEnabled: gallery.downloadOriginalsEnabled,
+        downloadWebEnabled: gallery.downloadWebEnabled,
         watermarkEnabled: gallery.watermarkEnabled,
         commentsEnabled: gallery.commentsEnabled,
         ratingsEnabled: gallery.ratingsEnabled,
@@ -2466,6 +2500,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
           id: true,
           downloadEnabled: true,
           downloadOriginalsEnabled: true,
+          downloadWebEnabled: true,
           tenantId: true,
         },
       });
@@ -2486,11 +2521,9 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         }
       }
 
-      const variant: "original" | "web" =
-        req.query.variant === "web" ? "web" : "original";
-      if (variant === "original" && !gallery.downloadOriginalsEnabled) {
-        return reply.status(403).send({ error: "originals_disabled" });
-      }
+      const variant = parseDownloadVariant(req.query.variant);
+      const refusal = downloadVariantRefusal(gallery, variant);
+      if (refusal) return reply.status(403).send({ error: refusal });
 
       const file = await prisma.file.findFirst({
         where: { id: req.params.fileId, galleryId: gallery.id },
@@ -2585,6 +2618,7 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
           id: true,
           downloadEnabled: true,
           downloadOriginalsEnabled: true,
+          downloadWebEnabled: true,
           tenantId: true,
         },
       });
@@ -2602,11 +2636,9 @@ export async function registerGalleryRoutes(app: FastifyInstance) {
         }
       }
 
-      const variant: "original" | "web" =
-        req.query.variant === "web" ? "web" : "original";
-      if (variant === "original" && !gallery.downloadOriginalsEnabled) {
-        return reply.status(403).send({ error: "originals_disabled" });
-      }
+      const variant = parseDownloadVariant(req.query.variant);
+      const refusal = downloadVariantRefusal(gallery, variant);
+      if (refusal) return reply.status(403).send({ error: refusal });
 
       const file = await prisma.file.findFirst({
         where: { id: req.params.fileId, galleryId: gallery.id },

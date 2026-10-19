@@ -60,6 +60,7 @@ export const en = {
 
 
   apiError: {
+    downloadVariantRequired: "Choose at least one version to download, or switch downloads off.",
     heroGalleryProtected: "This gallery has a password. Its photos cannot be used as the page's header image.",
     heroFileInvalid: "This photo cannot be used as header image: its gallery must be on this page and shown there.",
     invalidAssetKey: "The upload could not be assigned to this page. Please upload it again.",
@@ -349,9 +350,13 @@ export const en = {
     settingsHeading: "Settings",
     uploadHint: "up to {size} per file",
     settingDownload: "Allow download for clients",
-    settingOriginals: "Allow originals",
-    settingOriginalsDesc:
-      "When on, clients can download the original files. When off, only the reduced web versions (~2560px JPEG) are available.",
+    downloadVersions: "Which version can clients download?",
+    downloadVersions_both: "Both",
+    downloadVersions_originals: "Originals only",
+    downloadVersions_web: "Web version only",
+    downloadVersions_bothDesc: "Clients choose between the original files and a smaller web version (about 2560 px JPEG, videos as MP4).",
+    downloadVersions_originalsDesc: "Clients get the files exactly as you uploaded them, no smaller web version. For RAW uploads that means the RAW file.",
+    downloadVersions_webDesc: "Clients get only the smaller web version (about 2560 px JPEG, videos as MP4), not the original files.",
     settingWatermark: "Watermark on previews",
     settingWatermarkDesc:
       "Generated automatically. Configure the watermark text in studio settings.",

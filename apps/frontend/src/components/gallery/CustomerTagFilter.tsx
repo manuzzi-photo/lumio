@@ -33,6 +33,9 @@ interface Props {
   /** Steuert ob der ZIP-Download-Button sichtbar ist. False wenn
    *  Galerie downloadEnabled=false. */
   downloadEnabled: boolean;
+  /** Which version the ZIP contains: originals, or the web version for a
+   *  gallery that offers only that. */
+  variant: "original" | "web";
 }
 
 const VISIBLE_LIMIT = 12;
@@ -44,6 +47,7 @@ export function CustomerTagFilter({
   onChange,
   filteredCount,
   downloadEnabled,
+  variant,
 }: Props) {
   const errText = useErrorText();
   const t = useT();
@@ -95,7 +99,7 @@ export function CustomerTagFilter({
   async function onRequestZip() {
     if (selected.size === 0) return;
     try {
-      const res = await api.requestZipByTags(slug, "original", Array.from(selected));
+      const res = await api.requestZipByTags(slug, variant, Array.from(selected));
       setZipJob({
         zipId: res.id,
         status: res.status,

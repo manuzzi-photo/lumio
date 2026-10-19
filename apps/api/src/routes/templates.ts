@@ -14,12 +14,16 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
 import { prisma } from "../db.js";
+import { resolveDownloadFlags } from "../services/download-policy.js";
 
 const templateSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(2000).nullable().optional(),
   mode: z.enum(["collaboration", "presentation"]).default("collaboration"),
   downloadEnabled: z.boolean().default(true),
+  // Which versions new galleries offer (#70). At least one stays on.
+  downloadOriginalsEnabled: z.boolean().default(true),
+  downloadWebEnabled: z.boolean().default(true),
   watermarkEnabled: z.boolean().default(false),
   commentsEnabled: z.boolean().default(true),
   ratingsEnabled: z.boolean().default(true),
@@ -84,6 +88,14 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
     if (!(await validateBrandingId(req.tenantId, body.brandingId))) {
       return reply.status(400).send({ error: "bad_branding" });
     }
+    if (
+      !resolveDownloadFlags(
+        { downloadEnabled: true, downloadOriginalsEnabled: true, downloadWebEnabled: true },
+        body
+      ).ok
+    ) {
+      return reply.status(400).send({ error: "download_variant_required" });
+    }
     const template = await prisma.galleryTemplate.create({
       data: {
         tenantId: req.tenantId,
@@ -91,6 +103,8 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
         description: body.description ?? null,
         mode: body.mode,
         downloadEnabled: body.downloadEnabled,
+        downloadOriginalsEnabled: body.downloadOriginalsEnabled,
+        downloadWebEnabled: body.downloadWebEnabled,
         watermarkEnabled: body.watermarkEnabled,
         commentsEnabled: body.commentsEnabled,
         ratingsEnabled: body.ratingsEnabled,
@@ -134,6 +148,9 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
       ) {
         return reply.status(400).send({ error: "bad_branding" });
       }
+      if (!resolveDownloadFlags(existing, body).ok) {
+        return reply.status(400).send({ error: "download_variant_required" });
+      }
 
       const template = await prisma.galleryTemplate.update({
         where: { id: existing.id },
@@ -145,6 +162,12 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
           ...(body.mode !== undefined ? { mode: body.mode } : {}),
           ...(body.downloadEnabled !== undefined
             ? { downloadEnabled: body.downloadEnabled }
+            : {}),
+          ...(body.downloadOriginalsEnabled !== undefined
+            ? { downloadOriginalsEnabled: body.downloadOriginalsEnabled }
+            : {}),
+          ...(body.downloadWebEnabled !== undefined
+            ? { downloadWebEnabled: body.downloadWebEnabled }
             : {}),
           ...(body.watermarkEnabled !== undefined
             ? { watermarkEnabled: body.watermarkEnabled }

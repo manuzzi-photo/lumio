@@ -600,12 +600,14 @@ export function GalleryView({
                     emphasis="primary"
                   />
                 )}
-                <ZipDownloadButton
-                  slug={slug}
-                  kind="all"
-                  variant="web"
-                  emphasis={meta.downloadOriginalsEnabled ? "ghost" : "primary"}
-                />
+                {offersWeb(meta) && (
+                  <ZipDownloadButton
+                    slug={slug}
+                    kind="all"
+                    variant="web"
+                    emphasis={meta.downloadOriginalsEnabled ? "ghost" : "primary"}
+                  />
+                )}
                 {interactive && stats.liked > 0 && (
                   <>
                     {meta.downloadOriginalsEnabled && (
@@ -617,15 +619,17 @@ export function GalleryView({
                         emphasis="primary"
                       />
                     )}
-                    <ZipDownloadButton
-                      slug={slug}
-                      kind="selection"
-                      variant="web"
-                      count={stats.liked}
-                      emphasis={
-                        meta.downloadOriginalsEnabled ? "ghost" : "primary"
-                      }
-                    />
+                    {offersWeb(meta) && (
+                      <ZipDownloadButton
+                        slug={slug}
+                        kind="selection"
+                        variant="web"
+                        count={stats.liked}
+                        emphasis={
+                          meta.downloadOriginalsEnabled ? "ghost" : "primary"
+                        }
+                      />
+                    )}
                   </>
                 )}
               </DownloadMenu>
@@ -700,6 +704,8 @@ export function GalleryView({
           onChange={setTagFilter}
           filteredCount={filtered.length}
           downloadEnabled={meta.downloadEnabled}
+          // Originals unless the gallery offers the web version only.
+          variant={meta.downloadOriginalsEnabled ? "original" : "web"}
         />
       )}
 
@@ -886,16 +892,18 @@ export function GalleryView({
                   emphasis="primary"
                 />
               )}
-              <ZipDownloadButton
-                slug={slug}
-                kind="picked"
-                variant="web"
-                count={picks.size}
-                fileIds={picks.asArray()}
-                emphasis={
-                  meta.downloadOriginalsEnabled ? "ghost" : "primary"
-                }
-              />
+              {offersWeb(meta) && (
+                <ZipDownloadButton
+                  slug={slug}
+                  kind="picked"
+                  variant="web"
+                  count={picks.size}
+                  fileIds={picks.asArray()}
+                  emphasis={
+                    meta.downloadOriginalsEnabled ? "ghost" : "primary"
+                  }
+                />
+              )}
             </div>
           </div>
         </div>
@@ -1977,15 +1985,16 @@ function Lightbox({
   }
 
   // Zwei mögliche Download-Varianten: Original (volle Auflösung) und Web
-  // (2560px webp). Wenn der Studio "downloadOriginalsEnabled=false" gesetzt
-  // hat, wird Original ausgegraut/weggelassen und nur Web steht zur Wahl.
+  // (verkleinert). Das Studio kann jede der beiden abschalten (#70), aber
+  // nie beide: dafür gibt es "Downloads aus".
   const originalDownloadUrl =
     meta.downloadEnabled && meta.downloadOriginalsEnabled
       ? api.publicDownloadUrl(slug, file.id, "original")
       : null;
-  const webDownloadUrl = meta.downloadEnabled
-    ? api.publicDownloadUrl(slug, file.id, "web")
-    : null;
+  const webDownloadUrl =
+    meta.downloadEnabled && offersWeb(meta)
+      ? api.publicDownloadUrl(slug, file.id, "web")
+      : null;
 
   // Download bzw. — auf iOS — "In Fotos sichern". Ein normaler Browser-
   // Download landet auf iOS in der "Dateien"-App; das ist für Kunden, die
@@ -2658,4 +2667,10 @@ function PencilIcon() {
       <path d="M11.5 2 L14 4.5 L5 13.5 L1.5 14.5 L2.5 11 Z" />
     </svg>
   );
+}
+
+/** Whether the gallery offers the web version for download (#70). Older API
+ *  responses without the field mean yes, as before. */
+function offersWeb(meta: { downloadWebEnabled?: boolean }): boolean {
+  return meta.downloadWebEnabled !== false;
 }

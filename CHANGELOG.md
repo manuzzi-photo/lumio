@@ -29,6 +29,13 @@ Changes werden trotzdem klar als solche markiert. Details: `docs/VERSIONING.md`.
 
 ## [Unreleased]
 
+### Added
+- **Downloads: originals only** (#70). A gallery can now offer *Both*, *Originals only* or *Web version only* for download; until now the smaller web version was always offered. Gallery templates have the same choice, so new galleries inherit it. Every download path follows the setting (single file, all as ZIP, selection, picks, tag filter). Existing galleries and templates keep their behaviour. The database migration runs automatically on start.
+
+### Fixed
+- Creating a gallery through the API ignored `downloadOriginalsEnabled`.
+- In a gallery that offers the web version only, the ZIP download from the tag filter failed, because it always asked for originals.
+
 ## [0.92.0] - 2026-10-13
 
 A pull is enough for the server and the worker — nothing changes on their side. **Anyone using the Lightroom plug-in has to reinstall it:** the plug-in-side changes live only in the folder loaded into Lightroom, which is not updated along with the server. Re-add `apps/lightroom-plugin/lumio.lrdevplugin` in Lightroom (the plug-in then shows version 0.5.0).

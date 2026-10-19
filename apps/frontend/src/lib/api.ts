@@ -55,6 +55,8 @@ export interface Gallery {
   status: GalleryStatus;
   downloadEnabled: boolean;
   downloadOriginalsEnabled: boolean;
+  /** Web version offered for download (#70). At least one of the two. */
+  downloadWebEnabled: boolean;
   watermarkEnabled: boolean;
   commentsEnabled: boolean;
   /** Wenn true: Tag-Filter ist in der Customer-Galerie sichtbar +
@@ -298,6 +300,8 @@ export interface PublicGalleryMeta {
   mode: GalleryMode;
   downloadEnabled: boolean;
   downloadOriginalsEnabled: boolean;
+  /** Web version offered for download (#70). At least one of the two. */
+  downloadWebEnabled: boolean;
   watermarkEnabled: boolean;
   commentsEnabled: boolean;
   ratingsEnabled: boolean;
@@ -4705,6 +4709,8 @@ export interface GalleryTemplate {
   description: string | null;
   mode: GalleryMode;
   downloadEnabled: boolean;
+  downloadOriginalsEnabled: boolean;
+  downloadWebEnabled: boolean;
   watermarkEnabled: boolean;
   commentsEnabled: boolean;
   ratingsEnabled: boolean;
